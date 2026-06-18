@@ -2382,6 +2382,29 @@ class BaselineSwapSolver(IntentSolver):
                 except Exception:
                     pass
 
+        # Aerodrome Slipstream seed-pair discovery (chains where it's deployed).
+        # _discover_pools_for_pair only queries the Uniswap V3 factory, so
+        # without this the token list omits Aero-only tokens — even though the
+        # solver actively routes them. Mirrors the Aero step in
+        # _ensure_pools_for_route so the public list matches routing reach.
+        try:
+            from strategies.dex_aggregator import aerodrome as _aero
+            if chain_id in _aero.AERODROME_SLIPSTREAM_FACTORY:
+                w3a = self._get_web3(chain_id)
+                if w3a is not None:
+                    for i, tok_a in enumerate(seed):
+                        for tok_b in seed[i + 1:]:
+                            try:
+                                _aero.discover_pools_for_pair(
+                                    w3a, chain_id, tok_a, tok_b, pool_states,
+                                    self._query_pool_state, self._pair_discovery_cache,
+                                    cache_ttl=self._pool_cache_ttl,
+                                )
+                            except Exception:
+                                pass
+        except Exception:
+            pass
+
         # Also merge in the live pool cache — this includes pools discovered
         # during order processing (e.g. when a user pastes a custom token
         # and the solver successfully routes it). These tokens get promoted
@@ -2406,39 +2429,44 @@ class BaselineSwapSolver(IntentSolver):
             from web3 import Web3
             w3 = Web3(Web3.HTTPProvider(rpc_url))
 
+        _ERC20_ABI = [
+            {"inputs": [], "name": "symbol", "outputs": [{"type": "string"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [], "name": "decimals", "outputs": [{"type": "uint8"}], "stateMutability": "view", "type": "function"},
+        ]
         result = []
         for addr_lower, info in tokens.items():
             addr = info["address"]
             symbol = _TOKEN_SYMBOLS.get(addr_lower, "")
-            decimals = 18  # default
+            decimals: int | None = None  # None = not yet resolved
 
             if w3 and not symbol:
+                # Symbol uncached: fetch symbol + decimals from one contract.
                 try:
-                    # Query symbol() and decimals() on-chain
-                    erc20 = w3.eth.contract(
-                        address=w3.to_checksum_address(addr),
-                        abi=[
-                            {"inputs": [], "name": "symbol", "outputs": [{"type": "string"}], "stateMutability": "view", "type": "function"},
-                            {"inputs": [], "name": "decimals", "outputs": [{"type": "uint8"}], "stateMutability": "view", "type": "function"},
-                        ],
-                    )
+                    erc20 = w3.eth.contract(address=w3.to_checksum_address(addr), abi=_ERC20_ABI)
                     symbol = erc20.functions.symbol().call()
-                    decimals = erc20.functions.decimals().call()
+                    try:
+                        decimals = erc20.functions.decimals().call()
+                    except Exception:
+                        decimals = None
                 except Exception:
                     symbol = addr_lower[:8] + "..."
 
             if not symbol:
                 symbol = addr_lower[:8] + "..."
 
-            if w3 and decimals == 18:
+            # Resolve decimals at most ONCE: only when still unknown (cached
+            # symbol, or the symbol fetch above failed). Previously this
+            # re-queried decimals for every 18-decimal token that had just been
+            # fetched — a redundant RPC per token on the slow cold path.
+            if w3 and decimals is None:
                 try:
-                    erc20 = w3.eth.contract(
-                        address=w3.to_checksum_address(addr),
-                        abi=[{"inputs": [], "name": "decimals", "outputs": [{"type": "uint8"}], "stateMutability": "view", "type": "function"}],
-                    )
+                    erc20 = w3.eth.contract(address=w3.to_checksum_address(addr), abi=_ERC20_ABI)
                     decimals = erc20.functions.decimals().call()
                 except Exception:
-                    pass
+                    decimals = None
+
+            if decimals is None:
+                decimals = 18  # safe default
 
             # Estimate liquidity rank from pool count
             pool_count = sum(
