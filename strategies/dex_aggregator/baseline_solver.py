@@ -281,6 +281,13 @@ _GENERIC_FALLBACK_GAS_PRICE_WEI = 1_000_000_000  # 1 gwei for unknown chains
 
 _PLATFORM_FEE_MARGIN_BPS = 2000  # 20% margin above estimated gas cost
 
+# Uniswap SwapRouter02's MSG_SENDER sentinel: a swap whose recipient is
+# address(1) delivers output to msg.sender (the call's caller). For plans
+# executed through the ephemeral proxy, msg.sender of a router call IS the
+# proxy — so address(1) routes an intermediate cross-DEX hop's output back
+# into the proxy without the solver needing the proxy's CREATE2 address.
+_MSG_SENDER_SENTINEL = "0x0000000000000000000000000000000000000001"
+
 
 def _compute_platform_fee_wei(gas_units: int, gas_price_wei: int) -> int:
     """Estimate platform fee in native token wei (ETH/TAO).
@@ -854,62 +861,60 @@ class BaselineSwapSolver(IntentSolver):
             dex_config=snapshot.dex_config if snapshot else {},
         )
 
-        # Route-aware plan generation: check if multi-hop is needed
-        if input_token and output_token and pool_states:
+        # Exact-quote route resolution (fail loud). The on-chain Quoter
+        # decides output AND routability — single-tick math decides neither.
+        # The resolved route is what this plan is built on AND what quote()
+        # returns, so the two never disagree. A missing Quoter
+        # (QuoterUnavailable) or no quotable route (NoRouteError) propagates
+        # rather than silently degrading to approximate math.
+        if input_token and output_token:
             amount_in = swap_params.get("input_amount", 0)
+            if amount_in <= 0:
+                raise ValueError("input_amount must be positive")
 
-            if amount_in > 0:
-                route = self._find_best_executable_route(
-                    pool_states, input_token, output_token, amount_in, chain_id,
-                )
-                if route is not None:
-                    output_amount, route_desc, hops = route
-                    hop_dex = self._dominant_dex(hops)
-                    if len(hops) > 1:
-                        if hop_dex == "aerodrome_slipstream":
-                            return self._build_aerodrome_multihop_plan(
-                                intent, state, context, hops,
-                                input_token, output_token, amount_in,
-                                output_amount, chain_id,
-                            )
-                        return self._build_multihop_plan(
-                            intent, state, context, hops,
-                            input_token, output_token, amount_in,
-                            output_amount, chain_id,
-                        )
-                    elif len(hops) == 1:
-                        if hop_dex == "aerodrome_slipstream":
-                            return self._build_aerodrome_singlehop_plan(
-                                intent, state, context, hops[0],
-                                input_token, output_token, amount_in,
-                                output_amount, chain_id,
-                            )
-                        # Uni V3 single-hop: pass the discovered fee tier
-                        # to the processor so it doesn't override.
-                        discovered_fee = hops[0].get("fee")
-                        if discovered_fee and discovered_fee != self._processor.default_fee_tier:
-                            state = self._state_with_extra(
-                                intent,
-                                state,
-                                chain_id=state.chain_id,
-                                extra_updates={"fee_tier": discovered_fee},
-                            )
-
-        # Direct pool or no route info — delegate to SwapIntentProcessor.
-        # Falls back to direct pool.swap() on chains without a SwapRouter
-        # (e.g., BT EVM where Astrid Bridge (formerly TaoFi) deployed pools but no router).
-        try:
-            plan = _run_coro(self._processor.generate_plan(intent, state, context))
-            plan.metadata["chain_id"] = chain_id
-            return plan
-        except ValueError as exc:
-            if "No Uniswap V3 router" not in str(exc):
-                raise
-            # No router — try direct pool swap
-            return self._build_direct_pool_plan(
-                intent, state, context, pool_states,
-                input_token, output_token, chain_id,
+            output_amount, route_desc, hops = self._resolve_best_route(
+                pool_states, input_token, output_token, amount_in, chain_id,
             )
+
+            if len(hops) == 1:
+                hop = hops[0]
+                if self._hop_dex(hop) == "aerodrome_slipstream":
+                    return self._build_aerodrome_singlehop_plan(
+                        intent, state, context, hop,
+                        input_token, output_token, amount_in,
+                        output_amount, chain_id,
+                    )
+                return self._build_uniswap_singlehop_plan(
+                    intent, state, context, hop,
+                    input_token, output_token, amount_in,
+                    output_amount, chain_id,
+                )
+            elif len({self._hop_dex(h) for h in hops}) == 1:
+                # All hops on one DEX → packed-path exactInput (one call).
+                if self._dominant_dex(hops) == "aerodrome_slipstream":
+                    return self._build_aerodrome_multihop_plan(
+                        intent, state, context, hops,
+                        input_token, output_token, amount_in,
+                        output_amount, chain_id,
+                    )
+                return self._build_multihop_plan(
+                    intent, state, context, hops,
+                    input_token, output_token, amount_in,
+                    output_amount, chain_id,
+                )
+            else:
+                # Mixed cross-DEX route → sequential per-hop execution.
+                return self._build_cross_dex_plan(
+                    intent, state, context, hops,
+                    input_token, output_token, amount_in,
+                    output_amount, chain_id,
+                )
+
+        # Uni V3 single-hop (or a non-swap order missing tokens) — delegate
+        # to the SwapIntentProcessor for the approve + exactInputSingle plan.
+        plan = _run_coro(self._processor.generate_plan(intent, state, context))
+        plan.metadata["chain_id"] = chain_id
+        return plan
 
     def _build_direct_pool_plan(
         self,
@@ -1330,76 +1335,297 @@ class BaselineSwapSolver(IntentSolver):
             return "aerodrome_slipstream"
         return "uniswap_v3"
 
-    def _find_best_executable_route(
+    def _supports_msg_sender(self, dex: str, chain_id: int) -> bool:
+        """Whether ``dex``'s router on ``chain_id`` resolves the MSG_SENDER
+        sentinel (address(1)) → msg.sender.
+
+        Routing an INTERMEDIATE cross-DEX hop's output back into the
+        ephemeral proxy (the router call's msg.sender) needs this. Only
+        Uniswap's SwapRouter02 (Base/Optimism/Arbitrum) supports it; the
+        V1 SwapRouter (Ethereum/Anvil) and Aerodrome's V1-based Slipstream
+        router do NOT (they only resolve address(0) → the router itself).
+        """
+        from strategies.dex_aggregator.v3_codec import SWAP_ROUTER_V2_CHAINS
+        from strategies.dex_aggregator.quoter import DEX_UNISWAP_V3
+
+        return dex == DEX_UNISWAP_V3 and chain_id in SWAP_ROUTER_V2_CHAINS
+
+    def _is_executable_route(self, hops: list[dict[str, Any]], chain_id: int) -> bool:
+        """Whether the planner can emit ``hops`` as a single atomic plan.
+
+        - single hop → always (one router call);
+        - all hops same DEX → packed-path ``exactInput`` (one router call);
+        - mixed cross-DEX → sequential per-hop calls through the proxy. Every
+          NON-FINAL hop must route its output back to the proxy via the
+          MSG_SENDER sentinel, so each non-final hop's router must support
+          it. The final hop sends to the app contract (a real address), so
+          any DEX is fine there.
+
+        Used to drop unemittable routes BEFORE quoting, so the resolver
+        never returns a route the planner would refuse to build (which would
+        otherwise leave quote and plan disagreeing).
+        """
+        from strategies.dex_aggregator.quoter import hop_dex
+
+        if len(hops) <= 1:
+            return True
+        if len({hop_dex(h) for h in hops}) == 1:
+            return True
+        return all(self._supports_msg_sender(hop_dex(h), chain_id) for h in hops[:-1])
+
+    def _resolve_best_route(
         self,
         pool_states: dict[str, dict[str, Any]],
         token_in: str,
         token_out: str,
         amount_in: int,
         chain_id: int,
-    ) -> tuple[int, str, list[dict[str, Any]]] | None:
-        """Find the best route across all DEXes, but only return one we
-        can actually execute as a single transaction.
+    ) -> tuple[int, str, list[dict[str, Any]]]:
+        """Resolve the best EXECUTABLE route by EXACT on-chain quote.
 
-        ``find_best_route`` happily picks a multi-hop route that splits
-        across Uni V3 and Aerodrome, but no on-chain router supports
-        cross-DEX paths in a single call. So when the unrestricted route
-        is mixed multi-hop, we fall back to the better of:
-          (a) the best route considering only Uni V3 pools,
-          (b) the best route considering only Aerodrome pools.
+        The Quoter is the source of truth for output AND routability —
+        single-tick math decides neither. Fail loud: a missing Quoter
+        (``QuoterUnavailable``) or no quotable route (``NoRouteError``)
+        propagates; there is no silent fallback to approximate math.
 
-        Single-hop results are always executable (one router, one DEX)
-        and pass through unchanged.
+        Both ``quote()`` and ``generate_plan()`` route through here, so the
+        quote and the emitted plan are always built on the same route.
         """
-        from strategies.dex_aggregator.pool_math import find_best_route
+        from strategies.dex_aggregator import quoter as _quoter
 
+        w3 = self._get_web3(chain_id)
+        quote_hop = _quoter.make_quote_fn(w3, chain_id)
         intermediaries = self._intermediaries_for_chain(chain_id)
-        unrestricted = find_best_route(
-            pool_states, token_in, token_out, amount_in,
+        return _quoter.resolve_best_route(
+            quote_hop,
+            pool_states,
+            token_in,
+            token_out,
+            amount_in,
             intermediaries=intermediaries,
+            is_executable=lambda hops: self._is_executable_route(hops, chain_id),
         )
-        if unrestricted is None:
-            return None
 
-        _, _, hops = unrestricted
-        if len(hops) <= 1:
-            return unrestricted
+    def _build_cross_dex_plan(
+        self,
+        intent: AppIntentDefinition,
+        state: IntentState,
+        context: ProcessorContext,
+        hops: list[dict[str, Any]],
+        input_token: str,
+        output_token: str,
+        amount_in: int,
+        expected_output: int,
+        chain_id: int,
+    ) -> ExecutionPlan:
+        """Build a MIXED cross-DEX route as sequential per-hop swaps.
 
-        dexes = {self._hop_dex(h) for h in hops}
-        if len(dexes) == 1:
-            return unrestricted  # all-V3 or all-Aero — executable as-is
+        Each hop emits ``approve(routerForHop, amountInHop)`` +
+        ``router.exactInputSingle(...)``, run in order through the ephemeral
+        proxy (which custodies the in-between token between calls):
 
-        # Mixed multi-hop: re-run on per-DEX subsets. Whichever yields the
-        # best output wins; if neither produces a route, fall back to the
-        # best direct (single-hop) pool from the unrestricted set.
-        v3_only = {a: p for a, p in pool_states.items() if (p.get("dex") or "uniswap_v3") == "uniswap_v3"}
-        aero_only = {a: p for a, p in pool_states.items() if p.get("dex") == "aerodrome_slipstream"}
+          - ``amountIn(hopN)`` = the exact Quoter output of hop N-1
+            (attached to each hop by ``resolve_best_route``);
+          - intermediate hops set ``recipient`` to the MSG_SENDER sentinel
+            so output lands back in the proxy; the final hop delivers to the
+            app contract so ``AppIntentBase._gained()`` can measure it;
+          - intermediate ``amountOutMinimum`` is loose (0) — the whole plan
+            is ONE atomic tx, so there's no in-tx MEV between hops; the
+            contract's ``min_output_amount`` invariant enforces the user's
+            end-to-end protection on the FINAL output.
 
-        candidates = []
-        for subset in (v3_only, aero_only):
-            if not subset:
-                continue
-            r = find_best_route(
-                subset, token_in, token_out, amount_in,
-                intermediaries=intermediaries,
+        Only emitted for routes ``_is_executable_route`` accepted (every
+        non-final hop on a MSG_SENDER-routable router).
+        """
+        from common.abi_utils import encode_approve
+        from strategies.dex_aggregator.v3_codec import encode_exact_input_single as _uni_encode
+        from strategies.dex_aggregator import aerodrome as _aero
+        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+        from strategies.dex_aggregator.quoter import (
+            hop_dex,
+            hop_quoter_param,
+            DEX_AERODROME_SLIPSTREAM,
+        )
+
+        swap_params = self._normalized_swap_params(intent, state)
+        deadline = context.timestamp + self._processor.deadline_offset
+        final_recipient = state.contract_address or swap_params.get("receiver", state.owner)
+
+        # Final-hop user protection = the order's signed min (validator-set
+        # from the quote). Falls back to slippage on the exact route output.
+        final_min = swap_params.get("min_output_amount", 0)
+        if not final_min:
+            final_min = expected_output * (10000 - self._processor.slippage_bps) // 10000
+
+        interactions: list[Interaction] = []
+        last = len(hops) - 1
+        route_dexes: list[str] = []
+        for i, hop in enumerate(hops):
+            dex = hop_dex(hop)
+            route_dexes.append(dex)
+            hop_in = hop["token_in"]
+            hop_amount_in = int(hop["amount_in"])
+            is_final = i == last
+            recipient = final_recipient if is_final else _MSG_SENDER_SENTINEL
+            hop_min = final_min if is_final else 0
+
+            if dex == DEX_AERODROME_SLIPSTREAM:
+                router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
+                if not router:
+                    raise ValueError(f"No Aerodrome Slipstream router for chain {chain_id}")
+                call_data = _aero.encode_exact_input_single(
+                    token_in=hop_in,
+                    token_out=hop["token_out"],
+                    tick_spacing=hop_quoter_param(hop),
+                    recipient=recipient,
+                    deadline=deadline,
+                    amount_in=hop_amount_in,
+                    amount_out_minimum=hop_min,
+                )
+            else:
+                router = UNISWAP_V3_ROUTERS.get(chain_id)
+                if not router:
+                    raise ValueError(f"No Uniswap V3 router for chain {chain_id}")
+                call_data = _uni_encode(
+                    token_in=hop_in,
+                    token_out=hop["token_out"],
+                    fee=int(hop["fee"]),
+                    recipient=recipient,
+                    deadline=deadline,
+                    amount_in=hop_amount_in,
+                    amount_out_minimum=hop_min,
+                    chain_id=chain_id,
+                )
+
+            interactions.append(
+                Interaction(
+                    target=hop_in,
+                    value="0",
+                    call_data=encode_approve(router, hop_amount_in),
+                    chain_id=chain_id,
+                )
             )
-            if r is not None:
-                candidates.append(r)
-
-        if candidates:
-            return max(candidates, key=lambda r: r[0])
-
-        # Nothing single-DEX viable — try direct only across all pools.
-        from strategies.dex_aggregator.pool_math import find_best_pool
-        direct = find_best_pool(pool_states, token_in, token_out, amount_in)
-        if direct is not None:
-            addr, state, output = direct
-            return (
-                output,
-                f"direct via {(state.get('fee') or 0) / 1_000_000:.2%} pool",
-                [{"pool_addr": addr, "pool_state": state, "fee": int(state.get("fee", 3000))}],
+            interactions.append(
+                Interaction(
+                    target=router,
+                    value="0",
+                    call_data=call_data,
+                    chain_id=chain_id,
+                )
             )
-        return None
+
+        logger.info(
+            "Cross-DEX plan: %d hops %s, final_min=%d expected_out=%d",
+            len(hops), " → ".join(route_dexes), final_min, expected_output,
+        )
+
+        return ExecutionPlan(
+            intent_id=intent.app_id,
+            interactions=interactions,
+            deadline=deadline,
+            nonce=state.nonce,
+            metadata={
+                "route": "cross_dex_sequential",
+                "hops": len(hops),
+                "dexes": route_dexes,
+                "tokens": [input_token] + [h["token_out"] for h in hops],
+                "input_token": input_token,
+                "output_token": output_token,
+                "input_amount": str(amount_in),
+                "min_output_amount": str(final_min),
+                "expected_output": str(expected_output),
+                "chain_id": chain_id,
+            },
+        )
+
+    def _build_uniswap_singlehop_plan(
+        self,
+        intent: AppIntentDefinition,
+        state: IntentState,
+        context: ProcessorContext,
+        hop: dict[str, Any],
+        input_token: str,
+        output_token: str,
+        amount_in: int,
+        expected_output: int,
+        chain_id: int,
+    ) -> ExecutionPlan:
+        """Single-hop Uniswap V3 swap (approve + exactInputSingle).
+
+        Built locally rather than delegated to ``SwapIntentProcessor`` so the
+        router ``amountOutMinimum`` is anchored to the EXACT Quoter output —
+        exactly like every other builder here. The processor's no-signed-min
+        fallback derives the min from the INPUT amount (``input * (1 -
+        slippage)``), which is in the input token's denomination: for a pair
+        like WETH→USDC that sets a min ~1e8× the achievable output and the
+        router reverts "Too little received". The resolved fee tier from the
+        Quoter pass is used directly, so there's no processor override either.
+        """
+        from common.abi_utils import encode_approve
+        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+
+        router = UNISWAP_V3_ROUTERS.get(chain_id)
+        if not router:
+            raise ValueError(f"No Uniswap V3 router for chain {chain_id}")
+
+        swap_params = self._normalized_swap_params(intent, state)
+        min_output = swap_params.get("min_output_amount", 0)
+        if not min_output:
+            slippage_bps = self._processor.slippage_bps
+            min_output = expected_output * (10000 - slippage_bps) // 10000
+
+        deadline = context.timestamp + self._processor.deadline_offset
+        recipient = state.contract_address or swap_params.get("receiver", state.owner)
+        fee = int(hop.get("fee") or self._processor.default_fee_tier)
+
+        interactions = [
+            Interaction(
+                target=input_token,
+                value="0",
+                call_data=encode_approve(router, amount_in),
+                chain_id=chain_id,
+            ),
+            Interaction(
+                target=router,
+                value="0",
+                call_data=encode_exact_input_single(
+                    token_in=input_token,
+                    token_out=output_token,
+                    fee=fee,
+                    recipient=recipient,
+                    deadline=deadline,
+                    amount_in=amount_in,
+                    amount_out_minimum=min_output,
+                    chain_id=chain_id,
+                ),
+                chain_id=chain_id,
+            ),
+        ]
+
+        logger.info(
+            "Uniswap single-hop plan: %s -> %s fee=%d expected_out=%d min=%d",
+            input_token[:10], output_token[:10], fee, expected_output, min_output,
+        )
+
+        return ExecutionPlan(
+            intent_id=intent.app_id,
+            interactions=interactions,
+            deadline=deadline,
+            nonce=state.nonce,
+            metadata={
+                "route": "uniswap_v3",
+                "dex": "uniswap_v3",
+                "router": router,
+                "fee_tier": fee,
+                "input_token": input_token,
+                "output_token": output_token,
+                "input_amount": str(amount_in),
+                "min_output_amount": str(min_output),
+                "expected_output": str(expected_output),
+                "chain_id": chain_id,
+            },
+        )
 
     # ── Aerodrome plan builders ──────────────────────────────────────────
 
@@ -1873,11 +2099,9 @@ class BaselineSwapSolver(IntentSolver):
         """Compute a quote using RPC pool data (preferred) or snapshot fallback.
 
         Uses the shared normalized swap view (typed context first, raw
-        compatibility payload second), routes through discovered pools,
-        and returns estimated output.
+        compatibility payload second), routes through discovered pools via
+        exact on-chain quotes, and returns the exact estimated output.
         """
-        from strategies.dex_aggregator.pool_math import find_best_route
-
         swap_params = self._normalized_swap_params(intent, state)
         input_token = swap_params.get("input_token", "")
         output_token = swap_params.get("output_token", "")
@@ -1916,18 +2140,14 @@ class BaselineSwapSolver(IntentSolver):
                 f"(no RPC URL configured and no snapshot provided)"
             )
 
-        # Use the executable route finder so quote estimates can't promise
-        # a cross-DEX 2-hop the planner refuses to emit (the planner falls
-        # back to single-DEX, leaving a quote/plan output mismatch).
-        result = self._find_best_executable_route(
+        # Exact on-chain quote via the same resolver generate_plan() uses, so
+        # the quoted output is the exact output of the route the planner will
+        # actually emit (no quote/plan mismatch, no single-tick over-estimate
+        # driving the validator's min above what the swap can deliver). Fail
+        # loud: QuoterUnavailable / NoRouteError propagate, no approximation.
+        output_amount, route_desc, hops = self._resolve_best_route(
             pool_states, input_token, output_token, amount_in, chain_id,
         )
-        if result is None:
-            raise ValueError(
-                f"No route found for {input_token} -> {output_token}"
-            )
-
-        output_amount, route_desc, hops = result
 
         # Determine data source for metadata
         data_source = "rpc" if self._rpc_urls.get(chain_id) else "snapshot"
