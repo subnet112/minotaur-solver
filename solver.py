@@ -34,8 +34,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "reference-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.0.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "adaptive-quoter-miner")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 STATE_VERSION = 1
 MAX_ROUTE_HINTS = 512
@@ -615,6 +615,138 @@ class MinerSolver(BaselineSwapSolver):
             route = baseline_route
 
         self._record_route_hint(chain_id, token_in, token_out, amount_in, route)
+        return route
+
+    def _resolve_exact_route_set(
+        self,
+        quote_hop,
+        pool_states: dict[str, dict[str, Any]],
+        token_in: str,
+        token_out: str,
+        amount_in: int,
+        chain_id: int,
+        intermediaries: list[str],
+    ) -> tuple[int, str, list[dict[str, Any]]]:
+        """Exact-quote one intermediary set and apply the safe gas tiebreak.
+
+        Upstream's June 17 router made the on-chain Quoter authoritative.
+        Keep that property while retaining this miner's only route-selection
+        edge: among routes within ``GAS_AWARE_MIN_OUTPUT_BPS`` of the maximum
+        exact output, prefer the lower estimated-gas route.
+        """
+        from strategies.dex_aggregator import quoter as _quoter
+
+        candidates = _quoter.enumerate_candidate_routes(
+            pool_states,
+            token_in,
+            token_out,
+            intermediaries,
+        )
+        candidates = [
+            route
+            for route in candidates
+            if self._is_executable_route(route, chain_id)
+        ]
+        candidates.sort(
+            key=_quoter.route_bottleneck_liquidity,
+            reverse=True,
+        )
+
+        routes: list[tuple[int, str, list[dict[str, Any]]]] = []
+        quoted = 0
+        attempted = 0
+        last_skip: Exception | None = None
+        for candidate in candidates:
+            if quoted >= _quoter.MAX_QUOTE_CANDIDATES:
+                break
+            attempted += 1
+            try:
+                amounts = _quoter.quote_route(quote_hop, candidate, amount_in)
+            except _quoter.QuoteHopError as exc:
+                last_skip = exc
+                continue
+            quoted += 1
+
+            priced: list[dict[str, Any]] = []
+            current_in = int(amount_in)
+            for hop, output in zip(candidate, amounts):
+                priced_hop = dict(hop)
+                priced_hop["amount_in"] = current_in
+                priced_hop["amount_out"] = output
+                priced.append(priced_hop)
+                current_in = output
+            routes.append((
+                amounts[-1],
+                _quoter._route_description(candidate),
+                priced,
+            ))
+
+        route = self._best_scored_route(routes)
+        if route is None:
+            raise _quoter.NoRouteError(
+                f"no quotable route for {token_in[:10]}->{token_out[:10]} "
+                f"(attempted {attempted} candidate(s)"
+                + (f"; last skip: {last_skip}" if last_skip else "")
+                + ")"
+            )
+        return route
+
+    def _resolve_best_route(
+        self,
+        pool_states: dict[str, dict[str, Any]],
+        token_in: str,
+        token_out: str,
+        amount_in: int,
+        chain_id: int,
+    ) -> tuple[int, str, list[dict[str, Any]]]:
+        """Resolve an exact-quoted route while preserving guarded expansion."""
+        from strategies.dex_aggregator import quoter as _quoter
+
+        w3 = self._get_web3(chain_id)
+        quote_hop = _quoter.make_quote_fn(w3, chain_id)
+        baseline_mids = self._baseline_intermediaries_for_chain(chain_id)
+        baseline_route = self._resolve_exact_route_set(
+            quote_hop,
+            pool_states,
+            token_in,
+            token_out,
+            amount_in,
+            chain_id,
+            baseline_mids,
+        )
+
+        if not self._should_search_extra_intermediaries(chain_id):
+            route = baseline_route
+        else:
+            expanded_mids = self._intermediaries_for_chain(chain_id)
+            expanded_route = self._resolve_exact_route_set(
+                quote_hop,
+                pool_states,
+                token_in,
+                token_out,
+                amount_in,
+                chain_id,
+                expanded_mids,
+            )
+            required_edge_bps = self._extra_route_required_edge_bps(
+                baseline_route,
+                expanded_route,
+            )
+            if (
+                expanded_route[0] * 10_000
+                >= baseline_route[0] * (10_000 + required_edge_bps)
+            ):
+                route = expanded_route
+            else:
+                route = baseline_route
+
+        self._record_route_hint(
+            chain_id,
+            token_in,
+            token_out,
+            amount_in,
+            route,
+        )
         return route
 
     def generate_plan(self, intent, state, snapshot=None):
