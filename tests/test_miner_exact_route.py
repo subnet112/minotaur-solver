@@ -2,7 +2,7 @@
 
 from collections import Counter
 
-from solver import MinerSolver, SCORE_SCALE
+from solver import MIN_ROUTE_HEADROOM_BPS, MinerSolver, SCORE_SCALE
 from strategies.dex_aggregator.baseline_solver import BaselineSwapSolver
 
 
@@ -124,6 +124,27 @@ def test_selector_rejects_every_route_below_execution_minimum():
             [{"pool_addr": "0x0000000000000000000000000000000000000010"}],
         ),
     ]) is None
+
+
+def test_selector_requires_measured_headroom_above_minimum():
+    solver = MinerSolver()
+    solver._active_min_output = 10_000
+    solver._active_quoted_output = 10_100
+
+    too_close = (
+        10_024,
+        "14-24 bps headroom",
+        [{"pool_addr": "0x0000000000000000000000000000000000000010"}],
+    )
+    safe = (
+        10_025,
+        "25 bps headroom",
+        [{"pool_addr": "0x0000000000000000000000000000000000000020"}],
+    )
+
+    assert MIN_ROUTE_HEADROOM_BPS == 25
+    assert solver._best_scored_route([too_close]) is None
+    assert solver._best_scored_route([too_close, safe]) == safe
 
 
 def test_route_description_is_local_and_stable():

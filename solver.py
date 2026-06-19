@@ -39,6 +39,7 @@ SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 ZERO_ADDRESS = "0x" + "0" * 40
 SCORE_SCALE = 1_000_000
+MIN_ROUTE_HEADROOM_BPS = 25
 GAS_ESTIMATE_SINGLE_HOP = 430_000
 GAS_ESTIMATE_AERO_SINGLE_HOP_PREMIUM = 15_000
 GAS_ESTIMATE_EXTRA_HOP = 120_000
@@ -88,7 +89,11 @@ class MinerSolver(BaselineSwapSolver):
         gas_estimate = self._route_gas_estimate(route)
         gas_score_scaled = max(0, SCORE_SCALE - gas_estimate)
 
-        if min_output > 0 and output_amount < min_output:
+        if (
+            min_output > 0
+            and output_amount * 10_000
+            < min_output * (10_000 + MIN_ROUTE_HEADROOM_BPS)
+        ):
             return -1
         if anchor <= 0:
             return -1
@@ -115,7 +120,11 @@ class MinerSolver(BaselineSwapSolver):
         candidates = [
             route
             for route in routes
-            if self._active_min_output <= 0 or route[0] >= self._active_min_output
+            if (
+                self._active_min_output <= 0
+                or route[0] * 10_000
+                >= self._active_min_output * (10_000 + MIN_ROUTE_HEADROOM_BPS)
+            )
         ]
         if not candidates:
             return None
