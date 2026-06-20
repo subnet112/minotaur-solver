@@ -1,0 +1,35 @@
+# Supply-chain guard: ban `pull_request_target` in this repo's workflows.
+#
+# `pull_request_target` runs with the BASE repo's secrets while checking out
+# UNTRUSTED fork-PR code — the classic vector for a malicious solver PR to
+# exfiltrate the GHCR/registry token or run arbitrary code with write access.
+# Fork-PR solver code must only ever be built in the leader's network-isolated
+# sandbox, never in CI with secrets. This guard fails any PR that introduces it.
+name: Guard - no pull_request_target
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject the banned trigger in workflows
+        run: |
+          set -euo pipefail
+          # Any mention in ANOTHER workflow is suspicious (catches every trigger
+          # form); this guard file is excluded since it names the banned trigger.
+          banned='pull_request'"_target"
+          if grep -rIl --include='*.yml' --include='*.yaml' \
+               --exclude='no-pull-request-target.yml' \
+               "$banned" .github/workflows; then
+            echo "::error::${banned} is banned — it runs base-repo secrets on untrusted fork code (supply-chain footgun). Use pull_request instead."
+            exit 1
+          fi
+          echo "OK: no banned trigger found in .github/workflows"
