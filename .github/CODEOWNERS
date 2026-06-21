@@ -1,0 +1,8 @@
+# Merge-gate file lock. The champion merge authority lives in the leader's
+# trusted process (minotaur_subnet relayer), NOT in CI. champion-merge.yml is an
+# ADVISORY check only. Re-introducing an unsafe trigger (plain pull_request, or
+# actions/checkout of fork HEAD), or weakening the workflow, must go through
+# code-owner review. Has teeth once the protect-main ruleset sets
+# require_code_owner_review: true (added at adoption activation).
+/.github/ @stalkervmr
+/Dockerfile @stalkervmr
