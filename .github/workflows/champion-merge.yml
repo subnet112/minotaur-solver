@@ -1,204 +1,95 @@
-# Champion Auto-Merge — verifies on-chain attestation before merging.
+# Champion Cert Verification — ADVISORY check (NOT the merge gate).
 #
-# When a miner's solver wins the benchmark and passes champion consensus,
-# the leader API records the certification on BT EVM's ChampionRegistry
-# and creates a PR (not a direct push). This Action:
-#   1. Extracts the on-chain tx hash + round ID from the PR body
-#   2. Queries the ChampionRegistry on BT EVM to verify the certification
-#   3. Checks the on-chain commitHash matches the PR's head commit
-#   4. Auto-merges if valid — blocks if not
+# MERGE AUTHORITY DOES NOT LIVE HERE. The single source of merge authority is the
+# leader's own in-process on-chain verification in
+# minotaur_subnet/relayer/solver_repo.py::merge_miner_pr_when_certified(), which
+# re-resolves the PR head SHA, reads ChampionRegistry over web3, asserts
+# keccak(head.sha)==commitHash && exists && approvalCount>=getQuorumRequired(),
+# refuses any PR whose diff touches .github/**, and ONLY then squash-merges
+# pinned to that head SHA. This workflow is DEFENSE-IN-DEPTH + VISIBILITY only.
 #
-# The leader CANNOT push to main directly (branch protection enforced).
-# Only this Action can merge, and only after on-chain verification.
+# WHY pull_request_target (NOT plain pull_request): under plain pull_request a
+# FORK PR runs the FORK's copy of this file, letting a fork emit a no-op job
+# named `verify-champion-cert` that satisfies a name-matched required check with
+# ZERO verification (v1 attack #1). pull_request_target pins the workflow to the
+# BASE/default branch, so a fork CANNOT substitute it. It is kept safe because we
+# NEVER actions/checkout fork HEAD and run ONLY string ops + pinned `cast`
+# on-chain reads against the authoritative event head.sha — no untrusted code is
+# fetched or executed, so the pull_request_target RCE class does not apply.
+# permissions: contents: read (read-only; this job writes nothing, merges nothing).
+#
+# Even if this check is somehow spoofed green, the leader ignores it — the
+# in-process web3 check is the gate. The ruleset lists this context only so an
+# HONEST PR cannot merge while verification is red (fail-closed UX).
+#
+# DO NOT rename the job `verify-champion-cert` without updating the ruleset
+# required_status_checks context. DO NOT add actions/checkout of fork HEAD, a
+# fork-controlled Makefile/composite-action, or flip back to plain pull_request —
+# CODEOWNERS on .github/workflows/ guards this file, and the leader auto-rejects
+# any champion PR whose diff touches .github/**.
 
-name: Champion Auto-Merge
+name: Champion Cert Verification
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened]
     branches: [main]
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+
+concurrency:
+  group: champion-verify-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  verify-champion:
+  verify-champion-cert:
+    name: verify-champion-cert
     runs-on: ubuntu-latest
-    # Only run on champion/ branches (created by the leader API)
-    if: startsWith(github.head_ref, 'champion/')
-
+    env:
+      BTEVM_STATE_RPC: https://lite.chain.opentensor.ai
+      CHAMPION_REGISTRY: ${{ vars.CHAMPION_REGISTRY_ADDRESS }}
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Foundry (for cast CLI)
+      # NEVER actions/checkout — fork HEAD code is never fetched or executed.
+      - name: Install Foundry (cast)
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
 
-      - name: Extract certification data from PR body
-        id: extract
-        env:
-          PR_BODY: ${{ github.event.pull_request.body }}
-        run: |
-          # Parse HTML comments from PR body
-          TX_HASH=$(echo "$PR_BODY" | grep -oP '(?<=<!-- CHAMPION_TX_HASH: )\S+(?= -->)')
-          ROUND_ID=$(echo "$PR_BODY" | grep -oP '(?<=<!-- CHAMPION_ROUND_ID: )\S+(?= -->)')
-          COMMIT_HASH=$(echo "$PR_BODY" | grep -oP '(?<=<!-- CHAMPION_COMMIT_HASH: )\S+(?= -->)')
-          SUBMISSION_ID=$(echo "$PR_BODY" | grep -oP '(?<=<!-- CHAMPION_SUBMISSION_ID: )\S+(?= -->)')
-
-          echo "tx_hash=$TX_HASH" >> $GITHUB_OUTPUT
-          echo "round_id=$ROUND_ID" >> $GITHUB_OUTPUT
-          echo "commit_hash=$COMMIT_HASH" >> $GITHUB_OUTPUT
-          echo "submission_id=$SUBMISSION_ID" >> $GITHUB_OUTPUT
-
-          echo "Extracted:"
-          echo "  TX Hash: $TX_HASH"
-          echo "  Round ID: $ROUND_ID"
-          echo "  Commit Hash: $COMMIT_HASH"
-          echo "  Submission ID: $SUBMISSION_ID"
-
-          # Fail fast if required fields are missing
-          if [ -z "$TX_HASH" ] || [ "$TX_HASH" = "pending" ]; then
-            echo "::error::Missing or pending on-chain TX hash"
-            exit 1
-          fi
-          if [ -z "$ROUND_ID" ] || [ "$ROUND_ID" = "unknown" ]; then
-            echo "::error::Missing round ID"
-            exit 1
-          fi
-          if [ -z "$COMMIT_HASH" ]; then
-            echo "::error::Missing commit hash"
-            exit 1
-          fi
-
-      - name: Verify on-chain certification
-        id: verify
-        env:
-          BTEVM_RPC_URL: https://lite.chain.opentensor.ai
-          CHAMPION_REGISTRY: ${{ vars.CHAMPION_REGISTRY_ADDRESS }}
-          ROUND_ID: ${{ steps.extract.outputs.round_id }}
-          COMMIT_HASH: ${{ steps.extract.outputs.commit_hash }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      - name: Advisory on-chain cert check (NOT authoritative)
         run: |
           set -euo pipefail
+          [ -n "${CHAMPION_REGISTRY:-}" ] || { echo "::error::CHAMPION_REGISTRY_ADDRESS unset"; exit 1; }
+          REG="$CHAMPION_REGISTRY"
 
-          if [ -z "$CHAMPION_REGISTRY" ]; then
-            echo "::error::CHAMPION_REGISTRY_ADDRESS repository variable not set"
-            exit 1
-          fi
+          # Only the trusted event head.sha is an input (not fork-controlled content).
+          SHA="$(printf '%s' "$PR_HEAD_SHA" | tr 'A-Z' 'a-z')"
+          printf '%s' "$SHA" | grep -Eq '^[0-9a-f]{40}$' || { echo "::error::head sha not 40-hex: $PR_HEAD_SHA"; exit 1; }
+          # on-chain commitHash == keccak(utf8(lowercase-40-hex)) (_str_to_bytes32 keccak path)
+          TARGET="$(cast keccak "$SHA" | tr 'A-Z' 'a-z')"
+          echo "head sha=$SHA target=$TARGET"
 
-          # Convert round_id string to bytes32 (keccak256 hash, matching Python _str_to_bytes32)
-          ROUND_BYTES32=$(cast keccak "$(echo -n "$ROUND_ID")")
+          rpc() { local i out; for i in 1 2 3 4 5; do
+            if out="$(cast "$@" --rpc-url "$BTEVM_STATE_RPC" 2>/dev/null)"; then printf '%s' "$out"; return 0; fi
+            sleep $((i*4)); done; return 1; }
 
-          echo "Querying ChampionRegistry at $CHAMPION_REGISTRY..."
-          echo "  Round ID: $ROUND_ID"
-          echo "  Round bytes32: $ROUND_BYTES32"
+          QUORUM="$(rpc call "$REG" 'getQuorumRequired()(uint256)' | awk '{print $1}')" \
+            || { echo "::error::getQuorumRequired read failed"; exit 1; }
+          printf '%s' "$QUORUM" | grep -Eq '^[0-9]+$' && [ "$QUORUM" -ge 1 ] \
+            || { echo "::error::bad quorum $QUORUM (fail-closed)"; exit 1; }
 
-          # Retry logic for BT EVM RPC (can be flaky)
-          VERIFIED=false
-          for ATTEMPT in 1 2 3; do
-            echo "Attempt $ATTEMPT/3..."
+          REC="$(rpc call "$REG" 'getLatestChampion()((bytes32,bytes32,bytes32,bytes32,uint256,uint256,uint256,bool))')" \
+            || { echo "::error::getLatestChampion read failed"; exit 1; }
+          C="$(printf '%s' "$REC" | tr -d '() ')"
+          COMMIT="$(printf '%s' "$C" | cut -d, -f4 | tr 'A-Z' 'a-z')"
+          APPROVALS="$(printf '%s' "$C" | cut -d, -f7 | awk '{print $1}')"
+          EXISTS="$(printf '%s' "$C" | cut -d, -f8)"
+          echo "latest commit=$COMMIT approvals=$APPROVALS exists=$EXISTS quorum=$QUORUM"
 
-            # Check if the round is certified
-            IS_CERTIFIED=$(cast call "$CHAMPION_REGISTRY" \
-              "isChampionCertified(bytes32)(bool)" \
-              "$ROUND_BYTES32" \
-              --rpc-url "$BTEVM_RPC_URL" 2>/dev/null || echo "RPC_ERROR")
+          [ "$EXISTS" = "true" ]      || { echo "::error::getLatestChampion.exists!=true (fail-closed)"; exit 1; }
+          [ "$COMMIT" = "$TARGET" ]   || { echo "::error::latest commitHash $COMMIT != keccak(head.sha) $TARGET — NOT certified-as-latest (advisory; leader re-checks by round)"; exit 1; }
+          printf '%s' "$APPROVALS" | grep -Eq '^[0-9]+$' || { echo "::error::non-numeric approvals"; exit 1; }
+          [ "$APPROVALS" -ge "$QUORUM" ] || { echo "::error::approvals $APPROVALS < quorum $QUORUM"; exit 1; }
 
-            if [ "$IS_CERTIFIED" = "RPC_ERROR" ]; then
-              echo "  RPC call failed, retrying in $((ATTEMPT * 10))s..."
-              sleep $((ATTEMPT * 10))
-              continue
-            fi
-
-            echo "  Certified: $IS_CERTIFIED"
-
-            if [ "$IS_CERTIFIED" != "true" ]; then
-              echo "::error::Round $ROUND_ID is NOT certified on-chain"
-              exit 1
-            fi
-
-            # Get the full champion record
-            RECORD=$(cast call "$CHAMPION_REGISTRY" \
-              "getChampion(bytes32)((bytes32,bytes32,bytes32,bytes32,uint256,uint256,uint256,bool))" \
-              "$ROUND_BYTES32" \
-              --rpc-url "$BTEVM_RPC_URL" 2>/dev/null || echo "RPC_ERROR")
-
-            if [ "$RECORD" = "RPC_ERROR" ]; then
-              echo "  getChampion RPC failed, retrying..."
-              sleep $((ATTEMPT * 10))
-              continue
-            fi
-
-            echo "  Record: $RECORD"
-
-            # Extract commitHash from the record (4th field, bytes32)
-            # The record tuple is (roundId, candidateSubmissionId, candidateImageId,
-            # commitHash, effectiveEpoch, certifiedAt, approvalCount, exists)
-            ONCHAIN_COMMIT=$(echo "$RECORD" | awk -F',' '{print $4}' | tr -d ' ')
-
-            # Convert PR head SHA to bytes32 (keccak hash, matching _str_to_bytes32)
-            EXPECTED_COMMIT=$(cast keccak "$(echo -n "$COMMIT_HASH")")
-
-            echo "  On-chain commitHash: $ONCHAIN_COMMIT"
-            echo "  Expected commitHash: $EXPECTED_COMMIT"
-
-            if [ "$ONCHAIN_COMMIT" != "$EXPECTED_COMMIT" ]; then
-              echo "::error::Commit hash mismatch! On-chain: $ONCHAIN_COMMIT, Expected: $EXPECTED_COMMIT"
-              exit 1
-            fi
-
-            # Verify PR head SHA matches the commit hash from the PR body
-            # Support short commit hashes (7+ chars) from older attestations
-            if [ ${#COMMIT_HASH} -lt 40 ]; then
-              if [ "${PR_HEAD_SHA:0:${#COMMIT_HASH}}" != "$COMMIT_HASH" ]; then
-                echo "::error::PR head SHA prefix (${PR_HEAD_SHA:0:${#COMMIT_HASH}}) does not match certified commit ($COMMIT_HASH)"
-                exit 1
-              fi
-              # Use the full PR_HEAD_SHA for on-chain comparison
-              COMMIT_HASH="$PR_HEAD_SHA"
-            elif [ "$PR_HEAD_SHA" != "$COMMIT_HASH" ]; then
-              echo "::error::PR head SHA ($PR_HEAD_SHA) does not match certified commit ($COMMIT_HASH)"
-              exit 1
-            fi
-
-            # Extract approval count (7th field)
-            APPROVAL_COUNT=$(echo "$RECORD" | awk -F',' '{print $7}' | tr -d ' ')
-            echo "  Approval count: $APPROVAL_COUNT"
-
-            # Query required quorum
-            QUORUM=$(cast call "$CHAMPION_REGISTRY" \
-              "getQuorumRequired()(uint256)" \
-              --rpc-url "$BTEVM_RPC_URL" 2>/dev/null || echo "0")
-            echo "  Quorum required: $QUORUM"
-
-            if [ "$APPROVAL_COUNT" -lt "$QUORUM" ] 2>/dev/null; then
-              echo "::error::Insufficient approvals: $APPROVAL_COUNT < $QUORUM"
-              exit 1
-            fi
-
-            VERIFIED=true
-            break
-          done
-
-          if [ "$VERIFIED" != "true" ]; then
-            echo "::error::Verification failed after 3 attempts"
-            exit 1
-          fi
-
-          echo "verified=true" >> $GITHUB_OUTPUT
-          echo ""
-          echo "=== VERIFICATION PASSED ==="
-          echo "  Round: $ROUND_ID"
-          echo "  Commit: $COMMIT_HASH"
-          echo "  Approvals: $APPROVAL_COUNT / $QUORUM"
-
-      - name: Auto-merge PR
-        if: steps.verify.outputs.verified == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "On-chain verification passed — merging champion PR..."
-          gh pr merge ${{ github.event.pull_request.number }} \
-            --merge \
-            --subject "Champion merged: ${{ steps.extract.outputs.submission_id }} (round ${{ steps.extract.outputs.round_id }})"
+          echo "=== ADVISORY VERIFICATION PASSED — leader's in-process check is authoritative ==="

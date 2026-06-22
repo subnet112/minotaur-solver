@@ -1,16 +1,29 @@
 name: Build and Publish Solver Image
 
-# Builds the reference solver image and pushes to GHCR so prod (and
-# external operators) can `docker pull ghcr.io/subnet112/minotaur-solver`
-# instead of building locally from a checkout.
+# Builds the reference (genesis) solver image and publishes to GHCR.
 #
-# Tags applied:
-#   - :latest                  (always, on main)
-#   - :sha-<short-sha>         (always, immutable per-commit)
-#   - :<git-tag>               (when a v* tag is pushed)
+# PROVENANCE GATE (unfreeze-prep hardening):
+#   `:latest` is the GENESIS_SOLVER_IMAGE the fleet boots from (bootstrap /
+#   restart-before-champion / new node). It is NOT how an adopted champion
+#   reaches the fleet — the champion runs by its certified digest
+#   `ghcr.io/subnet112/minotaur-solver@sha256:<D>` (D = on-chain
+#   candidateImageId), pulled by-digest at hot-swap. So `:latest` must NOT be
+#   moved by an arbitrary `main` push: an uncertified `main` HEAD (admin-bypass,
+#   zero-review self-merge, or base-drift) could otherwise poison every cold
+#   boot. We therefore OWNER-GATE `:latest`:
 #
-# Multi-arch: linux/amd64 + linux/arm64 (covers x86 servers + M-series
-# Macs that miners often develop on).
+#     - every `main` push        -> :sha-<short>  (always, immutable, audit)
+#     - workflow_dispatch (maintainer) OR a `v*` tag -> :latest + :<tag>
+#                                  (the ONLY deliberate genesis-promotion paths)
+#
+#   We do NOT auto-move `:latest` on `main`. Champion `:latest` (if ever wanted)
+#   is set OUT OF CI by the leader via a manifest copy that preserves the
+#   certified digest, never a rebuild:
+#     docker buildx imagetools create -t <repo>:latest <repo>@sha256:<D>
+#   A CI rebuild can never reproduce D (D is single-arch; this build is
+#   multi-arch), so a built-digest==D gate is intentionally NOT used.
+#
+# Multi-arch: linux/amd64 + linux/arm64 (x86 servers + M-series dev Macs).
 
 on:
   push:
@@ -44,15 +57,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Owner-gated `:latest`. A bare `main` push only emits the immutable
+      # `:sha-<short>` provenance tag. `:latest` (the genesis/boot image) moves
+      # ONLY on a deliberate maintainer action: a manual `workflow_dispatch`
+      # run, or a pushed `v*` release tag. This prevents an uncertified `main`
+      # HEAD from becoming the fleet-runnable genesis image.
       - name: Compute image tags
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
             type=ref,event=tag
+            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
