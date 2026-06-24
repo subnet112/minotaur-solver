@@ -35,7 +35,7 @@ import asyncio
 import logging
 import os
 import time
-from typing import Any
+from typing import Any, Callable
 
 from minotaur_subnet.shared.types import (
     AppIntentDefinition,
@@ -594,26 +594,42 @@ class BaselineSwapSolver(IntentSolver):
         token_a: str,
         token_b: str,
         pool_states: dict[str, dict[str, Any]],
+        w3: Any = None,
     ) -> dict[str, dict[str, Any]]:
         """Query Uniswap V3 Factory for all pools between two tokens.
 
         Checks all 4 fee tiers. For each non-zero pool found, queries
-        on-chain state and merges into pool_states (mutated in-place).
+        on-chain state and returns it.
+
+        Thread-safety: this NEVER mutates the shared ``pool_states`` — it
+        only READS it (for the dedup skip below + the pair-cache marker)
+        and accumulates newly-discovered pools into a LOCAL ``delta`` that
+        it RETURNS. Callers merge the delta single-threaded so a parallel
+        fan-out (one task per pair, each reading the same shared dict) can
+        never corrupt it. The pair-cache skip path returns an EMPTY delta —
+        those pools are already in the shared dict from the call that set
+        the marker. Pass ``w3`` to run on a worker thread's own Web3
+        (``thread_web3``); otherwise the cached main-thread Web3 is used.
+
+        Returns the newly-discovered pools only (the delta), keyed by
+        pool address.
         """
+        delta: dict[str, dict[str, Any]] = {}
         now = time.time()
         a_lower, b_lower = token_a.lower(), token_b.lower()
         pair_key = (chain_id, min(a_lower, b_lower), max(a_lower, b_lower))
 
         if now - self._pair_discovery_cache.get(pair_key, 0) < self._pool_cache_ttl:
-            return pool_states
+            return delta
 
         factory = self._get_factory(chain_id)
         if factory is None:
-            return pool_states
+            return delta
 
-        w3 = self._get_web3(chain_id)
         if w3 is None:
-            return pool_states
+            w3 = self._get_web3(chain_id)
+        if w3 is None:
+            return delta
 
         discovered = 0
         rpc_errors = 0
@@ -633,13 +649,18 @@ class BaselineSwapSolver(IntentSolver):
             if not pool_addr or pool_addr == _ZERO_ADDRESS:
                 continue
 
-            # Skip if already in pool_states
-            if pool_addr in pool_states or pool_addr.lower() in {k.lower() for k in pool_states}:
+            # Skip if already known (READ-ONLY view of the shared dict plus
+            # what this task has already collected in its local delta).
+            if (
+                pool_addr in pool_states
+                or pool_addr in delta
+                or pool_addr.lower() in {k.lower() for k in pool_states}
+            ):
                 continue
 
             state = self._query_pool_state(w3, pool_addr)
             if state is not None:
-                pool_states[pool_addr] = state
+                delta[pool_addr] = state
                 discovered += 1
 
         # Only cache if RPC calls succeeded — if all failed, don't cache
@@ -649,7 +670,7 @@ class BaselineSwapSolver(IntentSolver):
         if discovered > 0:
             logger.debug("Factory: found %d new pools for %s/%s on chain %d",
                          discovered, token_a[:10], token_b[:10], chain_id)
-        return pool_states
+        return delta
 
     def _intermediaries_for_chain(self, chain_id: int) -> list[str]:
         """Chain-appropriate multi-hop intermediary tokens (WETH + USDC).
@@ -682,53 +703,87 @@ class BaselineSwapSolver(IntentSolver):
     ) -> dict[str, dict[str, Any]]:
         """Discover pools needed for routing token_in -> token_out.
 
-        Queries the Uniswap V3 Factory for the direct pair and
-        intermediary pairs (for multi-hop routing via WETH, USDC).
+        Queries the Uniswap V3 Factory (and the Aerodrome Slipstream
+        factory where deployed) for the direct pair and the intermediary
+        pairs (for multi-hop routing via WETH, USDC).
+
+        Discovery is fanned out across a bounded thread pool (one task per
+        pair) so a cold multi-hop route overlaps its RPC latency instead of
+        making ~100+ serial ``eth_call``s — keeping a cold DAI multi-hop
+        well under the validator's GENERATE_PLAN timeout. Determinism is
+        preserved: each task READS the shared ``pool_states`` (for dedup)
+        and returns a LOCAL delta; the deltas are merged single-threaded
+        with ``setdefault`` (first-wins, keyed by unique pool address →
+        order-independent), so the resulting SET of pools — and therefore
+        the downstream route + score — is byte-identical regardless of task
+        completion order. Route SELECTION + quoting stay serial and are not
+        touched here.
         """
-        if not self._rpc_urls.get(chain_id):
+        rpc_url = self._rpc_urls.get(chain_id)
+        if not rpc_url:
             return pool_states
 
-        # Direct pair
-        self._discover_pools_for_pair(chain_id, token_in, token_out, pool_states)
+        from strategies.dex_aggregator import aerodrome as _aero
+        from strategies.dex_aggregator.parallel import parallel_map, thread_web3
 
-        # Intermediary pairs for multi-hop (chain-appropriate WETH/USDC)
         intermediaries = self._intermediaries_for_chain(chain_id)
-
         in_lower, out_lower = token_in.lower(), token_out.lower()
+
+        # Distinct pairs to discover: direct + each (in, mid) / (mid, out).
+        pairs: list[tuple[str, str]] = [(token_in, token_out)]
         for mid in intermediaries:
             mid_lower = mid.lower()
             if mid_lower == in_lower or mid_lower == out_lower:
                 continue
-            self._discover_pools_for_pair(chain_id, token_in, mid, pool_states)
-            self._discover_pools_for_pair(chain_id, mid, token_out, pool_states)
+            pairs.append((token_in, mid))
+            pairs.append((mid, token_out))
 
-        # Aerodrome Slipstream discovery on chains where it's deployed.
-        # The Slipstream factory mirrors Uni V3 except getPool takes int24
-        # tickSpacing, and pools come back tagged dex='aerodrome_slipstream'
-        # so plan dispatch can route to the Slipstream SwapRouter.
-        from strategies.dex_aggregator import aerodrome as _aero
-        if chain_id in _aero.AERODROME_SLIPSTREAM_FACTORY:
-            w3 = self._get_web3(chain_id)
-            if w3 is not None:
+        # Pre-warm shared dict-on-first-touch caches on the MAIN thread so the
+        # worker threads only ever READ them (the Web3 + Factory caches build
+        # lazily and would otherwise race on a concurrent first touch). Worker
+        # threads use their OWN Web3 (thread_web3) for the actual .call()s; the
+        # main-thread Web3 here is only to populate _web3_cache / _factory.
+        self._get_web3(chain_id)
+        self._get_factory(chain_id)
+        aero_supported = chain_id in _aero.AERODROME_SLIPSTREAM_FACTORY
+
+        def _uni_task(a: str, b: str) -> Callable[[], Any]:
+            def run() -> dict[str, dict[str, Any]]:
+                w3 = thread_web3(rpc_url)
+                # Reads the SHARED pool_states for dedup; returns a local delta.
+                return self._discover_pools_for_pair(chain_id, a, b, pool_states, w3=w3)
+            return run
+
+        def _aero_task(a: str, b: str) -> Callable[[], Any]:
+            def run() -> dict[str, dict[str, Any]]:
+                w3 = thread_web3(rpc_url)
+                # _aero.discover_pools_for_pair MUTATES the dict passed to it,
+                # so hand it a FRESH local dict per task (never the shared one)
+                # and return that as this task's delta.
+                local: dict[str, dict[str, Any]] = {}
                 _aero.discover_pools_for_pair(
-                    w3, chain_id, token_in, token_out, pool_states,
+                    w3, chain_id, a, b, local,
                     self._query_pool_state, self._pair_discovery_cache,
                     cache_ttl=self._pool_cache_ttl,
                 )
-                for mid in intermediaries:
-                    mid_lower = mid.lower()
-                    if mid_lower == in_lower or mid_lower == out_lower:
-                        continue
-                    _aero.discover_pools_for_pair(
-                        w3, chain_id, token_in, mid, pool_states,
-                        self._query_pool_state, self._pair_discovery_cache,
-                        cache_ttl=self._pool_cache_ttl,
-                    )
-                    _aero.discover_pools_for_pair(
-                        w3, chain_id, mid, token_out, pool_states,
-                        self._query_pool_state, self._pair_discovery_cache,
-                        cache_ttl=self._pool_cache_ttl,
-                    )
+                return local
+            return run
+
+        tasks: list[Callable[[], Any]] = [_uni_task(a, b) for (a, b) in pairs]
+        if aero_supported:
+            tasks += [_aero_task(a, b) for (a, b) in pairs]
+
+        results = parallel_map(tasks)
+
+        # Merge single-threaded. setdefault = first-wins on a unique address
+        # key → independent of completion order → deterministic merged set.
+        for result in results:
+            if isinstance(result, Exception):
+                logger.debug("Pair discovery task failed: %s", result)
+                continue
+            if isinstance(result, dict):
+                for addr, state in result.items():
+                    pool_states.setdefault(addr, state)
 
         return pool_states
 
