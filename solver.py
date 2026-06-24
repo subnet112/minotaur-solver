@@ -40,10 +40,30 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "optimal-split-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.1.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 _FALSE = {"0", "false", "no", "off", ""}
+
+# v2 GATE (post-mortem of sub_1d555c64f851 / round-e29705052-n1): the v1
+# split-everywhere override REVERTED on WETH→DAI (`scoreIntent reverted`) and
+# CRASHED on DAI→USDC — DAI pools on Base are thin, and a liquidity-proportional
+# split routed a leg into a sub-floor pool that reverted on-chain (which the
+# Python try/except can't catch). The baseline handles those pairs fine (the
+# champion, baseline-derived, scored them non-zero). FIX: only split DEEP MAJOR
+# pairs; defer every thin/exotic pair to the proven baseline. This removes both
+# zeros (which diluted 0.515→0.412) while keeping the WETH/USDC split edge.
+_MAJOR_TOKENS: dict[int, set[str]] = {
+    8453: {  # Base (the live DexAggregator chain)
+        "0x4200000000000000000000000000000000000006".lower(),  # WETH
+        "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913".lower(),  # USDC
+    },
+    1: {
+        "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2".lower(),  # WETH
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".lower(),  # USDC
+    },
+}
+_MAJOR_TOKENS[31337] = _MAJOR_TOKENS[1]  # Anvil mainnet fork
 
 
 def _split_enabled() -> bool:
@@ -91,6 +111,13 @@ class MinerSolver(BaselineSwapSolver):
             return None
 
         chain_id = state.chain_id or (snapshot.chain_id if snapshot else 1)
+
+        # v2 GATE: only split DEEP MAJOR pairs (e.g. WETH/USDC). Thin/exotic pairs
+        # (DAI, long-tail) → baseline, which routes them safely. This is the fix
+        # for the WETH→DAI revert and DAI→USDC crash that sank the v1 submission.
+        majors = _MAJOR_TOKENS.get(int(chain_id), set())
+        if input_token.lower() not in majors or output_token.lower() not in majors:
+            return None
 
         # Reuse the baseline's RPC pool discovery (factory getPool + slot0).
         pool_states = self._get_pool_states(chain_id, snapshot)
@@ -183,7 +210,7 @@ class MinerSolver(BaselineSwapSolver):
             name=SOLVER_NAME,
             version=SOLVER_VERSION,
             author=SOLVER_AUTHOR,
-            description="Baseline + Uniswap-V3 split routing (price-impact aware, baseline fallback)",
+            description="Baseline + deep-major-pair split routing (v2: thin pairs deferred to baseline)",
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types,
         )
