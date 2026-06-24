@@ -56,3 +56,8 @@ class MinerSolver(BaselineSwapSolver):
 
 
 SOLVER_CLASS = MinerSolver
+
+# --- Tier-C observe-test candidate ---
+# Distinct commit of the reference baseline solver, submitted to exercise the
+# validator screening + content-addressed image push + benchmark pipeline on
+# the live fleet (observe-only; champion adoption remains frozen).
