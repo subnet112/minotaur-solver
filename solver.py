@@ -1,42 +1,31 @@
-"""Minotaur SN112 miner solver — v5: seeded+parallel discovery, multi-hop, safe split.
+"""Minotaur SN112 miner solver — v6: + Aerodrome routing + parallel quoting.
 
 REPLACES the root ``solver.py`` of a fork of ``subnet112/minotaur-solver``.
-Subclasses the real ``BaselineSwapSolver`` and applies every improvement that
-research + the live-report root-cause analysis showed is positive-EV and safe,
-each fully fenced with a fallback to the stock baseline.
+Subclasses the real ``BaselineSwapSolver``; every override falls back to the stock
+baseline. v6 builds on v5 (pre-seed + parallel discovery + multi-hop + safe split)
+and resolves the two open items the v5 live result exposed:
 
-WHAT THIS FIXES (from the live 0.4168 report + deep-research synthesis)
------------------------------------------------------------------------
-benchmark_score = 0.4·mean(synthetic) + 0.6·mean(historical); the whole gap is the
-11 zeros, and a SYNTHETIC zero is worth 2.778× a historical one. The recoverable
-synthetic zeros (WETH_to_DAI, DAI_to_USDC, cbBTC_to_USDC) all failed for the SAME
-reason: the worker was SIGKILLed by the 5s QUOTE wall-clock timeout because DAI/cbBTC
-are NOT in the baseline's `_KNOWN_POOLS[8453]` (only WETH/USDC is), so every pool was
-discovered cold via ~50-90 SERIAL JSON-RPC round-trips. On-chain checks confirm these
-pairs have DEEP liquidity (WETH/DAI 0.3% ≈ 1.7e19, USDC/DAI 0.01% ≈ 1.1e20, cbBTC/WETH
-deep) — they are routable; they just never finished discovery in time.
+  * v5 PROVED pre-seeding removes the WETH_to_DAI cold-discovery timeout (crash →
+    plan generated) but the plan then REVERTED on-chain — and DAI_to_USDC STILL
+    timed out, this time in the QUOTING phase (serial QuoterV2 over the multi-hop
+    candidate set blew the 5 s QUOTE budget), and v5 SKIPPED Aerodrome discovery for
+    seeded routes (it bypassed super), so Uniswap-only routes that revert never got
+    an Aerodrome alternative — and Aerodrome is the dominant DEX on Base.
 
-IMPROVEMENTS (all fall back to baseline on any error):
-  1. PRE-SEED the on-chain-verified deep Base pools for WETH/DAI, USDC/DAI, cbBTC/USDC,
-     cbBTC/WETH (+WETH/USDC intermediaries) so DAI/cbBTC routes skip cold discovery.
-  2. PARALLELIZE the per-pool state reads (ThreadPoolExecutor) so seeding ~10 pools is
-     a few hundred ms, not tens of serial round-trips — keeps the 5s QUOTE budget.
-  3. MULTI-HOP enablement: seeding the WETH/USDC + cbBTC/WETH legs lets the baseline's
-     own `_resolve_best_route` route cbBTC→WETH→USDC etc. when the thin direct pool is
-     worse — exactly the convex-routing "use the better path" result.
-  4. SAFE SPLIT (research-backed, gas-gated): for DEEP major pairs only, split across
-     the 2 deepest direct V3 pools when a Quoter-validated split beats the single-best
-     route by a margin big enough to clear the gas-term penalty. Per-leg
-     amountOutMinimum=0 (the on-chain min_output invariant enforces the aggregate, so
-     no single leg can revert on slippage — the baseline multi-hop builder does the
-     same). Never hand-routes into thin pools (the v1 failure); every leg is a real
-     Quoter-confirmed fill.
+v6 fixes both, SCOPED to DAI/cbBTC routes only (WETH/USDC passing cases stay 100% on
+the untouched baseline path → zero regression):
+  1. Seeded routes also run **Aerodrome Slipstream** discovery for the direct pair, so
+     `_resolve_best_route` can pick an Aerodrome fill where the Uniswap route reverts.
+  2. Seeded routes resolve the best route with **parallel** QuoterV2 calls
+     (ThreadPoolExecutor) instead of serial, so the multi-hop candidate set is quoted
+     in one wave and never blows the 5 s budget (the DAI_to_USDC timeout).
 
-SAFETY: changes 1-3 are SCOPED to routes touching DAI/cbBTC — WETH/USDC (the bulk of
-the 51 passing cases) stays on the untouched baseline path, so passes cannot regress.
-The split (4) is gated so high (default +2%) that on deep liquid pairs, where its gain
-is only ~8-10 bps, it self-disables and emits the baseline plan. Set
-MINER_DISABLE_SPLIT=1 / MINER_DISABLE_SEED=1 to turn either off.
+Plus v5, unchanged: on-chain-verified deep Uniswap pool pre-seed (kills cold
+discovery), parallel pool-state reads, and a gas-gated safe split on deep major pairs
+(per-leg amountOutMinimum=0 so the on-chain min_output invariant enforces the
+aggregate; +2 % gain gate → self-disables on deep liquid pairs).
+
+Toggles: MINER_DISABLE_SEED=1, MINER_DISABLE_SPLIT=1, MINER_DISABLE_PARALLEL_QUOTE=1.
 """
 
 from __future__ import annotations
@@ -54,7 +43,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "optimal-router-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "5.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "6.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -65,14 +54,11 @@ _USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 _DAI = "0x50c5725949a6f0c72e6c4a641f24049a917db0cb"
 _CBBTC = "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf"
 
-# Routes touching these tokens get the seeded+parallel path (they are the synthetic
-# zeros that timed out on cold discovery). WETH/USDC routes stay on the baseline path.
-_SEEDED_TOKENS = {_DAI, _CBBTC}
-_MAJOR_TOKENS = {_WETH, _USDC}
+_SEEDED_TOKENS = {_DAI, _CBBTC}   # routes touching these get the seeded/parallel/aero path
+_MAJOR_TOKENS = {_WETH, _USDC}    # the split applies only to these (deep) pairs
 
 # On-chain-VERIFIED deep Uniswap V3 pools on Base (factory getPool + liquidity(),
-# 2026-06-25). The 2 deepest fee tiers per pair; WETH/USDC included as the multi-hop
-# intermediary. Pre-seeding these skips the serial factory discovery that SIGKILLs DAI.
+# 2026-06-25). 2 deepest fee tiers per pair; WETH/USDC = the multi-hop intermediary.
 _SEED_POOLS_BASE = [
     "0xd0b53d9277642d899df5c87a3966a349a798f224",  # WETH/USDC 0.05%
     "0x6c561b446416e1a00e8e93e221854d6ea4171372",  # WETH/USDC 0.30%
@@ -87,42 +73,38 @@ _SEED_POOLS_BASE = [
 ]
 
 _SEED_WORKERS = int(os.environ.get("MINER_SEED_WORKERS", "8"))
-# Split must beat the single-best route by this factor to be emitted — set high so
-# it clears the gas-term penalty and self-disables on deep liquid pairs (~10 bps gain).
+_QUOTE_WORKERS = int(os.environ.get("MINER_QUOTE_WORKERS", "8"))
+_MAX_CANDIDATES = int(os.environ.get("MINER_MAX_CANDIDATES", "10"))
 _SPLIT_MIN_GAIN = float(os.environ.get("MINER_SPLIT_MIN_GAIN", "1.02"))
 _SPLIT_RATIOS = (0.3, 0.5, 0.7)
 
 
-def _seed_enabled() -> bool:
-    return os.environ.get("MINER_DISABLE_SEED", "0").strip().lower() in _FALSE
+def _enabled(disable_var: str) -> bool:
+    """A feature is ENABLED unless its MINER_DISABLE_* env var is truthy."""
+    return os.environ.get(disable_var, "0").strip().lower() in _FALSE
 
 
-def _split_enabled() -> bool:
-    return os.environ.get("MINER_DISABLE_SPLIT", "0").strip().lower() in _FALSE
+def _seeded_pair(token_in: str, token_out: str) -> bool:
+    return bool({str(token_in).lower(), str(token_out).lower()} & _SEEDED_TOKENS)
 
 
 class MinerSolver(BaselineSwapSolver):
-    """Baseline + seeded/parallel discovery for DAI/cbBTC + safe gas-gated split."""
+    """Baseline + seeded/parallel discovery, Aerodrome, parallel quoting, safe split."""
 
-    # ── 1+2+3: scoped parallel pre-seed (only DAI/cbBTC routes) ───────────────
+    # ── discovery: seeded routes get parallel Uniswap seed + Aerodrome direct ──
     def _ensure_pools_for_route(self, chain_id, pool_states, token_in, token_out):  # type: ignore[override]
         try:
-            if (
-                _seed_enabled()
-                and int(chain_id) == 8453
-                and ({str(token_in).lower(), str(token_out).lower()} & _SEEDED_TOKENS)
-            ):
+            if _enabled("MINER_DISABLE_SEED") and int(chain_id) == 8453 and _seeded_pair(token_in, token_out):
                 self._parallel_seed(chain_id, pool_states)
-                # Pools are seeded (incl. multi-hop intermediaries); the baseline
-                # resolver routes over them. Skip the SERIAL factory discovery that
-                # blows the 5s budget on these pairs.
+                self._aero_direct(chain_id, pool_states, token_in, token_out)
+                # We have the deep Uniswap pools + the Aerodrome direct option; skip the
+                # SERIAL Uniswap factory discovery that blows the 5 s budget on these pairs.
                 return pool_states
         except Exception:
-            logger.exception("[miner] parallel seed failed; using baseline discovery")
+            logger.exception("[miner] seeded discovery failed; using baseline discovery")
         return super()._ensure_pools_for_route(chain_id, pool_states, token_in, token_out)
 
     def _parallel_seed(self, chain_id, pool_states) -> None:
-        """Load the verified deep Base pools' state concurrently into pool_states."""
         w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return
@@ -141,9 +123,77 @@ class MinerSolver(BaselineSwapSolver):
                 if state is not None:
                     pool_states[addr] = state
 
-    # ── 4: safe gas-gated split across the 2 deepest direct pools (majors) ────
+    def _aero_direct(self, chain_id, pool_states, token_in, token_out) -> None:
+        """Add the Aerodrome Slipstream DIRECT-pair pools (Base's dominant DEX) so the
+        resolver has an Aerodrome fill where the Uniswap route reverts. Bounded: direct
+        pair only, to stay under the quote budget."""
+        try:
+            from strategies.dex_aggregator import aerodrome as _aero
+            if int(chain_id) not in _aero.AERODROME_SLIPSTREAM_FACTORY:
+                return
+            w3 = self._get_web3(int(chain_id))
+            if w3 is None:
+                return
+            _aero.discover_pools_for_pair(
+                w3, chain_id, token_in, token_out, pool_states,
+                self._query_pool_state, self._pair_discovery_cache,
+                cache_ttl=self._pool_cache_ttl,
+            )
+        except Exception:
+            logger.debug("[miner] aerodrome direct discovery skipped", exc_info=True)
+
+    # ── route resolution: seeded routes quote candidates in PARALLEL ──────────
+    def _resolve_best_route(self, pool_states, token_in, token_out, amount_in, chain_id):  # type: ignore[override]
+        if _enabled("MINER_DISABLE_PARALLEL_QUOTE") and int(chain_id) == 8453 and _seeded_pair(token_in, token_out):
+            try:
+                best = self._parallel_resolve(pool_states, token_in, token_out, amount_in, chain_id)
+                if best is not None:
+                    return best
+            except Exception:
+                logger.exception("[miner] parallel resolve failed; using baseline resolver")
+        return super()._resolve_best_route(pool_states, token_in, token_out, amount_in, chain_id)
+
+    def _parallel_resolve(self, pool_states, token_in, token_out, amount_in, chain_id):
+        """Same as quoter.resolve_best_route but quotes the top candidates CONCURRENTLY,
+        so the multi-hop candidate set never blows the 5 s QUOTE budget (the DAI_to_USDC
+        timeout). Returns (final_out, desc, priced_hops) or None to fall back."""
+        from strategies.dex_aggregator import quoter as _quoter
+
+        w3 = self._get_web3(int(chain_id))
+        quote_hop = _quoter.make_quote_fn(w3, chain_id)  # QuoterUnavailable → caught upstream
+        intermediaries = self._intermediaries_for_chain(chain_id)
+        candidates = _quoter.enumerate_candidate_routes(pool_states, token_in, token_out, intermediaries)
+        candidates = [r for r in candidates if self._is_executable_route(r, chain_id)]
+        candidates.sort(key=_quoter.route_bottleneck_liquidity, reverse=True)
+        candidates = candidates[:_MAX_CANDIDATES]
+        if not candidates:
+            return None
+
+        def _q(route):
+            try:
+                return route, _quoter.quote_route(quote_hop, route, amount_in)
+            except _quoter.QuoteHopError:
+                return route, None
+            except Exception:
+                return route, None
+
+        best = None
+        with ThreadPoolExecutor(max_workers=_QUOTE_WORKERS) as ex:
+            for route, amounts in ex.map(_q, candidates):
+                if amounts is None:
+                    continue
+                final_out = amounts[-1]
+                priced, cur = [], int(amount_in)
+                for hop, out in zip(route, amounts):
+                    h = dict(hop); h["amount_in"] = cur; h["amount_out"] = out
+                    priced.append(h); cur = out
+                if best is None or final_out > best[0]:
+                    best = (final_out, _quoter._route_description(route), priced)
+        return best
+
+    # ── plan: gas-gated safe split on deep MAJOR pairs (else baseline) ────────
     def generate_plan(self, intent, state, snapshot=None):  # type: ignore[override]
-        if _split_enabled():
+        if _enabled("MINER_DISABLE_SPLIT"):
             try:
                 plan = self._maybe_split_plan(intent, state, snapshot)
                 if plan is not None:
@@ -162,7 +212,6 @@ class MinerSolver(BaselineSwapSolver):
         if tin.startswith("eip155:") or tout.startswith("eip155:"):
             return None
         chain_id = state.chain_id or (snapshot.chain_id if snapshot else 1)
-        # DEEP major pairs only (WETH/USDC on Base) — never split thin/exotic pairs.
         if int(chain_id) != 8453 or tin.lower() not in _MAJOR_TOKENS or tout.lower() not in _MAJOR_TOKENS:
             return None
 
@@ -171,7 +220,6 @@ class MinerSolver(BaselineSwapSolver):
             pool_states = dict(pool_states)
         self._ensure_pools_for_route(chain_id, pool_states, tin, tout)
 
-        # Single-best baseline output (the gas-gate reference). If this raises, bail.
         best_out, _desc, _hops = self._resolve_best_route(pool_states, tin, tout, amount_in, chain_id)
         if best_out <= 0:
             return None
@@ -199,23 +247,19 @@ class MinerSolver(BaselineSwapSolver):
         w3 = self._get_web3(chain_id)
         quote_hop = _quoter.make_quote_fn(w3, chain_id)
 
-        best_split = None  # (total_out, [(hop, amount_in, out), ...])
+        best_split = None
         for r in _SPLIT_RATIOS:
             in0 = amount_in * int(r * 1000) // 1000
             in1 = amount_in - in0
             if in0 <= 0 or in1 <= 0:
                 continue
             try:
-                out0 = quote_hop(p0, in0)
-                out1 = quote_hop(p1, in1)
+                total = quote_hop(p0, in0) + quote_hop(p1, in1)
             except _quoter.QuoteHopError:
-                continue  # a pool can't fill its leg → this split is invalid, skip
-            total = out0 + out1
+                continue
             if best_split is None or total > best_split[0]:
-                best_split = (total, [(p0, in0, out0), (p1, in1, out1)])
+                best_split = (total, [(p0, in0), (p1, in1)])
 
-        # Gas-gate: only split if it beats the single-best route by the margin that
-        # covers the extra-swap gas penalty. Otherwise emit the baseline plan.
         if best_split is None or best_split[0] <= int(best_out * _SPLIT_MIN_GAIN):
             return None
 
@@ -233,27 +277,24 @@ class MinerSolver(BaselineSwapSolver):
         interactions = [Interaction(
             target=tin, value="0", call_data=encode_approve(router, amount_in), chain_id=chain_id,
         )]
-        for hop, leg_in, _leg_out in legs:
+        for hop, leg_in in legs:
             interactions.append(Interaction(
                 target=router, value="0",
                 call_data=encode_exact_input_single(
                     token_in=tin, token_out=tout, fee=int(hop["fee"]), recipient=recipient,
-                    deadline=deadline, amount_in=int(leg_in),
-                    amount_out_minimum=0,  # aggregate min enforced on-chain → no leg revert
-                    chain_id=chain_id,
+                    deadline=deadline, amount_in=int(leg_in), amount_out_minimum=0, chain_id=chain_id,
                 ),
                 chain_id=chain_id,
             ))
         logger.info(
             "[miner] split: 2 legs fees=%s total_out=%d vs single_best=%d (+%.2f%%)",
-            [int(h["fee"]) for h, _, _ in legs], best_split[0], best_out,
+            [int(h["fee"]) for h, _ in legs], best_split[0], best_out,
             (best_split[0] / best_out - 1) * 100,
         )
         return ExecutionPlan(
-            intent_id=intent.app_id, interactions=interactions, deadline=deadline,
-            nonce=state.nonce,
+            intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce,
             metadata={"solver": "optimal-router", "route": "uniswap_v3_split",
-                      "legs": [{"fee": int(h["fee"]), "amount_in": str(ai)} for h, ai, _ in legs]},
+                      "legs": [{"fee": int(h["fee"]), "amount_in": str(ai)} for h, ai in legs]},
         )
 
     def metadata(self) -> SolverMetadata:
@@ -263,9 +304,9 @@ class MinerSolver(BaselineSwapSolver):
             version=SOLVER_VERSION,
             author=SOLVER_AUTHOR,
             description=(
-                "Baseline + on-chain-verified pool pre-seed & parallel discovery for "
-                "DAI/cbBTC routes (kills the 5s-timeout zeros, enables multi-hop) + "
-                "gas-gated safe split on deep major pairs; all fall back to baseline"
+                "Baseline + verified pool pre-seed, parallel discovery & quoting, "
+                "Aerodrome direct-pair routing for DAI/cbBTC (kills timeouts, adds the "
+                "dominant-DEX fill) + gas-gated safe split on deep majors; all fall back"
             ),
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types,
