@@ -279,33 +279,12 @@ def make_quote_fn(w3: Any, chain_id: int) -> Callable[[dict[str, Any], int], int
         raise QuoterUnavailable(f"no Quoter configured for chain {chain_id}")
 
     from web3.exceptions import ContractLogicError  # lazy: keep import light
-    import threading
-    from strategies.dex_aggregator.parallel import thread_web3
 
-    # resolve_best_route quotes candidate routes CONCURRENTLY, so quote_hop must
-    # be thread-safe: a shared Web3/requests.Session is not safe for concurrent
-    # eth_calls. Give each worker thread its OWN Web3 (keyed by rpc_url) and its
-    # OWN per-dex contract cache. Recover the rpc_url from the provider; if it
-    # can't be read, fall back to the shared w3 (then only serial use is safe).
-    rpc_url = getattr(getattr(w3, "provider", None), "endpoint_uri", None)
-    _tl = threading.local()
-    # Guards the (dead-in-prod) fallback where rpc_url can't be recovered and
-    # every worker shares ONE Web3: serialize its eth_calls so a non-HTTP / mock
-    # provider can never race the shared requests.Session. Real HTTPProviders
-    # always expose endpoint_uri, so live/benchmark take the per-thread path and
-    # never touch this lock.
-    _shared_lock = threading.Lock()
+    # Cache contract objects per (dex) so we don't rebuild them per hop.
+    contracts: dict[str, Any] = {}
 
-    def _w3_for_thread() -> Any:
-        if not rpc_url:
-            return w3
-        return thread_web3(str(rpc_url))
-
-    def _contract(dex: str, w3_local: Any) -> Any:
-        cache = getattr(_tl, "contracts", None)
-        if cache is None:
-            cache = _tl.contracts = {}
-        cached = cache.get(dex)
+    def _contract(dex: str) -> Any:
+        cached = contracts.get(dex)
         if cached is not None:
             return cached
         addr = chain_quoters.get(dex)
@@ -318,28 +297,22 @@ def make_quote_fn(w3: Any, chain_id: int) -> Callable[[dict[str, Any], int], int
             if dex == DEX_AERODROME_SLIPSTREAM
             else _UNISWAP_QUOTER_ABI
         )
-        c = w3_local.eth.contract(address=w3_local.to_checksum_address(addr), abi=abi)
-        cache[dex] = c
+        c = w3.eth.contract(address=w3.to_checksum_address(addr), abi=abi)
+        contracts[dex] = c
         return c
 
     def quote_hop(hop: dict[str, Any], amount_in: int) -> int:
         dex = hop_dex(hop)
-        w3_local = _w3_for_thread()
-        contract = _contract(dex, w3_local)
+        contract = _contract(dex)
         params = (
-            w3_local.to_checksum_address(hop["token_in"]),
-            w3_local.to_checksum_address(hop["token_out"]),
+            w3.to_checksum_address(hop["token_in"]),
+            w3.to_checksum_address(hop["token_out"]),
             int(amount_in),
             hop_quoter_param(hop),  # fee (uint24) or tickSpacing (int24)
             0,  # sqrtPriceLimitX96 = 0 → no limit
         )
         try:
-            if w3_local is w3:
-                # Shared-w3 fallback (rpc_url unrecoverable) → serialize.
-                with _shared_lock:
-                    result = contract.functions.quoteExactInputSingle(params).call()
-            else:
-                result = contract.functions.quoteExactInputSingle(params).call()
+            result = contract.functions.quoteExactInputSingle(params).call()
         except ContractLogicError as exc:
             # The Quoter reverted: this pool can't fill this size. Not a
             # system failure — caller skips this candidate and tries another.
@@ -432,38 +405,20 @@ def resolve_best_route(
     quoted = 0  # SUCCESSFULLY quoted candidates only (reverts don't count)
     attempted = 0
     last_skip: Exception | None = None
-    # Quote candidate routes CONCURRENTLY — the slow part on a cold multi-hop
-    # (one eth_call per hop per candidate, serial round-trips). Each route's hops
-    # stay serial inside quote_route (amountIn(N)=amountOut(N-1)); the routes are
-    # independent. quote_hop is thread-safe (per-thread Web3). The selection loop
-    # below replays the EXACT serial logic over the ORDER-PRESERVED results, so
-    # the chosen route + output are byte-identical to the serial path — required
-    # for cross-validator agreement. (We quote every candidate rather than
-    # stopping at the budget; the budget still bounds SELECTION below, so the
-    # result is unchanged — only wall-clock improves.)
-    from strategies.dex_aggregator.parallel import parallel_map
-    quote_results = parallel_map(
-        [(lambda r=route: quote_route(quote_hop, r, amount_in)) for route in candidates]
-    )
-
-    for route, res in zip(candidates, quote_results):
+    for route in candidates:
         if quoted >= max_candidates:
             break
         attempted += 1
-        if isinstance(res, QuoteHopError):
+        try:
+            amounts = quote_route(quote_hop, route, amount_in)
+        except QuoteHopError as exc:
             # This pool can't fill this size — skip and try the next route. A
             # reverted candidate must NOT consume the quote budget: otherwise a
             # run of high-liquidity-but-unfillable candidates at the top of the
             # ranking would starve a viable thinner route and raise a FALSE
             # NoRouteError (the exact false-no-route this rewrite kills).
-            last_skip = res
+            last_skip = exc
             continue
-        if isinstance(res, Exception):
-            # QuoterUnavailable / transport error → fail loud, exactly as the
-            # serial path propagated it. Only reached WITHIN budget (the break
-            # above guards beyond-budget candidates the serial loop never quoted).
-            raise res
-        amounts = res
         quoted += 1
         final_out = amounts[-1]
         # Attach exact per-hop amounts to FRESH copies of the hops. The 2-hop

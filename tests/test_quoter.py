@@ -229,44 +229,6 @@ def test_resolve_raises_no_route_when_all_candidates_fail():
         )
 
 
-# ── (d) parallel quoting determinism ────────────────────────────────────────
-
-
-def test_resolve_deterministic_under_parallel_quoting():
-    """Candidates are now exact-quoted CONCURRENTLY. Thread completion order must
-    NOT change the result: the winner is still the FIRST route (in the liquidity-
-    sorted order) achieving the max output. Construct TIES at descending
-    liquidity + a reverting top route + a losing route, run many times, and
-    require a single, stable result — proving the selection is order-independent
-    (required for cross-validator agreement)."""
-    pools = {}
-    # Three direct routes with the SAME final output (a tie), descending liquidity.
-    for i, liq in enumerate([5000, 4000, 3000]):
-        pools[f"0xTIE{i}"] = _pool(
-            TOKEN_A, TOKEN_B, DEX_UNISWAP_V3, fee=100 + i, rate=10.0, liquidity=liq
-        )
-    # Highest-liquidity route REVERTS — must be skipped without consuming budget.
-    pools["0xFAIL"] = _pool(
-        TOKEN_A, TOKEN_B, DEX_UNISWAP_V3, fee=50, rate=999.0, liquidity=9000
-    )
-    # A strictly lower-output route — must lose.
-    pools["0xLOW"] = _pool(
-        TOKEN_A, TOKEN_B, DEX_UNISWAP_V3, fee=8000, rate=1.0, liquidity=100
-    )
-
-    seen = set()
-    for _ in range(25):
-        out, desc, hops = q.resolve_best_route(
-            _fake_quote(fail_pools={"0xFAIL"}), pools, TOKEN_A, TOKEN_B, 1_000,
-            intermediaries=[], max_candidates=6,
-        )
-        seen.add((out, desc, hops[0]["pool_addr"]))
-    assert len(seen) == 1, f"non-deterministic across runs: {seen}"
-    (out, _desc, winner), = seen
-    assert out == 10_000                 # the tied max output (10.0 * 1000)
-    assert winner == "0xTIE0"            # highest-liquidity tied route wins (first-in-sort)
-
-
 def test_resolve_raises_no_route_when_no_pools():
     with pytest.raises(NoRouteError):
         q.resolve_best_route(_fake_quote(), {}, TOKEN_A, TOKEN_B, 1_000, intermediaries=[])
