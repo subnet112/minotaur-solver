@@ -1,4 +1,15 @@
-"""Minotaur SN112 miner solver — v6: + Aerodrome routing + parallel quoting.
+"""Minotaur SN112 miner solver — v7: Aerodrome scoped to cbBTC (recover DAI_to_USDC).
+
+v7 over v6: v6 hit 0.4469 (best yet, +0.018 over the dethrone bar) and recovered
+cbBTC_to_USDC via Aerodrome — but its Aerodrome discovery added serial getPool latency
+that kept DAI_to_USDC over the 5 s QUOTE budget (still a timeout crash). v7 scopes
+Aerodrome discovery to **cbBTC pairs only** (thin Uniswap → aero genuinely helps);
+DAI pairs skip it because the seeded Uniswap pools are already very deep, so DAI_to_USDC
+now resolves fast (parallel quoting, no aero latency) and the deep USDC/DAI pool fills.
+Everything else identical to v6.
+
+--- v6 ---
+
 
 REPLACES the root ``solver.py`` of a fork of ``subnet112/minotaur-solver``.
 Subclasses the real ``BaselineSwapSolver``; every override falls back to the stock
@@ -43,7 +54,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "optimal-router-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "6.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "7.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -96,9 +107,16 @@ class MinerSolver(BaselineSwapSolver):
         try:
             if _enabled("MINER_DISABLE_SEED") and int(chain_id) == 8453 and _seeded_pair(token_in, token_out):
                 self._parallel_seed(chain_id, pool_states)
-                self._aero_direct(chain_id, pool_states, token_in, token_out)
-                # We have the deep Uniswap pools + the Aerodrome direct option; skip the
-                # SERIAL Uniswap factory discovery that blows the 5 s budget on these pairs.
+                # Aerodrome discovery ONLY for cbBTC pairs, where the Uniswap direct pool
+                # is THIN and an Aerodrome fill genuinely helps (v6 recovered cbBTC_to_USDC
+                # this way). For DAI pairs the seeded Uniswap pools are already very deep
+                # (USDC/DAI 0.01% ≈ 1.1e20), so skipping aero here removes its serial
+                # getPool latency — that latency is exactly what kept DAI_to_USDC over the
+                # 5 s QUOTE budget in v6. (WETH_to_DAI reverts as unfillable either way.)
+                if _CBBTC in {str(token_in).lower(), str(token_out).lower()}:
+                    self._aero_direct(chain_id, pool_states, token_in, token_out)
+                # We have the deep Uniswap pools (+ Aerodrome for cbBTC); skip the SERIAL
+                # Uniswap factory discovery that blows the 5 s budget on these pairs.
                 return pool_states
         except Exception:
             logger.exception("[miner] seeded discovery failed; using baseline discovery")
