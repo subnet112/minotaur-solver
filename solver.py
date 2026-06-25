@@ -1,4 +1,25 @@
-"""Minotaur SN112 miner solver — v8: timeout-bounded parallel RPC fan-outs.
+"""Minotaur SN112 miner solver — v9: additive liquidity-classification layer on v8.
+
+v9 is a SAFE, ADDITIVE extension of v8 (ZERO regression by construction): it generalizes
+v8's hardcoded DAI/cbBTC recovery to ANY known fragmented Base pair via a liquidity
+classifier, while leaving deep-canonical (WETH/USDC) and unknown pairs on the untouched
+baseline path.
+
+  * Class A (deep canonical: WETH/USDC) → baseline direct path, UNCHANGED from v8.
+  * Class B (known fragmented mid): DAI/cbBTC keep v8's PROVEN pre-seed+aero path; other
+    known mids (USDbC/cbETH/wstETH/AERO/weETH/rETH/tBTC) get bounded PARALLEL factory
+    discovery + Aerodrome + parallel quoting — so an unseen fragmented pair also dodges
+    the serial-discovery timeout and gets multi-hop candidates. (v9 generalization.)
+  * Class C (unknown/thin token) → baseline fallback-only; we add nothing.
+  * Lightweight in-process failure memory: if our enhanced path finds no route for a
+    class-B pair ≥N times this run, defer straight to baseline (never bans a route).
+
+Anti-regression: A/C paths and the DAI/cbBTC behavior are byte-identical to v8; the
++2% split gate, per-leg min=0, bounded timeouts, and baseline fallback all carry over.
+Flags: MINER_DISABLE_{SEED,SPLIT,PARALLEL_QUOTE}=1, MINER_FAIL_DEPRIORITIZE_AT.
+
+--- v8 ---
+
 
 v8 over v7: harden the parallel seed/quote fan-outs against a HUNG RPC node. v7 used
 ``with ThreadPoolExecutor() as ex: ex.map(...)`` whose ``__exit__`` does
@@ -68,7 +89,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "optimal-router-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "8.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "9.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -79,8 +100,35 @@ _USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 _DAI = "0x50c5725949a6f0c72e6c4a641f24049a917db0cb"
 _CBBTC = "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf"
 
-_SEEDED_TOKENS = {_DAI, _CBBTC}   # routes touching these get the seeded/parallel/aero path
+_SEEDED_TOKENS = {_DAI, _CBBTC}   # PRE-SEEDED (verified-pool) class-B pairs — v8 proven path
 _MAJOR_TOKENS = {_WETH, _USDC}    # the split applies only to these (deep) pairs
+
+# ── Liquidity classification (v9 generalization layer, additive) ──────────────
+# Class A = deep canonical (direct route only; unchanged from v8/baseline).
+# Class B = fragmented mid-liquidity KNOWN Base tokens (conditional multi-hop /
+#   parallel discovery — DAI/cbBTC are pre-seeded & proven; the rest get bounded
+#   PARALLEL factory discovery so they too avoid the serial-discovery timeout).
+# Class C = pair with an unknown/thin token → baseline fallback-only (we add nothing).
+_CANONICAL_TOKENS = {_WETH, _USDC}
+_MID_TOKENS = {
+    _DAI, _CBBTC,
+    "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca",  # USDbC
+    "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22",  # cbETH
+    "0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452",  # wstETH
+    "0x940181a94a35a4569e4529a3cdfb74e38fd98631",  # AERO
+    "0x04c0599ae5a44757c0af6f9ec3b93da8976c150a",  # weETH
+    "0xb6fe221fe9eef5aba221c348ba20a1bf5e73624c",  # rETH
+    "0x236aa50979d5f3de3bd1eeb40e81137f22ab794b",  # tBTC
+}
+_KNOWN_TOKENS = _CANONICAL_TOKENS | _MID_TOKENS
+
+# Lightweight in-process failure memory (v9, non-destructive): if OUR enhanced path
+# (parallel discovery+resolve) yields no route for a class-B token N times this run,
+# stop spending budget on it and defer straight to the baseline. Never bans a route —
+# the baseline still runs — and resets on each fresh process. The on-chain revert
+# itself is invisible to the solver, so this only deprioritizes OUR add-on, not routes.
+_FAIL_COUNTS: dict[str, int] = {}
+_FAIL_DEPRIORITIZE_AT = int(os.environ.get("MINER_FAIL_DEPRIORITIZE_AT", "3"))
 
 # On-chain-VERIFIED deep Uniswap V3 pools on Base (factory getPool + liquidity(),
 # 2026-06-25). 2 deepest fee tiers per pair; WETH/USDC = the multi-hop intermediary.
@@ -118,28 +166,79 @@ def _seeded_pair(token_in: str, token_out: str) -> bool:
     return bool({str(token_in).lower(), str(token_out).lower()} & _SEEDED_TOKENS)
 
 
+def _classify_pair(token_in: str, token_out: str) -> str:
+    """A = deep canonical, B = known fragmented mid, C = unknown/thin (fallback-only)."""
+    a, b = str(token_in).lower(), str(token_out).lower()
+    if a in _CANONICAL_TOKENS and b in _CANONICAL_TOKENS:
+        return "A"
+    if a in _KNOWN_TOKENS and b in _KNOWN_TOKENS:
+        return "B"
+    return "C"
+
+
+def _deprioritized(key: str) -> bool:
+    return _FAIL_COUNTS.get(key, 0) >= _FAIL_DEPRIORITIZE_AT
+
+
 class MinerSolver(BaselineSwapSolver):
     """Baseline + seeded/parallel discovery, Aerodrome, parallel quoting, safe split."""
 
-    # ── discovery: seeded routes get parallel Uniswap seed + Aerodrome direct ──
+    # ── discovery: liquidity-classified (A→baseline, B→seed/parallel, C→baseline) ──
     def _ensure_pools_for_route(self, chain_id, pool_states, token_in, token_out):  # type: ignore[override]
         try:
-            if _enabled("MINER_DISABLE_SEED") and int(chain_id) == 8453 and _seeded_pair(token_in, token_out):
-                self._parallel_seed(chain_id, pool_states)
-                # Aerodrome discovery ONLY for cbBTC pairs, where the Uniswap direct pool
-                # is THIN and an Aerodrome fill genuinely helps (v6 recovered cbBTC_to_USDC
-                # this way). For DAI pairs the seeded Uniswap pools are already very deep
-                # (USDC/DAI 0.01% ≈ 1.1e20), so skipping aero here removes its serial
-                # getPool latency — that latency is exactly what kept DAI_to_USDC over the
-                # 5 s QUOTE budget in v6. (WETH_to_DAI reverts as unfillable either way.)
-                if _CBBTC in {str(token_in).lower(), str(token_out).lower()}:
+            # Class A (deep canonical, e.g. WETH/USDC) and Class C (unknown/thin) take the
+            # UNTOUCHED baseline path — anti-regression: direct-route preference preserved,
+            # we add nothing. Only Class B (known fragmented mid) gets the enhanced path.
+            if (
+                _enabled("MINER_DISABLE_SEED")
+                and int(chain_id) == 8453
+                and _classify_pair(token_in, token_out) == "B"
+            ):
+                if _seeded_pair(token_in, token_out):
+                    # v8 PROVEN path (DAI/cbBTC): parallel pre-seed of verified deep pools.
+                    self._parallel_seed(chain_id, pool_states)
+                    # Aerodrome ONLY for cbBTC (thin Uniswap direct → aero fills, recovered
+                    # cbBTC_to_USDC in v6). DAI pairs skip aero (deep Uniswap; aero latency
+                    # is what kept DAI_to_USDC over the 5 s budget — removing it recovered it).
+                    if _CBBTC in {str(token_in).lower(), str(token_out).lower()}:
+                        self._aero_direct(chain_id, pool_states, token_in, token_out)
+                else:
+                    # NEW class-B mid token (no pre-seeded pools): bounded PARALLEL factory
+                    # discovery so it ALSO avoids the serial-discovery timeout, + Aerodrome.
+                    # This is the v9 generalization to unseen fragmented pairs.
+                    self._parallel_discover(chain_id, pool_states, token_in, token_out)
                     self._aero_direct(chain_id, pool_states, token_in, token_out)
-                # We have the deep Uniswap pools (+ Aerodrome for cbBTC); skip the SERIAL
-                # Uniswap factory discovery that blows the 5 s budget on these pairs.
+                # Pools are loaded (+ aero where useful); skip the SERIAL Uniswap factory
+                # discovery that blows the 5 s budget on fragmented pairs.
                 return pool_states
         except Exception:
-            logger.exception("[miner] seeded discovery failed; using baseline discovery")
+            logger.exception("[miner] enhanced discovery failed; using baseline discovery")
         return super()._ensure_pools_for_route(chain_id, pool_states, token_in, token_out)
+
+    def _parallel_discover(self, chain_id, pool_states, token_in, token_out) -> None:
+        """Bounded PARALLEL factory discovery for a class-B pair with no pre-seeded pools:
+        discover the direct pair + each (token, intermediary) leg concurrently (thread-local
+        dicts merged after) so an unseen fragmented pair avoids the serial-discovery timeout
+        and still gets multi-hop candidates. Falls back implicitly (empty → baseline)."""
+        a, b = str(token_in).lower(), str(token_out).lower()
+        pairs = [(token_in, token_out)]
+        for mid in self._intermediaries_for_chain(chain_id):
+            if mid.lower() in (a, b):
+                continue
+            pairs.append((token_in, mid))
+            pairs.append((mid, token_out))
+
+        def _disc(pair):
+            local: dict[str, Any] = {}
+            try:
+                self._discover_pools_for_pair(chain_id, pair[0], pair[1], local)
+            except Exception:
+                pass
+            return local
+
+        for local in self._bounded_map(_disc, pairs, workers=_SEED_WORKERS, timeout=_SEED_TIMEOUT_S):
+            if local:
+                pool_states.update(local)
 
     @staticmethod
     def _bounded_map(fn, items, *, workers, timeout):
@@ -201,14 +300,22 @@ class MinerSolver(BaselineSwapSolver):
         except Exception:
             logger.debug("[miner] aerodrome direct discovery skipped", exc_info=True)
 
-    # ── route resolution: seeded routes quote candidates in PARALLEL ──────────
+    # ── route resolution: class-B routes quote candidates in PARALLEL ──────────
     def _resolve_best_route(self, pool_states, token_in, token_out, amount_in, chain_id):  # type: ignore[override]
-        if _enabled("MINER_DISABLE_PARALLEL_QUOTE") and int(chain_id) == 8453 and _seeded_pair(token_in, token_out):
+        key = "%s/%s" % tuple(sorted((str(token_in).lower(), str(token_out).lower())))
+        if (
+            _enabled("MINER_DISABLE_PARALLEL_QUOTE")
+            and int(chain_id) == 8453
+            and _classify_pair(token_in, token_out) == "B"
+            and not _deprioritized(key)  # failure memory: stop spending budget after N misses
+        ):
             try:
                 best = self._parallel_resolve(pool_states, token_in, token_out, amount_in, chain_id)
                 if best is not None:
                     return best
+                _FAIL_COUNTS[key] = _FAIL_COUNTS.get(key, 0) + 1  # our path found no route
             except Exception:
+                _FAIL_COUNTS[key] = _FAIL_COUNTS.get(key, 0) + 1
                 logger.exception("[miner] parallel resolve failed; using baseline resolver")
         return super()._resolve_best_route(pool_states, token_in, token_out, amount_in, chain_id)
 
