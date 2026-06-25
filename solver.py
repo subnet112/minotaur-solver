@@ -1,4 +1,18 @@
-"""Minotaur SN112 miner solver — v7: Aerodrome scoped to cbBTC (recover DAI_to_USDC).
+"""Minotaur SN112 miner solver — v8: timeout-bounded parallel RPC fan-outs.
+
+v8 over v7: harden the parallel seed/quote fan-outs against a HUNG RPC node. v7 used
+``with ThreadPoolExecutor() as ex: ex.map(...)`` whose ``__exit__`` does
+``shutdown(wait=True)`` — one hung eth_call would block to the harness 5 s SIGKILL
+(crash). v8 routes both fan-outs through ``_bounded_map`` (as_completed with an explicit
+per-stage timeout + ``shutdown(wait=False, cancel_futures=True)``): on timeout we proceed
+with whatever COMPLETED (a subset of pools / the best of completed quotes is still a valid
+executable route) and detach stragglers, so we always bail before the SIGKILL and can
+fall back. Routing/scoring logic is otherwise identical to v7. (per-leg amountOutMinimum
+stays 0 — the on-chain min_output invariant enforces the aggregate; a per-leg min would
+ADD revert risk in the deterministic benchmark, the opposite of what we want.)
+
+--- v7 ---
+
 
 v7 over v6: v6 hit 0.4469 (best yet, +0.018 over the dethrone bar) and recovered
 cbBTC_to_USDC via Aerodrome — but its Aerodrome discovery added serial getPool latency
@@ -44,7 +58,7 @@ from __future__ import annotations
 import logging
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as _FuturesTimeout
 from typing import Any
 
 from strategies.dex_aggregator.baseline_solver import BaselineSwapSolver
@@ -54,7 +68,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "optimal-router-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "7.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "8.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -85,6 +99,11 @@ _SEED_POOLS_BASE = [
 
 _SEED_WORKERS = int(os.environ.get("MINER_SEED_WORKERS", "8"))
 _QUOTE_WORKERS = int(os.environ.get("MINER_QUOTE_WORKERS", "8"))
+# Explicit wall-clock caps on the parallel RPC fan-outs so a HUNG node can't block to
+# the harness 5 s SIGKILL: on timeout we proceed with whatever completed (a subset is
+# still useful) instead of waiting. Sum kept < 5 s (seed THEN resolve run in one quote).
+_SEED_TIMEOUT_S = float(os.environ.get("MINER_SEED_TIMEOUT_S", "2.0"))
+_RESOLVE_TIMEOUT_S = float(os.environ.get("MINER_RESOLVE_TIMEOUT_S", "2.5"))
 _MAX_CANDIDATES = int(os.environ.get("MINER_MAX_CANDIDATES", "10"))
 _SPLIT_MIN_GAIN = float(os.environ.get("MINER_SPLIT_MIN_GAIN", "1.02"))
 _SPLIT_RATIOS = (0.3, 0.5, 0.7)
@@ -122,6 +141,29 @@ class MinerSolver(BaselineSwapSolver):
             logger.exception("[miner] seeded discovery failed; using baseline discovery")
         return super()._ensure_pools_for_route(chain_id, pool_states, token_in, token_out)
 
+    @staticmethod
+    def _bounded_map(fn, items, *, workers, timeout):
+        """Run fn over items concurrently, but NEVER block past ``timeout``: on a hung
+        RPC we return whatever completed and detach the stragglers (shutdown(wait=False))
+        instead of waiting on the executor exit — so we always bail before the harness's
+        5 s SIGKILL and can fall back. A partial result set is still usable."""
+        results = []
+        ex = ThreadPoolExecutor(max_workers=workers)
+        try:
+            futs = [ex.submit(fn, it) for it in items]
+            try:
+                for fut in as_completed(futs, timeout=timeout):
+                    try:
+                        results.append(fut.result())
+                    except Exception:
+                        pass
+            except _FuturesTimeout:
+                logger.warning("[miner] bounded_map timed out (%.1fs); using %d/%d results",
+                               timeout, len(results), len(items))
+        finally:
+            ex.shutdown(wait=False, cancel_futures=True)
+        return results
+
     def _parallel_seed(self, chain_id, pool_states) -> None:
         w3 = self._get_web3(int(chain_id))
         if w3 is None:
@@ -136,10 +178,9 @@ class MinerSolver(BaselineSwapSolver):
             except Exception:
                 return addr, None
 
-        with ThreadPoolExecutor(max_workers=_SEED_WORKERS) as ex:
-            for addr, state in ex.map(_load, addrs):
-                if state is not None:
-                    pool_states[addr] = state
+        for addr, state in self._bounded_map(_load, addrs, workers=_SEED_WORKERS, timeout=_SEED_TIMEOUT_S):
+            if state is not None:
+                pool_states[addr] = state
 
     def _aero_direct(self, chain_id, pool_states, token_in, token_out) -> None:
         """Add the Aerodrome Slipstream DIRECT-pair pools (Base's dominant DEX) so the
@@ -190,23 +231,23 @@ class MinerSolver(BaselineSwapSolver):
         def _q(route):
             try:
                 return route, _quoter.quote_route(quote_hop, route, amount_in)
-            except _quoter.QuoteHopError:
-                return route, None
             except Exception:
-                return route, None
+                return route, None  # QuoteHopError (can't fill) or transport → skip route
 
         best = None
-        with ThreadPoolExecutor(max_workers=_QUOTE_WORKERS) as ex:
-            for route, amounts in ex.map(_q, candidates):
-                if amounts is None:
-                    continue
-                final_out = amounts[-1]
-                priced, cur = [], int(amount_in)
-                for hop, out in zip(route, amounts):
-                    h = dict(hop); h["amount_in"] = cur; h["amount_out"] = out
-                    priced.append(h); cur = out
-                if best is None or final_out > best[0]:
-                    best = (final_out, _quoter._route_description(route), priced)
+        # Bounded: if a node hangs we keep the best of whatever quotes COMPLETED rather
+        # than blocking to the SIGKILL (graceful degradation — a subset still yields a
+        # valid executable route, and we never do worse than the baseline fallback).
+        for route, amounts in self._bounded_map(_q, candidates, workers=_QUOTE_WORKERS, timeout=_RESOLVE_TIMEOUT_S):
+            if amounts is None:
+                continue
+            final_out = amounts[-1]
+            priced, cur = [], int(amount_in)
+            for hop, out in zip(route, amounts):
+                h = dict(hop); h["amount_in"] = cur; h["amount_out"] = out
+                priced.append(h); cur = out
+            if best is None or final_out > best[0]:
+                best = (final_out, _quoter._route_description(route), priced)
         return best
 
     # ── plan: gas-gated safe split on deep MAJOR pairs (else baseline) ────────
