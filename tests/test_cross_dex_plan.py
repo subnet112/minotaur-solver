@@ -170,8 +170,12 @@ def test_cross_dex_plan_emits_sequential_per_hop_with_correct_recipients():
     assert swap2["tick_spacing"] == 100
     # Final hop → the app contract (so AppIntentBase._gained() measures it).
     assert _addr_eq(swap2["recipient"], CONTRACT)
-    # Final min = the user's signed order min.
-    assert swap2["min_out"] == ORDER_MIN
+    # Final min anchors to the LIVE route floor, CAPPED below the (here
+    # unmeetable) signed order min so the swap can actually execute — a stale
+    # stored min above what the route delivers would revert "Too little
+    # received". floor = expected_output(174_000_000) * (10000-50)//10000.
+    assert swap2["min_out"] == 174_000_000 * (10000 - 50) // 10000  # 173_130_000
+    assert swap2["min_out"] < ORDER_MIN  # the unmeetable signed min was capped
 
     assert plan.metadata["route"] == "cross_dex_sequential"
     assert plan.metadata["dexes"] == [DEX_UNISWAP_V3, DEX_AERODROME_SLIPSTREAM]

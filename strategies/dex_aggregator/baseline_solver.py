@@ -1318,12 +1318,17 @@ class BaselineSwapSolver(IntentSolver):
         if not router:
             raise ValueError(f"No Uniswap V3 router for chain {chain_id}")
 
-        min_output = swap_params.get("min_output_amount", 0)
-        if not min_output:
-            # Apply slippage to the expected output (not the input amount,
-            # which is in a different token denomination)
-            slippage_bps = self._processor.slippage_bps
-            min_output = expected_output * (10000 - slippage_bps) // 10000
+        # Anchor amountOutMinimum to the LIVE exact-Quoter output, capped by (never
+        # ABOVE) the order's stored min. A stale stored min — e.g. a replayed /
+        # historical order signed at a different block — can exceed what the route
+        # delivers now, reverting the swap "Too little received" (EphemeralProxy
+        # CallFailed at the swap interaction). The contract's validator-enriched,
+        # quote-anchored min stays the real end-to-end guard. (Slippage applies to
+        # the expected OUTPUT, not the input — different token denomination.)
+        slippage_bps = self._processor.slippage_bps
+        floor = expected_output * (10000 - slippage_bps) // 10000
+        stored = swap_params.get("min_output_amount", 0)
+        min_output = min(stored, floor) if stored else floor
 
         deadline = context.timestamp + self._processor.deadline_offset
         recipient = state.contract_address or swap_params.get("receiver", state.owner)
@@ -1506,11 +1511,12 @@ class BaselineSwapSolver(IntentSolver):
         deadline = context.timestamp + self._processor.deadline_offset
         final_recipient = state.contract_address or swap_params.get("receiver", state.owner)
 
-        # Final-hop user protection = the order's signed min (validator-set
-        # from the quote). Falls back to slippage on the exact route output.
-        final_min = swap_params.get("min_output_amount", 0)
-        if not final_min:
-            final_min = expected_output * (10000 - self._processor.slippage_bps) // 10000
+        # Final-hop user protection: anchor to the LIVE exact route output, capped
+        # by (never above) the order's stored min. A stale stored min reverts the
+        # swap "Too little received"; the contract's validator-enriched min guards.
+        _floor = expected_output * (10000 - self._processor.slippage_bps) // 10000
+        _stored = swap_params.get("min_output_amount", 0)
+        final_min = min(_stored, _floor) if _stored else _floor
 
         interactions: list[Interaction] = []
         last = len(hops) - 1
@@ -1625,10 +1631,16 @@ class BaselineSwapSolver(IntentSolver):
             raise ValueError(f"No Uniswap V3 router for chain {chain_id}")
 
         swap_params = self._normalized_swap_params(intent, state)
-        min_output = swap_params.get("min_output_amount", 0)
-        if not min_output:
-            slippage_bps = self._processor.slippage_bps
-            min_output = expected_output * (10000 - slippage_bps) // 10000
+        # Anchor amountOutMinimum to the LIVE exact-Quoter output, capped by (never
+        # ABOVE) the order's stored min. A stale stored min — e.g. a replayed /
+        # historical order signed at a different block — can exceed what the route
+        # delivers now, reverting the swap "Too little received" (EphemeralProxy
+        # CallFailed at the swap interaction). The contract's validator-enriched,
+        # quote-anchored min stays the real end-to-end guard.
+        slippage_bps = self._processor.slippage_bps
+        floor = expected_output * (10000 - slippage_bps) // 10000
+        stored = swap_params.get("min_output_amount", 0)
+        min_output = min(stored, floor) if stored else floor
 
         deadline = context.timestamp + self._processor.deadline_offset
         recipient = state.contract_address or swap_params.get("receiver", state.owner)
@@ -1705,10 +1717,16 @@ class BaselineSwapSolver(IntentSolver):
             raise ValueError(f"No Aerodrome Slipstream router for chain {chain_id}")
 
         swap_params = self._normalized_swap_params(intent, state)
-        min_output = swap_params.get("min_output_amount", 0)
-        if not min_output:
-            slippage_bps = self._processor.slippage_bps
-            min_output = expected_output * (10000 - slippage_bps) // 10000
+        # Anchor amountOutMinimum to the LIVE exact-Quoter output, capped by (never
+        # ABOVE) the order's stored min. A stale stored min — e.g. a replayed /
+        # historical order signed at a different block — can exceed what the route
+        # delivers now, reverting the swap "Too little received" (EphemeralProxy
+        # CallFailed at the swap interaction). The contract's validator-enriched,
+        # quote-anchored min stays the real end-to-end guard.
+        slippage_bps = self._processor.slippage_bps
+        floor = expected_output * (10000 - slippage_bps) // 10000
+        stored = swap_params.get("min_output_amount", 0)
+        min_output = min(stored, floor) if stored else floor
 
         deadline = context.timestamp + self._processor.deadline_offset
         recipient = state.contract_address or swap_params.get("receiver", state.owner)
@@ -1799,10 +1817,16 @@ class BaselineSwapSolver(IntentSolver):
 
         path = _aero.encode_path(tokens, tick_spacings)
 
-        min_output = swap_params.get("min_output_amount", 0)
-        if not min_output:
-            slippage_bps = self._processor.slippage_bps
-            min_output = expected_output * (10000 - slippage_bps) // 10000
+        # Anchor amountOutMinimum to the LIVE exact-Quoter output, capped by (never
+        # ABOVE) the order's stored min. A stale stored min — e.g. a replayed /
+        # historical order signed at a different block — can exceed what the route
+        # delivers now, reverting the swap "Too little received" (EphemeralProxy
+        # CallFailed at the swap interaction). The contract's validator-enriched,
+        # quote-anchored min stays the real end-to-end guard.
+        slippage_bps = self._processor.slippage_bps
+        floor = expected_output * (10000 - slippage_bps) // 10000
+        stored = swap_params.get("min_output_amount", 0)
+        min_output = min(stored, floor) if stored else floor
 
         deadline = context.timestamp + self._processor.deadline_offset
         recipient = state.contract_address or swap_params.get("receiver", state.owner)
