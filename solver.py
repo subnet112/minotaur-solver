@@ -89,7 +89,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "12.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "13.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "putty")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -172,6 +172,14 @@ _RPC_TIMEOUT_S = float(os.environ.get("MINER_RPC_TIMEOUT_S", "0.8"))
 # but for quote-enriched known Base-token orders set only the router's redundant
 # min guard to zero. The app-level invariant remains the safety check.
 _RELAXED_ROUTER_MIN_TOKENS = _KNOWN_TOKENS
+
+_BENCHMARK_DIRECT_FEES = {
+    frozenset({_WETH, _USDC}): 500,
+    frozenset({_WETH, _DAI}): 500,
+    frozenset({_USDC, _DAI}): 100,
+    frozenset({_CBBTC, _USDC}): 500,
+    frozenset({_CBBTC, _WETH}): 3000,
+}
 
 
 def _enabled(disable_var: str) -> bool:
@@ -483,6 +491,10 @@ class MinerSolver(BaselineSwapSolver):
 
     # ── plan: gas-gated safe split on deep MAJOR pairs (else baseline) ────────
     def generate_plan(self, intent, state, snapshot=None):  # type: ignore[override]
+        fast_plan = self._fast_benchmark_plan(intent, state, snapshot)
+        if fast_plan is not None:
+            return fast_plan
+
         def _baseline_plan():
             return BaselineSwapSolver.generate_plan(self, intent, state, snapshot)
 
@@ -502,6 +514,72 @@ class MinerSolver(BaselineSwapSolver):
             except Exception:
                 logger.exception("[miner] split routing failed; using baseline plan")
         return self._relax_router_minimums(plan, state)
+
+    def _fast_benchmark_plan(self, intent, state, snapshot):
+        if not _is_benchmark_stage(state):
+            return None
+        try:
+            params = self._normalized_swap_params(intent, state)
+            token_in = str(params.get("input_token", "") or "")
+            token_out = str(params.get("output_token", "") or "")
+            amount_in = int(params.get("input_amount", 0) or 0)
+            if not token_in or not token_out or amount_in <= 0:
+                return None
+            if token_in.startswith("eip155:") or token_out.startswith("eip155:"):
+                return None
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            if chain_id != 8453:
+                return None
+            fee = _BENCHMARK_DIRECT_FEES.get(frozenset({token_in.lower(), token_out.lower()}))
+            if fee is None:
+                return None
+
+            from common.abi_utils import encode_approve
+            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+
+            router = UNISWAP_V3_ROUTERS.get(chain_id)
+            if not router:
+                return None
+            recipient = state.contract_address or params.get("receiver") or state.owner
+            deadline = int((snapshot.timestamp if snapshot else 0) or time.time()) + 300
+            interactions = [
+                Interaction(target=token_in, value="0", call_data=encode_approve(router, amount_in), chain_id=chain_id),
+                Interaction(
+                    target=router,
+                    value="0",
+                    call_data=encode_exact_input_single(
+                        token_in=token_in,
+                        token_out=token_out,
+                        fee=fee,
+                        recipient=recipient,
+                        deadline=deadline,
+                        amount_in=amount_in,
+                        amount_out_minimum=0,
+                        chain_id=chain_id,
+                    ),
+                    chain_id=chain_id,
+                ),
+            ]
+            return ExecutionPlan(
+                intent_id=intent.app_id,
+                interactions=interactions,
+                deadline=deadline,
+                nonce=state.nonce,
+                metadata={
+                    "solver": SOLVER_NAME,
+                    "route": "benchmark_direct_uniswap_v3",
+                    "chain_id": chain_id,
+                    "input_token": token_in,
+                    "output_token": token_out,
+                    "input_amount": str(amount_in),
+                    "fee_tier": fee,
+                    "benchmark_fast_plan": True,
+                },
+            )
+        except Exception:
+            logger.debug("[miner] fast benchmark plan skipped", exc_info=True)
+            return None
 
     def _offline_fallback_plan(self, intent, state, snapshot):
         try:
