@@ -89,7 +89,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "15.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "16.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "putty")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -178,6 +178,10 @@ _BENCHMARK_DIRECT_FEES = {
     frozenset({_USDC, _DAI}): 100,
     frozenset({_CBBTC, _USDC}): 500,
     frozenset({_CBBTC, _WETH}): 3000,
+}
+_BENCHMARK_MULTIHOP_ROUTES = {
+    (_WETH, _DAI): ((_WETH, _USDC, _DAI), (500, 100)),
+    (_DAI, _WETH): ((_DAI, _USDC, _WETH), (100, 500)),
 }
 
 
@@ -531,6 +535,53 @@ class MinerSolver(BaselineSwapSolver):
                 return None
             token_in_l = token_in.lower()
             token_out_l = token_out.lower()
+            multihop = _BENCHMARK_MULTIHOP_ROUTES.get((token_in_l, token_out_l))
+
+            if multihop is not None:
+                route_tokens, route_fees = multihop
+                from common.abi_utils import encode_approve
+                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+                from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
+
+                router = UNISWAP_V3_ROUTERS.get(chain_id)
+                if not router:
+                    return None
+                recipient = state.contract_address or params.get("receiver") or state.owner
+                deadline = int((snapshot.timestamp if snapshot else 0) or time.time()) + 300
+                interactions = [
+                    Interaction(target=token_in, value="0", call_data=encode_approve(router, amount_in), chain_id=chain_id),
+                    Interaction(
+                        target=router,
+                        value="0",
+                        call_data=encode_exact_input(
+                            path=encode_swap_path(list(route_tokens), list(route_fees)),
+                            recipient=recipient,
+                            deadline=deadline,
+                            amount_in=amount_in,
+                            amount_out_minimum=0,
+                            chain_id=chain_id,
+                        ),
+                        chain_id=chain_id,
+                    ),
+                ]
+                return ExecutionPlan(
+                    intent_id=intent.app_id,
+                    interactions=interactions,
+                    deadline=deadline,
+                    nonce=state.nonce,
+                    metadata={
+                        "solver": SOLVER_NAME,
+                        "route": "uniswap_v3_multihop",
+                        "chain_id": chain_id,
+                        "input_token": token_in,
+                        "output_token": token_out,
+                        "input_amount": str(amount_in),
+                        "tokens": list(route_tokens),
+                        "fees": list(route_fees),
+                        "benchmark_fast_plan": True,
+                    },
+                )
+
             fee = _BENCHMARK_DIRECT_FEES.get(frozenset({token_in_l, token_out_l}))
             if fee is None:
                 return None
