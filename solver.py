@@ -89,7 +89,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "optimal-router-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "9.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "10.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -357,7 +357,7 @@ class MinerSolver(BaselineSwapSolver):
                 best = (final_out, _quoter._route_description(route), priced)
         return best
 
-    # ── plan: gas-gated safe split on deep MAJOR pairs (else baseline) ────────
+    # ── plan: gas-gated safe split + best-effort partial fill (else baseline) ──
     def generate_plan(self, intent, state, snapshot=None):  # type: ignore[override]
         if _enabled("MINER_DISABLE_SPLIT"):
             try:
@@ -366,7 +366,67 @@ class MinerSolver(BaselineSwapSolver):
                     return plan
             except Exception:
                 logger.exception("[miner] split routing failed; using baseline plan")
-        return super().generate_plan(intent, state, snapshot)
+        plan = super().generate_plan(intent, state, snapshot)
+        # BEST-EFFORT PARTIAL (v10): the baseline sets the swap amountOutMinimum = the
+        # order min, so when no route delivers the min the swap reverts → 0. Live-sim
+        # confirms the app does NOT hard-enforce min (it only reverts because OUR swap
+        # min is tight). For an UNFILLABLE order we relax the swap min to the deliverable
+        # so it executes a PARTIAL fill (delivered < min) → the scorer's partial-credit
+        # branch (ratio·0.5·W_OUTPUT) instead of a 0. Only touches already-failing orders;
+        # FILLABLE orders keep the tight min (user protection) — so no regression.
+        if _enabled("MINER_DISABLE_PARTIAL"):
+            try:
+                plan = self._best_effort_partial(intent, state, snapshot, plan)
+            except Exception:
+                logger.exception("[miner] best-effort partial failed; using baseline plan")
+        return plan
+
+    def _best_effort_partial(self, intent, state, snapshot, plan):
+        if plan is None:
+            return plan
+        m = plan.metadata or {}
+        # Only the baseline single-hop Uniswap V3 path (its metadata carries everything
+        # we need to rebuild). Multi-hop / Aerodrome unfillable → left unchanged.
+        if m.get("route") != "uniswap_v3":
+            return plan
+        try:
+            exp = int(m.get("expected_output", 0) or 0)
+            mn = int(m.get("min_output_amount", 0) or 0)
+        except (TypeError, ValueError):
+            return plan
+        if exp <= 0 or mn <= 0 or exp >= mn:
+            return plan  # fillable (or unknown) → keep tight min, protect the user
+        router = m.get("router")
+        fee = int(m.get("fee_tier", 0) or 0)
+        tin = m.get("input_token")
+        tout = m.get("output_token")
+        amt = int(m.get("input_amount", 0) or 0)
+        chain_id = int(m.get("chain_id", 8453) or 8453)
+        if not router or not fee or not tin or not tout or amt <= 0:
+            return plan
+        loose = int(exp * 0.99)  # deliver the best achievable instead of reverting on min
+        from common.abi_utils import encode_approve
+        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+        params = self._normalized_swap_params(intent, state)
+        recipient = state.contract_address or params.get("receiver") or state.owner
+        deadline = getattr(plan, "deadline", None) or ((snapshot.timestamp if snapshot else int(time.time())) + 300)
+        interactions = [
+            Interaction(target=tin, value="0", call_data=encode_approve(router, amt), chain_id=chain_id),
+            Interaction(
+                target=router, value="0",
+                call_data=encode_exact_input_single(
+                    token_in=tin, token_out=tout, fee=fee, recipient=recipient,
+                    deadline=deadline, amount_in=amt, amount_out_minimum=loose, chain_id=chain_id,
+                ),
+                chain_id=chain_id,
+            ),
+        ]
+        logger.info("[miner] best-effort partial: unfillable (exp=%d < min=%d) → loosen swap min to %d",
+                    exp, mn, loose)
+        return ExecutionPlan(
+            intent_id=plan.intent_id, interactions=interactions, deadline=deadline, nonce=plan.nonce,
+            metadata={**m, "best_effort_partial": True, "relaxed_amount_out_min": str(loose)},
+        )
 
     def _maybe_split_plan(self, intent, state, snapshot):
         params = self._normalized_swap_params(intent, state)
