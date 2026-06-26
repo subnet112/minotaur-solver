@@ -89,7 +89,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "optimal-router-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "9.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "11.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -357,16 +357,66 @@ class MinerSolver(BaselineSwapSolver):
                 best = (final_out, _quoter._route_description(route), priced)
         return best
 
-    # ── plan: gas-gated safe split on deep MAJOR pairs (else baseline) ────────
+    # ── plan: gas-gated safe split + multihop-router-version fix (else baseline) ──
     def generate_plan(self, intent, state, snapshot=None):  # type: ignore[override]
         if _enabled("MINER_DISABLE_SPLIT"):
             try:
                 plan = self._maybe_split_plan(intent, state, snapshot)
                 if plan is not None:
-                    return plan
+                    return self._fix_multihop_v2(plan)
             except Exception:
                 logger.exception("[miner] split routing failed; using baseline plan")
-        return super().generate_plan(intent, state, snapshot)
+        plan = super().generate_plan(intent, state, snapshot)
+        return self._fix_multihop_v2(plan)
+
+    # V2 SwapRouter exactInput selector (no deadline) and the chains that need it.
+    _V1_EXACT_INPUT = "0xc04b8d59"   # exactInput((bytes,address,uint256,uint256,uint256)) — WITH deadline
+    _V2_EXACT_INPUT = "0xb858183f"   # exactInput((bytes,address,uint256,uint256))         — NO deadline
+
+    def _fix_multihop_v2(self, plan):
+        """Repair the baseline's broken multi-hop calldata on SwapRouter02 chains.
+
+        ``v3_codec.encode_exact_input`` hardcodes the V1 ``exactInput`` selector
+        (``c04b8d59``, WITH a deadline field), but Base/Optimism/Arbitrum route to
+        SwapRouter02, which only exposes the V2 ``exactInput`` (NO deadline). The V1
+        selector hits a nonexistent function there → every multi-hop reverts (~46k gas,
+        hard 0). The single-hop encoder already gates V1/V2 by chain; multi-hop does not.
+
+        This post-process detects any V1 multi-hop calldata on a V2 chain and rewrites it
+        to V2 (decode params, drop the deadline, re-encode under the V2 selector). It only
+        ever touches calldata that would otherwise revert, so it cannot regress a working
+        plan. INSURANCE: the current live pack has no multi-hop scenario, so this is inert
+        today and only matters if the validator adds a 2-hop pair. Fully self-contained.
+        """
+        if plan is None or _enabled("MINER_DISABLE_MULTIHOP_FIX") is False:
+            return plan
+        try:
+            from strategies.dex_aggregator.v3_codec import SWAP_ROUTER_V2_CHAINS
+            from eth_abi import encode as _abi_encode, decode as _abi_decode
+        except Exception:
+            return plan
+        v1 = bytes.fromhex(self._V1_EXACT_INPUT[2:])
+        v2 = bytes.fromhex(self._V2_EXACT_INPUT[2:])
+        changed = False
+        for ix in (plan.interactions or []):
+            try:
+                if int(getattr(ix, "chain_id", 0) or 0) not in SWAP_ROUTER_V2_CHAINS:
+                    continue
+                cd = ix.call_data or ""
+                raw = bytes.fromhex(cd[2:] if cd.startswith("0x") else cd)
+                if raw[:4] != v1:
+                    continue
+                path, recipient, _deadline, amt_in, amt_min = _abi_decode(
+                    ["(bytes,address,uint256,uint256,uint256)"], raw[4:])[0]
+                ix.call_data = "0x" + (v2 + _abi_encode(
+                    ["(bytes,address,uint256,uint256)"],
+                    [(path, recipient, amt_in, amt_min)])).hex()
+                changed = True
+            except Exception:
+                continue  # never let the repair break an otherwise-valid plan
+        if changed:
+            logger.info("[miner] multihop fix: rewrote V1 exactInput → V2 (SwapRouter02) — would-revert avoided")
+        return plan
 
     def _maybe_split_plan(self, intent, state, snapshot):
         params = self._normalized_swap_params(intent, state)
