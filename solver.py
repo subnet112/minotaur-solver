@@ -89,7 +89,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "optimal-router-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "11.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "11.2.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -155,6 +155,17 @@ _RESOLVE_TIMEOUT_S = float(os.environ.get("MINER_RESOLVE_TIMEOUT_S", "2.5"))
 _MAX_CANDIDATES = int(os.environ.get("MINER_MAX_CANDIDATES", "10"))
 _SPLIT_MIN_GAIN = float(os.environ.get("MINER_SPLIT_MIN_GAIN", "1.02"))
 _SPLIT_RATIOS = (0.3, 0.5, 0.7)
+# Hard wall-clock bound on the split attempt. Its quote_hop loop does LIVE RPC, which
+# HANGS in a no-network screening sandbox (--network=none) until the socket times out —
+# blowing the 30s/plan budget before the offline baseline is reached → null plan → Stage-3
+# rejection. We compute the baseline FIRST and bound the split so a hung RPC can only
+# REPLACE the baseline, never block it into a null plan.
+_SPLIT_BUDGET_S = float(os.environ.get("MINER_SPLIT_BUDGET_S", "6.0"))
+# Wall-clock bound on the BASELINE plan call. The baseline quotes via a LIVE QuoterV2 RPC
+# (even with snapshot pools present), so a slow/flaky chain RPC can push it past the harness
+# 30s/plan limit → the call is killed → null plan → Stage-3 rejection. We bound it and, on
+# miss or RPC failure, fall back to a snapshot-only plan so we ALWAYS return within budget.
+_BASELINE_BUDGET_S = float(os.environ.get("MINER_BASELINE_BUDGET_S", "16.0"))
 
 
 def _enabled(disable_var: str) -> bool:
@@ -263,6 +274,31 @@ class MinerSolver(BaselineSwapSolver):
             ex.shutdown(wait=False, cancel_futures=True)
         return results
 
+    @staticmethod
+    def _bounded_call(fn, args=(), *, timeout):
+        """Run ``fn(*args)`` but NEVER block past ``timeout``. Uses a DAEMON thread so a
+        hung RPC (no-network sandbox) can't block process exit or wedge the next plan — we
+        join with a timeout and return None on miss so the caller falls back to baseline.
+        This keeps a hung split attempt from consuming the plan budget and starving the
+        offline baseline (the Stage-3 'null plan' rejection)."""
+        import threading
+        box: dict[str, Any] = {}
+
+        def _run():
+            try:
+                box["v"] = fn(*args)
+            except Exception:
+                logger.exception("[miner] bounded_call raised; → baseline")
+                box["v"] = None
+
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+        t.join(timeout)
+        if t.is_alive():
+            logger.warning("[miner] bounded_call timed out (%.1fs); abandoning → baseline", timeout)
+            return None
+        return box.get("v")
+
     def _parallel_seed(self, chain_id, pool_states) -> None:
         w3 = self._get_web3(int(chain_id))
         if w3 is None:
@@ -357,17 +393,88 @@ class MinerSolver(BaselineSwapSolver):
                 best = (final_out, _quoter._route_description(route), priced)
         return best
 
-    # ── plan: gas-gated safe split + multihop-router-version fix (else baseline) ──
+    # ── plan: bounded baseline → snapshot fallback → bounded split + multihop fix ──
     def generate_plan(self, intent, state, snapshot=None):  # type: ignore[override]
+        # 1) Baseline plan, but BOUNDED: it quotes via a live QuoterV2 RPC, which on a slow or
+        #    dead chain RPC blows the 30s/plan budget (or raises QuoterUnavailable) → the
+        #    null-plan Stage-3 rejection we were hitting every round. Bound it so a slow RPC
+        #    can't starve us. (super() is unavailable inside the worker fn → call the base
+        #    class explicitly.)
+        def _baseline():
+            return BaselineSwapSolver.generate_plan(self, intent, state, snapshot)
+        base_plan = self._bounded_call(_baseline, timeout=_BASELINE_BUDGET_S)
+        # 2) RPC-FREE SAFETY NET: if the baseline yielded nothing (RPC down/slow), build a
+        #    structurally-valid swap straight from the snapshot pools — guarantees a non-null
+        #    plan within budget. Only fires when baseline produced nothing, so it never
+        #    overrides an accurately-quoted plan.
+        if base_plan is None:
+            base_plan = self._offline_fallback_plan(intent, state, snapshot)
+        # 3) Gas-gated split, HARD-bounded (its quote_hop loop hangs with no network).
         if _enabled("MINER_DISABLE_SPLIT"):
             try:
-                plan = self._maybe_split_plan(intent, state, snapshot)
-                if plan is not None:
-                    return self._fix_multihop_v2(plan)
+                enhanced = self._bounded_call(
+                    self._maybe_split_plan, (intent, state, snapshot), timeout=_SPLIT_BUDGET_S)
+                if enhanced is not None:
+                    return self._fix_multihop_v2(enhanced)
             except Exception:
                 logger.exception("[miner] split routing failed; using baseline plan")
-        plan = super().generate_plan(intent, state, snapshot)
-        return self._fix_multihop_v2(plan)
+        return self._fix_multihop_v2(base_plan)
+
+    def _offline_fallback_plan(self, intent, state, snapshot):
+        """RPC-free safety net: a structurally-valid single-hop swap built straight from the
+        snapshot's pool_states, for when live quoting is unavailable/slow (the baseline needs
+        a live QuoterV2 RPC and returns NULL when the chain RPC is down/slow). Picks the
+        deepest direct pool in the snapshot and emits approve + exactInputSingle (chain-aware
+        V1/V2 encoding). Fires only when the baseline produced nothing, so it never overrides
+        an accurately-quoted plan — it can only turn a null/0 into an executing swap."""
+        try:
+            params = self._normalized_swap_params(intent, state)
+            tin = str(params.get("input_token", "") or "")
+            tout = str(params.get("output_token", "") or "")
+            amount_in = int(params.get("input_amount", 0) or 0)
+            if not tin or not tout or amount_in <= 0 or tin.startswith("eip155:") or tout.startswith("eip155:"):
+                return None
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+            router = UNISWAP_V3_ROUTERS.get(chain_id)
+            if not router:
+                return None
+            pool_states = self._get_pool_states(chain_id, snapshot) or {}
+            a, b = tin.lower(), tout.lower()
+            best = None  # (liquidity, fee) of the deepest direct pool
+            for p in pool_states.values():
+                if {str(p.get("token0", "")).lower(), str(p.get("token1", "")).lower()} != {a, b}:
+                    continue
+                liq = int(p.get("liquidity", "0") or 0)
+                if liq <= 0:
+                    continue
+                if best is None or liq > best[0]:
+                    best = (liq, int(p.get("fee", 3000) or 3000))
+            if best is None:
+                return None
+            min_out = int(params.get("min_output_amount", 0) or 0)
+            recipient = state.contract_address or params.get("receiver") or state.owner
+            ts = getattr(snapshot, "timestamp", None) if snapshot else None
+            deadline = int(ts or time.time()) + 300
+            from common.abi_utils import encode_approve
+            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+            interactions = [
+                Interaction(target=tin, value="0", call_data=encode_approve(router, amount_in), chain_id=chain_id),
+                Interaction(
+                    target=router, value="0",
+                    call_data=encode_exact_input_single(
+                        token_in=tin, token_out=tout, fee=best[1], recipient=recipient,
+                        deadline=deadline, amount_in=amount_in, amount_out_minimum=min_out, chain_id=chain_id),
+                    chain_id=chain_id),
+            ]
+            logger.info("[miner] offline fallback: snapshot single-hop %s→%s fee=%d (baseline produced no plan)",
+                        tin[:8], tout[:8], best[1])
+            return ExecutionPlan(
+                intent_id=intent.app_id, interactions=interactions, deadline=deadline,
+                nonce=state.nonce, metadata={"solver": "offline-fallback", "route": "uniswap_v3", "fee_tier": best[1]})
+        except Exception:
+            logger.exception("[miner] offline fallback failed")
+            return None
 
     # V2 SwapRouter exactInput selector (no deadline) and the chains that need it.
     _V1_EXACT_INPUT = "0xc04b8d59"   # exactInput((bytes,address,uint256,uint256,uint256)) — WITH deadline
