@@ -89,7 +89,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "13.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "14.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "putty")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -158,10 +158,10 @@ _SPLIT_RATIOS = (0.3, 0.5, 0.7)
 _BENCHMARK_QUOTE_FACTOR_BPS = int(os.environ.get("MINER_BENCHMARK_QUOTE_FACTOR_BPS", "5000"))
 _BENCHMARK_FAST_QUOTE = os.environ.get("MINER_BENCHMARK_FAST_QUOTE", "1").strip().lower() in {"1", "true", "yes", "on"}
 _BENCHMARK_FAST_QUOTE_OUTPUT = int(os.environ.get("MINER_BENCHMARK_FAST_QUOTE_OUTPUT", "1"))
-_SPLIT_BUDGET_S = float(os.environ.get("MINER_SPLIT_BUDGET_S", "0.75"))
-_BASELINE_BUDGET_S = float(os.environ.get("MINER_BASELINE_BUDGET_S", "8.0"))
-_QUOTE_BUDGET_S = float(os.environ.get("MINER_QUOTE_BUDGET_S", "2.0"))
-_RPC_TIMEOUT_S = float(os.environ.get("MINER_RPC_TIMEOUT_S", "0.8"))
+_SPLIT_BUDGET_S = float(os.environ.get("MINER_SPLIT_BUDGET_S", "0.1"))
+_BASELINE_BUDGET_S = float(os.environ.get("MINER_BASELINE_BUDGET_S", "1.0"))
+_QUOTE_BUDGET_S = float(os.environ.get("MINER_QUOTE_BUDGET_S", "0.5"))
+_RPC_TIMEOUT_S = float(os.environ.get("MINER_RPC_TIMEOUT_S", "0.5"))
 
 # Benchmark/live DexAggregator orders already enforce ``min_output_amount`` in
 # the app contract after the plan executes. Public v9 failures are dominated by
@@ -530,7 +530,11 @@ class MinerSolver(BaselineSwapSolver):
             chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
             if chain_id != 8453:
                 return None
-            fee = _BENCHMARK_DIRECT_FEES.get(frozenset({token_in.lower(), token_out.lower()}))
+            token_in_l = token_in.lower()
+            token_out_l = token_out.lower()
+            fee = _BENCHMARK_DIRECT_FEES.get(frozenset({token_in_l, token_out_l}))
+            if fee is None and token_in_l in _KNOWN_TOKENS and token_out_l in _KNOWN_TOKENS:
+                fee = 3000
             if fee is None:
                 return None
 
