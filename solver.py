@@ -59,7 +59,7 @@ from minotaur_subnet.shared.types import (
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-01-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "16.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "17.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king-01")
 
 # Base hub tokens — the pairs the benchmark trades against.
@@ -107,6 +107,16 @@ _HARD_PLAN_DEADLINE_S = min(_HARD_PLAN_DEADLINE_S, 29.5)
 # under the new 15s cap so cold quotes COMPLETE and score instead of forfeiting.
 _HARD_QUOTE_DEADLINE_S = float(os.environ.get("KING_HARD_QUOTE_DEADLINE_S", "14.0"))
 _HARD_QUOTE_DEADLINE_S = min(_HARD_QUOTE_DEADLINE_S, 14.5)
+
+# v17 SPEED: per-eth_call socket timeout. The baseline's _get_web3 builds the
+# HTTPProvider with NO request timeout, so a slow/hung validator RPC call blocks for
+# the socket default (tens of s) → the cold per-case discovery runs ~24-28 s and the
+# 62-case benchmark overruns the ~5-min round window (benchmark_window_elapsed → 0).
+# Capping EVERY eth_call at 1.5 s collapses that unbounded tail (~20x on a hung call):
+# healthy Base reads are well under 1.5 s, and a timed-out call just raises → caught by
+# the baseline's existing fallback, so no route/fillability is lost. This is the single
+# highest-leverage change to actually COMPLETE the benchmark inside a 5-min window.
+_RPC_TIMEOUT_S = float(os.environ.get("KING_RPC_TIMEOUT_S", "1.5"))
 
 # ── v14: blind-spot self-quote under-reporting ────────────────────────────────
 # On a champion BLIND SPOT the orchestrator scores against the CHALLENGER's own
@@ -186,6 +196,30 @@ class MinerSolver(BaselineSwapSolver):
         if tls is None:
             tls = self._king_tls = threading.local()
         return tls
+
+    # ── v17 SPEED: bounded Web3 — cap every eth_call at _RPC_TIMEOUT_S ─────────
+    def _get_web3(self, chain_id):  # type: ignore[override]
+        """Identical to the baseline cache, but the HTTPProvider carries a hard
+        per-request socket timeout so no single eth_call can hang the benchmark.
+        On any failure returns None → the baseline callers already fall back, so
+        no route or fillability is lost (only the unbounded latency is removed)."""
+        cid = int(chain_id)
+        cache = getattr(self, "_web3_cache", None)
+        if cache is not None and cid in cache:
+            return cache[cid]
+        rpc_url = self._rpc_urls.get(cid)
+        if not rpc_url:
+            return None
+        try:
+            from web3 import Web3
+            w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": _RPC_TIMEOUT_S}))
+            if w3.is_connected():
+                self._web3_cache[cid] = w3
+                return w3
+            logger.warning("king bounded web3 not connected for chain %d", cid)
+        except Exception:
+            logger.warning("king bounded web3 create failed for chain %d", cid, exc_info=True)
+        return None
 
     # ── init: warm the pool cache for the unseeded benchmark pairs ────────────
     def initialize(self, config: dict[str, Any]) -> None:
