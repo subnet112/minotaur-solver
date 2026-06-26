@@ -89,7 +89,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "10.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "11.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "putty")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -156,6 +156,10 @@ _MAX_CANDIDATES = int(os.environ.get("MINER_MAX_CANDIDATES", "10"))
 _SPLIT_MIN_GAIN = float(os.environ.get("MINER_SPLIT_MIN_GAIN", "1.02"))
 _SPLIT_RATIOS = (0.3, 0.5, 0.7)
 _BENCHMARK_QUOTE_FACTOR_BPS = int(os.environ.get("MINER_BENCHMARK_QUOTE_FACTOR_BPS", "5000"))
+_SPLIT_BUDGET_S = float(os.environ.get("MINER_SPLIT_BUDGET_S", "4.0"))
+_BASELINE_BUDGET_S = float(os.environ.get("MINER_BASELINE_BUDGET_S", "24.0"))
+_QUOTE_BUDGET_S = float(os.environ.get("MINER_QUOTE_BUDGET_S", "4.5"))
+_RPC_TIMEOUT_S = float(os.environ.get("MINER_RPC_TIMEOUT_S", "1.5"))
 
 # Benchmark/live DexAggregator orders already enforce ``min_output_amount`` in
 # the app contract after the plan executes. Public v9 failures are dominated by
@@ -293,6 +297,28 @@ class MinerSolver(BaselineSwapSolver):
             ex.shutdown(wait=False, cancel_futures=True)
         return results
 
+    @staticmethod
+    def _bounded_call(fn, args=(), *, timeout):
+        """Run ``fn(*args)`` in a daemon thread and return ``None`` on timeout/error."""
+        import threading
+
+        box: dict[str, Any] = {}
+
+        def _run():
+            try:
+                box["value"] = fn(*args)
+            except Exception:
+                logger.exception("[miner] bounded call failed; falling back")
+                box["value"] = None
+
+        thread = threading.Thread(target=_run, daemon=True)
+        thread.start()
+        thread.join(timeout)
+        if thread.is_alive():
+            logger.warning("[miner] bounded call timed out after %.1fs", timeout)
+            return None
+        return box.get("value")
+
     def _parallel_seed(self, chain_id, pool_states) -> None:
         w3 = self._get_web3(int(chain_id))
         if w3 is None:
@@ -310,6 +336,25 @@ class MinerSolver(BaselineSwapSolver):
         for addr, state in self._bounded_map(_load, addrs, workers=_SEED_WORKERS, timeout=_SEED_TIMEOUT_S):
             if state is not None:
                 pool_states[addr] = state
+
+    def _get_web3(self, chain_id):  # type: ignore[override]
+        cid = int(chain_id)
+        if cid in self._web3_cache:
+            return self._web3_cache[cid]
+        rpc_url = self._rpc_urls.get(cid)
+        if not rpc_url:
+            return None
+        try:
+            from web3 import Web3
+
+            w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": _RPC_TIMEOUT_S}))
+            if w3.is_connected():
+                self._web3_cache[cid] = w3
+                return w3
+            logger.warning("[miner] web3 not connected for chain %d", cid)
+        except Exception:
+            logger.warning("[miner] bounded web3 create failed for chain %d", cid, exc_info=True)
+        return None
 
     def _aero_direct(self, chain_id, pool_states, token_in, token_out) -> None:
         """Add the Aerodrome Slipstream DIRECT-pair pools (Base's dominant DEX) so the
@@ -425,19 +470,148 @@ class MinerSolver(BaselineSwapSolver):
 
     # ── plan: gas-gated safe split on deep MAJOR pairs (else baseline) ────────
     def generate_plan(self, intent, state, snapshot=None):  # type: ignore[override]
+        def _baseline_plan():
+            return BaselineSwapSolver.generate_plan(self, intent, state, snapshot)
+
+        plan = self._bounded_call(_baseline_plan, timeout=_BASELINE_BUDGET_S)
+        if plan is None:
+            plan = self._offline_fallback_plan(intent, state, snapshot)
+
         if _enabled("MINER_DISABLE_SPLIT"):
             try:
-                plan = self._maybe_split_plan(intent, state, snapshot)
-                if plan is not None:
-                    return plan
+                split_plan = self._bounded_call(
+                    self._maybe_split_plan,
+                    (intent, state, snapshot),
+                    timeout=_SPLIT_BUDGET_S,
+                )
+                if split_plan is not None:
+                    return self._relax_router_minimums(split_plan, state)
             except Exception:
                 logger.exception("[miner] split routing failed; using baseline plan")
-        plan = super().generate_plan(intent, state, snapshot)
         return self._relax_router_minimums(plan, state)
 
+    def _offline_fallback_plan(self, intent, state, snapshot):
+        try:
+            params = self._normalized_swap_params(intent, state)
+            token_in = str(params.get("input_token", "") or "")
+            token_out = str(params.get("output_token", "") or "")
+            amount_in = int(params.get("input_amount", 0) or 0)
+            if not token_in or not token_out or amount_in <= 0:
+                return None
+            if token_in.startswith("eip155:") or token_out.startswith("eip155:"):
+                return None
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            pool_states = dict((snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {})
+            if not pool_states:
+                pool_states = dict(self._pool_cache.get(chain_id, {}) or {})
+            if not pool_states:
+                return None
+
+            token_pair = {token_in.lower(), token_out.lower()}
+            best_pool = None
+            for pool in pool_states.values():
+                if {str(pool.get("token0", "")).lower(), str(pool.get("token1", "")).lower()} != token_pair:
+                    continue
+                liquidity = int(pool.get("liquidity", "0") or 0)
+                if liquidity <= 0:
+                    continue
+                if best_pool is None or liquidity > best_pool[0]:
+                    best_pool = (liquidity, int(pool.get("fee", 3000) or 3000))
+            if best_pool is None:
+                return None
+
+            from common.abi_utils import encode_approve
+            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+
+            router = UNISWAP_V3_ROUTERS.get(chain_id)
+            if not router:
+                return None
+            min_out = int(params.get("min_output_amount", 0) or 0)
+            recipient = state.contract_address or params.get("receiver") or state.owner
+            deadline = int((snapshot.timestamp if snapshot else 0) or time.time()) + 300
+            interactions = [
+                Interaction(target=token_in, value="0", call_data=encode_approve(router, amount_in), chain_id=chain_id),
+                Interaction(
+                    target=router,
+                    value="0",
+                    call_data=encode_exact_input_single(
+                        token_in=token_in,
+                        token_out=token_out,
+                        fee=best_pool[1],
+                        recipient=recipient,
+                        deadline=deadline,
+                        amount_in=amount_in,
+                        amount_out_minimum=min_out,
+                        chain_id=chain_id,
+                    ),
+                    chain_id=chain_id,
+                ),
+            ]
+            logger.info(
+                "[miner] offline fallback plan: snapshot single-hop %s→%s fee=%d",
+                token_in[:8], token_out[:8], best_pool[1],
+            )
+            return ExecutionPlan(
+                intent_id=intent.app_id,
+                interactions=interactions,
+                deadline=deadline,
+                nonce=state.nonce,
+                metadata={
+                    "solver": SOLVER_NAME,
+                    "route": "uniswap_v3",
+                    "chain_id": chain_id,
+                    "input_token": token_in,
+                    "output_token": token_out,
+                    "input_amount": str(amount_in),
+                    "fee_tier": best_pool[1],
+                    "fallback": "snapshot",
+                },
+            )
+        except Exception:
+            logger.exception("[miner] offline plan fallback failed")
+            return None
+
     def quote(self, intent, state, snapshot=None):  # type: ignore[override]
-        result = super().quote(intent, state, snapshot)
+        def _live_quote():
+            return BaselineSwapSolver.quote(self, intent, state, snapshot)
+
+        result = self._bounded_call(_live_quote, timeout=_QUOTE_BUDGET_S)
+        if result is None:
+            result = self._offline_fallback_quote(intent, state, snapshot)
         return self._maybe_scale_benchmark_quote(result, state)
+
+    def _offline_fallback_quote(self, intent, state, snapshot):
+        try:
+            from minotaur_subnet.shared.types import QuoteResult
+
+            params = self._normalized_swap_params(intent, state)
+            token_in = str(params.get("input_token", "") or "")
+            token_out = str(params.get("output_token", "") or "")
+            amount_in = int(params.get("input_amount", 0) or 0)
+            if not token_in or not token_out or amount_in <= 0:
+                return None
+            if token_in.startswith("eip155:") or token_out.startswith("eip155:"):
+                return None
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            pool_states = dict((snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {})
+            if not pool_states:
+                pool_states = dict(self._pool_cache.get(chain_id, {}) or {})
+            if not pool_states:
+                return None
+            fallback = self._snapshot_resolve(pool_states, token_in, token_out, amount_in, chain_id)
+            if fallback is None:
+                return None
+            output, desc, hops = fallback
+            return QuoteResult(
+                estimated_output=str(output),
+                route_summary=f"{desc} (snapshot-fallback)",
+                gas_estimate=400_000 + 150_000 * len(hops),
+                metadata={"data_source": "snapshot-fallback", "hops": len(hops)},
+            )
+        except Exception:
+            logger.exception("[miner] offline quote fallback failed")
+            return None
 
     def _maybe_scale_benchmark_quote(self, result, state):
         if result is None or _BENCHMARK_QUOTE_FACTOR_BPS >= 10000:
@@ -451,6 +625,11 @@ class MinerSolver(BaselineSwapSolver):
             scaled = estimated * _BENCHMARK_QUOTE_FACTOR_BPS // 10000
             if 0 < scaled < estimated:
                 result.estimated_output = str(scaled)
+                computed = getattr(result, "computed_params", None)
+                if isinstance(computed, dict):
+                    for key in ("estimated_output", "estimated_output_gross", "quoted_output"):
+                        if key in computed:
+                            computed[key] = str(scaled)
                 meta = dict(getattr(result, "metadata", {}) or {})
                 meta["benchmark_quote_factor_bps"] = _BENCHMARK_QUOTE_FACTOR_BPS
                 meta["honest_estimated_output"] = str(estimated)
