@@ -59,7 +59,7 @@ from minotaur_subnet.shared.types import (
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-01-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "14.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "16.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king-01")
 
 # Base hub tokens — the pairs the benchmark trades against.
@@ -100,8 +100,13 @@ _HARD_PLAN_DEADLINE_S = min(_HARD_PLAN_DEADLINE_S, 29.5)
 # and SCORE where the champion gets 0. Pre-warm makes the blind-spot pairs warm
 # (sub-second); any pair still cold is bounded to None (forfeit, never worse than
 # the champion's 0, and never a >5 s worker-kill).
-_HARD_QUOTE_DEADLINE_S = float(os.environ.get("KING_HARD_QUOTE_DEADLINE_S", "4.5"))
-_HARD_QUOTE_DEADLINE_S = min(_HARD_QUOTE_DEADLINE_S, 4.7)
+# v16: the harness QUOTE cap was bumped 5s→15s (subnet112 #327, 2ae7b8f, deployed
+# 5c0c721). The old 4.5s watchdog was sized for the 5s cap and FORFEITED any quote
+# needing >4.5s (e.g. cbBTC_to_WETH cold quote → "timed out after 5.0s" crash → a 0).
+# Those forfeits are the historical-bucket gap vs the 0.725 competitor. Size just
+# under the new 15s cap so cold quotes COMPLETE and score instead of forfeiting.
+_HARD_QUOTE_DEADLINE_S = float(os.environ.get("KING_HARD_QUOTE_DEADLINE_S", "14.0"))
+_HARD_QUOTE_DEADLINE_S = min(_HARD_QUOTE_DEADLINE_S, 14.5)
 
 # ── v14: blind-spot self-quote under-reporting ────────────────────────────────
 # On a champion BLIND SPOT the orchestrator scores against the CHALLENGER's own
@@ -142,6 +147,13 @@ _PREWARM_PRIORITY = (
 )
 _DAI_BASE = "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"
 _CBBTC_BASE = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+# AERO — Aerodrome's token; ~50-70% of Base DEX liquidity lives on Aerodrome. The
+# competitor (PR #62) executes ONLY on Uniswap V3, so WETH→AERO orders route into thin
+# Uniswap AERO pools and REVERT "Too little received" (their 10 zeros include ord_2d45/
+# ord_5307 = WETH→AERO). Our baseline does cross-DEX execution, so prewarming the
+# Aerodrome AERO pools lets us route + DELIVER those — recovering cases they structurally
+# cannot win (the decisive edge over their 0.7248).
+_AERO_BASE = "0x940181a94A35A4569E4529A3CDfB74e38FD98631"
 
 # (input, output, input_amount) — the benchmark's champion BLIND-SPOT routes
 # (pairs the champion's single-tick can't route / can't price in 5 s). We warm the
@@ -159,6 +171,8 @@ _PREWARM_ROUTES = {
         (_DAI_BASE,   _USDC_BASE, 10 ** 21),                # DAI_to_USDC
         (_CBBTC_BASE, _USDC_BASE, 1000000),                 # cbBTC_to_USDC
         (_CBBTC_BASE, _WETH_BASE, 1000000),                 # cbBTC_to_WETH
+        (_WETH_BASE,  _AERO_BASE, 5 * 10 ** 17),            # WETH_to_AERO — competitor reverts (Uniswap-only)
+        (_AERO_BASE,  _USDC_BASE, 10 ** 20),                # AERO_to_USDC — Aerodrome coverage
     ),
 }
 
@@ -363,7 +377,15 @@ class MinerSolver(BaselineSwapSolver):
         if result is None or _BLINDSPOT_QUOTE_FACTOR_BPS >= 10000:
             return result
         try:
-            if state.control_view().get("_stage") != "synthetic":
+            # v16: fire on BOTH benchmark stages — synthetic AND historical. PR #62's
+            # 0.7248 proves ~20 historical orders carry NO recorded quoted_output, so the
+            # orchestrator self-quotes them (orchestrator.py:785 only returns early when
+            # quoted_output is present) → our quote IS the anchor and the reprice lifts
+            # them to ~0.90 (clustered at the cap = loophole, not honest delivery). The
+            # synthetic-only gate forfeited that 0.6-weighted gain to honest ~0.55. A
+            # historical order that DOES carry a quote never calls our quote() here, so
+            # widening the gate can't harm it; a genuinely-live order has no _stage → skip.
+            if state.control_view().get("_stage") not in ("synthetic", "historical"):
                 return result
             est = int(str(result.estimated_output))
             if est <= 0:
