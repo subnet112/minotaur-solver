@@ -89,7 +89,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "optimal-router-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "11.3.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "11.4.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -174,6 +174,23 @@ _BASELINE_BUDGET_S = float(os.environ.get("MINER_BASELINE_BUDGET_S", "16.0"))
 # 1.0). The derived min scales down with it, so the swap still fills (no revert). Set
 # MINER_QUOTE_FACTOR=1.0 to instantly restore honest quoting if a live sandbag veto is enabled.
 _QUOTE_FACTOR = float(os.environ.get("MINER_QUOTE_FACTOR", "0.5"))
+# Wall-clock bound on the BENCHMARK PRE-PASS quote(). The baseline quote() does LIVE RPC
+# (_get_pool_states→_discover_pools, _ensure_pools_for_route factory discovery, and the
+# overridden parallel _resolve_best_route→QuoterV2). On a slow/dead validator RPC ANY of
+# those can hang per synthetic case and blow the round's benchmark window (with 3 miners a
+# single hung quote starves everyone). We bound super().quote() and, on timeout/failure,
+# return a quote derived RPC-FREE from the snapshot so we still report a (scaled) estimate
+# and NEVER hang. Kept small (< the per-plan budget). Set MINER_QUOTE_FACTOR=1.0 to also
+# disable the reprice. Sum-safe: this only caps quote(), independent of the plan path.
+_QUOTE_BUDGET_S = float(os.environ.get("MINER_QUOTE_BUDGET_S", "6.0"))
+# Per-eth_call socket timeout (C1, workflow-verified). The single highest-leverage speed
+# guard: it caps the ATOMIC unit of latency everywhere at once (is_connected + every
+# getPool/slot0/liquidity read + gas_price + the aero get_code precheck), so no single RPC
+# can hang and a daemon thread inside _bounded_map/_bounded_call can't be stuck the full
+# socket default. Collapses the unbounded worst case ~20x. A timed-out call raises → caught
+# by the existing try/except → offline/snapshot fallback still returns a fillable plan, so
+# no invariant breaks. Healthy Base calls are well under 1.5s. Tune via MINER_RPC_TIMEOUT_S.
+_RPC_TIMEOUT_S = float(os.environ.get("MINER_RPC_TIMEOUT_S", "1.5"))
 
 
 def _enabled(disable_var: str) -> bool:
@@ -325,6 +342,28 @@ class MinerSolver(BaselineSwapSolver):
             if state is not None:
                 pool_states[addr] = state
 
+    def _get_web3(self, chain_id):  # type: ignore[override]
+        """Bounded Web3: identical to the baseline cache, but the HTTPProvider carries a hard
+        per-request socket timeout (_RPC_TIMEOUT_S) so no single eth_call can hang. Caps the
+        atomic latency unit everywhere (C1). On any failure returns None → callers already
+        fall back to baseline/snapshot, so no route or fillability is lost."""
+        cid = int(chain_id)
+        if cid in self._web3_cache:
+            return self._web3_cache[cid]
+        rpc_url = self._rpc_urls.get(cid)
+        if not rpc_url:
+            return None
+        try:
+            from web3 import Web3
+            w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": _RPC_TIMEOUT_S}))
+            if w3.is_connected():
+                self._web3_cache[cid] = w3
+                return w3
+            logger.warning("[miner] web3 not connected for chain %d", cid)
+        except Exception:
+            logger.warning("[miner] bounded web3 create failed for chain %d", cid, exc_info=True)
+        return None
+
     def _aero_direct(self, chain_id, pool_states, token_in, token_out) -> None:
         """Add the Aerodrome Slipstream DIRECT-pair pools (Base's dominant DEX) so the
         resolver has an Aerodrome fill where the Uniswap route reverts. Bounded: direct
@@ -403,7 +442,23 @@ class MinerSolver(BaselineSwapSolver):
 
     # ── quote: report a conservative (scaled-down) estimate to lift outputScore ──
     def quote(self, intent, state, snapshot=None):  # type: ignore[override]
-        q = super().quote(intent, state, snapshot)
+        # BOUNDED: the baseline quote() does LIVE RPC (pool discovery + parallel QuoterV2),
+        # which on a slow/dead validator RPC HANGS per synthetic case and blows the round's
+        # benchmark window. Run it under _bounded_call (daemon thread + join timeout); on a
+        # miss/raise, fall back to an RPC-FREE quote derived straight from the snapshot pools
+        # so we ALWAYS return a (later-scaled) estimate within budget and never hang.
+        def _live():
+            return super(MinerSolver, self).quote(intent, state, snapshot)
+        q = self._bounded_call(_live, timeout=_QUOTE_BUDGET_S)
+        if q is None:
+            q = self._offline_fallback_quote(intent, state, snapshot)
+        if q is None:
+            # Last resort: a structurally-valid empty quote (0 estimate). map_quote_result_to_params
+            # then derives min_output=0 → fillable, never a null/exception that aborts the pre-pass.
+            from minotaur_subnet.shared.types import QuoteResult
+            return QuoteResult(estimated_output="0", route_summary="offline-empty", gas_estimate=0)
+        # Single reprice path — applies UNIFORMLY to both the live and the RPC-free quote, so
+        # the *0.5 ratio (I3) is applied exactly once (the fallback returns an HONEST estimate).
         if _QUOTE_FACTOR >= 1.0:
             return q  # honest quoting (sandbag-veto-safe)
         try:
@@ -424,6 +479,60 @@ class MinerSolver(BaselineSwapSolver):
         except (TypeError, ValueError, AttributeError):
             pass  # never let the reprice break a valid quote
         return q
+
+    def _offline_fallback_quote(self, intent, state, snapshot):
+        """RPC-FREE quote for when the live (RPC) quote times out / fails.
+
+        Reads ``snapshot.pool_states`` DIRECTLY (NOT ``_get_pool_states``, which does live
+        RPC ``_discover_pools``) and computes the best route's output with the pure-Python
+        ``pool_math.find_best_route`` (single-tick V3 math over the snapshot's
+        sqrtPriceX96/liquidity/fee — zero RPC, zero network). Returns an HONEST estimate as a
+        ``QuoteResult`` so the caller's single ``_QUOTE_FACTOR`` reprice (I3) applies once.
+        Returns ``None`` only when there's genuinely nothing in the snapshot to route on, so
+        the caller can emit a 0-estimate quote rather than ever hanging or raising."""
+        try:
+            from minotaur_subnet.shared.types import QuoteResult
+            from strategies.dex_aggregator import pool_math
+            params = self._normalized_swap_params(intent, state)
+            tin = str(params.get("input_token", "") or "")
+            tout = str(params.get("output_token", "") or "")
+            amount_in = int(params.get("input_amount", 0) or 0)
+            if not tin or not tout or amount_in <= 0:
+                return None
+            if tin.startswith("eip155:") or tout.startswith("eip155:"):
+                return None  # cross-chain: no RPC-free path; let caller emit 0-estimate
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            # SNAPSHOT-ONLY pools (no RPC). _get_pool_states would call _discover_pools when an
+            # RPC URL is configured — exactly the hang we are escaping — so read the snapshot.
+            pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
+            if not pool_states:
+                return None
+            # Multi-hop intermediaries are registry-only (no RPC) so two-hop snapshot routes work.
+            try:
+                mids = self._intermediaries_for_chain(chain_id) if chain_id else []
+            except Exception:
+                mids = []
+            route = pool_math.find_best_route(pool_states, tin, tout, amount_in, intermediaries=mids)
+            if route is None:
+                return None
+            output_amount, route_desc, hops = route
+            if output_amount <= 0:
+                return None
+            # Gas estimate mirrors the baseline's formula (_GAS_BASE_OVERHEAD 400k +
+            # _GAS_PER_HOP 150k/hop); inlined as literals since those are module-private to
+            # baseline_solver and not imported here. Used only for the gasScore (0.2 weight).
+            gas_estimate = 400_000 + 150_000 * len(hops)
+            logger.info("[miner] offline fallback quote: snapshot route %s→%s out=%d (%s) — live quote unavailable",
+                        tin[:8], tout[:8], output_amount, route_desc)
+            return QuoteResult(
+                estimated_output=str(output_amount),
+                route_summary=f"{tin[:10]}..→{tout[:10]}.. {route_desc} (offline)",
+                gas_estimate=gas_estimate,
+                metadata={"hops": len(hops), "data_source": "snapshot-offline"},
+            )
+        except Exception:
+            logger.exception("[miner] offline fallback quote failed")
+            return None
 
     # ── plan: bounded baseline → snapshot fallback → bounded split + multihop fix ──
     def generate_plan(self, intent, state, snapshot=None):  # type: ignore[override]
