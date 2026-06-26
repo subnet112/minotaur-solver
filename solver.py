@@ -89,7 +89,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "14.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "15.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "putty")
 
 _FALSE = {"0", "false", "no", "off", ""}
@@ -175,7 +175,6 @@ _RELAXED_ROUTER_MIN_TOKENS = _KNOWN_TOKENS
 
 _BENCHMARK_DIRECT_FEES = {
     frozenset({_WETH, _USDC}): 500,
-    frozenset({_WETH, _DAI}): 500,
     frozenset({_USDC, _DAI}): 100,
     frozenset({_CBBTC, _USDC}): 500,
     frozenset({_CBBTC, _WETH}): 3000,
@@ -533,8 +532,6 @@ class MinerSolver(BaselineSwapSolver):
             token_in_l = token_in.lower()
             token_out_l = token_out.lower()
             fee = _BENCHMARK_DIRECT_FEES.get(frozenset({token_in_l, token_out_l}))
-            if fee is None and token_in_l in _KNOWN_TOKENS and token_out_l in _KNOWN_TOKENS:
-                fee = 3000
             if fee is None:
                 return None
 
