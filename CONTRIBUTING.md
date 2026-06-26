@@ -10,6 +10,11 @@ Thanks for your interest in the Minotaur reference solver. This guide covers the
 
 ## Pull requests
 
+> **Submitting as a subnet-112 miner?** Two extra requirements apply on top of the steps below:
+>
+> - **Link your GitHub account to your hotkey first.** A submission's PR fork owner must be linked to your Bittensor hotkey, so nobody can submit your PR — or a copy of it — under their own key. Sign `MinotaurGithubLink:<github_login>:<hotkey>` with your hotkey, put `{"hotkey": "...", "signature": "..."}` in a **public gist on the account you submit from**, and `POST /v1/miner/link-github` with its id. A submission whose fork owner isn't linked to the submitting hotkey is rejected.
+> - **Base your PR on the _current_ `main`.** Each champion is squash-merged to `main`, so `main` always holds the current champion's `solver.py`. A PR forked from an older `main` will conflict and **cannot be adopted even if it wins the benchmark**. After any champion change, **rebase onto the latest `main` and resubmit** — the validator auto-closes now-stale submission PRs with a rebase reminder.
+
 1. Fork the repo and create a topic branch off `main`.
 2. Keep PRs focused — one logical change per PR. Drive-by formatting fixes belong in their own PR.
 3. Run the test suite locally before pushing:
