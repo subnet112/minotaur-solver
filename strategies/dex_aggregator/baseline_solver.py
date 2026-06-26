@@ -1289,6 +1289,7 @@ class BaselineSwapSolver(IntentSolver):
                     deadline=deadline,
                     amount_in=amount_in,
                     amount_out_minimum=min_output,
+                    chain_id=chain_id,
                 ),
                 chain_id=chain_id,
             ),

@@ -8,9 +8,10 @@ Two router variants are in production deployments today:
     deployments): exactInputSingle params drop ``deadline``.
 
 ``encode_exact_input_single`` auto-selects the variant from ``chain_id``.
-``encode_exact_input`` (the multi-hop path version) uses the V1 layout
-universally — V2 SwapRouter02 still exposes the deadline-included
-exactInput on every chain we deploy to.
+``encode_exact_input`` (the multi-hop path version) also auto-selects from
+``chain_id``: SwapRouter02 chains (Base/Optimism/Arbitrum) expose ONLY the
+no-deadline ``exactInput((bytes,address,uint256,uint256))`` selector, so the
+V1 deadline-included layout reverts there with empty returndata.
 """
 
 from eth_abi.abi import encode
@@ -31,8 +32,13 @@ EXACT_INPUT_SINGLE_SELECTOR = EXACT_INPUT_SINGLE_SELECTOR_V1
 SWAP_ROUTER_V2_CHAINS = {8453, 10, 42161}  # Base, Optimism, Arbitrum
 
 # Uniswap V3 SwapRouter.exactInput(ExactInputParams)
+# V1 (Ethereum mainnet / Anvil forks / Astrid Bridge EVM): WITH deadline.
 # Signature: exactInput((bytes,address,uint256,uint256,uint256))
 EXACT_INPUT_SELECTOR = bytes.fromhex("c04b8d59")
+
+# Uniswap V3 SwapRouter02 (Base/Optimism/Arbitrum): exactInput WITHOUT deadline.
+# Signature: exactInput((bytes,address,uint256,uint256))
+EXACT_INPUT_SELECTOR_V2 = bytes.fromhex("b858183f")
 
 
 def encode_exact_input_single(
@@ -90,11 +96,19 @@ def encode_exact_input(
     deadline: int,
     amount_in: int,
     amount_out_minimum: int,
+    chain_id: int = 0,
 ) -> str:
     """Encode Uniswap V3 SwapRouter.exactInput calldata (multi-hop).
 
     This encodes a multi-hop swap through a sequence of Uniswap V3 pools.
     The path is a packed encoding of (token, fee, token, fee, ..., token).
+
+    Auto-detects SwapRouter version by ``chain_id`` (mirrors
+    ``encode_exact_input_single``):
+
+    - V1 (Ethereum mainnet, Anvil forks): ExactInputParams includes ``deadline``.
+    - V2 (Base/Optimism/Arbitrum SwapRouter02): ``deadline`` is dropped; the V1
+      selector does not exist on these routers and reverts with empty returndata.
 
     Args:
         path: Packed-encoded swap path. Each segment is:
@@ -103,13 +117,29 @@ def encode_exact_input(
             Example for A -> B (fee 3000) -> C (fee 500):
                 A_addr(20) + 0x000bb8(3) + B_addr(20) + 0x0001f4(3) + C_addr(20)
         recipient: Address that receives the output tokens (0x-prefixed).
-        deadline: Unix timestamp after which the transaction reverts.
+        deadline: Unix timestamp after which the transaction reverts (V1 only).
         amount_in: Exact amount of input tokens to swap (in wei).
         amount_out_minimum: Minimum acceptable output amount (in wei).
+        chain_id: Target chain ID. Determines SwapRouter version.
 
     Returns:
         The ABI-encoded calldata as a 0x-prefixed hex string.
     """
+    if chain_id in SWAP_ROUTER_V2_CHAINS:
+        # SwapRouter02: exactInput params drop the deadline field.
+        encoded_params = encode(
+            ["(bytes,address,uint256,uint256)"],
+            [
+                (
+                    path,
+                    recipient,
+                    amount_in,
+                    amount_out_minimum,
+                )
+            ],
+        )
+        return "0x" + (EXACT_INPUT_SELECTOR_V2 + encoded_params).hex()
+
     encoded_params = encode(
         ["(bytes,address,uint256,uint256,uint256)"],
         [
