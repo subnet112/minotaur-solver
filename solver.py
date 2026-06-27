@@ -565,29 +565,15 @@ class KingSplitSolver(MinerSolver):
     # Slipstream plans, so the above 4 UniV3 ABIs cover every loosenable swap.)
 
     def generate_plan(self, intent, state, snapshot=None) -> ExecutionPlan:
-        t0 = time.time()
-        base_plan = super().generate_plan(intent, state, snapshot)
-        # FIX (the 10 reverts): the baseline sets the swap's amountOutMinimum to
-        # quote*(1-0.5%), but the route's quote overestimates actual delivery by
-        # more than 0.5% on some pairs (multihop especially) -> the router reverts
-        # "Too little received" and the case scores 0. The app contract ALREADY
-        # enforces the order's true min_output on the final delivered amount, so
-        # the swap's internal floor is redundant; we lower it to the order's real
-        # min so the swap fills instead of reverting. Recovers king's blind spots
-        # (WETH_to_DAI etc.). Verified cause on a Base fork. Never raises.
-        try:
-            params = self._normalized_swap_params(intent, state)
-            user_min = int(params.get("min_output_amount") or 0)
-            base_plan = self._loosen_swap_min(base_plan, user_min)
-        except Exception:
-            logger.exception("king-split: amountOutMin loosen skipped (non-fatal)")
-        try:
-            split = self._try_split(intent, state, t0)
-            if split is not None:
-                return split
-        except Exception:
-            logger.exception("king-split: split routing skipped (using king plan)")
-        return base_plan
+        # HONEST KING v17 (no split, no min-loosen). Evidence (Base fork + a real
+        # benchmark) showed: (a) the amountOutMinimum-loosen was a no-op — the
+        # live 0xFae4 contract enforces the order's min on the delivered amount,
+        # not the swap's internal floor, so the reverts were never "Too little
+        # received" on the live path; and (b) the 2-way split added latency on top
+        # of king's resolution that risked the watchdog budget (WETH_to_DAI came
+        # back as an empty/timed-out plan in the benchmark). Both add-ons are
+        # removed: ship king v17 unchanged, which fills WETH_to_DAI cleanly.
+        return super().generate_plan(intent, state, snapshot)
 
     def _loosen_swap_min(self, plan, user_min):
         """Re-encode each swap interaction's amountOutMinimum down to ``user_min``
@@ -654,7 +640,7 @@ class KingSplitSolver(MinerSolver):
         m = super().metadata()
         return SolverMetadata(
             name=_SPLIT_NAME, version=_SPLIT_VERSION, author=_SPLIT_AUTHOR,
-            description="king v17 baseline + optimal 2-way split routing (marginal-price)",
+            description="king v17 (honest baseline; split/loosen add-ons removed)",
             supported_chains=m.supported_chains,
             supported_intent_types=m.supported_intent_types,
         )
