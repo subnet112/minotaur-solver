@@ -52,6 +52,7 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import (
     AppIntentDefinition,
     ExecutionPlan,
+    Interaction,
     IntentState,
     QuoteResult,
 )
@@ -59,7 +60,7 @@ from minotaur_subnet.shared.types import (
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "17.1.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "17.2.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "putty")
 
 # Base hub tokens — the pairs the benchmark trades against.
@@ -531,9 +532,17 @@ class MinerSolver(BaselineSwapSolver):
                 chain_id = int(getattr(state, "chain_id", 0) or 0)
             except (TypeError, ValueError):
                 chain_id = 0
+            raw = _raw_params(state)
+            target = str(raw.get("input_token") or raw.get("tokenIn") or raw.get("token_in") or "")
+            if not (target.startswith("0x") and len(target) == 42):
+                target = "0x0000000000000000000000000000000000000000"
             return ExecutionPlan(
-                intent_id=getattr(state, "intent_id", "") or "",
-                interactions=[],
+                intent_id=(
+                    getattr(intent, "app_id", "")
+                    or getattr(state, "intent_id", "")
+                    or ""
+                ),
+                interactions=[Interaction(target=target, value="0", call_data="0x", chain_id=chain_id)],
                 deadline=int(time.time()) + 300,
                 nonce=int(getattr(state, "nonce", 0) or 0),
                 metadata={"route": "watchdog_timeout_fallback", "chain_id": chain_id},
