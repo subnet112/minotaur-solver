@@ -554,9 +554,33 @@ class KingSplitSolver(MinerSolver):
 
     _SPLIT_TOTAL_BUDGET_S = 27.0
 
+    # Swap calldata ABIs -> (eth-abi tuple type, index of amountOutMinimum within it).
+    _SWAP_MIN_SPEC = {
+        "0x414bf389": ("(address,address,uint24,address,uint256,uint256,uint256,uint160)", 6),  # UniV3 V1 exactInputSingle
+        "0x04e45aaf": ("(address,address,uint24,address,uint256,uint256,uint160)", 5),           # SwapRouter02 exactInputSingle
+        "0xc04b8d59": ("(bytes,address,uint256,uint256,uint256)", 4),                             # V1 exactInput (multihop)
+        "0xb858183f": ("(bytes,address,uint256,uint256)", 3),                                     # SwapRouter02 exactInput
+    }
+    # (Aerodrome v2 split legs already use amountOutMin=0; king emits only UniV3/
+    # Slipstream plans, so the above 4 UniV3 ABIs cover every loosenable swap.)
+
     def generate_plan(self, intent, state, snapshot=None) -> ExecutionPlan:
         t0 = time.time()
         base_plan = super().generate_plan(intent, state, snapshot)
+        # FIX (the 10 reverts): the baseline sets the swap's amountOutMinimum to
+        # quote*(1-0.5%), but the route's quote overestimates actual delivery by
+        # more than 0.5% on some pairs (multihop especially) -> the router reverts
+        # "Too little received" and the case scores 0. The app contract ALREADY
+        # enforces the order's true min_output on the final delivered amount, so
+        # the swap's internal floor is redundant; we lower it to the order's real
+        # min so the swap fills instead of reverting. Recovers king's blind spots
+        # (WETH_to_DAI etc.). Verified cause on a Base fork. Never raises.
+        try:
+            params = self._normalized_swap_params(intent, state)
+            user_min = int(params.get("min_output_amount") or 0)
+            base_plan = self._loosen_swap_min(base_plan, user_min)
+        except Exception:
+            logger.exception("king-split: amountOutMin loosen skipped (non-fatal)")
         try:
             split = self._try_split(intent, state, t0)
             if split is not None:
@@ -564,6 +588,30 @@ class KingSplitSolver(MinerSolver):
         except Exception:
             logger.exception("king-split: split routing skipped (using king plan)")
         return base_plan
+
+    def _loosen_swap_min(self, plan, user_min):
+        """Re-encode each swap interaction's amountOutMinimum down to ``user_min``
+        (the order's real floor, which the contract enforces anyway), removing the
+        baseline's quote-relative slippage floor that reverts on quote-overestimate.
+        In-place; never raises (a decode miss leaves the interaction untouched)."""
+        if not plan or not getattr(plan, "interactions", None):
+            return plan
+        from eth_abi import decode as _dec, encode as _enc
+        for ix in plan.interactions:
+            cd = ix.call_data or ""
+            spec = self._SWAP_MIN_SPEC.get(cd[:10].lower())
+            if not spec:
+                continue
+            types, idx = spec
+            try:
+                fields = list(_dec([types], bytes.fromhex(cd[10:]))[0])
+                if int(fields[idx]) <= user_min:
+                    continue
+                fields[idx] = user_min
+                ix.call_data = "0x" + cd[2:10] + _enc([types], [tuple(fields)]).hex()
+            except Exception:
+                continue
+        return plan
 
     def _try_split(self, intent, state, t0):
         # Never split inside king's reentrant (substrate->EVM) path.
