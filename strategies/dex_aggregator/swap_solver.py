@@ -188,7 +188,7 @@ class SwapIntentProcessor(IntentProcessor):
                     recipient=recipient,
                     deadline=deadline,
                     amount_in=input_amount,
-                    amount_out_minimum=min_output_amount,
+                    amount_out_minimum=0,  # contract enforces order min; tight swap-leg min self-reverts ("Too little received") on tight-margin orders
                     chain_id=chain_id,
                 ),
                 chain_id=chain_id,

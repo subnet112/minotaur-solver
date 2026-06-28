@@ -1283,7 +1283,7 @@ class BaselineSwapSolver(IntentSolver):
                     recipient=recipient,
                     deadline=deadline,
                     amount_in=amount_in,
-                    amount_out_minimum=min_output,
+                    amount_out_minimum=0,  # contract enforces the order min (gained<minAmountOut -> 0); a tight swap-leg min only self-reverts ("Too little received") on tight-margin orders the whole field loses
                 ),
                 chain_id=chain_id,
             ),
@@ -1450,7 +1450,7 @@ class BaselineSwapSolver(IntentSolver):
                     recipient=recipient,
                     deadline=deadline,
                     amount_in=amount_in,
-                    amount_out_minimum=min_output,
+                    amount_out_minimum=0,  # contract enforces the order min (gained<minAmountOut -> 0); a tight swap-leg min only self-reverts ("Too little received") on tight-margin orders the whole field loses
                 ),
                 chain_id=chain_id,
             ),
@@ -1541,7 +1541,7 @@ class BaselineSwapSolver(IntentSolver):
                     recipient=recipient,
                     deadline=deadline,
                     amount_in=amount_in,
-                    amount_out_minimum=min_output,
+                    amount_out_minimum=0,  # contract enforces the order min (gained<minAmountOut -> 0); a tight swap-leg min only self-reverts ("Too little received") on tight-margin orders the whole field loses
                 ),
                 chain_id=chain_id,
             ),

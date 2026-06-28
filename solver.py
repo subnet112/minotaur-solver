@@ -56,7 +56,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "score-aware-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.1.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.2.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 # Base (chain 8453) only — the whole live order book is Base.
