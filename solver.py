@@ -56,7 +56,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "score-aware-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.2.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.3.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -208,10 +208,41 @@ class MinerSolver(BaselineSwapSolver):
         caught here and degraded to a best-effort plan rather than a process
         crash + uncovered zero."""
         try:
-            return self._generate_plan_impl(intent, state, snapshot)
+            plan = self._generate_plan_impl(intent, state, snapshot)
         except Exception:
             logger.exception("[solver] generate_plan top-level guard caught; last-resort plan")
-            return self._last_resort_plan(intent, state, snapshot)
+            plan = self._last_resort_plan(intent, state, snapshot)
+        return self._slim_plan_metadata(plan, state)
+
+    @staticmethod
+    def _slim_plan_metadata(plan, state):
+        """Strip the SHIPPED plan's metadata to the functional minimum.
+
+        ``plan.metadata`` is JSON-serialized into the on-chain ``scoreIntent``
+        CALLDATA (16 gas per non-zero byte). Our verbose keys
+        (``solver``/``route``/``venue_param``/``expected_output``) cost
+        ~2.0k gas per swap (MEASURED: 125-byte metadata = +2024 gas vs empty,
+        = +0.0004 gasScore js) for ZERO scoring benefit — they are read only
+        off the *internal candidate* plans during venue selection
+        (``_score_aware_singlehop``), never off the shipped plan. The scorer
+        and the simulator's scoreIntent path read output/route/chain from the
+        intent_order + interactions, NOT from plan.metadata; the harness even
+        re-adds ``chain_id`` itself. We keep ``chain_id`` only (the irreducible
+        floor the multichain simulator needs to pick a backend). On-chain
+        OUTPUT and validity are unchanged — only calldata bytes shrink."""
+        if plan is None:
+            return plan
+        try:
+            old = plan.metadata or {}
+            cid = old.get("chain_id")
+            if cid is None:
+                cid = getattr(state, "chain_id", None)
+            if cid is None and getattr(plan, "interactions", None):
+                cid = getattr(plan.interactions[0], "chain_id", None)
+            plan.metadata = {"chain_id": int(cid)} if cid is not None else {}
+        except Exception:
+            logger.exception("[solver] metadata slim skipped; leaving plan metadata as-is")
+        return plan
 
     def _generate_plan_impl(self, intent, state, snapshot=None):
         def _baseline():
