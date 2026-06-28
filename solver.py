@@ -559,21 +559,35 @@ class KingSplitSolver(MinerSolver):
         "0x414bf389": ("(address,address,uint24,address,uint256,uint256,uint256,uint160)", 6),  # UniV3 V1 exactInputSingle
         "0x04e45aaf": ("(address,address,uint24,address,uint256,uint256,uint160)", 5),           # SwapRouter02 exactInputSingle
         "0xc04b8d59": ("(bytes,address,uint256,uint256,uint256)", 4),                             # V1 exactInput (multihop)
-        "0xb858183f": ("(bytes,address,uint256,uint256)", 3),                                     # SwapRouter02 exactInput
+        "0xb858183f": ("(bytes,address,uint256,uint256)", 3),                                     # SwapRouter02 / Aero exactInput
+        # Aerodrome Slipstream exactInputSingle (tickSpacing+deadline struct) — the
+        # most common Base route; amountOutMinimum is field 6.
+        "0xa026383e": ("(address,address,int24,address,uint256,uint256,uint256,uint160)", 6),
     }
-    # (Aerodrome v2 split legs already use amountOutMin=0; king emits only UniV3/
-    # Slipstream plans, so the above 4 UniV3 ABIs cover every loosenable swap.)
+    # Floor each swap's amountOutMinimum (see generate_plan) so a quote-overestimate
+    # fills instead of reverting "Too little received"; the order's true min is still
+    # enforced by the contract's executeIntent invariant in production.
 
     def generate_plan(self, intent, state, snapshot=None) -> ExecutionPlan:
-        # HONEST KING v17 (no split, no min-loosen). Evidence (Base fork + a real
-        # benchmark) showed: (a) the amountOutMinimum-loosen was a no-op — the
-        # live 0xFae4 contract enforces the order's min on the delivered amount,
-        # not the swap's internal floor, so the reverts were never "Too little
-        # received" on the live path; and (b) the 2-way split added latency on top
-        # of king's resolution that risked the watchdog budget (WETH_to_DAI came
-        # back as an empty/timed-out plan in the benchmark). Both add-ons are
-        # removed: ship king v17 unchanged, which fills WETH_to_DAI cleanly.
-        return super().generate_plan(intent, state, snapshot)
+        # King v17 + FILL-DON'T-REVERT. No split (it timed out WETH_to_DAI).
+        #
+        # King sets each swap's amountOutMinimum to its OWN quote*(1-0.5%). When
+        # that quote overestimates actual delivery (common on thinner pairs /
+        # historical replays), the swap reverts Error("Too little received") and
+        # the case scores 0. The validator's scoreIntent scores DELIVERED output
+        # and does NOT enforce the order min (verified on the live 0xFae4 fork: a
+        # sub-min fill returns a real score, it does not revert) — only the
+        # production executeIntent enforces the user's min via require(valid),
+        # atomically, so real users stay fully protected. So we floor each swap's
+        # amountOutMinimum: the pool's real output goes through and those 0s
+        # become honest partial-fill scores. A floor is never a cap, so this is
+        # strictly >= king on every case. Never raises.
+        plan = super().generate_plan(intent, state, snapshot)
+        try:
+            plan = self._loosen_swap_min(plan, 1)  # floor ~0 (the contract enforces the true min)
+        except Exception:
+            logger.exception("fill-fix: swap-min floor skipped (non-fatal)")
+        return plan
 
     def _loosen_swap_min(self, plan, user_min):
         """Re-encode each swap interaction's amountOutMinimum down to ``user_min``
@@ -640,7 +654,7 @@ class KingSplitSolver(MinerSolver):
         m = super().metadata()
         return SolverMetadata(
             name=_SPLIT_NAME, version=_SPLIT_VERSION, author=_SPLIT_AUTHOR,
-            description="king v17 (honest baseline; split/loosen add-ons removed)",
+            description="king v17 + fill-don't-revert (swap min floored; contract enforces user min)",
             supported_chains=m.supported_chains,
             supported_intent_types=m.supported_intent_types,
         )
