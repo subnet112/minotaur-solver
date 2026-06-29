@@ -56,7 +56,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "26.1.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "28.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -85,7 +85,17 @@ _AERO_QUOTER = "0x254cf9e1e6e233aa1ac962cb9b05b2cfeaae15b0"  # Aerodrome Slipstr
 _AERO_V2_ROUTER = "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43"  # Aerodrome Router
 _UNI_FEES = (100, 500, 3000, 10000)
 _UNI_WETH_DAI_PATH_FEES = ((3000, 100), (500, 100), (100, 100), (10000, 100))
-_UNI_TWOHOP_FEES = ((500, 500), (100, 100), (500, 100), (100, 500))
+# Non-kg (exotic) hub sweep. Exotic/volatile tokens (e.g. INCH) live in the 1%
+# (fee=10000) tier, NOT the 1bp/5bp tiers — so the hub->exotic (and exotic->hub)
+# legs MUST probe 3000/10000, or the only real pool is missed and we silently
+# fall back to the champion's suboptimal base route. (v0.23.0/v26.1 only swept
+# 100/500 on both legs -> missed the WETH->INCH 1% pool -> lost USDC->INCH by +13bps.)
+_UNI_TWOHOP_FEES = (
+    (500, 500), (100, 100), (500, 100), (100, 500),
+    (100, 10000), (500, 10000), (3000, 10000),   # liquid hub IN, exotic OUT (1% tier)
+    (10000, 100), (10000, 500), (10000, 3000),   # exotic IN (1% tier), liquid hub OUT
+    (100, 3000), (3000, 100),                      # 0.3% exotic tier
+)
 _AERO_TICK_SPACINGS = (1, 50, 100, 200, 2000)
 _AERO_TWOHOP_TICKS = ((100, 1), (1, 100), (100, 100), (1, 1))
 # king v26: a WIDER multi-hop fee/tick sweep used ONLY for known-good (deep,
