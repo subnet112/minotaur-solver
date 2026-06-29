@@ -30,11 +30,14 @@ from strategies.dex_aggregator.quoter import (  # noqa: E402
 )
 from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS  # noqa: E402
 from strategies.dex_aggregator import aerodrome as _aero  # noqa: E402
+from solver import MinerSolver  # noqa: E402
 
 CHAIN = 8453
 WETH = "0x4200000000000000000000000000000000000006"
 USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 DAI = "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"
+AERO = "0x940181a94A35A4569E4529A3CDfB74e38FD98631"
+UNKNOWN = "0x0000000000000000000000000000000000000BAD"
 CONTRACT = "0x00000000000000000000000000000000C0FFEE01"
 OWNER = "0x00000000000000000000000000000000000A11CE"
 ORDER_MIN = 990_000_000_000_000_000  # the user's signed min (final-hop guard)
@@ -75,8 +78,26 @@ def _decode_aero_swap(call_data):
     )
 
 
+def _decode_uni_exact_input(call_data):
+    raw = bytes.fromhex(call_data[2:])
+    # CHAIN (8453/Base) uses SwapRouter02, whose multi-hop exactInput drops the
+    # deadline field (selector b858183f). The V1 selector c04b8d59 does not exist
+    # on SwapRouter02 and reverts with empty returndata.
+    assert raw[:4].hex() == "b858183f"  # SwapRouter02 exactInput(bytes path,...) no deadline
+    (path, recipient, amount_in, min_out) = decode(
+        ["(bytes,address,uint256,uint256)"], raw[4:]
+    )[0]
+    return dict(path=path, recipient=recipient, amount_in=amount_in, min_out=min_out)
+
+
 def _solver():
     s = BaselineSwapSolver()
+    s.initialize({"chain_ids": [CHAIN], "rpc_urls": {CHAIN: "http://anvil"}})
+    return s
+
+
+def _miner_solver():
+    s = MinerSolver()
     s.initialize({"chain_ids": [CHAIN], "rpc_urls": {CHAIN: "http://anvil"}})
     return s
 
@@ -96,6 +117,24 @@ def _state():
             "receiver": OWNER,
         },
     )
+
+
+def _quoted_state():
+    state = _state()
+    state.raw_params["quoted_output"] = str(ORDER_MIN * 2)
+    state.sync_extra()
+    return state
+
+
+def _quoted_state_for(output_token, *, min_output=ORDER_MIN, quoted_output=None):
+    state = _state()
+    state.raw_params.update({
+        "output_token": output_token,
+        "min_output_amount": str(min_output),
+        "quoted_output": str(quoted_output if quoted_output is not None else min_output * 2),
+    })
+    state.sync_extra()
+    return state
 
 
 def _uni_then_aero_hops():
@@ -250,6 +289,131 @@ def test_cross_dex_plan_uses_slippage_when_no_order_min():
     assert swap2["min_out"] == expected * (10000 - slippage) // 10000
 
 
+def test_miner_relaxes_router_min_for_quote_enriched_dai_multihop():
+    s = _miner_solver()
+    s._normalized_swap_params = lambda intent, state: {
+        "input_token": WETH, "output_token": DAI, "input_amount": 10 ** 18,
+        "min_output_amount": ORDER_MIN, "receiver": OWNER, "fee_tier": 500,
+    }
+    h1 = {
+        "dex": DEX_UNISWAP_V3,
+        "pool_state": {"dex": DEX_UNISWAP_V3, "token0": WETH, "token1": USDC},
+        "fee": 500, "token_in": WETH, "token_out": USDC,
+        "amount_in": 10 ** 18, "amount_out": 175_000_000,
+    }
+    h2 = {
+        "dex": DEX_UNISWAP_V3,
+        "pool_state": {"dex": DEX_UNISWAP_V3, "token0": USDC, "token1": DAI},
+        "fee": 100, "token_in": USDC, "token_out": DAI,
+        "amount_in": 175_000_000, "amount_out": 174_000_000,
+    }
+    s._get_pool_states = lambda chain_id, snapshot: {"0xP": {"token0": WETH, "token1": DAI}}
+    s._ensure_pools_for_route = lambda *a, **k: None
+    s._derive_prices = lambda *a, **k: {}
+    s._resolve_best_route = lambda *a, **k: (174_000_000, "v3 2-hop", [h1, h2])
+
+    plan = s.generate_plan(_intent(), _quoted_state())
+    swap = _decode_uni_exact_input(plan.interactions[1].call_data)
+
+    assert swap["min_out"] == 0
+    assert plan.metadata["router_amount_out_minimum"] == "0"
+    assert plan.metadata["app_min_output_amount"] == str(ORDER_MIN)
+
+
+def test_miner_fast_benchmark_plan_uses_aerodrome_for_weth_aero():
+    s = _miner_solver()
+    amount_in = 10 ** 15
+    state = IntentState(
+        contract_address=CONTRACT,
+        chain_id=CHAIN,
+        nonce=3,
+        owner=OWNER,
+        raw_params={
+            "input_token": WETH,
+            "output_token": AERO,
+            "input_amount": str(amount_in),
+            "min_output_amount": "4656149939793434877",
+            "quoted_output": "4901210462940457766",
+            "receiver": OWNER,
+        },
+        control={"_stage": "historical", "_intent_function": "swap"},
+    )
+
+    plan = s.generate_plan(_intent(), state)
+
+    assert len(plan.interactions) == 2
+    aero_router = _aero.AERODROME_SLIPSTREAM_ROUTER[CHAIN]
+    spender, approved = _decode_approve(plan.interactions[0].call_data)
+    assert _addr_eq(plan.interactions[0].target, WETH)
+    assert _addr_eq(spender, aero_router)
+    assert approved == amount_in
+
+    swap = _decode_aero_swap(plan.interactions[1].call_data)
+    assert _addr_eq(plan.interactions[1].target, aero_router)
+    assert _addr_eq(swap["token_in"], WETH)
+    assert _addr_eq(swap["token_out"], AERO)
+    assert swap["tick_spacing"] == 200
+    assert swap["amount_in"] == amount_in
+    assert swap["min_out"] == 0
+    assert plan.metadata["route"] == "benchmark_direct_aerodrome_slipstream"
+
+
+@pytest.mark.parametrize(
+    "output_token,min_output,quoted_output",
+    [
+        (USDC, 170_000_000, 175_000_000),
+        (AERO, 4_656_149_939_793_434_877, 4_901_210_462_940_457_766),
+    ],
+)
+def test_miner_relaxes_router_min_for_quote_enriched_known_singlehop(output_token, min_output, quoted_output):
+    s = _miner_solver()
+    s._normalized_swap_params = lambda intent, state: {
+        "input_token": WETH, "output_token": output_token, "input_amount": 10 ** 18,
+        "min_output_amount": min_output, "receiver": OWNER, "fee_tier": 500,
+    }
+    hop = {
+        "dex": DEX_UNISWAP_V3,
+        "pool_state": {"dex": DEX_UNISWAP_V3, "fee": 500},
+        "fee": 500, "token_in": WETH, "token_out": output_token,
+        "amount_in": 10 ** 18, "amount_out": quoted_output,
+    }
+    s._get_pool_states = lambda chain_id, snapshot: {"0xP": {"token0": WETH, "token1": output_token}}
+    s._ensure_pools_for_route = lambda *a, **k: None
+    s._derive_prices = lambda *a, **k: {}
+    s._resolve_best_route = lambda *a, **k: (quoted_output, "v3 direct", [hop])
+
+    plan = s.generate_plan(_intent(), _quoted_state_for(output_token, min_output=min_output, quoted_output=quoted_output))
+    swap = _decode_uni_v2_swap(plan.interactions[1].call_data)
+
+    assert swap["min_out"] == 0
+    assert plan.metadata["router_amount_out_minimum"] == "0"
+    assert plan.metadata["app_min_output_amount"] == str(min_output)
+
+
+def test_miner_keeps_router_min_for_unknown_quote_enriched_pair():
+    s = _miner_solver()
+    s._normalized_swap_params = lambda intent, state: {
+        "input_token": WETH, "output_token": UNKNOWN, "input_amount": 10 ** 18,
+        "min_output_amount": 170_000_000, "receiver": OWNER, "fee_tier": 500,
+    }
+    hop = {
+        "dex": DEX_UNISWAP_V3,
+        "pool_state": {"dex": DEX_UNISWAP_V3, "fee": 500},
+        "fee": 500, "token_in": WETH, "token_out": UNKNOWN,
+        "amount_in": 10 ** 18, "amount_out": 175_000_000,
+    }
+    s._get_pool_states = lambda chain_id, snapshot: {"0xP": {"token0": WETH, "token1": UNKNOWN}}
+    s._ensure_pools_for_route = lambda *a, **k: None
+    s._derive_prices = lambda *a, **k: {}
+    s._resolve_best_route = lambda *a, **k: (175_000_000, "v3 direct", [hop])
+
+    plan = s.generate_plan(_intent(), _quoted_state_for(UNKNOWN, min_output=170_000_000, quoted_output=175_000_000))
+    swap = _decode_uni_v2_swap(plan.interactions[1].call_data)
+
+    assert swap["min_out"] == 170_000_000
+    assert "router_amount_out_minimum" not in plan.metadata
+
+
 # ── executability matrix ───────────────────────────────────────────────────
 
 
@@ -334,3 +498,43 @@ class _Plan:
     def __init__(self):
         self.metadata = {}
         self.interactions = []
+
+
+def test_encode_exact_input_is_chain_aware_multihop_selector():
+    """Regression: multi-hop exactInput must match the router deployed per chain.
+
+    Base/Optimism/Arbitrum run SwapRouter02, whose exactInput drops the deadline
+    field (selector b858183f). The legacy V1 selector c04b8d59 (with deadline)
+    does not exist on SwapRouter02 and reverts with empty returndata — the root
+    cause of the WETH_to_DAI benchmark revert.
+    """
+    from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
+
+    path = encode_swap_path([WETH, USDC, DAI], [500, 100])
+
+    # SwapRouter02 chains -> no-deadline layout.
+    for v2_chain in (8453, 10, 42161):
+        cd = encode_exact_input(
+            path=path, recipient=OWNER, deadline=1_000,
+            amount_in=10 ** 18, amount_out_minimum=0, chain_id=v2_chain,
+        )
+        raw = bytes.fromhex(cd[2:])
+        assert raw[:4].hex() == "b858183f", f"chain {v2_chain} must use SwapRouter02 selector"
+        # Tuple decodes cleanly without a deadline field.
+        decode(["(bytes,address,uint256,uint256)"], raw[4:])
+
+    # V1 chains (e.g. Ethereum mainnet / Anvil fork) keep the deadline layout.
+    cd_v1 = encode_exact_input(
+        path=path, recipient=OWNER, deadline=1_000,
+        amount_in=10 ** 18, amount_out_minimum=0, chain_id=1,
+    )
+    raw_v1 = bytes.fromhex(cd_v1[2:])
+    assert raw_v1[:4].hex() == "c04b8d59"
+    decode(["(bytes,address,uint256,uint256,uint256)"], raw_v1[4:])
+
+    # Default (chain_id omitted) preserves the historical V1 behavior.
+    cd_default = encode_exact_input(
+        path=path, recipient=OWNER, deadline=1_000,
+        amount_in=10 ** 18, amount_out_minimum=0,
+    )
+    assert bytes.fromhex(cd_default[2:])[:4].hex() == "c04b8d59"
