@@ -774,15 +774,17 @@ class MinerSolver(BaselineSwapSolver):
                 amount_in=amount_in, amount_out_minimum=0)
             route_tag = "uniswap_v3_multihop"
         elif cand["venue"] == "pancake_v3":
-            # PancakeSwap V3 SmartRouter — SwapRouter02-style exactInputSingle
-            # (0x04e45aaf, no deadline). min=0 (contract enforces order min).
+            # PancakeSwap V3 SmartRouter exactInputSingle is the V1-style struct WITH
+            # deadline (selector 0x414bf389), NOT SwapRouter02 — fork-verified: the
+            # no-deadline ABI reverts (dropped swap), this one fills.
+            # (tokenIn,tokenOut,fee,recipient,deadline,amountIn,amountOutMinimum,sqrtLimit)
             from eth_abi import encode as _abi_encode
             from eth_utils import to_checksum_address as _ck
             router = _PANCAKE_ROUTER
             enc = _abi_encode(
-                ["(address,address,uint24,address,uint256,uint256,uint160)"],
-                [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(amount_in), 0, 0)])
-            call = "0x" + ("04e45aaf" + enc.hex())
+                ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
+                [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
+            call = "0x" + ("414bf389" + enc.hex())
             route_tag = "pancake_v3"
         elif cand["venue"] == "aerodrome_slipstream":
             from strategies.dex_aggregator import aerodrome as _aero
