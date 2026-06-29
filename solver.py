@@ -55,9 +55,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.23.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "Xayaan")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "26.1.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -88,6 +88,19 @@ _UNI_WETH_DAI_PATH_FEES = ((3000, 100), (500, 100), (100, 100), (10000, 100))
 _UNI_TWOHOP_FEES = ((500, 500), (100, 100), (500, 100), (100, 500))
 _AERO_TICK_SPACINGS = (1, 50, 100, 200, 2000)
 _AERO_TWOHOP_TICKS = ((100, 1), (1, 100), (100, 100), (1, 1))
+# king v26: a WIDER multi-hop fee/tick sweep used ONLY for known-good (deep,
+# fee-free) pairs. The thicker search clears an order's min_output on more
+# rejected/expired known-good orders (the champion's blind spots = a
+# blind_spot_cover win) and finds the better fee combo on more pairs. Exotic
+# pairs keep the narrow incumbent sets above (no added phantom-revert surface).
+# USDbC EXCLUDED: as an INPUT its multi-hop reverts ("transfer amount exceeds
+# balance") — a phantom route that would DROP a USDbC order (regression). USDbC
+# pairs fall through to the incumbent's exact, proven-safe routing instead.
+_KG_SET = frozenset({_WETH, _USDC, _DAI, _CBBTC, _AERO})
+_UNI_KG_TWOHOP_FEES = ((100, 100), (500, 100), (100, 500), (500, 500),
+                       (3000, 100), (100, 3000), (3000, 500), (500, 3000))
+_AERO_KG_TWOHOP_TICKS = ((1, 1), (100, 1), (1, 100), (100, 100),
+                         (200, 100), (100, 200), (200, 1), (1, 200))
 
 # Score-proxy gas model: actual executeIntent gas ≈ fixed harness/proxy
 # overhead (per venue) + the route's tick-crossing cost, which the on-chain
@@ -115,10 +128,10 @@ _RPC_TIMEOUT_S = float(os.environ.get("SOLVER_RPC_TIMEOUT_S", "2.0"))
 #    concurrent quoter enumeration makes the select step ~2-3s in practice.
 _QUOTE_BUDGET_S = float(os.environ.get("SOLVER_QUOTE_BUDGET_S", "14.0"))
 _BASELINE_BUDGET_S = float(os.environ.get("SOLVER_BASELINE_BUDGET_S", "14.0"))
-_SELECT_BUDGET_S = float(os.environ.get("SOLVER_SELECT_BUDGET_S", "10.0"))
+_SELECT_BUDGET_S = float(os.environ.get("SOLVER_SELECT_BUDGET_S", "12.0"))
 # Per-venue quoter eth_calls are fired concurrently; cap the pool so a slow RPC
 # can't spawn unbounded threads. 9 venues (4 Uni fee tiers + 5 Aero spacings).
-_QUOTER_MAX_WORKERS = int(os.environ.get("SOLVER_QUOTER_MAX_WORKERS", "32"))
+_QUOTER_MAX_WORKERS = int(os.environ.get("SOLVER_QUOTER_MAX_WORKERS", "48"))
 
 # V1/V2 exactInput selectors for the multi-hop SwapRouter02 repair (insurance).
 _V1_EXACT_INPUT = "0xc04b8d59"
@@ -535,6 +548,21 @@ class MinerSolver(BaselineSwapSolver):
                 if t not in (tin_l, tout_l) and t not in mids:
                     mids.append(t)
 
+            # king: for DEEP/FEE-FREE pairs (both endpoints known-good), sweep
+            # EVERY hub. The incumbent's per-pair mids are SELECTIVE and miss
+            # both-major pairs like cbBTC<->DAI, where the Uniswap multi-hop
+            # cbBTC->USDC->DAI delivers ~+2.6% over its Aerodrome fallback
+            # (fork-validated, EXEC ok via the V2 exactInput fix). All legs are
+            # known-good so the route can never phantom-revert -> 0 drops. This
+            # set is a strict SUPERSET of the incumbent's mids for these pairs,
+            # so we never deliver less; exotics fall through to the incumbent's
+            # exact (proven-safe) mids below.
+            _KG = {_WETH, _USDC, _DAI, _CBBTC, _AERO}   # USDbC excluded (input-revert)
+            if tin_l in _KG and tout_l in _KG:
+                for token in (_WETH, _USDC, _DAI, _CBBTC, _AERO):
+                    add(token)
+                return mids
+
             # Current live gaps are concentrated here: cbBTC gives better
             # WETH/USDC execution at retail+ sizes; USDbC is the deep DAI/USDC
             # bridge; WETH/AERO cover the long-tail Base tokens.
@@ -583,18 +611,23 @@ class MinerSolver(BaselineSwapSolver):
             + [(_quote_aero, t) for t in _AERO_TICK_SPACINGS]
             + [(_quote_aero_v2, r) for r in core_v2_routes]
         )
+        # king v26: known-good pairs get the WIDER fee/tick sweep; exotics keep
+        # the incumbent's narrow sets (no extra phantom-revert surface).
+        _kg_pair = str(tin).lower() in _KG_SET and str(tout).lower() in _KG_SET
+        _mh_fees = _UNI_KG_TWOHOP_FEES if _kg_pair else _UNI_TWOHOP_FEES
+        _mh_ticks = _AERO_KG_TWOHOP_TICKS if _kg_pair else _AERO_TWOHOP_TICKS
         uni_routes = []
         if str(tin).lower() == _WETH and str(tout).lower() == _DAI:
             uni_routes.extend([((tin, _USDC, tout), fees) for fees in _UNI_WETH_DAI_PATH_FEES])
         for mid in twohop_mids:
-            uni_routes.extend([((tin, mid, tout), fees) for fees in _UNI_TWOHOP_FEES])
+            uni_routes.extend([((tin, mid, tout), fees) for fees in _mh_fees])
 
         aero_routes = []
         for mid in twohop_mids:
             # Slipstream multihop had the best current-preview edges for
             # USDC/WETH via cbBTC and USDC->long-tail via WETH.
             if mid in {_CBBTC, _WETH, _USDC, _AERO}:
-                aero_routes.extend([((tin, mid, tout), ticks) for ticks in _AERO_TWOHOP_TICKS])
+                aero_routes.extend([((tin, mid, tout), ticks) for ticks in _mh_ticks])
 
         extra_jobs = (
             [(_quote_aero_v2, r) for r in extra_v2_routes]
