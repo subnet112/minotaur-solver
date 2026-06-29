@@ -1,45 +1,40 @@
-"""Minotaur SN112 DEX-aggregator solver — score-aware multi-venue router.
+"""Minotaur SN112 DEX-aggregator solver — MAX-OUTPUT best-execution router.
 
-Design (validated on the fork-scoring oracle, run_oracle_delta.py)
-------------------------------------------------------------------
-Under the live "reference-bar" scoring every challenger is anchored on the
-CHAMPION's quote, so for the deep canonical book (USDC<->WETH ~80% of orders)
-the output term is PINNED at outputScore≈0.505 for everyone who delivers the
-true market output — the champion sandbags its own quote ~1%, so ratio≈1.010
-no matter what. That makes:
+⚠️ STANDBY BUILD (v1.4.0-maxout). Ships ONLY when the subnet owner replaces the
+quote-ratio scoring with "tokens delivered". Under the OLD scoring every solver
+was pinned at outputScore≈0.5 (ratio≈1) on the deep book so it was a gas race;
+this variant is for the NEW regime where the score IS the delivered output, so
+best-execution routing (split / multi-hop / full venue coverage) becomes the
+decisive lever and the gas tilt is dropped from selection.
 
-    finalScore = 0.8*outputScore + 0.2*gasScore
+Design
+------
+Same never-null / bounded / slim-metadata scaffolding as the live score-aware
+router (proven on the fork oracle), but the route SELECTION is replaced:
 
-a GAS race on the canonical book, and an OUTPUT race only on the long-tail
-(exotic pairs where ratio<1). This solver optimizes the actual finalScore
-directly instead of "max output then maybe reroute for gas":
+  1. Build the baseline plan (bounded; offline-snapshot fallback). The baseline
+     already enumerates direct + 2-hop routes via the on-chain QuoterV2 and
+     picks the MAX-OUTPUT route, with recipient=app and amount_out_minimum=0 —
+     so it is our multi-hop candidate AND a guaranteed valid fallback.
+  2. MAX-OUTPUT SELECTION — pick the route that delivers the MOST output tokens:
+       a. exact-quote every single-hop venue (Uniswap V3 tiers 100/500/3000/
+          10000 + Aerodrome Slipstream tickSpacings 1/50/100/200/2000) → best
+          single by OUTPUT (no gas tilt; tie-break leaner gas only at equal out).
+       b. SPLIT: allocate amountIn across the top distinct pools (a bounded
+          fraction grid, exact-quoted) to cut price impact on large/thin orders.
+          Only adopted when it beats the best single by >_SPLIT_MIN_GAIN_BPS so
+          we never double the gas for a negligible output gain (measured: deep
+          canonical pools see ≤0.06% from splitting even at 100 ETH; thin/exotic
+          pairs are won by MULTI-HOP, not splitting).
+       c. MULTI-HOP: the baseline's best 2-hop output (expected_output).
+     Choose argmax(output) among {single, split, multi} that clears the order
+     min. Every leg keeps recipient=app (the scorer counts pool→app AND
+     app→receiver ≈ 2× delivered) and amount_out_minimum=0 (no self-revert).
+  3. Never crash / never return None: top-level guards on generate_plan and
+     quote, bounded calls under the 30s/15s kills, offline-snapshot fallback,
+     best-effort single-hop, and a final structurally-valid empty plan.
 
-  1. Build the baseline plan (bounded; offline-snapshot fallback if RPC is slow)
-     so we always have a valid plan in hand.
-  2. SCORE-AWARE SELECTION: exact-quote every single-hop venue for the pair —
-     Uniswap V3 (fee tiers 100/500/3000/10000) AND Aerodrome Slipstream
-     (tickSpacings 1/50/100/200/2000) — via their on-chain QuoterV2 (output +
-     gasEstimate), then pick the route that maximizes a faithful score proxy
-        score ~= 0.4*(out/best_out) - 0.2*(model_gas/1e6)
-     i.e. take the leaner-gas Uniswap single-hop when it delivers within the
-     gas-justified margin of Aerodrome (the canonical-book gas win), and take
-     whatever delivers the MOST output when ratio<1 (the long-tail output win,
-     output being 4x the gas weight). Always require out >= the order min so the
-     swap clears the on-chain veto — never a zero.
-  3. The selected single-hop also COVERS the champion's blind spots for free:
-     a direct Uniswap WETH/DAI single-hop fills WETH->DAI (which the champion's
-     multi-hop reverts on), and a working Uniswap tier fills the tiny WETH->USDC
-     case the champion's Aerodrome route reverts on.
-  4. Never crash / never return None: a top-level try/except guard on BOTH
-     generate_plan and quote (so even an undefined-variable bug — the exact way
-     the live king died — degrades to a fallback instead of crashing the
-     process), bounded calls under the harness 30s/15s kills, an offline
-     snapshot fallback, a best-effort default-fee single-hop, and a final
-     structurally-valid empty plan together guarantee 0 crashes and 0 nulls.
-
-No quote sandbagging. ``quote()`` reports the honest baseline estimate (the
-old _QUOTE_FACTOR under-report is neutralized by the validator's reference-bar
-fix, so it is removed — dead weight and risk).
+No quote sandbagging — ``quote()`` reports the honest baseline estimate.
 """
 
 from __future__ import annotations
@@ -55,8 +50,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "score-aware-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.3.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "maxout-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.4.0-maxout")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -79,6 +74,23 @@ _AERO_TICK_SPACINGS = (1, 50, 100, 200, 2000)
 _OFFSET_UNI = int(os.environ.get("SOLVER_OFFSET_UNI", "285000"))
 _OFFSET_AERO = int(os.environ.get("SOLVER_OFFSET_AERO", "318000"))
 _GAS_MULTIHOP = int(os.environ.get("SOLVER_GAS_MULTIHOP", "490000"))
+
+# ── MAX-OUTPUT split tuning ──────────────────────────────────────────────────
+# A split adds one extra approve+swap leg per extra pool (≈+400k gas/leg). Only
+# adopt a split when it beats the best single hop by MORE than this margin, so we
+# never trade a large gas hit for a negligible output gain. MEASURED on a pinned
+# Base fork: deep canonical pools (WETH/USDC both ways, cbBTC/USDC) gain only
+# 0.002–0.06% from splitting even at 20–100 ETH / 200k USDC; the real output
+# wins on thin/exotic pairs come from MULTI-HOP, not splitting. Set to 0 once the
+# "tokens delivered" scoring is confirmed to drop the gas term entirely (then
+# every wei of extra output is free and we want the full split gain).
+_SPLIT_MIN_GAIN_BPS = int(os.environ.get("SOLVER_SPLIT_MIN_GAIN_BPS", "10"))
+# Max distinct pools to split across (caps extra gas + quoter fan-out).
+_SPLIT_MAX_LEGS = int(os.environ.get("SOLVER_SPLIT_MAX_LEGS", "3"))
+# Allocation granularity for the split search (units of 1/_SPLIT_GRID).
+_SPLIT_GRID = int(os.environ.get("SOLVER_SPLIT_GRID", "4"))
+# Bound for the split quoter fan-out so a slow RPC can't blow the select budget.
+_SPLIT_BUDGET_S = float(os.environ.get("SOLVER_SPLIT_BUDGET_S", "4.0"))
 
 # Per-eth_call socket timeout so no single RPC can hang the plan.
 _RPC_TIMEOUT_S = float(os.environ.get("SOLVER_RPC_TIMEOUT_S", "2.0"))
@@ -414,8 +426,10 @@ class MinerSolver(BaselineSwapSolver):
         return cands
 
     def _score_aware_singlehop(self, intent, state, snapshot, base_plan):
-        """Pick the finalScore-optimal single-hop route across Uniswap +
-        Aerodrome and build its plan. Falls back to base_plan on anything."""
+        """MAX-OUTPUT selection: pick the route that DELIVERS THE MOST output
+        tokens across {best single hop, best split, baseline multi-hop}. Keeps
+        the method name so the bounded-call wiring in _generate_plan_impl is
+        unchanged. Falls back to base_plan on anything."""
         try:
             params = self._normalized_swap_params(intent, state)
             tin = str(params.get("input_token", "") or "")
@@ -429,48 +443,237 @@ class MinerSolver(BaselineSwapSolver):
                 return base_plan
 
             cands = self._enumerate_singlehop_quotes(chain_id, tin, tout, amount_in)
-            if not cands:
-                return base_plan
 
-            best_out = max(c["out"] for c in cands)
+            # Baseline multi-hop output (recipient=app, min=0 already; the
+            # baseline picks the max-output direct+2hop route via the quoter).
             bp_out = 0
             if base_plan is not None:
                 try:
                     bp_out = int((base_plan.metadata or {}).get("expected_output", 0) or 0)
                 except (TypeError, ValueError):
                     bp_out = 0
-            ref = max(best_out, bp_out, 1)
 
-            def score(out, gas_model):
-                return 0.4 * (out / ref) - 0.2 * (gas_model / 1e6)
-
-            # Only consider single-hops that clear the order min — a single-hop
-            # below min would revert (e.g. the THIN direct WETH/DAI pool delivers
-            # ~150 DAI vs the 354 DAI min, while the real route is the multi-hop
-            # WETH->USDC->DAI). If NO single-hop clears the min, keep the baseline
-            # plan (its multi-hop route + the V2 calldata fix execute it).
+            # ── candidate A: best SINGLE hop by OUTPUT (clearing min) ──────────
             usable = [c for c in cands if min_out <= 0 or c["out"] >= min_out]
-            if not usable:
-                return base_plan
-            # Primary key: score proxy; tie-break: lower quoter gasEstimate.
-            best = max(usable, key=lambda c: (round(score(c["out"], c["gas_model"]), 9), -c["gas_est"]))
+            best_single = (max(usable, key=lambda c: (c["out"], -c["gas_est"]))
+                           if usable else None)
+            single_out = best_single["out"] if best_single else 0
 
-            # Don't regress a baseline route that scores higher (e.g. a 2-hop
-            # that genuinely out-delivers every single-hop venue).
+            # ── candidate B: best SPLIT by OUTPUT (only if it materially beats
+            #    the single hop — splitting doubles gas per extra leg) ──────────
+            split = None
+            if best_single is not None and len(cands) >= 2:
+                split = self._bounded_call(
+                    self._best_split,
+                    (chain_id, tin, tout, amount_in, cands, min_out),
+                    timeout=_SPLIT_BUDGET_S)
+            split_out = split["out"] if split else 0
+            # gate: require split to beat single by > _SPLIT_MIN_GAIN_BPS
+            if split is not None and single_out > 0:
+                gain_bps = (split_out - single_out) * 10000 // single_out
+                if gain_bps <= _SPLIT_MIN_GAIN_BPS:
+                    split = None
+                    split_out = 0
+
+            # ── pick the argmax-OUTPUT candidate that clears the order min ─────
+            options = []
+            if best_single is not None:
+                options.append(("single", single_out))
+            if split is not None and (min_out <= 0 or split_out >= min_out):
+                options.append(("split", split_out))
             if base_plan is not None and bp_out > 0 and (min_out <= 0 or bp_out >= min_out):
-                m = (base_plan.metadata or {})
-                route = str(m.get("route") or "").lower()
-                bp_gas = (_GAS_MULTIHOP if ("multi" in route or "hop" in route)
-                          else (_OFFSET_AERO + 110000 if "aero" in route
-                                else _OFFSET_UNI + 100000))
-                if score(bp_out, bp_gas) >= score(best["out"], best["gas_model"]):
-                    return base_plan
+                options.append(("multi", bp_out))
+            if not options:
+                return base_plan
+            winner, _ = max(options, key=lambda o: o[1])
 
+            if winner == "multi":
+                return base_plan
+            if winner == "split":
+                sp_plan = self._build_split_plan(
+                    intent, state, snapshot, split, tin, tout, amount_in, chain_id)
+                if sp_plan is not None:
+                    return sp_plan
+                # fall through to single if the split plan couldn't be built
             return self._build_singlehop_plan(
-                intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                intent, state, snapshot, best_single, tin, tout, amount_in, chain_id)
         except Exception:
-            logger.exception("[solver] score-aware selection failed; keeping base plan")
+            logger.exception("[solver] max-output selection failed; keeping base plan")
             return base_plan
+
+    # ── max-output split search + plan builder ───────────────────────────────
+    def _best_split(self, chain_id, tin, tout, amount_in, cands, min_out):
+        """Find the output-maximizing allocation of amountIn across the top
+        distinct single-hop pools. Each leg hits a DISTINCT pool, so quoting a
+        fraction against each pool independently (vs current chain state) and
+        summing is faithful — the legs don't share reserves. Returns
+        {'out': total_out, 'legs': [(venue, param, leg_amount_in, leg_out), ...]}
+        or None. Bounded fan-out; never raises."""
+        try:
+            from eth_abi import encode as _enc, decode as _dec
+            from eth_utils import keccak as _kk, to_checksum_address as _ck
+            import concurrent.futures
+            w3 = self._get_web3(int(chain_id))
+            if w3 is None:
+                return None
+            # top-N distinct pools by full-amount output
+            pools = sorted(cands, key=lambda c: c["out"], reverse=True)[:_SPLIT_MAX_LEGS]
+            if len(pools) < 2:
+                return None
+
+            uni_sel = _kk(text="quoteExactInputSingle((address,address,uint256,uint24,uint160))")[:4]
+            aero_sel = _kk(text="quoteExactInputSingle((address,address,uint256,int24,uint160))")[:4]
+
+            def _q(pool, amt):
+                if amt <= 0:
+                    return 0
+                try:
+                    if pool["venue"] == "aerodrome_slipstream":
+                        p = _enc(["(address,address,uint256,int24,uint160)"],
+                                 [(_ck(tin), _ck(tout), int(amt), int(pool["param"]), 0)])
+                        data = "0x" + (aero_sel + p).hex(); to = _AERO_QUOTER
+                    else:
+                        p = _enc(["(address,address,uint256,uint24,uint160)"],
+                                 [(_ck(tin), _ck(tout), int(amt), int(pool["param"]), 0)])
+                        data = "0x" + (uni_sel + p).hex(); to = _UNI_QUOTER
+                    r = w3.eth.call({"to": _ck(to), "data": data})
+                    out, _a, _t, _g = _dec(["uint256", "uint160", "uint32", "uint256"], r)
+                    return int(out)
+                except Exception:
+                    return 0
+
+            G = _SPLIT_GRID
+            # quote each pool at each grid fraction k/G concurrently.
+            curve = {i: [0] * (G + 1) for i in range(len(pools))}
+            # full-amount (k=G) outputs are already known from cands.
+            for i, pool in enumerate(pools):
+                curve[i][G] = pool["out"]
+            jobs = [(i, k) for i in range(len(pools)) for k in range(1, G)]
+            with concurrent.futures.ThreadPoolExecutor(max_workers=_QUOTER_MAX_WORKERS) as ex:
+                futs = {ex.submit(_q, pools[i], amount_in * k // G): (i, k) for (i, k) in jobs}
+                for fu in concurrent.futures.as_completed(futs):
+                    i, k = futs[fu]
+                    try:
+                        curve[i][k] = fu.result()
+                    except Exception:
+                        curve[i][k] = 0
+
+            # DP over G units: dp[k] = (best_total_out, alloc list of units/pool)
+            NEG = -1
+            dp = [(NEG, None)] * (G + 1)
+            dp[0] = (0, [0] * len(pools))
+            for i in range(len(pools)):
+                ndp = [(NEG, None)] * (G + 1)
+                for k in range(G + 1):
+                    best = (NEG, None)
+                    for j in range(0, k + 1):
+                        if dp[k - j][0] < 0:
+                            continue
+                        oj = curve[i][j]
+                        if j > 0 and oj <= 0:
+                            continue
+                        tot = dp[k - j][0] + oj
+                        if tot > best[0]:
+                            alloc = list(dp[k - j][1]); alloc[i] = j
+                            best = (tot, alloc)
+                    ndp[k] = best
+                dp = ndp
+            total, alloc = dp[G]
+            if alloc is None or total <= 0:
+                return None
+
+            # Build integer-wei leg amounts that sum EXACTLY to amount_in (the
+            # proxy is funded with exactly amount_in; any shortfall wastes input
+            # and any overage reverts the last leg). Give the rounding remainder
+            # to the largest-allocation leg.
+            used = [i for i in range(len(pools)) if alloc[i] > 0]
+            if len(used) < 2:
+                return None  # not actually a split
+            tot_units = sum(alloc)
+            leg_amts = {i: amount_in * alloc[i] // tot_units for i in used}
+            rem = amount_in - sum(leg_amts.values())
+            big = max(used, key=lambda i: alloc[i])
+            leg_amts[big] += rem
+            # final exact re-quote of each leg at its assigned amount
+            legs = []
+            with concurrent.futures.ThreadPoolExecutor(max_workers=_QUOTER_MAX_WORKERS) as ex:
+                fq = {ex.submit(_q, pools[i], leg_amts[i]): i for i in used}
+                outs = {}
+                for fu in concurrent.futures.as_completed(fq):
+                    i = fq[fu]
+                    try:
+                        outs[i] = fu.result()
+                    except Exception:
+                        outs[i] = 0
+            total_out = 0
+            for i in used:
+                o = outs.get(i, 0)
+                if o <= 0:
+                    return None  # a leg can't fill its slice -> abandon split
+                legs.append((pools[i]["venue"], pools[i]["param"], leg_amts[i], o))
+                total_out += o
+            if min_out > 0 and total_out < min_out:
+                return None
+            return {"out": total_out, "legs": legs}
+        except Exception:
+            logger.exception("[solver] split search failed")
+            return None
+
+    def _build_split_plan(self, intent, state, snapshot, split, tin, tout, amount_in, chain_id):
+        """Build approve(s) + one exactInputSingle per split leg, all delivering
+        to recipient=app with amount_out_minimum=0. One approve per distinct
+        router covers the sum of leg amounts routed through it."""
+        try:
+            from common.abi_utils import encode_approve
+            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+            from strategies.dex_aggregator import aerodrome as _aero
+            params = self._normalized_swap_params(intent, state)
+            recipient = state.contract_address or params.get("receiver") or state.owner
+            ts = getattr(snapshot, "timestamp", None) if snapshot else None
+            deadline = int(ts or time.time()) + 300
+            uni_router = UNISWAP_V3_ROUTERS.get(chain_id)
+            aero_router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
+
+            # sum amount per router for a single covering approve each
+            router_total: dict[str, int] = {}
+            for venue, _param, amt, _o in split["legs"]:
+                r = aero_router if venue == "aerodrome_slipstream" else uni_router
+                if not r:
+                    return None
+                router_total[r] = router_total.get(r, 0) + int(amt)
+
+            interactions = [
+                Interaction(target=tin, value="0",
+                            call_data=encode_approve(r, tot), chain_id=chain_id)
+                for r, tot in router_total.items()
+            ]
+            for venue, param, amt, _o in split["legs"]:
+                if venue == "aerodrome_slipstream":
+                    call = _aero.encode_exact_input_single(
+                        token_in=tin, token_out=tout, tick_spacing=int(param),
+                        recipient=recipient, deadline=deadline, amount_in=int(amt),
+                        amount_out_minimum=0)
+                    interactions.append(Interaction(
+                        target=aero_router, value="0", call_data=call, chain_id=chain_id))
+                else:
+                    call = encode_exact_input_single(
+                        token_in=tin, token_out=tout, fee=int(param), recipient=recipient,
+                        deadline=deadline, amount_in=int(amt), amount_out_minimum=0,
+                        chain_id=chain_id)
+                    interactions.append(Interaction(
+                        target=uni_router, value="0", call_data=call, chain_id=chain_id))
+
+            logger.info("[solver] max-output SPLIT %d legs out=%d", len(split["legs"]), split["out"])
+            return ExecutionPlan(
+                intent_id=intent.app_id, interactions=interactions, deadline=deadline,
+                nonce=state.nonce,
+                metadata={"solver": "maxout-router", "route": "split",
+                          "legs": len(split["legs"]), "expected_output": str(split["out"]),
+                          "chain_id": chain_id})
+        except Exception:
+            logger.exception("[solver] split plan build failed")
+            return None
 
     def _build_singlehop_plan(self, intent, state, snapshot, cand, tin, tout, amount_in, chain_id):
         """Build approve + exactInputSingle for the chosen venue.
@@ -609,9 +812,10 @@ class MinerSolver(BaselineSwapSolver):
         base = super().metadata()
         return SolverMetadata(
             name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR,
-            description=("Baseline routing + score-aware multi-venue single-hop "
-                         "selection (Uniswap V3 tiers + Aerodrome Slipstream), "
-                         "honest quoting, 0-zero coverage"),
+            description=("Max-output best-execution router: argmax delivered "
+                         "output across single-hop / split / multi-hop (Uniswap "
+                         "V3 tiers + Aerodrome Slipstream), recipient=app double "
+                         "count, honest quoting, 0-zero coverage"),
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types)
 
