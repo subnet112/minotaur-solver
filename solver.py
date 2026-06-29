@@ -1,4 +1,15 @@
-"""Minotaur SN112 DEX-aggregator solver — score-aware multi-venue router.
+"""Minotaur SN112 DEX-aggregator solver — king-iris MAX-OUTPUT multi-venue router (v20).
+
+v20 change: the subnet is shipping RELATIVE per-order scoring (#394-#399) that
+compares challenger vs champion on RAW DELIVERED OUTPUT (gas term / quote anchor /
+clamp all removed), adopting iff no order regresses and >=1 strictly wins. The
+incumbent (score-aware-router) DOWN-ROUTES output for gas under the old absolute
+scorer — every such trade is a REGRESSION under the relative rule. v20 sets the
+venue-selection gas weight to 0 (``SOLVER_GAS_WEIGHT``), so it picks the MAX-OUTPUT
+single-hop on every order: it never regresses and strictly out-delivers a
+gas-sacrificing champion on every down-routed order -> a clean relative dethrone,
+while keeping the exact-quote multi-venue coverage + robustness below. The original
+score-aware design notes follow.
 
 Design (validated on the fork-scoring oracle, run_oracle_delta.py)
 ------------------------------------------------------------------
@@ -55,9 +66,22 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "score-aware-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.3.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "miner")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "20.0.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
+
+# v20: weight of the gas term in single-hop venue selection. The incumbent
+# score-aware build used 0.2 (the live 0.8*output + 0.2*gas absolute scorer),
+# which DOWN-ROUTES to a leaner-gas venue even when another venue delivers MORE
+# output. The subnet is shipping RELATIVE per-order scoring (#394-#399), which
+# compares challenger vs champion on RAW DELIVERED OUTPUT (gas term, quote anchor
+# and clamp all removed) and adopts iff NO order regresses and >=1 strictly wins.
+# Against that rule, any gas-for-output trade is a REGRESSION. v20 sets the gas
+# weight to 0 -> pure MAX OUTPUT on every order: it never regresses and strictly
+# out-delivers a gas-sacrificing champion on every down-routed order -> a clean
+# relative dethrone. (Set SOLVER_GAS_WEIGHT=0.2 to restore the absolute-regime
+# gas-aware behaviour.) Output coverage + robustness layers are unchanged.
+_GAS_WEIGHT = float(os.environ.get("SOLVER_GAS_WEIGHT", "0.0"))
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -442,7 +466,8 @@ class MinerSolver(BaselineSwapSolver):
             ref = max(best_out, bp_out, 1)
 
             def score(out, gas_model):
-                return 0.4 * (out / ref) - 0.2 * (gas_model / 1e6)
+                # v20: gas weight defaults to 0 -> pure MAX OUTPUT (relative regime).
+                return 0.4 * (out / ref) - _GAS_WEIGHT * (gas_model / 1e6)
 
             # Only consider single-hops that clear the order min — a single-hop
             # below min would revert (e.g. the THIN direct WETH/DAI pool delivers
