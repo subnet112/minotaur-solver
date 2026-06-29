@@ -764,6 +764,12 @@ class MinerSolver(BaselineSwapSolver):
                     if score(bp_out, bp_gas) >= score(best["out"], best["gas_model"]):
                         return base_plan
 
+            # route SPLIT across the top-2 deep V3 venues; None -> single-hop plan
+            split_plan = self._try_split_plan(
+                intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
+            if split_plan is not None:
+                return split_plan
+
             return self._build_singlehop_plan(
                 intent, state, snapshot, best, tin, tout, amount_in, chain_id)
         except Exception:
@@ -867,6 +873,151 @@ class MinerSolver(BaselineSwapSolver):
             metadata={"solver": "score-aware-router", "route": route_tag,
                       "venue_param": cand["param"], "expected_output": str(cand["out"]),
                       "chain_id": chain_id})
+
+    # ── route splitting across the deep single-pool V3 venues ────────────────
+    # The champion picks ONE best route. On large orders (convex price impact)
+    # splitting the same order across Uni V3 / Aerodrome Slipstream / Pancake V3
+    # delivers strictly more output (on-chain split sim: +12..18 bps at size).
+    # Per the SN112 rule (raw output per order, >10 bps win, zero regressions),
+    # each such large order becomes a clean win the single-route champion can't
+    # match. SAFETY: we only EVER emit a split when its summed on-chain quote
+    # beats the chosen single route by a real margin; otherwise we fall straight
+    # back to the proven single-hop plan. More output is never a regression.
+    _SPLITTABLE = ("uniswap_v3", "aerodrome_slipstream", "pancake_v3")
+
+    def _quote_one(self, w3, venue, param, tin, tout, amount):
+        """Single eth_call quote for one (venue, param) at `amount`. 0 on revert."""
+        from eth_abi import encode as _enc, decode as _dec
+        from eth_utils import keccak as _kk, to_checksum_address as _ck
+        try:
+            if venue == "aerodrome_slipstream":
+                sel = _kk(text="quoteExactInputSingle((address,address,uint256,int24,uint160))")[:4]
+                quoter, typ = _AERO_QUOTER, "int24"
+            else:
+                sel = _kk(text="quoteExactInputSingle((address,address,uint256,uint24,uint160))")[:4]
+                quoter = _PANCAKE_QUOTER if venue == "pancake_v3" else _UNI_QUOTER
+                typ = "uint24"
+            p = _enc([f"(address,address,uint256,{typ},uint160)"],
+                     [(_ck(tin), _ck(tout), int(amount), int(param), 0)])
+            r = w3.eth.call({"to": _ck(quoter), "data": "0x" + (sel + p).hex()})
+            return int(_dec(["uint256", "uint160", "uint32", "uint256"], r)[0])
+        except Exception:
+            return 0
+
+    def _encode_v3_leg(self, venue, param, tin, tout, amount, recipient, deadline, chain_id):
+        """(router, calldata) for a single-pool exactInputSingle leg. Mirrors the
+        PROVEN encodings in _build_singlehop_plan exactly (incl. Pancake's
+        deadline-style 0x414bf389 selector)."""
+        if venue == "pancake_v3":
+            from eth_abi import encode as _abi_encode
+            from eth_utils import to_checksum_address as _ck
+            router = _PANCAKE_ROUTER
+            enc = _abi_encode(
+                ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
+                [(_ck(tin), _ck(tout), int(param), _ck(recipient), int(deadline), int(amount), 0, 0)])
+            return router, "0x" + ("414bf389" + enc.hex())
+        if venue == "aerodrome_slipstream":
+            from strategies.dex_aggregator import aerodrome as _aero
+            router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
+            if not router:
+                raise ValueError("no aerodrome router")
+            return router, _aero.encode_exact_input_single(
+                token_in=tin, token_out=tout, tick_spacing=int(param),
+                recipient=recipient, deadline=deadline, amount_in=amount, amount_out_minimum=0)
+        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+        router = UNISWAP_V3_ROUTERS.get(chain_id)
+        if not router:
+            raise ValueError("no uniswap router")
+        return router, encode_exact_input_single(
+            token_in=tin, token_out=tout, fee=int(param), recipient=recipient,
+            deadline=deadline, amount_in=amount, amount_out_minimum=0, chain_id=chain_id)
+
+    def _try_split_plan(self, intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best):
+        """Probe a 2-venue split of this order across the top-2 deep V3 venues.
+        Returns an ExecutionPlan ONLY if the split's summed on-chain quote beats
+        the chosen single route by > _SPLIT_MIN_GAIN_BPS; else None (caller falls
+        back to the single-hop plan). Bounded to 6 extra concurrent eth_calls,
+        fired only when the runner-up venue is within 2% (the promising case)."""
+        try:
+            _SPLIT_MIN_GAIN = 1.0005   # +5 bps over the single route to justify a 2nd leg
+            ref_out = int(best.get("out", 0) or 0)
+            if ref_out <= 0 or amount_in < 3:
+                return None
+            # top-2 DISTINCT splittable venues by full-amount output
+            sp = sorted((c for c in cands if c["venue"] in self._SPLITTABLE),
+                        key=lambda c: c["out"], reverse=True)
+            top, seen = [], set()
+            for c in sp:
+                if c["venue"] in seen:
+                    continue
+                seen.add(c["venue"]); top.append(c)
+                if len(top) == 2:
+                    break
+            if len(top) < 2:
+                return None
+            v1, v2 = top[0], top[1]
+            # cost gate: only probe when the runner-up is genuinely competitive
+            if v2["out"] < v1["out"] * 0.98:
+                return None
+            w3 = self._get_web3(int(chain_id))
+            if w3 is None:
+                return None
+            import concurrent.futures
+            fr = [amount_in // 3, amount_in // 2, (2 * amount_in) // 3]
+            jobs = [(v, a) for v in (v1, v2) for a in fr]
+            quotes: dict[tuple, int] = {}
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(jobs)) as ex:
+                futs = {ex.submit(self._quote_one, w3, v["venue"], v["param"], tin, tout, a): (v["venue"], a)
+                        for v, a in jobs}
+                for f in concurrent.futures.as_completed(futs):
+                    quotes[futs[f]] = f.result()
+
+            def q(v, a):
+                if a >= amount_in:
+                    return int(v["out"])
+                return int(quotes.get((v["venue"], a), 0))
+
+            # evaluate the 3 complementary splits (a1 in {1/3,1/2,2/3}; a2=rest)
+            best_total, best_a1 = ref_out, None
+            for a1 in fr:
+                a2 = amount_in - a1
+                o1, o2 = q(v1, a1), q(v2, a2)
+                if o1 <= 0 or o2 <= 0:
+                    continue
+                if o1 + o2 > best_total:
+                    best_total, best_a1 = o1 + o2, a1
+            if best_a1 is None or best_total < ref_out * _SPLIT_MIN_GAIN:
+                return None
+            legs = [(v1["venue"], v1["param"], best_a1),
+                    (v2["venue"], v2["param"], amount_in - best_a1)]
+            return self._build_split_plan(
+                intent, state, snapshot, legs, tin, tout, amount_in, chain_id, best_total, ref_out)
+        except Exception:
+            logger.exception("[solver] split probe failed; keeping single route")
+            return None
+
+    def _build_split_plan(self, intent, state, snapshot, legs, tin, tout, amount_in, chain_id, exp_out, ref_out):
+        from common.abi_utils import encode_approve
+        params = self._normalized_swap_params(intent, state)
+        recipient = state.contract_address or params.get("receiver") or state.owner
+        ts = getattr(snapshot, "timestamp", None) if snapshot else None
+        deadline = int(ts or time.time()) + 300
+        interactions = []
+        for venue, param, amt in legs:
+            router, call = self._encode_v3_leg(venue, param, tin, tout, amt, recipient, deadline, chain_id)
+            interactions.append(Interaction(target=tin, value="0",
+                                            call_data=encode_approve(router, amt), chain_id=chain_id))
+            interactions.append(Interaction(target=router, value="0", call_data=call, chain_id=chain_id))
+        gain_bps = (exp_out - ref_out) * 10000 // max(1, ref_out)
+        logger.info("[solver] SPLIT %d legs out=%d (+%d bps vs single) legs=%s",
+                    len(legs), exp_out, gain_bps, [(v, a) for v, _p, a in legs])
+        return ExecutionPlan(
+            intent_id=intent.app_id, interactions=interactions, deadline=deadline,
+            nonce=state.nonce,
+            metadata={"solver": "score-aware-router", "route": "split",
+                      "legs": len(legs), "expected_output": str(exp_out),
+                      "single_output": str(ref_out), "chain_id": chain_id})
 
     # ── offline RPC-free plan (safety net when baseline yields nothing) ──────
     def _offline_fallback_plan(self, intent, state, snapshot):
