@@ -67,7 +67,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "20.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "21.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
 
 # v20: weight of the gas term in single-hop venue selection. The incumbent
@@ -268,6 +268,27 @@ class MinerSolver(BaselineSwapSolver):
             logger.exception("[solver] metadata slim skipped; leaving plan metadata as-is")
         return plan
 
+    @staticmethod
+    def _is_multihop_plan(plan):
+        """True if the plan ships a multi-hop exactInput — the route family that
+        reverts CallFailed(index=1) on the cbBTC->WETH phantom 2-hop and drops the
+        order. Detected by the route metadata (set pre-slim) and, as a backstop,
+        the swap selector (0xb858183f / 0xc04b8d59 = exactInput; single-hop
+        exactInputSingle is 0x04e45aaf / 0x414bf389 / 0xa026383e)."""
+        if plan is None:
+            return False
+        try:
+            m = plan.metadata or {}
+            route = str(m.get("route") or "").lower()
+            if ("multi" in route) or ("hop" in route) or int(m.get("hops", 1) or 1) > 1:
+                return True
+            for ix in (getattr(plan, "interactions", None) or []):
+                if (ix.call_data or "")[:10].lower() in ("0xb858183f", "0xc04b8d59"):
+                    return True
+        except Exception:
+            return False
+        return False
+
     def _generate_plan_impl(self, intent, state, snapshot=None):
         def _baseline():
             return BaselineSwapSolver.generate_plan(self, intent, state, snapshot)
@@ -284,6 +305,20 @@ class MinerSolver(BaselineSwapSolver):
             self._score_aware_singlehop, (intent, state, snapshot, base_plan),
             timeout=_SELECT_BUDGET_S)
         plan = enhanced if enhanced is not None else base_plan
+
+        # Robustness net for the select-timeout path: never DEFAULT to an
+        # unvalidated multi-hop. When selection timed out (enhanced is None) and
+        # the baseline handed us a multi-hop — the cbBTC->WETH phantom "0.00% +
+        # 0.01%" 2-hop that reverts CallFailed(index=1) and DROPS the order — make
+        # one more bounded attempt at a real single-hop fill (base_plan=None makes
+        # _score_aware_singlehop build the max-output single-hop directly). The
+        # gas-tilted champion serves this order via single-hop; so can we.
+        if enhanced is None and self._is_multihop_plan(plan):
+            sh = self._bounded_call(
+                self._score_aware_singlehop, (intent, state, snapshot, None),
+                timeout=_SELECT_BUDGET_S)
+            if sh is not None and not self._is_multihop_plan(sh):
+                plan = sh
 
         plan = self._fix_multihop_v2(plan)
         if plan is None:
@@ -480,16 +515,28 @@ class MinerSolver(BaselineSwapSolver):
             # Primary key: score proxy; tie-break: lower quoter gasEstimate.
             best = max(usable, key=lambda c: (round(score(c["out"], c["gas_model"]), 9), -c["gas_est"]))
 
-            # Don't regress a baseline route that scores higher (e.g. a 2-hop
-            # that genuinely out-delivers every single-hop venue).
+            # Don't regress a baseline route that scores higher — BUT only honor a
+            # SINGLE-HOP baseline here. A multi-hop baseline's expected_output is
+            # route-math that is frequently a PHANTOM-pool fantasy: e.g. cbBTC->WETH
+            # picks a "0.00% + 0.01%" 2-hop quoting 0.527 WETH that reverts
+            # CallFailed(index=1) on execution -> delivers 0 -> a DROPPED order the
+            # gas-tilted champion fills via a real single-hop (0.3806 WETH). We only
+            # reach this line when a usable single-hop CLEARS the order min (the
+            # `usable` gate above already ships the baseline when NO single-hop
+            # fills — the legit thin-pool multi-hop case), so a real single-hop fill
+            # is always in hand. Never trade it for an unvalidated multi-hop's
+            # modeled output: under max-output (gas weight 0) the fantasy always
+            # "wins" the score proxy and silently drops the order.
             if base_plan is not None and bp_out > 0 and (min_out <= 0 or bp_out >= min_out):
                 m = (base_plan.metadata or {})
                 route = str(m.get("route") or "").lower()
-                bp_gas = (_GAS_MULTIHOP if ("multi" in route or "hop" in route)
-                          else (_OFFSET_AERO + 110000 if "aero" in route
-                                else _OFFSET_UNI + 100000))
-                if score(bp_out, bp_gas) >= score(best["out"], best["gas_model"]):
-                    return base_plan
+                is_multihop = (("multi" in route) or ("hop" in route)
+                               or int(m.get("hops", 1) or 1) > 1)
+                if not is_multihop:
+                    bp_gas = (_OFFSET_AERO + 110000 if "aero" in route
+                              else _OFFSET_UNI + 100000)
+                    if score(bp_out, bp_gas) >= score(best["out"], best["gas_model"]):
+                        return base_plan
 
             return self._build_singlehop_plan(
                 intent, state, snapshot, best, tin, tout, amount_in, chain_id)
