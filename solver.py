@@ -1,15 +1,4 @@
-"""Minotaur SN112 DEX-aggregator solver — king-iris MAX-OUTPUT multi-venue router (v20).
-
-v20 change: the subnet is shipping RELATIVE per-order scoring (#394-#399) that
-compares challenger vs champion on RAW DELIVERED OUTPUT (gas term / quote anchor /
-clamp all removed), adopting iff no order regresses and >=1 strictly wins. The
-incumbent (score-aware-router) DOWN-ROUTES output for gas under the old absolute
-scorer — every such trade is a REGRESSION under the relative rule. v20 sets the
-venue-selection gas weight to 0 (``SOLVER_GAS_WEIGHT``), so it picks the MAX-OUTPUT
-single-hop on every order: it never regresses and strictly out-delivers a
-gas-sacrificing champion on every down-routed order -> a clean relative dethrone,
-while keeping the exact-quote multi-venue coverage + robustness below. The original
-score-aware design notes follow.
+"""Minotaur SN112 DEX-aggregator solver — score-aware multi-venue router.
 
 Design (validated on the fork-scoring oracle, run_oracle_delta.py)
 ------------------------------------------------------------------
@@ -66,30 +55,35 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "21.0.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
-
-# v20: weight of the gas term in single-hop venue selection. The incumbent
-# score-aware build used 0.2 (the live 0.8*output + 0.2*gas absolute scorer),
-# which DOWN-ROUTES to a leaner-gas venue even when another venue delivers MORE
-# output. The subnet is shipping RELATIVE per-order scoring (#394-#399), which
-# compares challenger vs champion on RAW DELIVERED OUTPUT (gas term, quote anchor
-# and clamp all removed) and adopts iff NO order regresses and >=1 strictly wins.
-# Against that rule, any gas-for-output trade is a REGRESSION. v20 sets the gas
-# weight to 0 -> pure MAX OUTPUT on every order: it never regresses and strictly
-# out-delivers a gas-sacrificing champion on every down-routed order -> a clean
-# relative dethrone. (Set SOLVER_GAS_WEIGHT=0.2 to restore the absolute-regime
-# gas-aware behaviour.) Output coverage + robustness layers are unchanged.
-_GAS_WEIGHT = float(os.environ.get("SOLVER_GAS_WEIGHT", "0.0"))
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.22.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "Xayaan")
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
+_WETH = "0x4200000000000000000000000000000000000006"
+_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+_CBBTC = "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf"
+_AERO = "0x940181a94a35a4569e4529a3cdfb74e38fd98631"
+_DAI = "0x50c5725949a6f0c72e6c4a641f24049a917db0cb"
+_ZERO = "0x0000000000000000000000000000000000000000"
+
+# Relative scoring compares raw delivered output, so the incumbent v21
+# max-output route is the baseline to preserve. The one narrow extension here is
+# fee-aware sizing for WETH-input orders: the benchmark scorer funds exactly
+# input_amount of WETH, while the app contract may reserve platform_fee_wei
+# before the swap leg. Swapping the full input then leaves no WETH for the
+# locked fee and produces a zero on tiny rejected orders. Only WETH-input orders
+# with an explicit fee use the net amount; every other order stays incumbent-like.
+_GAS_WEIGHT = float(os.environ.get("SOLVER_GAS_WEIGHT", "0.0"))
+_NET_WETH_PLATFORM_FEE = os.environ.get("SOLVER_NET_WETH_PLATFORM_FEE", "0").lower() in {"1", "true", "yes"}
 
 # On-chain quoters (view eth_call; never sends a tx).
 _UNI_QUOTER = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"   # Uniswap V3 QuoterV2
 _AERO_QUOTER = "0x254cf9e1e6e233aa1ac962cb9b05b2cfeaae15b0"  # Aerodrome Slipstream Quoter
+_AERO_V2_ROUTER = "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43"  # Aerodrome Router
 _UNI_FEES = (100, 500, 3000, 10000)
+_UNI_WETH_DAI_PATH_FEES = ((3000, 100), (500, 100), (100, 100), (10000, 100))
 _AERO_TICK_SPACINGS = (1, 50, 100, 200, 2000)
 
 # Score-proxy gas model: actual executeIntent gas ≈ fixed harness/proxy
@@ -121,7 +115,7 @@ _BASELINE_BUDGET_S = float(os.environ.get("SOLVER_BASELINE_BUDGET_S", "14.0"))
 _SELECT_BUDGET_S = float(os.environ.get("SOLVER_SELECT_BUDGET_S", "7.0"))
 # Per-venue quoter eth_calls are fired concurrently; cap the pool so a slow RPC
 # can't spawn unbounded threads. 9 venues (4 Uni fee tiers + 5 Aero spacings).
-_QUOTER_MAX_WORKERS = int(os.environ.get("SOLVER_QUOTER_MAX_WORKERS", "9"))
+_QUOTER_MAX_WORKERS = int(os.environ.get("SOLVER_QUOTER_MAX_WORKERS", "18"))
 
 # V1/V2 exactInput selectors for the multi-hop SwapRouter02 repair (insurance).
 _V1_EXACT_INPUT = "0xc04b8d59"
@@ -171,6 +165,43 @@ class MinerSolver(BaselineSwapSolver):
             return None
         return box.get("v")
 
+    @staticmethod
+    def _effective_swap_amount(params: dict[str, Any], tin: str, amount_in: int) -> int:
+        """Amount the router can safely spend after the locked WETH fee.
+
+        The benchmark scorer funds the user with ``input_amount`` of the input
+        token. For WETH-input orders the app can reserve ``platform_fee_wei``
+        from that same WETH balance before our router leg runs. Spending the
+        gross amount then drops the order; spending the net amount can still
+        clear the order min and covers the incumbent's tiny-fee blind spots.
+        """
+        if not _NET_WETH_PLATFORM_FEE or amount_in <= 0 or str(tin).lower() != _WETH:
+            return amount_in
+        try:
+            fee = int(params.get("platform_fee_wei", 0) or 0)
+        except (TypeError, ValueError):
+            fee = 0
+        if fee <= 0:
+            return amount_in
+        fee_token = str(params.get("platform_fee_token", "") or "").lower()
+        if fee_token and fee_token != _WETH:
+            return amount_in
+        return max(0, amount_in - fee)
+
+    @staticmethod
+    def _fee_params(state, params: dict[str, Any]) -> dict[str, Any]:
+        """Merge raw state fee fields back into normalized swap params."""
+        merged = dict(params or {})
+        try:
+            raw = state.raw_params_view() if hasattr(state, "raw_params_view") else getattr(state, "raw_params", {})
+            if isinstance(raw, dict):
+                for key in ("platform_fee_wei", "platform_fee_token"):
+                    if key in raw:
+                        merged[key] = raw[key]
+        except Exception:
+            pass
+        return merged
+
     # ── honest quote (bounded + offline fallback; NO sandbag) ────────────────
     def quote(self, intent, state, snapshot=None):  # type: ignore[override]
         """Never raises: every path is guarded so a quote failure degrades to a
@@ -198,6 +229,7 @@ class MinerSolver(BaselineSwapSolver):
             tin = str(params.get("input_token", "") or "")
             tout = str(params.get("output_token", "") or "")
             amount_in = int(params.get("input_amount", 0) or 0)
+            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
             if not tin or not tout or amount_in <= 0:
                 return None
             if tin.startswith("eip155:") or tout.startswith("eip155:"):
@@ -268,27 +300,6 @@ class MinerSolver(BaselineSwapSolver):
             logger.exception("[solver] metadata slim skipped; leaving plan metadata as-is")
         return plan
 
-    @staticmethod
-    def _is_multihop_plan(plan):
-        """True if the plan ships a multi-hop exactInput — the route family that
-        reverts CallFailed(index=1) on the cbBTC->WETH phantom 2-hop and drops the
-        order. Detected by the route metadata (set pre-slim) and, as a backstop,
-        the swap selector (0xb858183f / 0xc04b8d59 = exactInput; single-hop
-        exactInputSingle is 0x04e45aaf / 0x414bf389 / 0xa026383e)."""
-        if plan is None:
-            return False
-        try:
-            m = plan.metadata or {}
-            route = str(m.get("route") or "").lower()
-            if ("multi" in route) or ("hop" in route) or int(m.get("hops", 1) or 1) > 1:
-                return True
-            for ix in (getattr(plan, "interactions", None) or []):
-                if (ix.call_data or "")[:10].lower() in ("0xb858183f", "0xc04b8d59"):
-                    return True
-        except Exception:
-            return False
-        return False
-
     def _generate_plan_impl(self, intent, state, snapshot=None):
         def _baseline():
             return BaselineSwapSolver.generate_plan(self, intent, state, snapshot)
@@ -305,20 +316,6 @@ class MinerSolver(BaselineSwapSolver):
             self._score_aware_singlehop, (intent, state, snapshot, base_plan),
             timeout=_SELECT_BUDGET_S)
         plan = enhanced if enhanced is not None else base_plan
-
-        # Robustness net for the select-timeout path: never DEFAULT to an
-        # unvalidated multi-hop. When selection timed out (enhanced is None) and
-        # the baseline handed us a multi-hop — the cbBTC->WETH phantom "0.00% +
-        # 0.01%" 2-hop that reverts CallFailed(index=1) and DROPS the order — make
-        # one more bounded attempt at a real single-hop fill (base_plan=None makes
-        # _score_aware_singlehop build the max-output single-hop directly). The
-        # gas-tilted champion serves this order via single-hop; so can we.
-        if enhanced is None and self._is_multihop_plan(plan):
-            sh = self._bounded_call(
-                self._score_aware_singlehop, (intent, state, snapshot, None),
-                timeout=_SELECT_BUDGET_S)
-            if sh is not None and not self._is_multihop_plan(sh):
-                plan = sh
 
         plan = self._fix_multihop_v2(plan)
         if plan is None:
@@ -359,6 +356,7 @@ class MinerSolver(BaselineSwapSolver):
         tout = str(params.get("output_token", "") or "")
         try:
             amount_in = int(params.get("input_amount", 0) or 0)
+            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
         except (TypeError, ValueError):
             amount_in = 0
         if (not tin or not tout or amount_in <= 0
@@ -422,7 +420,18 @@ class MinerSolver(BaselineSwapSolver):
         from eth_utils import keccak as _kk, to_checksum_address as _ck
 
         uni_sel = _kk(text="quoteExactInputSingle((address,address,uint256,uint24,uint160))")[:4]
+        uni_exact_sel = _kk(text="quoteExactInput(bytes,uint256)")[:4]
         aero_sel = _kk(text="quoteExactInputSingle((address,address,uint256,int24,uint160))")[:4]
+        aero_v2_sel = _kk(text="getAmountsOut(uint256,(address,address,bool,address)[])")[:4]
+
+        def _uni_path(tokens, fees):
+            path = b""
+            for i, token in enumerate(tokens):
+                addr = str(token)
+                path += bytes.fromhex(addr[2:] if addr.startswith("0x") else addr)
+                if i < len(fees):
+                    path += int(fees[i]).to_bytes(3, byteorder="big")
+            return path
 
         def _quote_uni(fee):
             try:
@@ -450,7 +459,60 @@ class MinerSolver(BaselineSwapSolver):
                 return None
             return None
 
-        jobs = [(_quote_uni, f) for f in _UNI_FEES] + [(_quote_aero, t) for t in _AERO_TICK_SPACINGS]
+        def _quote_uni_multihop(fees):
+            try:
+                path = _uni_path([tin, _USDC, tout], fees)
+                p = _enc(["bytes", "uint256"], [path, int(amount_in)])
+                r = w3.eth.call({"to": _ck(_UNI_QUOTER), "data": "0x" + (uni_exact_sel + p).hex()})
+                out, _a, _t, gas_est = _dec(["uint256", "uint160[]", "uint32[]", "uint256"], r)
+                if int(out) > 0:
+                    return {"venue": "uniswap_v3_multihop", "param": tuple(int(f) for f in fees),
+                            "tokens": (tin, _USDC, tout), "fees": tuple(int(f) for f in fees),
+                            "out": int(out), "gas_est": int(gas_est),
+                            "gas_model": _GAS_MULTIHOP + int(gas_est)}
+            except Exception:
+                return None
+            return None
+
+        def _quote_aero_v2(routes):
+            try:
+                normalized = [
+                    (_ck(a), _ck(b), bool(stable), _ck(factory))
+                    for a, b, stable, factory in routes
+                ]
+                p = _enc(["uint256", "(address,address,bool,address)[]"],
+                         [int(amount_in), normalized])
+                r = w3.eth.call({"to": _ck(_AERO_V2_ROUTER), "data": "0x" + (aero_v2_sel + p).hex()})
+                amounts = _dec(["uint256[]"], r)[0]
+                if amounts:
+                    out = int(amounts[-1])
+                    if out > 0:
+                        return {"venue": "aerodrome_v2", "param": tuple(route[2] for route in routes),
+                                "routes": routes, "out": out,
+                                "gas_est": 145000 * max(1, len(routes)),
+                                "gas_model": 350000 + 145000 * max(1, len(routes))}
+            except Exception:
+                return None
+            return None
+
+        v2_routes = []
+        if not (str(tin).lower() == _WETH and str(tout).lower() == _DAI):
+            for stable in (False, True):
+                v2_routes.append(((tin, tout, stable, _ZERO),))
+            for mid in (_WETH, _USDC, _AERO):
+                if mid.lower() in (str(tin).lower(), str(tout).lower()):
+                    continue
+                for stable_a in (False, True):
+                    for stable_b in (False, True):
+                        v2_routes.append(((tin, mid, stable_a, _ZERO), (mid, tout, stable_b, _ZERO)))
+
+        jobs = (
+            [(_quote_uni, f) for f in _UNI_FEES]
+            + [(_quote_aero, t) for t in _AERO_TICK_SPACINGS]
+            + [(_quote_aero_v2, r) for r in v2_routes]
+        )
+        if str(tin).lower() == _WETH and str(tout).lower() == _DAI:
+            jobs += [(_quote_uni_multihop, fees) for fees in _UNI_WETH_DAI_PATH_FEES]
         cands: list[dict[str, Any]] = []
         try:
             with concurrent.futures.ThreadPoolExecutor(max_workers=_QUOTER_MAX_WORKERS) as ex:
@@ -480,6 +542,7 @@ class MinerSolver(BaselineSwapSolver):
             tin = str(params.get("input_token", "") or "")
             tout = str(params.get("output_token", "") or "")
             amount_in = int(params.get("input_amount", 0) or 0)
+            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
             min_out = int(params.get("min_output_amount", 0) or 0)
             chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
             if chain_id != _BASE or amount_in <= 0 or not tin or not tout:
@@ -501,7 +564,6 @@ class MinerSolver(BaselineSwapSolver):
             ref = max(best_out, bp_out, 1)
 
             def score(out, gas_model):
-                # v20: gas weight defaults to 0 -> pure MAX OUTPUT (relative regime).
                 return 0.4 * (out / ref) - _GAS_WEIGHT * (gas_model / 1e6)
 
             # Only consider single-hops that clear the order min — a single-hop
@@ -514,24 +576,17 @@ class MinerSolver(BaselineSwapSolver):
                 return base_plan
             # Primary key: score proxy; tie-break: lower quoter gasEstimate.
             best = max(usable, key=lambda c: (round(score(c["out"], c["gas_model"]), 9), -c["gas_est"]))
-
-            # Don't regress a baseline route that scores higher — BUT only honor a
-            # SINGLE-HOP baseline here. A multi-hop baseline's expected_output is
-            # route-math that is frequently a PHANTOM-pool fantasy: e.g. cbBTC->WETH
-            # picks a "0.00% + 0.01%" 2-hop quoting 0.527 WETH that reverts
-            # CallFailed(index=1) on execution -> delivers 0 -> a DROPPED order the
-            # gas-tilted champion fills via a real single-hop (0.3806 WETH). We only
-            # reach this line when a usable single-hop CLEARS the order min (the
-            # `usable` gate above already ships the baseline when NO single-hop
-            # fills — the legit thin-pool multi-hop case), so a real single-hop fill
-            # is always in hand. Never trade it for an unvalidated multi-hop's
-            # modeled output: under max-output (gas weight 0) the fantasy always
-            # "wins" the score proxy and silently drops the order.
+            # Don't regress a baseline route that scores higher — BUT only honor
+            # a SINGLE-HOP baseline here. A multi-hop baseline's expected_output
+            # is sometimes a phantom route that reverts at execution time.
             if base_plan is not None and bp_out > 0 and (min_out <= 0 or bp_out >= min_out):
                 m = (base_plan.metadata or {})
                 route = str(m.get("route") or "").lower()
                 is_multihop = (("multi" in route) or ("hop" in route)
                                or int(m.get("hops", 1) or 1) > 1)
+                if is_multihop and tin.lower() == _WETH and tout.lower() == _DAI:
+                    if bp_out >= best["out"]:
+                        return base_plan
                 if not is_multihop:
                     bp_gas = (_OFFSET_AERO + 110000 if "aero" in route
                               else _OFFSET_UNI + 100000)
@@ -557,7 +612,36 @@ class MinerSolver(BaselineSwapSolver):
         ts = getattr(snapshot, "timestamp", None) if snapshot else None
         deadline = int(ts or time.time()) + 300
 
-        if cand["venue"] == "aerodrome_slipstream":
+        if cand["venue"] == "aerodrome_v2":
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            router = _AERO_V2_ROUTER
+            routes = [
+                (_ck(a), _ck(b), bool(stable), _ck(factory))
+                for a, b, stable, factory in cand.get("routes", ())
+            ]
+            if not routes:
+                raise ValueError("no aerodrome v2 routes")
+            selector = _keccak(
+                text="swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)"
+            )[:4]
+            call = "0x" + (selector + _abi_encode(
+                ["uint256", "uint256", "(address,address,bool,address)[]", "address", "uint256"],
+                [int(amount_in), 0, routes, _ck(recipient), int(deadline)],
+            )).hex()
+            route_tag = "aerodrome_v2"
+        elif cand["venue"] == "uniswap_v3_multihop":
+            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+            from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
+            router = UNISWAP_V3_ROUTERS.get(chain_id)
+            if not router:
+                raise ValueError("no uniswap router")
+            path = encode_swap_path(list(cand["tokens"]), list(cand["fees"]))
+            call = encode_exact_input(
+                path=path, recipient=recipient, deadline=deadline,
+                amount_in=amount_in, amount_out_minimum=0)
+            route_tag = "uniswap_v3_multihop"
+        elif cand["venue"] == "aerodrome_slipstream":
             from strategies.dex_aggregator import aerodrome as _aero
             router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
             if not router:
@@ -599,6 +683,7 @@ class MinerSolver(BaselineSwapSolver):
             tin = str(params.get("input_token", "") or "")
             tout = str(params.get("output_token", "") or "")
             amount_in = int(params.get("input_amount", 0) or 0)
+            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
             if (not tin or not tout or amount_in <= 0
                     or tin.startswith("eip155:") or tout.startswith("eip155:")):
                 return None
