@@ -55,9 +55,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "28.0.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.99.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -83,6 +83,9 @@ _NET_WETH_PLATFORM_FEE = os.environ.get("SOLVER_NET_WETH_PLATFORM_FEE", "0").low
 _UNI_QUOTER = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"   # Uniswap V3 QuoterV2
 _AERO_QUOTER = "0x254cf9e1e6e233aa1ac962cb9b05b2cfeaae15b0"  # Aerodrome Slipstream Quoter
 _AERO_V2_ROUTER = "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43"  # Aerodrome Router
+_PANCAKE_QUOTER = "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997"  # PancakeSwap V3 QuoterV2
+_PANCAKE_ROUTER = "0x1b81D678ffb9C0263b24A97847620C99d213eB14"  # PancakeSwap V3 SmartRouter
+_PANCAKE_FEES = (100, 500, 2500, 10000)
 _UNI_FEES = (100, 500, 3000, 10000)
 _UNI_WETH_DAI_PATH_FEES = ((3000, 100), (500, 100), (100, 100), (10000, 100))
 # Non-kg (exotic) hub sweep. Exotic/volatile tokens (e.g. INCH) live in the 1%
@@ -527,6 +530,19 @@ class MinerSolver(BaselineSwapSolver):
                 return None
             return None
 
+        def _quote_pancake(fee):
+            try:
+                p = _enc(["(address,address,uint256,uint24,uint160)"],
+                         [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
+                r = w3.eth.call({"to": _ck(_PANCAKE_QUOTER), "data": "0x" + (uni_sel + p).hex()})
+                out, _a, _t, gas_est = _dec(["uint256", "uint160", "uint32", "uint256"], r)
+                if int(out) > 0:
+                    return {"venue": "pancake_v3", "param": int(fee), "out": int(out),
+                            "gas_est": int(gas_est), "gas_model": _OFFSET_UNI + int(gas_est)}
+            except Exception:
+                return None
+            return None
+
         def _quote_aero_v2(routes):
             try:
                 normalized = [
@@ -618,6 +634,7 @@ class MinerSolver(BaselineSwapSolver):
 
         core_jobs = (
             [(_quote_uni, f) for f in _UNI_FEES]
+            + [(_quote_pancake, f) for f in _PANCAKE_FEES]
             + [(_quote_aero, t) for t in _AERO_TICK_SPACINGS]
             + [(_quote_aero_v2, r) for r in core_v2_routes]
         )
@@ -795,6 +812,17 @@ class MinerSolver(BaselineSwapSolver):
                 path=path, recipient=recipient, deadline=deadline,
                 amount_in=amount_in, amount_out_minimum=0)
             route_tag = "uniswap_v3_multihop"
+        elif cand["venue"] == "pancake_v3":
+            # PancakeSwap V3 SmartRouter exactInputSingle = V1-style WITH deadline
+            # (0x414bf389), NOT SwapRouter02 (the no-deadline ABI reverts = dropped swap).
+            from eth_abi import encode as _abi_encode
+            from eth_utils import to_checksum_address as _ck
+            router = _PANCAKE_ROUTER
+            enc = _abi_encode(
+                ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
+                [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
+            call = "0x" + ("414bf389" + enc.hex())
+            route_tag = "pancake_v3"
         elif cand["venue"] == "aerodrome_slipstream":
             from strategies.dex_aggregator import aerodrome as _aero
             router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
