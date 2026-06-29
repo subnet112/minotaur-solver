@@ -55,9 +55,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.23.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "Xayaan")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "25.0.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -115,10 +115,10 @@ _RPC_TIMEOUT_S = float(os.environ.get("SOLVER_RPC_TIMEOUT_S", "2.0"))
 #    concurrent quoter enumeration makes the select step ~2-3s in practice.
 _QUOTE_BUDGET_S = float(os.environ.get("SOLVER_QUOTE_BUDGET_S", "14.0"))
 _BASELINE_BUDGET_S = float(os.environ.get("SOLVER_BASELINE_BUDGET_S", "14.0"))
-_SELECT_BUDGET_S = float(os.environ.get("SOLVER_SELECT_BUDGET_S", "10.0"))
+_SELECT_BUDGET_S = float(os.environ.get("SOLVER_SELECT_BUDGET_S", "12.0"))
 # Per-venue quoter eth_calls are fired concurrently; cap the pool so a slow RPC
 # can't spawn unbounded threads. 9 venues (4 Uni fee tiers + 5 Aero spacings).
-_QUOTER_MAX_WORKERS = int(os.environ.get("SOLVER_QUOTER_MAX_WORKERS", "32"))
+_QUOTER_MAX_WORKERS = int(os.environ.get("SOLVER_QUOTER_MAX_WORKERS", "48"))
 
 # V1/V2 exactInput selectors for the multi-hop SwapRouter02 repair (insurance).
 _V1_EXACT_INPUT = "0xc04b8d59"
@@ -534,6 +534,21 @@ class MinerSolver(BaselineSwapSolver):
                 t = str(token).lower()
                 if t not in (tin_l, tout_l) and t not in mids:
                     mids.append(t)
+
+            # king: for DEEP/FEE-FREE pairs (both endpoints known-good), sweep
+            # EVERY hub. The incumbent's per-pair mids are SELECTIVE and miss
+            # both-major pairs like cbBTC<->DAI, where the Uniswap multi-hop
+            # cbBTC->USDC->DAI delivers ~+2.6% over its Aerodrome fallback
+            # (fork-validated, EXEC ok via the V2 exactInput fix). All legs are
+            # known-good so the route can never phantom-revert -> 0 drops. This
+            # set is a strict SUPERSET of the incumbent's mids for these pairs,
+            # so we never deliver less; exotics fall through to the incumbent's
+            # exact (proven-safe) mids below.
+            _KG = {_WETH, _USDC, _DAI, _CBBTC, _USDBC, _AERO}
+            if tin_l in _KG and tout_l in _KG:
+                for token in (_WETH, _USDC, _DAI, _CBBTC, _USDBC, _AERO):
+                    add(token)
+                return mids
 
             # Current live gaps are concentrated here: cbBTC gives better
             # WETH/USDC execution at retail+ sizes; USDbC is the deep DAI/USDC
