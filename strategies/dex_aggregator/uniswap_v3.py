@@ -163,6 +163,7 @@ def build_multi_hop_swap_interaction(
             deadline=deadline,
             amount_in=amount_in,
             amount_out_minimum=amount_out_minimum,
+            chain_id=chain_id,
         ),
         chain_id=chain_id,
     )
