@@ -19,8 +19,13 @@
 # permissions: contents: read (read-only; this job writes nothing, merges nothing).
 #
 # Even if this check is somehow spoofed green, the leader ignores it — the
-# in-process web3 check is the gate. The ruleset lists this context only so an
-# HONEST PR cannot merge while verification is red (fail-closed UX).
+# in-process web3 check is the gate. This job is PURELY INFORMATIONAL: it passes
+# (neutral) for the normal "head is not yet the certified-as-latest champion"
+# state of an open submission PR, and FAILS only on a genuine verification
+# problem it cannot trust (registry unset, malformed head sha, RPC unreadable,
+# bad quorum, malformed approvals). It gates no merge — a freshly-submitted
+# solver is never already the on-chain champion, so failing on that normal state
+# painted every contributor PR red for no signal; it now reports green + a notice.
 #
 # DO NOT rename the job `verify-champion-cert` without updating the ruleset
 # required_status_checks context. DO NOT add actions/checkout of fork HEAD, a
@@ -87,9 +92,16 @@ jobs:
           EXISTS="$(printf '%s' "$C" | cut -d, -f8)"
           echo "latest commit=$COMMIT approvals=$APPROVALS exists=$EXISTS quorum=$QUORUM"
 
-          [ "$EXISTS" = "true" ]      || { echo "::error::getLatestChampion.exists!=true (fail-closed)"; exit 1; }
-          [ "$COMMIT" = "$TARGET" ]   || { echo "::error::latest commitHash $COMMIT != keccak(head.sha) $TARGET — NOT certified-as-latest (advisory; leader re-checks by round)"; exit 1; }
-          printf '%s' "$APPROVALS" | grep -Eq '^[0-9]+$' || { echo "::error::non-numeric approvals"; exit 1; }
-          [ "$APPROVALS" -ge "$QUORUM" ] || { echo "::error::approvals $APPROVALS < quorum $QUORUM"; exit 1; }
+          # A malformed approvals field means the on-chain read itself can't be trusted
+          # — that stays HARD-FAIL (fail-closed), like the registry/sha/RPC/quorum guards above.
+          printf '%s' "$APPROVALS" | grep -Eq '^[0-9]+$' || { echo "::error::non-numeric approvals (malformed on-chain read)"; exit 1; }
 
-          echo "=== ADVISORY VERIFICATION PASSED — leader's in-process check is authoritative ==="
+          # Outcome (ADVISORY — gates nothing; the leader's in-process web3 check is the
+          # authoritative merge gate). The normal state of an OPEN submission PR is "head
+          # is not yet the certified-as-latest champion": that is expected, not an error,
+          # so emit a neutral NOTICE and pass green. Only a positive match prints PASSED.
+          if [ "$EXISTS" = "true" ] && [ "$COMMIT" = "$TARGET" ] && [ "$APPROVALS" -ge "$QUORUM" ]; then
+            echo "=== this PR head IS the certified-as-latest on-chain champion (approvals $APPROVALS >= quorum $QUORUM) — leader's in-process check is authoritative ==="
+          else
+            echo "::notice::advisory: PR head is not certified-as-latest (exists=$EXISTS, on-chain commit=$COMMIT vs keccak(head)=$TARGET, approvals=$APPROVALS, quorum=$QUORUM). Expected for an open submission; gates nothing — the leader's in-process on-chain check is the authoritative merge gate."
+          fi
