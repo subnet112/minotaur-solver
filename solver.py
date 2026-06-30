@@ -940,11 +940,14 @@ class MinerSolver(BaselineSwapSolver):
         back to the single-hop plan). Bounded to 6 extra concurrent eth_calls,
         fired only when the runner-up venue is within 2% (the promising case)."""
         try:
-            _SPLIT_MIN_GAIN = 1.0005   # +5 bps over the single route to justify a 2nd leg
+            # === V2 AGGRESSIVE: top-3 venues, discrete 2-/3-way allocation menu, +1 bps gate ===
+            # Robust by construction: every candidate allocation's total is a DIRECT
+            # sum of real on-chain quotes at the allocated amounts (no marginal-greedy
+            # artifacts), so it can never report a phantom gain.
+            _SPLIT_MIN_GAIN = 1.0001   # +1 bps (aggressive — split on the smallest real gain)
             ref_out = int(best.get("out", 0) or 0)
-            if ref_out <= 0 or amount_in < 3:
+            if ref_out <= 0 or amount_in < 6:
                 return None
-            # top-2 DISTINCT splittable venues by full-amount output
             sp = sorted((c for c in cands if c["venue"] in self._SPLITTABLE),
                         key=lambda c: c["out"], reverse=True)
             top, seen = [], set()
@@ -952,45 +955,66 @@ class MinerSolver(BaselineSwapSolver):
                 if c["venue"] in seen:
                     continue
                 seen.add(c["venue"]); top.append(c)
-                if len(top) == 2:
+                if len(top) == 3:
                     break
             if len(top) < 2:
                 return None
-            v1, v2 = top[0], top[1]
-            # cost gate: only probe when the runner-up is genuinely competitive
-            if v2["out"] < v1["out"] * 0.98:
+            # cost gate: runner-up within 3% (wider than V1's 2%)
+            if top[1]["out"] < top[0]["out"] * 0.97:
                 return None
             w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
             import concurrent.futures
-            fr = [amount_in // 3, amount_in // 2, (2 * amount_in) // 3]
-            jobs = [(v, a) for v in (v1, v2) for a in fr]
+            v1 = top[0]; v2 = top[1]; v3 = top[2] if len(top) >= 3 else None
+            a3 = amount_in // 3; a2 = amount_in // 2
+            a4 = amount_in // 4; a23 = (2 * amount_in) // 3
+            allocs = [
+                [(v1, a3), (v2, amount_in - a3)],
+                [(v1, a2), (v2, amount_in - a2)],
+                [(v1, a23), (v2, amount_in - a23)],
+            ]
+            if v3 is not None:
+                allocs += [
+                    [(v1, a3), (v3, amount_in - a3)],
+                    [(v1, a2), (v3, amount_in - a2)],
+                    [(v1, a3), (v2, a3), (v3, amount_in - 2 * a3)],
+                    [(v1, a2), (v2, a4), (v3, amount_in - a2 - a4)],
+                ]
+            need: dict[str, tuple] = {}
+            for alloc in allocs:
+                for v, a in alloc:
+                    if 0 < a < amount_in:
+                        need.setdefault(v["venue"], (v, set()))[1].add(a)
+            jobs = [(meta, a) for meta, amts in need.values() for a in amts]
             quotes: dict[tuple, int] = {}
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(jobs)) as ex:
-                futs = {ex.submit(self._quote_one, w3, v["venue"], v["param"], tin, tout, a): (v["venue"], a)
-                        for v, a in jobs}
-                for f in concurrent.futures.as_completed(futs):
-                    quotes[futs[f]] = f.result()
+            if jobs:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=min(16, len(jobs))) as ex:
+                    futs = {ex.submit(self._quote_one, w3, m["venue"], m["param"], tin, tout, a): (m["venue"], a)
+                            for m, a in jobs}
+                    for f in concurrent.futures.as_completed(futs):
+                        quotes[futs[f]] = f.result()
 
             def q(v, a):
                 if a >= amount_in:
                     return int(v["out"])
+                if a <= 0:
+                    return 0
                 return int(quotes.get((v["venue"], a), 0))
 
-            # evaluate the 3 complementary splits (a1 in {1/3,1/2,2/3}; a2=rest)
-            best_total, best_a1 = ref_out, None
-            for a1 in fr:
-                a2 = amount_in - a1
-                o1, o2 = q(v1, a1), q(v2, a2)
-                if o1 <= 0 or o2 <= 0:
-                    continue
-                if o1 + o2 > best_total:
-                    best_total, best_a1 = o1 + o2, a1
-            if best_a1 is None or best_total < ref_out * _SPLIT_MIN_GAIN:
+            best_total, best_alloc = ref_out, None
+            for alloc in allocs:
+                tot, ok = 0, True
+                for v, a in alloc:
+                    o = q(v, a)
+                    if o <= 0:
+                        ok = False; break
+                    tot += o
+                if ok and tot > best_total:
+                    best_total, best_alloc = tot, alloc
+            if best_alloc is None or best_total < ref_out * _SPLIT_MIN_GAIN:
                 return None
-            legs = [(v1["venue"], v1["param"], best_a1),
-                    (v2["venue"], v2["param"], amount_in - best_a1)]
+            legs = [(v["venue"], v["param"], a) for v, a in best_alloc]
             return self._build_split_plan(
                 intent, state, snapshot, legs, tin, tout, amount_in, chain_id, best_total, ref_out)
         except Exception:
