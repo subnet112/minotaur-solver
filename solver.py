@@ -56,7 +56,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "29.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "29.1.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -750,6 +750,26 @@ class MinerSolver(BaselineSwapSolver):
             cands = self._enumerate_singlehop_quotes(chain_id, tin, tout, amount_in)
             if not cands:
                 return base_plan
+            # Cross-venue 2-hop via a deep hub. The champion only chains hops WITHIN
+            # one venue (an all-Uni / all-Aero path), so it misses e.g. USDC->WETH on
+            # PancakeV3 then WETH->INCH on Uni — the route production aggregators use to
+            # beat the all-Uni multihop on exotic outputs by >10bps. Only enumerated
+            # when a leg is exotic (a hub is actually needed); a strict superset.
+            if (tin.lower() not in _KG_SET) or (tout.lower() not in _KG_SET):
+                try:
+                    _bb = max((c["out"] for c in cands), default=0)
+                    _xc = self._enumerate_crossvenue_2hop(chain_id, tin, tout, amount_in)
+                    # Only let a cross-venue 2-hop compete when (a) its FIRST leg is a
+                    # DIFFERENT venue than Uniswap — a Uni-leg1 xhop just duplicates the
+                    # single-call Uni multihop but executes as two lossier swaps — and
+                    # (b) it clears the best single-call route by a safety margin, so a
+                    # near-tie can never regress us. Real exotic wins (Pancake/Aero leg1
+                    # beating Uni on the hub leg) clear this comfortably.
+                    cands = cands + [c for c in _xc
+                                     if c["leg1"]["venue"] != "uniswap_v3"
+                                     and c["out"] > _bb * 1.0015]
+                except Exception:
+                    pass
 
             best_out = max(c["out"] for c in cands)
             bp_out = 0
@@ -796,6 +816,11 @@ class MinerSolver(BaselineSwapSolver):
                               else _OFFSET_UNI + 100000)
                     if score(bp_out, bp_gas) >= score(best["out"], best["gas_model"]):
                         return base_plan
+
+            # Cross-venue 2-hop wins selection (exotic): build sequential hub-chained legs.
+            if best.get("venue") == "crossvenue_2hop":
+                return self._build_2hop_plan(
+                    intent, state, snapshot, best, tin, tout, amount_in, chain_id)
 
             # route SPLIT across the top-2 deep V3 venues; None -> single-hop plan
             split_plan = self._try_split_plan(
@@ -907,6 +932,106 @@ class MinerSolver(BaselineSwapSolver):
                       "venue_param": cand["param"], "expected_output": str(cand["out"]),
                       "chain_id": chain_id})
 
+    # ── cross-venue 2-hop routing (tin -> hub -> tout across DIFFERENT venues) ─
+    _XHOP_HUBS = (_WETH, _USDC, _CBBTC)
+
+    def _best_leg(self, w3, chain_id, a, b, amt, venues=None):
+        """Best single-pool quote for a->b at `amt` across Uni V3 / Pancake V3 /
+        Aerodrome Slipstream. `venues` restricts the set (used to force the FINAL
+        leg onto Uniswap, the only router whose CONTRACT_BALANCE chaining we use).
+        Returns {venue,param,out} or None."""
+        if int(amt) <= 0:
+            return None
+        import concurrent.futures
+        combos = ([("uniswap_v3", f) for f in _UNI_FEES]
+                  + [("pancake_v3", f) for f in _PANCAKE_FEES]
+                  + [("aerodrome_slipstream", t) for t in _AERO_TICK_SPACINGS])
+        if venues is not None:
+            combos = [(v, p) for v, p in combos if v in venues]
+        best = None
+        workers = max(1, min(_QUOTER_MAX_WORKERS, len(combos)))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+            futs = {ex.submit(self._quote_one, w3, v, p, a, b, int(amt)): (v, p) for v, p in combos}
+            for f in concurrent.futures.as_completed(futs):
+                v, p = futs[f]
+                try:
+                    o = int(f.result())
+                except Exception:
+                    o = 0
+                if o > 0 and (best is None or o > best["out"]):
+                    best = {"venue": v, "param": p, "out": o}
+        return best
+
+    def _enumerate_crossvenue_2hop(self, chain_id, tin, tout, amount_in):
+        """tin -> hub -> tout where each leg takes its OWN best venue/pool (legs may
+        differ in venue). Captures the exotic route the champion's same-venue path
+        multihop can't express. Returns crossvenue_2hop candidates."""
+        cands = []
+        w3 = self._get_web3(int(chain_id))
+        if w3 is None:
+            return cands
+        tl, ol = tin.lower(), tout.lower()
+        for hub in self._XHOP_HUBS:
+            if hub in (tl, ol):
+                continue
+            # leg1 (tin->hub): any deep venue. leg2 (hub->tout): UNISWAP ONLY, so the
+            # CONTRACT_BALANCE chaining in _build_2hop_plan can swap the Uni router's
+            # own balance (no proxy custody needed).
+            l1 = self._best_leg(w3, chain_id, tin, hub, amount_in)
+            if not l1:
+                continue
+            l2 = self._best_leg(w3, chain_id, hub, tout, l1["out"], venues=("uniswap_v3",))
+            if not l2:
+                continue
+            cands.append({
+                "venue": "crossvenue_2hop",
+                "param": (l1["venue"], l1["param"], l2["venue"], l2["param"]),
+                "out": int(l2["out"]), "hub": hub, "leg1": l1, "leg2": l2,
+                "gas_est": 240000, "gas_model": _GAS_MULTIHOP + 120000,
+            })
+        return cands
+
+    def _build_2hop_plan(self, intent, state, snapshot, cand, tin, tout, amount_in, chain_id):
+        """Cross-venue 2-hop via CONTRACT_BALANCE chaining (no proxy custody needed):
+          1. approve leg1 router for tin
+          2. leg1 tin->hub on its best venue, OUTPUT TO the Uniswap SwapRouter02 (the
+             router now holds the hub token within this single execution tx)
+          3. leg2 Uni exactInputSingle hub->tout with amountIn=0 == SwapRouter02's
+             CONTRACT_BALANCE flag (hasAlreadyPaid) -> swaps the router's OWN hub
+             balance, output to the app contract for measurement.
+        Verified on-fork: SwapRouter02 amountIn==0 swaps balanceOf(router); Pancake/
+        Aero/Uni leg1 all deliver to an arbitrary recipient address."""
+        from common.abi_utils import encode_approve
+        from eth_abi import encode as _enc
+        from eth_utils import to_checksum_address as _ck
+        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+        params = self._normalized_swap_params(intent, state)
+        app = state.contract_address or params.get("receiver") or state.owner
+        ts = getattr(snapshot, "timestamp", None) if snapshot else None
+        deadline = int(ts or time.time()) + 300
+        hub, l1, l2 = cand["hub"], cand["leg1"], cand["leg2"]
+        uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+        # leg1: tin -> hub on the best (possibly non-Uni) venue, recipient = Uni router.
+        r1, c1 = self._encode_v3_leg(l1["venue"], l1["param"], tin, hub, amount_in, uni_router, deadline, chain_id)
+        # leg2: Uni SwapRouter02 exactInputSingle (selector 0x04e45aaf, NO deadline),
+        # amountIn=0 -> CONTRACT_BALANCE; recipient = app. No approve needed.
+        leg2_params = _enc(
+            ["address", "address", "uint24", "address", "uint256", "uint256", "uint160"],
+            [_ck(hub), _ck(tout), int(l2["param"]), _ck(app), 0, 0, 0])
+        c2 = "0x04e45aaf" + leg2_params.hex()
+        interactions = [
+            Interaction(target=tin, value="0", call_data=encode_approve(r1, amount_in), chain_id=chain_id),
+            Interaction(target=r1, value="0", call_data=c1, chain_id=chain_id),
+            Interaction(target=uni_router, value="0", call_data=c2, chain_id=chain_id),
+        ]
+        logger.info("[solver] XHOP %s->%s->%s out=%d via %s+uni(CB)",
+                    tin[:8], hub[:8], tout[:8], cand["out"], l1["venue"])
+        return ExecutionPlan(
+            intent_id=intent.app_id, interactions=interactions, deadline=deadline,
+            nonce=state.nonce,
+            metadata={"solver": "crossvenue-2hop", "route": "crossvenue_2hop", "hub": hub,
+                      "expected_output": str(cand["out"]), "chain_id": chain_id, "hops": 2})
+
     # ── route splitting across the deep single-pool V3 venues ────────────────
     # The champion picks ONE best route. On large orders (convex price impact)
     # splitting the same order across Uni V3 / Aerodrome Slipstream / Pancake V3
@@ -981,19 +1106,22 @@ class MinerSolver(BaselineSwapSolver):
             A = int(amount_in)
             if ref_out <= 0 or A < 6:
                 return None
-            # top-3 DISTINCT splittable venues by full-amount output (best pool/tier each)
+            # top-4 DISTINCT POOLS (venue, fee-tier) by full-amount output. Unlike the
+            # one-pool-per-venue champion, this can split across MULTIPLE fee tiers of
+            # the same venue (independent liquidity) for strictly more depth.
             sp = sorted((c for c in cands if c["venue"] in self._SPLITTABLE),
                         key=lambda c: c["out"], reverse=True)
             top, seen = [], set()
             for c in sp:
-                if c["venue"] in seen:
+                key = (c["venue"], c["param"])
+                if key in seen:
                     continue
-                seen.add(c["venue"]); top.append(c)
-                if len(top) == 3:
+                seen.add(key); top.append(c)
+                if len(top) == 4:
                     break
             if len(top) < 2:
                 return None
-            # cost gate: only probe when the runner-up venue is genuinely competitive
+            # cost gate: only probe when the runner-up pool is genuinely competitive
             if top[1]["out"] < top[0]["out"] * 0.98:
                 return None
             w3 = self._get_web3(int(chain_id))
@@ -1010,7 +1138,9 @@ class MinerSolver(BaselineSwapSolver):
             quotes: dict[tuple, int] = {}
             workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
             with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
-                futs = {ex.submit(self._quote_one, w3, v["venue"], v["param"], tin, tout, a): (v["venue"], a)
+                # key by POOL (venue, param) — top may hold >1 pool per venue
+                futs = {ex.submit(self._quote_one, w3, v["venue"], v["param"], tin, tout, a):
+                        (v["venue"], v["param"], a)
                         for v, a in jobs}
                 for f in concurrent.futures.as_completed(futs):
                     quotes[futs[f]] = f.result()
@@ -1021,7 +1151,7 @@ class MinerSolver(BaselineSwapSolver):
                     return int(v["out"])
                 if a <= 0:
                     return 0
-                return int(quotes.get((v["venue"], a), 0))
+                return int(quotes.get((v["venue"], v["param"], a), 0))
 
             best_total, best_legs = ref_out, None
             # 2-way: every ordered venue pair over the complementary ratio grid
@@ -1036,12 +1166,12 @@ class MinerSolver(BaselineSwapSolver):
                         if o1 > 0 and o2 > 0 and o1 + o2 > best_total:
                             best_total = o1 + o2
                             best_legs = [(vi, a1), (vj, a2)]
-            # 3-way across all 3 venues (allocations chosen so a3 stays on-grid)
-            if len(top) >= 3:
-                v1, v2, v3 = top[0], top[1], top[2]
-                combos = ((A // 3, A // 3), (A // 2, A // 4), (A // 4, A // 2),
-                          (A // 4, A // 4), (A // 2, A // 3), (A // 3, A // 2),
-                          (A // 2, A // 6), (A // 6, A // 2))
+            # 3-way over every distinct triple of the top pools (allocations on-grid)
+            import itertools as _it
+            combos = ((A // 3, A // 3), (A // 2, A // 4), (A // 4, A // 2),
+                      (A // 4, A // 4), (A // 2, A // 3), (A // 3, A // 2),
+                      (A // 2, A // 6), (A // 6, A // 2))
+            for v1, v2, v3 in _it.permutations(top, 3) if len(top) >= 3 else ():
                 for a1, a2 in combos:
                     a3 = A - a1 - a2
                     if a1 <= 0 or a2 <= 0 or a3 <= 0:
@@ -1065,11 +1195,22 @@ class MinerSolver(BaselineSwapSolver):
         recipient = state.contract_address or params.get("receiver") or state.owner
         ts = getattr(snapshot, "timestamp", None) if snapshot else None
         deadline = int(ts or time.time()) + 300
-        interactions = []
+        # Encode each leg, then AGGREGATE the approve per router: legs may share a
+        # router (e.g. two Uniswap fee tiers), and a fresh approve per leg would
+        # OVERWRITE (not add) the allowance — so one approve(router, sum) up front,
+        # then every swap. Distinct-router legs are unaffected (one approve each).
+        from collections import OrderedDict
+        encoded = []
+        approve_totals: "OrderedDict[str,int]" = OrderedDict()
         for venue, param, amt in legs:
             router, call = self._encode_v3_leg(venue, param, tin, tout, amt, recipient, deadline, chain_id)
+            encoded.append((router, call))
+            approve_totals[router] = approve_totals.get(router, 0) + int(amt)
+        interactions = []
+        for router, total in approve_totals.items():
             interactions.append(Interaction(target=tin, value="0",
-                                            call_data=encode_approve(router, amt), chain_id=chain_id))
+                                            call_data=encode_approve(router, total), chain_id=chain_id))
+        for router, call in encoded:
             interactions.append(Interaction(target=router, value="0", call_data=call, chain_id=chain_id))
         gain_bps = (exp_out - ref_out) * 10000 // max(1, ref_out)
         logger.info("[solver] SPLIT %d legs out=%d (+%d bps vs single) legs=%s",
