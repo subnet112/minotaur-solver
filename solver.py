@@ -56,7 +56,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.0.1")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -135,13 +135,17 @@ _ETH_HUBS = (_ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_DAI, _ETH_WBTC)
 _ETH_UNI_FEES = (100, 500, 3000, 10000)
 _ETH_UNI_FEES_TWOHOP = ((500, 500), (500, 3000), (3000, 500), (3000, 3000),
                          (100, 500), (500, 100), (100, 3000), (3000, 100))
-# Curve on Ethereum mainnet.
-# Old Swap Router: get_best_rate(address,address,uint256,address[8]) -> (address,uint256)
-#                  exchange_with_best_rate(address,address,uint256,uint256,address) -> uint256
-# Covers 3pool (DAI/USDC/USDT) + Tricrypto2 (USDT/WBTC/WETH) — the largest Curve pools.
-_ETH_CURVE_AUTO_ROUTER = "0x99a58482bd75cbab83b27ec03ca68ff489b5788f"
-# Router-NG: explicit route arrays required. get_dy / exchange. Future use.
+# Curve on Ethereum mainnet — Router-NG (explicit verified routes, exact get_dy).
+#   get_dy(address[11],uint256[5][5],uint256) -> uint256                (quote)
+#   exchange(address[11],uint256[5][5],uint256,uint256,address[5],address) (execute)
+# We route ONLY through the canonical 3pool (DAI/USDC/USDT) — fork-proven to
+# execute and deliver exactly its get_dy quote, and a huge edge over Uniswap at
+# size (Uni's USDC/DAI pool is thin and collapses on 2M+ orders; 3pool doesn't).
+# The OLD registry's get_best_rate is intentionally NOT used: it routes through
+# ancient cToken lending pools and returns phantom quotes that revert on exec.
 _ETH_CURVE_ROUTER = "0x45312ea0eFf7E09C83CBE249fa1d7598c4C8cd4e"
+_ETH_3POOL = "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7"
+_ETH_3POOL_IDX = {_ETH_DAI: 0, _ETH_USDC: 1, _ETH_USDT: 2}   # coin order in 3pool
 
 # Score-proxy gas model: actual executeIntent gas ≈ fixed harness/proxy
 # overhead (per venue) + the route's tick-crossing cost, which the on-chain
@@ -1120,18 +1124,30 @@ class MinerSolver(BaselineSwapSolver):
             return None
 
         def _quote_eth_curve():
+            # Curve Router-NG get_dy on the 3pool stable triangle (DAI/USDC/USDT).
+            # The OLD registry's get_best_rate is UNSAFE — it routes through ancient
+            # cToken lending pools and returns phantom-inflated quotes (50k USDC ->
+            # "57912" USDT) that revert/under-deliver on execution. Router-NG get_dy
+            # is exact (fork-proven: USDC->DAI 2M get_dy == delivered DAI). 3pool
+            # massively beats Uniswap at size, esp. USDC<->DAI where Uni's pool is
+            # thin (Uni delivers 557k of a 2M order; Curve delivers 1.999M).
+            ti = _ETH_3POOL_IDX.get(tin_l)
+            tj = _ETH_3POOL_IDX.get(tout_l)
+            if ti is None or tj is None or ti == tj:
+                return None
             try:
-                # get_best_rate(address,address,uint256,address[8]) -> (address,uint256)
-                sel = _kk(text="get_best_rate(address,address,uint256,address[8])")[:4]
-                exclude = ["0x" + "0" * 40] * 8
-                p = _enc(["address", "address", "uint256", "address[8]"],
-                         [_ck(tin), _ck(tout), int(amount_in), exclude])
-                r = w3.eth.call({"to": _ck(_ETH_CURVE_AUTO_ROUTER),
-                                 "data": "0x" + (sel + p).hex()})
-                pool_addr, expected = _dec(["address", "uint256"], r)
-                if int(expected) > 0:
-                    return {"venue": "curve_auto", "param": str(pool_addr),
-                            "out": int(expected), "gas_est": 200000, "gas_model": 430000}
+                Z = "0x" + "0" * 40
+                route = [_ck(tin), _ck(_ETH_3POOL), _ck(tout)] + [Z] * 8
+                swap = [[ti, tj, 1, 1, 3]] + [[0, 0, 0, 0, 0]] * 4
+                sel = _kk(text="get_dy(address[11],uint256[5][5],uint256)")[:4]
+                p = _enc(["address[11]", "uint256[5][5]", "uint256"],
+                         [route, swap, int(amount_in)])
+                r = w3.eth.call({"to": _ck(_ETH_CURVE_ROUTER), "data": "0x" + (sel + p).hex()})
+                out = int(_dec(["uint256"], r)[0])
+                if out > 0:
+                    return {"venue": "curve_ng", "param": "3pool", "out": out,
+                            "gas_est": 200000, "gas_model": 430000,
+                            "curve_route": route, "curve_swap": swap}
             except Exception:
                 return None
             return None
@@ -1197,7 +1213,7 @@ class MinerSolver(BaselineSwapSolver):
             if base_plan is not None and bp_out > 0 and (min_out <= 0 or bp_out >= min_out):
                 if score(bp_out, _OFFSET_UNI + 100000) >= score(best["out"], best["gas_model"]):
                     return base_plan
-            if best["venue"] == "curve_auto":
+            if best["venue"] == "curve_ng":
                 return self._build_curve_plan(
                     intent, state, snapshot, best, tin, tout, amount_in, chain_id)
             return self._build_singlehop_plan(
@@ -1207,7 +1223,12 @@ class MinerSolver(BaselineSwapSolver):
             return base_plan
 
     def _build_curve_plan(self, intent, state, snapshot, cand, tin, tout, amount_in, chain_id):
-        """Build approve + exchange_with_best_rate for Curve's old Swap Router."""
+        """approve + Curve Router-NG exchange() for the chosen 3pool route.
+
+        Fork-execution proven (USDC->DAI 2M): the calldata below runs status=1 and
+        delivers exactly the get_dy quote. min_dy=0 — the harness enforces the
+        order's min_output at the intent level, so this only removes spurious
+        per-swap slippage reverts. No deadline param (Router-NG.exchange has none)."""
         from common.abi_utils import encode_approve
         from eth_abi import encode as _abi_encode
         from eth_utils import keccak as _kk, to_checksum_address as _ck
@@ -1215,23 +1236,26 @@ class MinerSolver(BaselineSwapSolver):
         recipient = state.contract_address or params.get("receiver") or state.owner
         ts = getattr(snapshot, "timestamp", None) if snapshot else None
         deadline = int(ts or time.time()) + 300
-        sel = _kk(text="exchange_with_best_rate(address,address,uint256,uint256,address)")[:4]
+        Z = "0x" + "0" * 40
+        route = cand["curve_route"]
+        swap = cand["curve_swap"]
+        sel = _kk(text="exchange(address[11],uint256[5][5],uint256,uint256,address[5],address)")[:4]
         enc = _abi_encode(
-            ["address", "address", "uint256", "uint256", "address"],
-            [_ck(tin), _ck(tout), int(amount_in), 0, _ck(recipient)])
+            ["address[11]", "uint256[5][5]", "uint256", "uint256", "address[5]", "address"],
+            [route, swap, int(amount_in), 0, [Z] * 5, _ck(recipient)])
         call = "0x" + (sel + enc).hex()
         interactions = [
             Interaction(target=tin, value="0",
-                        call_data=encode_approve(_ETH_CURVE_AUTO_ROUTER, amount_in),
+                        call_data=encode_approve(_ETH_CURVE_ROUTER, amount_in),
                         chain_id=chain_id),
-            Interaction(target=_ETH_CURVE_AUTO_ROUTER, value="0",
+            Interaction(target=_ETH_CURVE_ROUTER, value="0",
                         call_data=call, chain_id=chain_id),
         ]
-        logger.info("[solver] curve_auto out=%d pool=%s", cand["out"], cand["param"])
+        logger.info("[solver] curve_ng 3pool out=%d", cand["out"])
         return ExecutionPlan(
             intent_id=intent.app_id, interactions=interactions, deadline=deadline,
             nonce=state.nonce,
-            metadata={"solver": "curve-router", "route": "curve_auto",
+            metadata={"solver": "curve-router", "route": "curve_ng_3pool",
                       "expected_output": str(cand["out"]), "chain_id": chain_id})
 
     # ── offline RPC-free plan (safety net when baseline yields nothing) ──────
