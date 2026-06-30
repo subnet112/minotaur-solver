@@ -55,9 +55,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.0.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "multiway-split-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.0.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "5FAKxCys9FnpsFQTEjUCdx8zNtqpWXiyEev5gx1Bde7Widgf")
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -908,14 +908,16 @@ class MinerSolver(BaselineSwapSolver):
                       "chain_id": chain_id})
 
     # ── route splitting across the deep single-pool V3 venues ────────────────
-    # The champion picks ONE best route. On large orders (convex price impact)
-    # splitting the same order across Uni V3 / Aerodrome Slipstream / Pancake V3
-    # delivers strictly more output (on-chain split sim: +12..18 bps at size).
-    # Per the SN112 rule (raw output per order, >10 bps win, zero regressions),
-    # each such large order becomes a clean win the single-route champion can't
-    # match. SAFETY: we only EVER emit a split when its summed on-chain quote
-    # beats the chosen single route by a real margin; otherwise we fall straight
-    # back to the proven single-hop plan. More output is never a regression.
+    # On large orders (convex price impact) splitting one order across Uni V3 /
+    # Aerodrome Slipstream / Pancake V3 delivers strictly more output. The prior
+    # champion split only the top-2 venues at coarse {1/3,1/2,2/3} ratios; this
+    # solver splits the top-3 venues (2-way AND 3-way) on a finer tenths grid,
+    # capturing more of that convex gain at size. Per the SN112 rule (raw output
+    # per order, zero regressions), each large order is a clean win the top-2
+    # single-grid splitter can't match. SAFETY: we only EVER emit a split when its
+    # summed on-chain quote beats the chosen single route by a real margin;
+    # otherwise we fall straight back to the proven single-hop plan. More on-chain
+    # output is never a regression.
     _SPLITTABLE = ("uniswap_v3", "aerodrome_slipstream", "pancake_v3")
 
     def _quote_one(self, w3, venue, param, tin, tout, amount):
@@ -967,17 +969,29 @@ class MinerSolver(BaselineSwapSolver):
             deadline=deadline, amount_in=amount, amount_out_minimum=0, chain_id=chain_id)
 
     def _try_split_plan(self, intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best):
-        """Probe a 2-venue split of this order across the top-2 deep V3 venues.
-        Returns an ExecutionPlan ONLY if the split's summed on-chain quote beats
-        the chosen single route by > _SPLIT_MIN_GAIN_BPS; else None (caller falls
-        back to the single-hop plan). Bounded to 6 extra concurrent eth_calls,
-        fired only when the runner-up venue is within 2% (the promising case)."""
+        """Probe 2-way AND 3-way splits across the top-3 deep V3 venues on a fine
+        (tenths) grid, and return an ExecutionPlan ONLY if the split's summed
+        on-chain quote beats the chosen single route by > _SPLIT_MIN_GAIN; else
+        None (caller falls back to the single-hop plan).
+
+        This EXTENDS the champion's top-2 / {1/3,1/2,2/3} probe in three ways that
+        capture more of the convex price-impact gain at size:
+          • a third splittable venue (3-way splits, not just 2-way),
+          • a finer tenths grid (9 ratios per pair, vs the old 3), and
+          • all of it powered by a single per-venue quote grid — pool outputs are
+            independent, so one grid of quotes feeds every 2-/3-way combination.
+
+        SAFETY (unchanged): the single route is the floor, every split total is an
+        on-chain quote, and we only emit when it beats the single route by a real
+        margin. More on-chain output is never a regression, and any failure falls
+        straight back to the proven single-hop plan. We prefer the simplest split
+        on ties (2-way evaluated before 3-way; strict-greater to upgrade)."""
         try:
-            _SPLIT_MIN_GAIN = 1.0005   # +5 bps over the single route to justify a 2nd leg
+            _SPLIT_MIN_GAIN = 1.0005   # +5 bps over the single route to justify extra legs
             ref_out = int(best.get("out", 0) or 0)
-            if ref_out <= 0 or amount_in < 3:
+            if ref_out <= 0 or amount_in < 10:
                 return None
-            # top-2 DISTINCT splittable venues by full-amount output
+            # top-3 DISTINCT splittable venues by full-amount output
             sp = sorted((c for c in cands if c["venue"] in self._SPLITTABLE),
                         key=lambda c: c["out"], reverse=True)
             top, seen = [], set()
@@ -985,45 +999,90 @@ class MinerSolver(BaselineSwapSolver):
                 if c["venue"] in seen:
                     continue
                 seen.add(c["venue"]); top.append(c)
-                if len(top) == 2:
+                if len(top) == 3:
                     break
             if len(top) < 2:
                 return None
-            v1, v2 = top[0], top[1]
-            # cost gate: only probe when the runner-up is genuinely competitive
-            if v2["out"] < v1["out"] * 0.98:
+            v1 = top[0]
+            # cost gate: keep only genuinely competitive venues (within 2% of the
+            # leader at full size) — a venue far below the leader cannot improve a
+            # split, so we don't waste quote budget probing it.
+            venues = [v1] + [v for v in top[1:] if v["out"] >= v1["out"] * 0.98]
+            if len(venues) < 2:
                 return None
             w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
             import concurrent.futures
-            fr = [amount_in // 3, amount_in // 2, (2 * amount_in) // 3]
-            jobs = [(v, a) for v in (v1, v2) for a in fr]
-            quotes: dict[tuple, int] = {}
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(jobs)) as ex:
-                futs = {ex.submit(self._quote_one, w3, v["venue"], v["param"], tin, tout, a): (v["venue"], a)
-                        for v, a in jobs}
+            # One quote grid per venue: output at each tenth of the order (k/10,
+            # k=1..9). Bounded to <= 3*9 = 27 concurrent eth_calls, fired only on
+            # the promising case (a competitive runner-up exists).
+            grid = list(range(1, 10))
+            amts = {k: amount_in * k // 10 for k in grid}
+            jobs = [(vi, k) for vi in range(len(venues)) for k in grid]
+            qt: dict[tuple, int] = {}
+            with concurrent.futures.ThreadPoolExecutor(max_workers=min(48, len(jobs))) as ex:
+                futs = {
+                    ex.submit(self._quote_one, w3, venues[vi]["venue"], venues[vi]["param"],
+                              tin, tout, amts[k]): (vi, k)
+                    for vi, k in jobs
+                }
                 for f in concurrent.futures.as_completed(futs):
-                    quotes[futs[f]] = f.result()
+                    qt[futs[f]] = f.result()
 
-            def q(v, a):
-                if a >= amount_in:
-                    return int(v["out"])
-                return int(quotes.get((v["venue"], a), 0))
+            def out_at(vi, k):
+                return int(qt.get((vi, k), 0))
 
-            # evaluate the 3 complementary splits (a1 in {1/3,1/2,2/3}; a2=rest)
-            best_total, best_a1 = ref_out, None
-            for a1 in fr:
-                a2 = amount_in - a1
-                o1, o2 = q(v1, a1), q(v2, a2)
-                if o1 <= 0 or o2 <= 0:
-                    continue
-                if o1 + o2 > best_total:
-                    best_total, best_a1 = o1 + o2, a1
-            if best_a1 is None or best_total < ref_out * _SPLIT_MIN_GAIN:
+            n = len(venues)
+            # Best allocation at each leg count, scanned independently so each can
+            # be held to its own gas-justified bar below.
+            best2_total, best2_alloc = 0, None
+            for i in range(n):
+                for j in range(i + 1, n):
+                    for k1 in grid:
+                        k2 = 10 - k1
+                        o1, o2 = out_at(i, k1), out_at(j, k2)
+                        if o1 <= 0 or o2 <= 0:
+                            continue
+                        if o1 + o2 > best2_total:
+                            best2_total, best2_alloc = o1 + o2, [(i, k1), (j, k2)]
+            best3_total, best3_alloc = 0, None
+            if n >= 3:
+                for k1 in range(1, 9):
+                    for k2 in range(1, 10 - k1):
+                        k3 = 10 - k1 - k2
+                        o1, o2, o3 = out_at(0, k1), out_at(1, k2), out_at(2, k3)
+                        if o1 <= 0 or o2 <= 0 or o3 <= 0:
+                            continue
+                        if o1 + o2 + o3 > best3_total:
+                            best3_total, best3_alloc = o1 + o2 + o3, [(0, k1), (1, k2), (2, k3)]
+
+            # Each extra leg adds an approve+swap (gas, a scored term), so require
+            # each added leg to clear its own output bar: +5 bps for the 2nd leg,
+            # +10 bps for the 3rd. The single route is the floor; we upgrade to a
+            # 2-way only if it clears +5 bps, and to a 3-way only if it ALSO beats
+            # the best 2-way and clears +10 bps. Simplest plan wins on ties.
+            best_total, best_alloc = ref_out, None
+            if best2_alloc is not None and best2_total >= ref_out * _SPLIT_MIN_GAIN:
+                best_total, best_alloc = best2_total, best2_alloc
+            if (best3_alloc is not None
+                    and best3_total > best_total
+                    and best3_total >= ref_out * (1 + 2 * (_SPLIT_MIN_GAIN - 1))):
+                best_total, best_alloc = best3_total, best3_alloc
+            if best_alloc is None:
                 return None
-            legs = [(v1["venue"], v1["param"], best_a1),
-                    (v2["venue"], v2["param"], amount_in - best_a1)]
+            # Build legs; the LAST leg takes the residual so the parts sum EXACTLY
+            # to amount_in (tenths flooring would otherwise drop a few wei). The
+            # residual leg only ever gets >= its quoted share, so realized output
+            # is >= best_total — the gain estimate stays conservative.
+            legs, used = [], 0
+            for idx, (vi, k) in enumerate(best_alloc):
+                if idx == len(best_alloc) - 1:
+                    amt = amount_in - used
+                else:
+                    amt = amount_in * k // 10
+                    used += amt
+                legs.append((venues[vi]["venue"], venues[vi]["param"], amt))
             return self._build_split_plan(
                 intent, state, snapshot, legs, tin, tout, amount_in, chain_id, best_total, ref_out)
         except Exception:
