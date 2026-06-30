@@ -933,7 +933,8 @@ class MinerSolver(BaselineSwapSolver):
                       "chain_id": chain_id})
 
     # ── cross-venue 2-hop routing (tin -> hub -> tout across DIFFERENT venues) ─
-    _XHOP_HUBS = (_WETH, _USDC, _CBBTC)
+    _XHOP_HUBS = (_WETH,)   # WETH is the deep hub for the exotic wins (e.g. INCH); one
+                            # hub keeps the extra per-exotic quote cost low (no timeouts).
 
     def _best_leg(self, w3, chain_id, a, b, amt, venues=None):
         """Best single-pool quote for a->b at `amt` across Uni V3 / Pancake V3 /
