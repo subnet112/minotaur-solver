@@ -55,9 +55,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.0.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "29.0.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -967,17 +967,21 @@ class MinerSolver(BaselineSwapSolver):
             deadline=deadline, amount_in=amount, amount_out_minimum=0, chain_id=chain_id)
 
     def _try_split_plan(self, intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best):
-        """Probe a 2-venue split of this order across the top-2 deep V3 venues.
-        Returns an ExecutionPlan ONLY if the split's summed on-chain quote beats
-        the chosen single route by > _SPLIT_MIN_GAIN_BPS; else None (caller falls
-        back to the single-hop plan). Bounded to 6 extra concurrent eth_calls,
-        fired only when the runner-up venue is within 2% (the promising case)."""
+        """Probe a route SPLIT across the top-3 DISTINCT deep V3 venues (Uni V3 /
+        Aerodrome Slipstream / Pancake V3). STRICT SUPERSET of the 2-venue split:
+        searches every venue PAIR over a fine complementary ratio grid AND a 3-way
+        split, then keeps the single best summed on-chain quote. Returns an
+        ExecutionPlan only if it beats the chosen single route by > _SPLIT_MIN_GAIN;
+        else None (caller falls back to single-hop). Legs are on DISTINCT venues =
+        distinct routers, so the proven per-leg approve+swap encoding is unchanged
+        (no allowance collision). More output is never a per-order regression."""
         try:
-            _SPLIT_MIN_GAIN = 1.0005   # +5 bps over the single route to justify a 2nd leg
+            _SPLIT_MIN_GAIN = 1.0005   # +5 bps over the single route to justify a split
             ref_out = int(best.get("out", 0) or 0)
-            if ref_out <= 0 or amount_in < 3:
+            A = int(amount_in)
+            if ref_out <= 0 or A < 6:
                 return None
-            # top-2 DISTINCT splittable venues by full-amount output
+            # top-3 DISTINCT splittable venues by full-amount output (best pool/tier each)
             sp = sorted((c for c in cands if c["venue"] in self._SPLITTABLE),
                         key=lambda c: c["out"], reverse=True)
             top, seen = [], set()
@@ -985,45 +989,70 @@ class MinerSolver(BaselineSwapSolver):
                 if c["venue"] in seen:
                     continue
                 seen.add(c["venue"]); top.append(c)
-                if len(top) == 2:
+                if len(top) == 3:
                     break
             if len(top) < 2:
                 return None
-            v1, v2 = top[0], top[1]
-            # cost gate: only probe when the runner-up is genuinely competitive
-            if v2["out"] < v1["out"] * 0.98:
+            # cost gate: only probe when the runner-up venue is genuinely competitive
+            if top[1]["out"] < top[0]["out"] * 0.98:
                 return None
             w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
             import concurrent.futures
-            fr = [amount_in // 3, amount_in // 2, (2 * amount_in) // 3]
-            jobs = [(v, a) for v in (v1, v2) for a in fr]
+            # fine, symmetric integer fraction grid (complements stay on-grid)
+            fr = sorted({A // 6, A // 4, A // 3, A // 2,
+                         (2 * A) // 3, (3 * A) // 4, (5 * A) // 6})
+            fr = [a for a in fr if 0 < a < A]
+            amts = sorted(set(fr) | {A - a for a in fr})
+            amts = [a for a in amts if 0 < a < A]
+            jobs = [(v, a) for v in top for a in amts]
             quotes: dict[tuple, int] = {}
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(jobs)) as ex:
+            workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
                 futs = {ex.submit(self._quote_one, w3, v["venue"], v["param"], tin, tout, a): (v["venue"], a)
                         for v, a in jobs}
                 for f in concurrent.futures.as_completed(futs):
                     quotes[futs[f]] = f.result()
 
             def q(v, a):
-                if a >= amount_in:
+                a = int(a)
+                if a >= A:
                     return int(v["out"])
+                if a <= 0:
+                    return 0
                 return int(quotes.get((v["venue"], a), 0))
 
-            # evaluate the 3 complementary splits (a1 in {1/3,1/2,2/3}; a2=rest)
-            best_total, best_a1 = ref_out, None
-            for a1 in fr:
-                a2 = amount_in - a1
-                o1, o2 = q(v1, a1), q(v2, a2)
-                if o1 <= 0 or o2 <= 0:
-                    continue
-                if o1 + o2 > best_total:
-                    best_total, best_a1 = o1 + o2, a1
-            if best_a1 is None or best_total < ref_out * _SPLIT_MIN_GAIN:
+            best_total, best_legs = ref_out, None
+            # 2-way: every ordered venue pair over the complementary ratio grid
+            for i in range(len(top)):
+                for j in range(len(top)):
+                    if i == j:
+                        continue
+                    vi, vj = top[i], top[j]
+                    for a1 in fr:
+                        a2 = A - a1
+                        o1, o2 = q(vi, a1), q(vj, a2)
+                        if o1 > 0 and o2 > 0 and o1 + o2 > best_total:
+                            best_total = o1 + o2
+                            best_legs = [(vi, a1), (vj, a2)]
+            # 3-way across all 3 venues (allocations chosen so a3 stays on-grid)
+            if len(top) >= 3:
+                v1, v2, v3 = top[0], top[1], top[2]
+                combos = ((A // 3, A // 3), (A // 2, A // 4), (A // 4, A // 2),
+                          (A // 4, A // 4), (A // 2, A // 3), (A // 3, A // 2),
+                          (A // 2, A // 6), (A // 6, A // 2))
+                for a1, a2 in combos:
+                    a3 = A - a1 - a2
+                    if a1 <= 0 or a2 <= 0 or a3 <= 0:
+                        continue
+                    o1, o2, o3 = q(v1, a1), q(v2, a2), q(v3, a3)
+                    if o1 > 0 and o2 > 0 and o3 > 0 and o1 + o2 + o3 > best_total:
+                        best_total = o1 + o2 + o3
+                        best_legs = [(v1, a1), (v2, a2), (v3, a3)]
+            if best_legs is None or best_total < ref_out * _SPLIT_MIN_GAIN:
                 return None
-            legs = [(v1["venue"], v1["param"], best_a1),
-                    (v2["venue"], v2["param"], amount_in - best_a1)]
+            legs = [(v["venue"], v["param"], int(a)) for (v, a) in best_legs]
             return self._build_split_plan(
                 intent, state, snapshot, legs, tin, tout, amount_in, chain_id, best_total, ref_out)
         except Exception:
