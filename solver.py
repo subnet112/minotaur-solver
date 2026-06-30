@@ -56,7 +56,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.0.1")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.1.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -755,6 +755,17 @@ class MinerSolver(BaselineSwapSolver):
             if not cands:
                 return base_plan
 
+            # Cross-venue 2-hop candidates (tin->hub->tout, each leg best venue,
+            # leg2 Uni CONTRACT_BALANCE). The field's edge — routes our same-venue
+            # multihop can't express. Add only those beating the best single-hop by
+            # >5bps (more output is never a per-order regression; bounded extra RPC).
+            try:
+                _bb = max((c["out"] for c in cands), default=0)
+                _xc = self._enumerate_crossvenue_2hop(chain_id, tin, tout, amount_in)
+                cands = cands + [c for c in _xc if c["out"] > _bb * 1.0005]
+            except Exception:
+                logger.exception("[solver] crossvenue 2hop enumerate failed; skipping")
+
             best_out = max(c["out"] for c in cands)
             bp_out = 0
             if base_plan is not None:
@@ -800,6 +811,12 @@ class MinerSolver(BaselineSwapSolver):
                               else _OFFSET_UNI + 100000)
                     if score(bp_out, bp_gas) >= score(best["out"], best["gas_model"]):
                         return base_plan
+
+            # If a cross-venue 2-hop is the best route, build it (CONTRACT_BALANCE
+            # chaining). Checked before split — it's a distinct plan shape.
+            if best.get("venue") == "crossvenue_2hop":
+                return self._build_2hop_plan(
+                    intent, state, snapshot, best, tin, tout, amount_in, chain_id)
 
             # route SPLIT across the top-2 deep V3 venues; None -> single-hop plan
             split_plan = self._try_split_plan(
@@ -969,6 +986,104 @@ class MinerSolver(BaselineSwapSolver):
         return router, encode_exact_input_single(
             token_in=tin, token_out=tout, fee=int(param), recipient=recipient,
             deadline=deadline, amount_in=amount, amount_out_minimum=0, chain_id=chain_id)
+
+    # ── cross-venue 2-hop via SwapRouter02 CONTRACT_BALANCE chaining ─────────
+    # The champion (and our base) only express SAME-VENUE multihop (one router's
+    # path encoding). The field's edge is a CROSS-venue 2-hop: leg1 tin->hub on
+    # its best venue (Pancake/Aero/Uni), leg2 hub->tout on Uniswap with amountIn=0
+    # (== SwapRouter02 CONTRACT_BALANCE, swaps the router's own hub balance leg1
+    # just deposited). Captures WETH<->USDC-via-cbBTC and exotic routes our path
+    # multihop can't (+28bps measured on the orders the field beat us on).
+    _XHOP_HUBS = (_WETH, _CBBTC, _DAI, _USDBC, _AERO)
+
+    def _best_leg(self, w3, chain_id, a, b, amt, venues=None):
+        """Best single-pool quote a->b at `amt` across Uni V3 / Pancake V3 / Aero
+        Slipstream. `venues` restricts the set (force the FINAL leg onto Uniswap,
+        whose CONTRACT_BALANCE chaining we use). Returns {venue,param,out} or None."""
+        if int(amt) <= 0:
+            return None
+        import concurrent.futures
+        combos = ([("uniswap_v3", f) for f in _UNI_FEES]
+                  + [("pancake_v3", f) for f in _PANCAKE_FEES]
+                  + [("aerodrome_slipstream", t) for t in _AERO_TICK_SPACINGS])
+        if venues is not None:
+            combos = [(v, p) for v, p in combos if v in venues]
+        best = None
+        workers = max(1, min(_QUOTER_MAX_WORKERS, len(combos)))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+            futs = {ex.submit(self._quote_one, w3, v, p, a, b, int(amt)): (v, p) for v, p in combos}
+            for f in concurrent.futures.as_completed(futs):
+                v, p = futs[f]
+                try:
+                    o = int(f.result())
+                except Exception:
+                    o = 0
+                if o > 0 and (best is None or o > best["out"]):
+                    best = {"venue": v, "param": p, "out": o}
+        return best
+
+    def _enumerate_crossvenue_2hop(self, chain_id, tin, tout, amount_in):
+        """tin -> hub -> tout, each leg its OWN best venue (legs may differ). leg2
+        is forced onto Uniswap so _build_2hop_plan can chain via CONTRACT_BALANCE.
+        Returns crossvenue_2hop candidates (one per usable hub)."""
+        cands = []
+        w3 = self._get_web3(int(chain_id))
+        if w3 is None:
+            return cands
+        tl, ol = str(tin).lower(), str(tout).lower()
+        for hub in self._XHOP_HUBS:
+            if hub in (tl, ol):
+                continue
+            l1 = self._best_leg(w3, chain_id, tin, hub, amount_in)
+            if not l1:
+                continue
+            l2 = self._best_leg(w3, chain_id, hub, tout, l1["out"], venues=("uniswap_v3",))
+            if not l2:
+                continue
+            cands.append({
+                "venue": "crossvenue_2hop",
+                "param": (l1["venue"], l1["param"], l2["venue"], l2["param"]),
+                "out": int(l2["out"]), "hub": hub, "leg1": l1, "leg2": l2,
+                "gas_est": 240000, "gas_model": _GAS_MULTIHOP + 120000,
+            })
+        return cands
+
+    def _build_2hop_plan(self, intent, state, snapshot, cand, tin, tout, amount_in, chain_id):
+        """Cross-venue 2-hop via SwapRouter02 CONTRACT_BALANCE chaining:
+          1. approve leg1 router for tin
+          2. leg1 tin->hub on its best venue, recipient = the Uni SwapRouter02
+          3. leg2 Uni exactInputSingle (0x04e45aaf, no deadline) hub->tout with
+             amountIn=0 == CONTRACT_BALANCE -> swaps the router's OWN hub balance,
+             recipient = app contract for measurement. No leg2 approve needed."""
+        from common.abi_utils import encode_approve
+        from eth_abi import encode as _enc
+        from eth_utils import to_checksum_address as _ck
+        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+        params = self._normalized_swap_params(intent, state)
+        app = state.contract_address or params.get("receiver") or state.owner
+        ts = getattr(snapshot, "timestamp", None) if snapshot else None
+        deadline = int(ts or time.time()) + 300
+        hub, l1, l2 = cand["hub"], cand["leg1"], cand["leg2"]
+        uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+        if not uni_router:
+            raise ValueError("no uniswap router")
+        r1, c1 = self._encode_v3_leg(l1["venue"], l1["param"], tin, hub, amount_in, uni_router, deadline, chain_id)
+        leg2_params = _enc(
+            ["address", "address", "uint24", "address", "uint256", "uint256", "uint160"],
+            [_ck(hub), _ck(tout), int(l2["param"]), _ck(app), 0, 0, 0])
+        c2 = "0x04e45aaf" + leg2_params.hex()
+        interactions = [
+            Interaction(target=tin, value="0", call_data=encode_approve(r1, amount_in), chain_id=chain_id),
+            Interaction(target=r1, value="0", call_data=c1, chain_id=chain_id),
+            Interaction(target=uni_router, value="0", call_data=c2, chain_id=chain_id),
+        ]
+        logger.info("[solver] XHOP %s->%s->%s out=%d via %s+uni(CB)",
+                    str(tin)[:8], str(hub)[:8], str(tout)[:8], cand["out"], l1["venue"])
+        return ExecutionPlan(
+            intent_id=intent.app_id, interactions=interactions, deadline=deadline,
+            nonce=state.nonce,
+            metadata={"solver": "crossvenue-2hop", "route": "crossvenue_2hop", "hub": hub,
+                      "expected_output": str(cand["out"]), "chain_id": chain_id, "hops": 2})
 
     def _try_split_plan(self, intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best):
         """Probe a 2-venue split of this order across the top-2 deep V3 venues.
