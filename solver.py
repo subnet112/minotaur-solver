@@ -56,7 +56,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.99.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -114,6 +114,34 @@ _UNI_KG_TWOHOP_FEES = ((100, 100), (500, 100), (100, 500), (500, 500),
                        (3000, 100), (100, 3000), (3000, 500), (500, 3000))
 _AERO_KG_TWOHOP_TICKS = ((1, 1), (100, 1), (1, 100), (100, 100),
                          (200, 100), (100, 200), (200, 1), (1, 200))
+
+# ── Ethereum mainnet (chain 1) + Bittensor-EVM (chain 964) multi-chain routing ──
+# The champion is Base-only: its score-aware engine bails for non-Base chains and
+# falls back to the WEAK baseline (single Uni V3 / single-tick math, no Curve).
+# A strong score-aware path on these chains beats that baseline on every order.
+_ETH = 1
+_BT = 964
+# Uniswap V3 QuoterV2 per chain (verified on-chain: quoteExactInputSingle works).
+_UNI_QUOTER_BY_CHAIN = {
+    _ETH: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",   # Ethereum mainnet QuoterV2
+}
+# Mainnet major tokens (lowercase, like the Base set).
+_ETH_WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+_ETH_USDC = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+_ETH_USDT = "0xdac17f958d2ee523a2206206994597c13d831ec7"
+_ETH_DAI  = "0x6b175474e89094c44da98b954eedeac495271d0f"
+_ETH_WBTC = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+_ETH_HUBS = (_ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_DAI, _ETH_WBTC)
+_ETH_UNI_FEES = (100, 500, 3000, 10000)
+_ETH_UNI_FEES_TWOHOP = ((500, 500), (500, 3000), (3000, 500), (3000, 3000),
+                         (100, 500), (500, 100), (100, 3000), (3000, 100))
+# Curve on Ethereum mainnet.
+# Old Swap Router: get_best_rate(address,address,uint256,address[8]) -> (address,uint256)
+#                  exchange_with_best_rate(address,address,uint256,uint256,address) -> uint256
+# Covers 3pool (DAI/USDC/USDT) + Tricrypto2 (USDT/WBTC/WETH) — the largest Curve pools.
+_ETH_CURVE_AUTO_ROUTER = "0x99a58482bd75cbab83b27ec03ca68ff489b5788f"
+# Router-NG: explicit route arrays required. get_dy / exchange. Future use.
+_ETH_CURVE_ROUTER = "0x45312ea0eFf7E09C83CBE249fa1d7598c4C8cd4e"
 
 # Score-proxy gas model: actual executeIntent gas ≈ fixed harness/proxy
 # overhead (per venue) + the route's tick-crossing cost, which the on-chain
@@ -709,9 +737,14 @@ class MinerSolver(BaselineSwapSolver):
             amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
             min_out = int(params.get("min_output_amount", 0) or 0)
             chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-            if chain_id != _BASE or amount_in <= 0 or not tin or not tout:
+            if amount_in <= 0 or not tin or not tout:
                 return base_plan
             if tin.startswith("eip155:") or tout.startswith("eip155:"):
+                return base_plan
+            if chain_id == _ETH:
+                return self._score_aware_eth(intent, state, snapshot, base_plan,
+                                             tin, tout, amount_in, min_out, chain_id)
+            if chain_id != _BASE:
                 return base_plan
 
             cands = self._enumerate_singlehop_quotes(chain_id, tin, tout, amount_in)
@@ -1018,6 +1051,188 @@ class MinerSolver(BaselineSwapSolver):
             metadata={"solver": "score-aware-router", "route": "split",
                       "legs": len(legs), "expected_output": str(exp_out),
                       "single_output": str(ref_out), "chain_id": chain_id})
+
+    # ── Ethereum mainnet score-aware routing ─────────────────────────────────
+    def _enumerate_eth_quotes(self, chain_id, tin, tout, amount_in):
+        """Concurrent ETH-mainnet quotes: Uni V3 + PancakeSwap V3 + Curve (registry)."""
+        w3 = self._get_web3(int(chain_id))
+        if w3 is None:
+            return []
+        _eth_uni_quoter = _UNI_QUOTER_BY_CHAIN.get(int(chain_id))
+        if not _eth_uni_quoter:
+            return []
+        import concurrent.futures
+        from eth_abi import encode as _enc, decode as _dec
+        from eth_utils import keccak as _kk, to_checksum_address as _ck
+
+        uni_sel = _kk(text="quoteExactInputSingle((address,address,uint256,uint24,uint160))")[:4]
+        uni_exact_sel = _kk(text="quoteExactInput(bytes,uint256)")[:4]
+
+        def _eth_uni_path(tokens, fees):
+            path = b""
+            for i, token in enumerate(tokens):
+                addr = str(token)
+                path += bytes.fromhex(addr[2:] if addr.startswith("0x") else addr)
+                if i < len(fees):
+                    path += int(fees[i]).to_bytes(3, byteorder="big")
+            return path
+
+        def _quote_eth_uni(fee):
+            try:
+                p = _enc(["(address,address,uint256,uint24,uint160)"],
+                         [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
+                r = w3.eth.call({"to": _ck(_eth_uni_quoter), "data": "0x" + (uni_sel + p).hex()})
+                out, _a, _t, gas_est = _dec(["uint256", "uint160", "uint32", "uint256"], r)
+                if int(out) > 0:
+                    return {"venue": "uniswap_v3", "param": int(fee), "out": int(out),
+                            "gas_est": int(gas_est), "gas_model": _OFFSET_UNI + int(gas_est)}
+            except Exception:
+                return None
+            return None
+
+        def _quote_eth_pancake(fee):
+            try:
+                p = _enc(["(address,address,uint256,uint24,uint160)"],
+                         [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
+                r = w3.eth.call({"to": _ck(_PANCAKE_QUOTER), "data": "0x" + (uni_sel + p).hex()})
+                out, _a, _t, gas_est = _dec(["uint256", "uint160", "uint32", "uint256"], r)
+                if int(out) > 0:
+                    return {"venue": "pancake_v3", "param": int(fee), "out": int(out),
+                            "gas_est": int(gas_est), "gas_model": _OFFSET_UNI + int(gas_est)}
+            except Exception:
+                return None
+            return None
+
+        def _quote_eth_uni_multihop(route):
+            try:
+                tokens, fees = route
+                path = _eth_uni_path(tokens, fees)
+                p = _enc(["bytes", "uint256"], [path, int(amount_in)])
+                r = w3.eth.call({"to": _ck(_eth_uni_quoter), "data": "0x" + (uni_exact_sel + p).hex()})
+                out, _a, _t, gas_est = _dec(["uint256", "uint160[]", "uint32[]", "uint256"], r)
+                if int(out) > 0:
+                    return {"venue": "uniswap_v3_multihop", "param": tuple(int(f) for f in fees),
+                            "tokens": tuple(tokens), "fees": tuple(int(f) for f in fees),
+                            "out": int(out), "gas_est": int(gas_est),
+                            "gas_model": _GAS_MULTIHOP + int(gas_est)}
+            except Exception:
+                return None
+            return None
+
+        def _quote_eth_curve():
+            try:
+                # get_best_rate(address,address,uint256,address[8]) -> (address,uint256)
+                sel = _kk(text="get_best_rate(address,address,uint256,address[8])")[:4]
+                exclude = ["0x" + "0" * 40] * 8
+                p = _enc(["address", "address", "uint256", "address[8]"],
+                         [_ck(tin), _ck(tout), int(amount_in), exclude])
+                r = w3.eth.call({"to": _ck(_ETH_CURVE_AUTO_ROUTER),
+                                 "data": "0x" + (sel + p).hex()})
+                pool_addr, expected = _dec(["address", "uint256"], r)
+                if int(expected) > 0:
+                    return {"venue": "curve_auto", "param": str(pool_addr),
+                            "out": int(expected), "gas_est": 200000, "gas_model": 430000}
+            except Exception:
+                return None
+            return None
+
+        tin_l, tout_l = str(tin).lower(), str(tout).lower()
+        eth_mids = [h for h in _ETH_HUBS if h not in (tin_l, tout_l)]
+        uni_routes = [((tin, mid, tout), fees)
+                      for mid in eth_mids[:3]
+                      for fees in _ETH_UNI_FEES_TWOHOP]
+
+        jobs = (
+            [(_quote_eth_uni, f) for f in _ETH_UNI_FEES]
+            + [(_quote_eth_pancake, f) for f in _ETH_UNI_FEES]
+            + [(_quote_eth_uni_multihop, r) for r in uni_routes]
+        )
+        cands: list[dict[str, Any]] = []
+        try:
+            workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+                futs = [ex.submit(fn, arg) for fn, arg in jobs]
+                for fu in concurrent.futures.as_completed(futs):
+                    try:
+                        c = fu.result()
+                        if c is not None:
+                            cands.append(c)
+                    except Exception:
+                        pass
+        except Exception:
+            logger.exception("[solver] eth enumerate concurrent failed; sequential fallback")
+            for fn, arg in jobs:
+                c = fn(arg)
+                if c is not None:
+                    cands.append(c)
+        curve_cand = _quote_eth_curve()
+        if curve_cand is not None:
+            cands.append(curve_cand)
+        return cands
+
+    def _score_aware_eth(self, intent, state, snapshot, base_plan,
+                         tin, tout, amount_in, min_out, chain_id):
+        """Score-optimal routing for Ethereum mainnet: Uni V3 + PancakeSwap V3 + Curve."""
+        try:
+            cands = self._enumerate_eth_quotes(chain_id, tin, tout, amount_in)
+            if not cands:
+                return base_plan
+            best_out = max(c["out"] for c in cands)
+            bp_out = 0
+            if base_plan is not None:
+                try:
+                    bp_out = int((base_plan.metadata or {}).get("expected_output", 0) or 0)
+                except (TypeError, ValueError):
+                    bp_out = 0
+            ref = max(best_out, bp_out, 1)
+
+            def score(out, gas_model):
+                return 0.4 * (out / ref) - _GAS_WEIGHT * (gas_model / 1e6)
+
+            usable = [c for c in cands if min_out <= 0 or c["out"] >= min_out]
+            if not usable:
+                return base_plan
+            best = max(usable,
+                       key=lambda c: (round(score(c["out"], c["gas_model"]), 9), -c["gas_est"]))
+            if base_plan is not None and bp_out > 0 and (min_out <= 0 or bp_out >= min_out):
+                if score(bp_out, _OFFSET_UNI + 100000) >= score(best["out"], best["gas_model"]):
+                    return base_plan
+            if best["venue"] == "curve_auto":
+                return self._build_curve_plan(
+                    intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+            return self._build_singlehop_plan(
+                intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+        except Exception:
+            logger.exception("[solver] score_aware_eth failed; keeping base plan")
+            return base_plan
+
+    def _build_curve_plan(self, intent, state, snapshot, cand, tin, tout, amount_in, chain_id):
+        """Build approve + exchange_with_best_rate for Curve's old Swap Router."""
+        from common.abi_utils import encode_approve
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _kk, to_checksum_address as _ck
+        params = self._normalized_swap_params(intent, state)
+        recipient = state.contract_address or params.get("receiver") or state.owner
+        ts = getattr(snapshot, "timestamp", None) if snapshot else None
+        deadline = int(ts or time.time()) + 300
+        sel = _kk(text="exchange_with_best_rate(address,address,uint256,uint256,address)")[:4]
+        enc = _abi_encode(
+            ["address", "address", "uint256", "uint256", "address"],
+            [_ck(tin), _ck(tout), int(amount_in), 0, _ck(recipient)])
+        call = "0x" + (sel + enc).hex()
+        interactions = [
+            Interaction(target=tin, value="0",
+                        call_data=encode_approve(_ETH_CURVE_AUTO_ROUTER, amount_in),
+                        chain_id=chain_id),
+            Interaction(target=_ETH_CURVE_AUTO_ROUTER, value="0",
+                        call_data=call, chain_id=chain_id),
+        ]
+        logger.info("[solver] curve_auto out=%d pool=%s", cand["out"], cand["param"])
+        return ExecutionPlan(
+            intent_id=intent.app_id, interactions=interactions, deadline=deadline,
+            nonce=state.nonce,
+            metadata={"solver": "curve-router", "route": "curve_auto",
+                      "expected_output": str(cand["out"]), "chain_id": chain_id})
 
     # ── offline RPC-free plan (safety net when baseline yields nothing) ──────
     def _offline_fallback_plan(self, intent, state, snapshot):
