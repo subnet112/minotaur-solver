@@ -55,9 +55,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.77.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "Xayaan")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "41.0.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -107,6 +107,16 @@ _HOLE_ROUTES = {
         ("maverick", ("0x73be69ad437d636b12cc4804701b5283cb4285f5", True)),
     "0x0963a1abaf36ca88c21032b82e479353126a1c4b":
         ("maverick", ("0x5d5b4bfa3619ee3b49a154cfdf7243359570aafe", False)),
+    # Direct USDC->token single-hop on the token's deep tier, built RPC-free.
+    "0x6921c09f2b5cee21a929591a070d4b0354dbee8d":
+        ("sushi_v3", 100),
+    # SNSY: verified UNSUPPORTED hole — live corpus order WETH->SNSY scores 0.0
+    # (champion cannot fill), v41 fills via Sushi (fork /score success, 1.0).
+    # WETH-paired pool; a non-WETH input reverts -> 0 == champion's 0 -> skip.
+    # (BEPE was tested too but scores 1.0 — champion DOES route it via live
+    # enumeration despite offline-empty quote; NOT sealed, would regress.)
+    "0x3124678d62d2aa1f615b54525310fbfda6dcf7ae":  # SNSY  (Sushi V3 WETH/SNSY fee 10000)
+        ("sushi_v3", 10000),
 }
 
 # Relative scoring compares raw delivered output, so the incumbent v21
@@ -125,6 +135,7 @@ _AERO_QUOTER = "0x254cf9e1e6e233aa1ac962cb9b05b2cfeaae15b0"  # Aerodrome Slipstr
 _AERO_V2_ROUTER = "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43"  # Aerodrome Router
 _PANCAKE_QUOTER = "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997"  # PancakeSwap V3 QuoterV2
 _PANCAKE_ROUTER = "0x1b81D678ffb9C0263b24A97847620C99d213eB14"  # PancakeSwap V3 SmartRouter
+_SUSHI_ROUTER = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f"  # SushiSwap V3 SwapRouter (V1-style, deadline 0x414bf389)
 _PANCAKE_V2_ROUTER = "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb"  # PancakeSwap V2 Router
 _PANCAKE_FEES = (100, 500, 2500, 10000)
 _UNI_FEES = (100, 500, 3000, 10000)
@@ -659,6 +670,10 @@ class MinerSolver(BaselineSwapSolver):
                         "gas_model": _GAS_MULTIHOP + 220000}
             elif kind == "pancake":
                 cand = {"venue": "pancake_v3", "param": int(param),
+                        "out": max(min_out, 1), "gas_est": 160000,
+                        "gas_model": _OFFSET_UNI + 160000}
+            elif kind == "sushi_v3":
+                cand = {"venue": "sushi_v3", "param": int(param),
                         "out": max(min_out, 1), "gas_est": 160000,
                         "gas_model": _OFFSET_UNI + 160000}
             elif kind == "maverick":
@@ -1471,6 +1486,17 @@ class MinerSolver(BaselineSwapSolver):
                 [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
             call = "0x" + ("414bf389" + enc.hex())
             route_tag = "pancake_v3"
+        elif cand["venue"] == "sushi_v3":
+            # SushiSwap V3 SwapRouter exactInputSingle = V1-style WITH deadline
+            # (0x414bf389); same ABI as Pancake's SmartRouter.
+            from eth_abi import encode as _abi_encode
+            from eth_utils import to_checksum_address as _ck
+            router = _SUSHI_ROUTER
+            enc = _abi_encode(
+                ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
+                [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
+            call = "0x" + ("414bf389" + enc.hex())
+            route_tag = "sushi_v3"
         elif cand["venue"] == "pancake_v3_multihop":
             from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
             router = _PANCAKE_ROUTER
