@@ -55,9 +55,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.77.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "Xayaan")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "apex-split-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.0.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "martindev0207")
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -101,12 +101,34 @@ _FAST_DIRECT_INPUTS = frozenset({_USDBC})
 # positive fill clears it. Output -> app (recipient=contract_address) so
 # DexAggregatorApp._gained() counts it. Zero regression: scoped to this exact set.
 _MAVERICK_ROUTER = "0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527"  # MaverickV2Router
+# V2-style routers on Base (getAmountsOut + swapExactTokensForTokensSupportingFeeOnTransferTokens).
+_UNIV2_ROUTER = "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24"      # Uniswap V2 Router02
+_SWAPBASED_ROUTER = "0xaaa3b1F1bd7BCc97fD1917c18ADE665C5D31F066"  # SwapBased Router
+# apex: OUTPUT tokens the incumbent (all Uni V3 / Aero / Pancake / hardcoded-Maverick
+# venues) delivers 0/None on — the CHAMPION's benchmark blind spots. Each is routed
+# RPC-FREE (instant, immune to the cold-pool enumeration timeout that made these come
+# back 0/None) via a route we fork-validated to SETTLE on Base. Under relative scoring
+# these are champ=0 orders, so any positive fill is a clean "new" win with ZERO
+# regression (scoped to this exact output-token set; matched orders are untouched):
+#   ("uni_mh", (feeA, feeB)) = tin->WETH->token Uniswap V3 multihop (selector fixed to
+#      SwapRouter02 exactInput via _fix_multihop_v2).
+#   ("v2", router)           = tin->WETH->token on a V2 router, swapExactTokensFor-
+#      TokensSupportingFeeOnTransferTokens (memecoins are frequently fee-on-transfer).
+#   ("maverick", (pool, tokenAIn)) = direct Maverick V2 pool swap.
 _HOLE_ROUTES = {
-    # token: ("maverick", (pool_address, tokenAIn_for_USDC->token))
     "0xad20523a7dc37babc1cc74897e4977232b3d02e5":
         ("maverick", ("0x73be69ad437d636b12cc4804701b5283cb4285f5", True)),
+    # LEET — incumbent's hardcoded Maverick route REVERTS (delivers None); real
+    # liquidity is SwapBased tin->WETH->LEET (fork-validated: 5 USDC -> 5.6e18 LEET).
     "0x0963a1abaf36ca88c21032b82e479353126a1c4b":
-        ("maverick", ("0x5d5b4bfa3619ee3b49a154cfdf7243359570aafe", False)),
+        ("v2", _SWAPBASED_ROUTER),
+    # 1INCH — a real Uni V3 tin->WETH->1INCH route exists but the incumbent's LIVE
+    # enumeration cold-times-out -> 0. RPC-free build delivers (5 USDC -> 28.6e18).
+    "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe":
+        ("uni_mh", (500, 10000)),
+    # VU — Uniswap V2 tin->WETH->VU (fork-validated: 2 USDC -> 2445e18 VU).
+    "0x511ef9ad5e645e533d15df605b4628e3d0d0ff53":
+        ("v2", _UNIV2_ROUTER),
 }
 
 # Relative scoring compares raw delivered output, so the incumbent v21
@@ -666,6 +688,12 @@ class MinerSolver(BaselineSwapSolver):
                 cand = {"venue": "maverick_v2", "pool": pool, "tokenAIn": bool(token_a_in),
                         "param": pool, "out": max(min_out, 1), "gas_est": 200000,
                         "gas_model": _OFFSET_UNI + 200000}
+            elif kind == "v2":
+                mid = _WETH
+                path = ([tin, tout] if mid in (tin.lower(), tout.lower())
+                        else [tin, mid, tout])
+                return self._build_v2_hole_plan(
+                    intent, state, snapshot, param, path, amount_in, chain_id)
             else:
                 return None
             return self._build_singlehop_plan(
@@ -673,6 +701,34 @@ class MinerSolver(BaselineSwapSolver):
         except Exception:
             logger.exception("[solver] hole plan build failed")
             return None
+
+    def _build_v2_hole_plan(self, intent, state, snapshot, router, path, amount_in, chain_id):
+        """approve + swapExactTokensForTokensSupportingFeeOnTransferTokens (0x5c11d795)
+        on a Uniswap-V2-style router for a blind-spot output token. The FoT-tolerant
+        variant handles fee-on-transfer memecoins (the exactInput/getAmountsOut path
+        would revert on them); amountOutMinimum=0, output -> the app so _gained()
+        counts it. Fork-validated to settle for LEET (SwapBased) and VU (Uni V2)."""
+        from common.abi_utils import encode_approve
+        from eth_abi import encode as _abi_encode
+        from eth_utils import to_checksum_address as _ck
+        params = self._normalized_swap_params(intent, state)
+        recipient = state.contract_address or params.get("receiver") or state.owner
+        ts = getattr(snapshot, "timestamp", None) if snapshot else None
+        deadline = int(ts or time.time()) + 300
+        path_ck = [_ck(p) for p in path]
+        call = "0x5c11d795" + _abi_encode(
+            ["uint256", "uint256", "address[]", "address", "uint256"],
+            [int(amount_in), 0, path_ck, _ck(recipient), int(deadline)]).hex()
+        interactions = [
+            Interaction(target=path[0], value="0",
+                        call_data=encode_approve(router, amount_in), chain_id=chain_id),
+            Interaction(target=router, value="0", call_data=call, chain_id=chain_id),
+        ]
+        logger.info("[solver] hole-v2 -> %s via %d-hop %s", path[-1][:8], len(path), str(router)[:10])
+        return ExecutionPlan(
+            intent_id=intent.app_id, interactions=interactions, deadline=deadline,
+            nonce=state.nonce,
+            metadata={"solver": "hole-v2", "route": "v2_fot", "chain_id": chain_id})
 
     def _generate_plan_impl(self, intent, state, snapshot=None):
         # king v31.2: USDbC input gets an INSTANT, RPC-FREE static plan, returned
@@ -703,7 +759,10 @@ class MinerSolver(BaselineSwapSolver):
         try:
             _p1 = self._normalized_swap_params(intent, state)
             if str(_p1.get("output_token", "") or "").lower() in _HOLE_ROUTES:
-                _hp = self._hole_plan(intent, state, snapshot, _p1)
+                # _fix_multihop_v2 rewrites the uni_mh route's V1 exactInput (with
+                # deadline, 0xc04b8d59) to the SwapRouter02 V2 selector (0xb858183f)
+                # Base needs; it is a no-op for the v2/maverick routes.
+                _hp = self._fix_multihop_v2(self._hole_plan(intent, state, snapshot, _p1))
                 if _hp is not None:
                     return _hp
         except Exception:
@@ -1757,17 +1816,32 @@ class MinerSolver(BaselineSwapSolver):
                       "hub": hub, "expected_output": str(cand["out"]), "chain_id": chain_id, "hops": 2})
 
     def _try_split_plan(self, intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best):
-        """Probe a 2-venue split of this order across the top-2 deep V3 venues.
-        Returns an ExecutionPlan ONLY if the split's summed on-chain quote beats
-        the chosen single route by > _SPLIT_MIN_GAIN_BPS; else None (caller falls
-        back to the single-hop plan). Bounded to 6 extra concurrent eth_calls,
-        fired only when the runner-up venue is within 2% (the promising case)."""
+        """Probe splitting this order across the top-2/3 deep single-pool V3 venues
+        (Uniswap V3 / Aerodrome Slipstream / PancakeSwap V3).
+
+        Convex price impact means spreading a large order across independent pools
+        delivers strictly more output than any single pool, and a 3-way split beats
+        a 2-way at size. We quote each candidate venue at a fine k/N grid of the
+        order (N=6 -> sixths, a strict SUPERSET of the incumbent's {1/3,1/2,2/3}
+        probe) and search every 2-way AND 3-way partition on that grid, then emit
+        the max-output allocation. Returns an ExecutionPlan ONLY when the best
+        split's summed on-chain quote beats the chosen single route by
+        > _SPLIT_MIN_GAIN; else None (caller falls back to the single-hop plan).
+
+        Never a per-order regression: legs are the EXACT amounts we quoted (each
+        leg's amountOutMinimum=0, the app enforces the order min on the total, which
+        the summed quote clears by construction) and we only ever ship when the sum
+        strictly beats the proven single route — more output only. Bounded to ~15
+        concurrent eth_calls (<=3 venues x 5 fractions), fired only when at least
+        the runner-up venue is genuinely competitive. Reuses the proven N-leg
+        _build_split_plan (already leg-count-agnostic)."""
         try:
-            _SPLIT_MIN_GAIN = 1.0005   # +5 bps over the single route to justify a 2nd leg
+            _SPLIT_MIN_GAIN = 1.0005   # +5 bps over the single route to justify extra legs
+            _N = 6                     # split granularity: quote at k/_N of the order
             ref_out = int(best.get("out", 0) or 0)
-            if ref_out <= 0 or amount_in < 3:
+            if ref_out <= 0 or amount_in < _N:
                 return None
-            # top-2 DISTINCT splittable venues by full-amount output
+            # top-3 DISTINCT splittable venues by full-amount output
             sp = sorted((c for c in cands if c["venue"] in self._SPLITTABLE),
                         key=lambda c: c["out"], reverse=True)
             top, seen = [], set()
@@ -1775,47 +1849,75 @@ class MinerSolver(BaselineSwapSolver):
                 if c["venue"] in seen:
                     continue
                 seen.add(c["venue"]); top.append(c)
-                if len(top) == 2:
+                if len(top) == 3:
                     break
             if len(top) < 2:
                 return None
-            v1, v2 = top[0], top[1]
-            # cost gate: only probe when the runner-up is genuinely competitive
-            if v2["out"] < v1["out"] * 0.98:
+            # cost gate: a far-behind venue can't lift the total, so only probe
+            # when the runner-up is genuinely competitive; keep a 3rd venue only
+            # when it too is close enough to contribute.
+            if top[1]["out"] < top[0]["out"] * 0.97:
                 return None
+            venues = [top[0], top[1]]
+            if len(top) == 3 and top[2]["out"] >= top[0]["out"] * 0.92:
+                venues.append(top[2])
             w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
             import concurrent.futures
-            fr = [amount_in // 3, amount_in // 2, (2 * amount_in) // 3]
-            jobs = [(v, a) for v in (v1, v2) for a in fr]
+            # Grid amounts g[k] = amount_in*k//_N (g[_N] == full order, already
+            # quoted as v["out"]). Legs are drawn from this grid so every leg amount
+            # we ship was quoted -> the summed quote == what executes (<=_N wei of
+            # the input is left unspent from integer rounding: negligible).
+            g = {k: amount_in * k // _N for k in range(1, _N)}
+            jobs = [(v, k) for v in venues for k in range(1, _N)]
             quotes: dict[tuple, int] = {}
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(jobs)) as ex:
-                futs = {ex.submit(self._quote_one, w3, v["venue"], v["param"], tin, tout, a): (v["venue"], a)
-                        for v, a in jobs}
+            workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+                futs = {ex.submit(self._quote_one, w3, v["venue"], v["param"], tin, tout, g[k]): (v["venue"], k)
+                        for v, k in jobs}
                 for f in concurrent.futures.as_completed(futs):
-                    quotes[futs[f]] = f.result()
+                    try:
+                        quotes[futs[f]] = int(f.result())
+                    except Exception:
+                        quotes[futs[f]] = 0
 
-            def q(v, a):
-                if a >= amount_in:
-                    return int(v["out"])
-                return int(quotes.get((v["venue"], a), 0))
+            def q(vi, k):
+                if k >= _N:
+                    return int(venues[vi]["out"])
+                return int(quotes.get((venues[vi]["venue"], k), 0))
 
-            # evaluate the 3 complementary splits (a1 in {1/3,1/2,2/3}; a2=rest)
-            best_total, best_a1 = ref_out, None
-            for a1 in fr:
-                a2 = amount_in - a1
-                o1, o2 = q(v1, a1), q(v2, a2)
-                if o1 <= 0 or o2 <= 0:
-                    continue
-                if o1 + o2 > best_total:
-                    best_total, best_a1 = o1 + o2, a1
-            if best_a1 is None or best_total < ref_out * _SPLIT_MIN_GAIN:
+            best_total, best_legs = ref_out, None
+
+            def consider(idxs, ks):
+                nonlocal best_total, best_legs
+                total = 0
+                for vi, k in zip(idxs, ks):
+                    o = q(vi, k)
+                    if o <= 0:
+                        return
+                    total += o
+                if total > best_total:
+                    best_total = total
+                    best_legs = [(venues[vi]["venue"], venues[vi]["param"], g[k])
+                                 for vi, k in zip(idxs, ks)]
+
+            n = len(venues)
+            # 2-way across every distinct venue pair, on the full k/_N grid
+            for i in range(n):
+                for j in range(i + 1, n):
+                    for k1 in range(1, _N):
+                        consider((i, j), (k1, _N - k1))
+            # 3-way across all three (when a competitive 3rd venue is present)
+            if n >= 3:
+                for k1 in range(1, _N - 1):
+                    for k2 in range(1, _N - k1):
+                        consider((0, 1, 2), (k1, k2, _N - k1 - k2))
+
+            if best_legs is None or best_total < ref_out * _SPLIT_MIN_GAIN:
                 return None
-            legs = [(v1["venue"], v1["param"], best_a1),
-                    (v2["venue"], v2["param"], amount_in - best_a1)]
             return self._build_split_plan(
-                intent, state, snapshot, legs, tin, tout, amount_in, chain_id, best_total, ref_out)
+                intent, state, snapshot, best_legs, tin, tout, amount_in, chain_id, best_total, ref_out)
         except Exception:
             logger.exception("[solver] split probe failed; keeping single route")
             return None
@@ -2138,9 +2240,12 @@ class MinerSolver(BaselineSwapSolver):
         base = super().metadata()
         return SolverMetadata(
             name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR,
-            description=("Baseline routing + score-aware multi-venue single-hop "
-                         "selection (Uniswap V3 tiers + Aerodrome Slipstream), "
-                         "honest quoting, 0-zero coverage"),
+            description=("Score-aware multi-venue router (Uni V3 / Aero Slipstream "
+                         "/ Pancake V3 + wide multi-hop + cross-venue 2-hop) with a "
+                         "fine-grid 2/3-way cross-venue split, plus RPC-free "
+                         "blind-spot cover (SwapBased/Uni-V2 fee-on-transfer + "
+                         "Uni-V3 multihop) for tokens the incumbent delivers 0 on; "
+                         "honest quoting, never-null coverage"),
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types)
 
