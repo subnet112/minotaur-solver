@@ -55,9 +55,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "33.0.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "king")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.2.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -1062,6 +1062,8 @@ class MinerSolver(BaselineSwapSolver):
                 _bb = max((c["out"] for c in cands), default=0)
                 _xc = self._enumerate_crossvenue_2hop(chain_id, tin, tout, amount_in)
                 cands = cands + [c for c in _xc if c["out"] > _bb * 1.0005]
+                _xp = self._enumerate_crossvenue_2hop_proxy(chain_id, tin, tout, amount_in)
+                cands = cands + [c for c in _xp if c["out"] > _bb * 1.0005]
             except Exception:
                 logger.exception("[solver] crossvenue 2hop enumerate failed; skipping")
 
@@ -1115,6 +1117,9 @@ class MinerSolver(BaselineSwapSolver):
             # chaining). Checked before split — it's a distinct plan shape.
             if best.get("venue") == "crossvenue_2hop":
                 return self._build_2hop_plan(
+                    intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+            if best.get("venue") == "crossvenue_2hop_proxy":
+                return self._build_2hop_proxy_plan(
                     intent, state, snapshot, best, tin, tout, amount_in, chain_id)
 
             # route SPLIT across the top-2 deep V3 venues; None -> single-hop plan
@@ -1396,6 +1401,77 @@ class MinerSolver(BaselineSwapSolver):
             nonce=state.nonce,
             metadata={"solver": "crossvenue-2hop", "route": "crossvenue_2hop", "hub": hub,
                       "expected_output": str(cand["out"]), "chain_id": chain_id, "hops": 2})
+
+    # ── stable-leg1 cross-venue 2-hop with NON-Uni leg2 (proxy custody) ──────
+    # The king copied our cross-venue but kept leg2 on Uniswap only (CONTRACT_BALANCE).
+    # When the best FINAL leg (hub->tout) is on Pancake/Aero, that route is lost. Here
+    # the app holds the hub between legs (4 interactions) so leg2 can be ANY venue.
+    # RESTRICTED to stable->stable leg1 (tin,hub in USDC/USDbC/DAI): leg1 output is
+    # ~constant across blocks, so the FIXED leg2 amountIn (leg1 quote - small buffer)
+    # can't revert. Captures the Pancake-leg2 edge the king lacks (+~10bps on e.g.
+    # USDC->USDbC->WETH(Pancake)) — the exact route Xayaan beat us with.
+    _XHOP_STABLES = frozenset({_USDC, _USDBC, _DAI})
+    _XHOP_PROXY_BUFFER_BPS = 5
+
+    def _enumerate_crossvenue_2hop_proxy(self, chain_id, tin, tout, amount_in):
+        """Stable-leg1 (tin,hub in STABLES) cross-venue 2-hop, leg2 on ANY venue.
+        Only NON-Uni final legs (Uni leg2 is already the CONTRACT_BALANCE path).
+        Candidate `out` is buffered so selection never over-counts vs delivery."""
+        cands = []
+        tl, ol = str(tin).lower(), str(tout).lower()
+        if tl not in self._XHOP_STABLES:
+            return cands
+        w3 = self._get_web3(int(chain_id))
+        if w3 is None:
+            return cands
+        for hub in self._XHOP_STABLES:
+            if hub in (tl, ol):
+                continue
+            l1 = self._best_leg(w3, chain_id, tin, hub, amount_in)
+            if not l1:
+                continue
+            l2 = self._best_leg(w3, chain_id, hub, tout, l1["out"])
+            if not l2 or l2["venue"] == "uniswap_v3":
+                continue
+            buffered = int(l2["out"]) * (10000 - self._XHOP_PROXY_BUFFER_BPS) // 10000
+            cands.append({
+                "venue": "crossvenue_2hop_proxy",
+                "param": (l1["venue"], l1["param"], l2["venue"], l2["param"]),
+                "out": buffered, "hub": hub, "leg1": l1, "leg2": l2,
+                "gas_est": 320000, "gas_model": _GAS_MULTIHOP + 200000,
+            })
+        return cands
+
+    def _build_2hop_proxy_plan(self, intent, state, snapshot, cand, tin, tout, amount_in, chain_id):
+        """Stable-leg1 cross-venue via PROXY CUSTODY (leg2 on a non-Uni venue):
+          1. approve leg1 router for tin
+          2. leg1 tin->hub, recipient = app
+          3. approve leg2 router for the hub (buffered amount)
+          4. leg2 hub->tout (amountIn = leg1 quote * (1 - buffer)), recipient = app.
+        The buffer guarantees the app holds >= amountIn even if the stable leg1
+        drifts a hair across blocks (safe ONLY because leg1 is stable->stable)."""
+        from common.abi_utils import encode_approve
+        params = self._normalized_swap_params(intent, state)
+        app = state.contract_address or params.get("receiver") or state.owner
+        ts = getattr(snapshot, "timestamp", None) if snapshot else None
+        deadline = int(ts or time.time()) + 300
+        hub, l1, l2 = cand["hub"], cand["leg1"], cand["leg2"]
+        amount_in2 = int(l1["out"]) * (10000 - self._XHOP_PROXY_BUFFER_BPS) // 10000
+        r1, c1 = self._encode_v3_leg(l1["venue"], l1["param"], tin, hub, amount_in, app, deadline, chain_id)
+        r2, c2 = self._encode_v3_leg(l2["venue"], l2["param"], hub, tout, amount_in2, app, deadline, chain_id)
+        interactions = [
+            Interaction(target=tin, value="0", call_data=encode_approve(r1, amount_in), chain_id=chain_id),
+            Interaction(target=r1, value="0", call_data=c1, chain_id=chain_id),
+            Interaction(target=hub, value="0", call_data=encode_approve(r2, amount_in2), chain_id=chain_id),
+            Interaction(target=r2, value="0", call_data=c2, chain_id=chain_id),
+        ]
+        logger.info("[solver] XHOP-PROXY %s->%s->%s out~%d via %s+%s",
+                    str(tin)[:8], str(hub)[:8], str(tout)[:8], cand["out"], l1["venue"], l2["venue"])
+        return ExecutionPlan(
+            intent_id=intent.app_id, interactions=interactions, deadline=deadline,
+            nonce=state.nonce,
+            metadata={"solver": "crossvenue-2hop-proxy", "route": "crossvenue_2hop_proxy",
+                      "hub": hub, "expected_output": str(cand["out"]), "chain_id": chain_id, "hops": 2})
 
     def _try_split_plan(self, intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best):
         """Probe a 2-venue split of this order across the top-2 deep V3 venues.
