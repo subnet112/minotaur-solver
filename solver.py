@@ -56,7 +56,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.2.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.3.1")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -1122,11 +1122,22 @@ class MinerSolver(BaselineSwapSolver):
                 return self._build_2hop_proxy_plan(
                     intent, state, snapshot, best, tin, tout, amount_in, chain_id)
 
-            # route SPLIT across the top-2 deep V3 venues; None -> single-hop plan
+            # SPLIT: try both the N-way OPTIMAL split (DP marginal-equalization
+            # over top-K pools) AND the king's top-2/3-ratio split, then use
+            # whichever delivers MORE — strict superset, never regresses vs either.
+            opt_plan = self._optimal_split_plan(
+                intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
             split_plan = self._try_split_plan(
                 intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
-            if split_plan is not None:
-                return split_plan
+            chosen_split = None
+            for _p in (opt_plan, split_plan):
+                if _p is None:
+                    continue
+                if chosen_split is None or int((_p.metadata or {}).get("expected_output", 0) or 0) > \
+                        int((chosen_split.metadata or {}).get("expected_output", 0) or 0):
+                    chosen_split = _p
+            if chosen_split is not None:
+                return chosen_split
 
             return self._build_singlehop_plan(
                 intent, state, snapshot, best, tin, tout, amount_in, chain_id)
@@ -1255,6 +1266,8 @@ class MinerSolver(BaselineSwapSolver):
     # beats the chosen single route by a real margin; otherwise we fall straight
     # back to the proven single-hop plan. More output is never a regression.
     _SPLITTABLE = ("uniswap_v3", "aerodrome_slipstream", "pancake_v3")
+    _OPT_SPLIT_GRID = 8    # divide the order into 8 units for the DP allocation
+    _OPT_SPLIT_K = 4       # split across up to the top-4 distinct pools (venue+fee)
 
     def _quote_one(self, w3, venue, param, tin, tout, amount):
         """Single eth_call quote for one (venue, param) at `amount`. 0 on revert."""
@@ -1411,7 +1424,7 @@ class MinerSolver(BaselineSwapSolver):
     # can't revert. Captures the Pancake-leg2 edge the king lacks (+~10bps on e.g.
     # USDC->USDbC->WETH(Pancake)) — the exact route Xayaan beat us with.
     _XHOP_STABLES = frozenset({_USDC, _USDBC, _DAI})
-    _XHOP_PROXY_BUFFER_BPS = 5
+    _XHOP_PROXY_BUFFER_BPS = 0
 
     def _enumerate_crossvenue_2hop_proxy(self, chain_id, tin, tout, amount_in):
         """Stable-leg1 (tin,hub in STABLES) cross-venue 2-hop, leg2 on ANY venue.
@@ -1535,6 +1548,84 @@ class MinerSolver(BaselineSwapSolver):
                 intent, state, snapshot, legs, tin, tout, amount_in, chain_id, best_total, ref_out)
         except Exception:
             logger.exception("[solver] split probe failed; keeping single route")
+            return None
+
+    def _optimal_split_plan(self, intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best):
+        """N-way OPTIMAL split across the top-K distinct splittable pools, allocated
+        by a knapsack DP over a fine grid (approximates marginal-price equalization).
+        Strictly beats the king's top-2 / 3-ratio split when 3+ pools compete or the
+        optimal ratio isn't 1/3,1/2,2/3. Returns a plan ONLY if the optimal split's
+        summed on-chain quote beats the best single route by >5bps; else None."""
+        try:
+            _MIN_GAIN = 1.0005
+            ref_out = int(best.get("out", 0) or 0)
+            G, K = self._OPT_SPLIT_GRID, self._OPT_SPLIT_K
+            if ref_out <= 0 or amount_in < G * 4:
+                return None
+            # top-K DISTINCT pools (venue,fee) by full-amount output
+            pools = sorted((c for c in cands if c["venue"] in self._SPLITTABLE),
+                           key=lambda c: c["out"], reverse=True)
+            seen, top = set(), []
+            for c in pools:
+                key = (c["venue"], c["param"])
+                if key in seen:
+                    continue
+                seen.add(key); top.append(c)
+                if len(top) == K:
+                    break
+            if len(top) < 2 or top[1]["out"] < top[0]["out"] * 0.985:
+                return None
+            w3 = self._get_web3(int(chain_id))
+            if w3 is None:
+                return None
+            import concurrent.futures
+            unit = amount_in // G
+            m = len(top)
+            # sample out_i[k] = output of pool i fed k units, concurrently
+            curves = {i: {0: 0} for i in range(m)}
+            jobs = [(i, k) for i in range(m) for k in range(1, G + 1)]
+
+            def _q(job):
+                i, k = job
+                o = self._quote_one(w3, top[i]["venue"], top[i]["param"], tin, tout, unit * k)
+                return (i, k, int(o or 0))
+
+            workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+                for i, k, o in ex.map(_q, jobs):
+                    curves[i][k] = o
+            # knapsack DP: dp[i][k] = best total output using first i pools + k units
+            dp = [[0] * (G + 1) for _ in range(m + 1)]
+            par = [[0] * (G + 1) for _ in range(m + 1)]
+            for i in range(1, m + 1):
+                ci = curves[i - 1]
+                for k in range(G + 1):
+                    bv, bj = dp[i - 1][k], 0
+                    for j in range(1, k + 1):
+                        val = dp[i - 1][k - j] + ci.get(j, 0)
+                        if val > bv:
+                            bv, bj = val, j
+                    dp[i][k] = bv; par[i][k] = bj
+            total = dp[m][G]
+            if total < ref_out * _MIN_GAIN:
+                return None
+            # backtrack the allocation
+            alloc = [0] * m; k = G
+            for i in range(m, 0, -1):
+                j = par[i][k]; alloc[i - 1] = j; k -= j
+            idxs = [i for i in range(m) if alloc[i] > 0]
+            if len(idxs) < 2:
+                return None   # collapsed to a single pool — let the single-hop path handle it
+            legs, used = [], 0
+            for i in idxs:
+                amt_i = unit * alloc[i]
+                legs.append([top[i]["venue"], top[i]["param"], amt_i]); used += amt_i
+            legs[0][2] += (amount_in - used)   # dust remainder -> the top pool
+            legs = [(v, p, a) for v, p, a in legs if a > 0]
+            return self._build_split_plan(
+                intent, state, snapshot, legs, tin, tout, amount_in, chain_id, total, ref_out)
+        except Exception:
+            logger.exception("[solver] optimal split failed; falling back")
             return None
 
     def _build_split_plan(self, intent, state, snapshot, legs, tin, tout, amount_in, chain_id, exp_out, ref_out):
