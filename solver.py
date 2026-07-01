@@ -55,8 +55,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.77.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "Xayaan")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -1697,7 +1697,7 @@ class MinerSolver(BaselineSwapSolver):
     # Stable-proxy cross-venue 2-hop: leg1 stable->stable into the app, then
     # execute the best non-Uni final leg using a tiny buffer on the leg1 quote.
     _XHOP_STABLES = frozenset({_USDC, _USDBC, _DAI})
-    _XHOP_PROXY_BUFFER_BPS = 5
+    _XHOP_PROXY_BUFFER_BPS = 0
 
     def _enumerate_crossvenue_2hop_proxy(self, chain_id, tin, tout, amount_in):
         cands = []
