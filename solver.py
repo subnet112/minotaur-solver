@@ -56,7 +56,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.4.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.5.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -117,6 +117,11 @@ _HOLE_ROUTES = {
     # enumeration despite offline-empty quote; NOT sealed, would regress.)
     "0x3124678d62d2aa1f615b54525310fbfda6dcf7ae":  # SNSY  (Sushi V3 WETH/SNSY fee 10000)
         ("sushi_v3", 10000),
+    # v2.5.0: WETH->0x10f434 corpus order (min=1). Champion-reachable venues
+    # deliver 1.2e13 dust; the real pool is Sushi V3 fee-3000 = 2.16e15
+    # (fork-proven status=1, 178x). Same shape as SNSY above.
+    "0x10f434b3d1cc13a4a79b062dcc25706f64d10d47":
+        ("sushi_v3", 3000),
     # king v46: Hydrex (Algebra Integral) — a venue this base cannot reach, so
     # these score 0/None (blind_spot_cover vs champion). Single-hop
     # exactInputSingle tin->tout; param = VERIFIED-good input tokens (a direct
@@ -309,6 +314,14 @@ _STATIC_EXOTIC_ROUTES = {
     # (8.25e9) or standard enumeration. BaseSwap direct WETH->COOKIE delivers
     # 3.00e25 (fork-proven: status=1, 3.6e15x more) -> we win this order too.
     (_WETH, _COOKIE): ("baseswap_v2", (_WETH, _COOKIE)),
+    # v2.5.0 quality-win covers: champion fills these min=1 orders via its
+    # reachable venues but massively under-delivers vs Uniswap V2 (which its
+    # engine never quotes). Fork-proven: 0x2a66 uniV2-direct=2.0e20 vs champ
+    # 2.28e19 (8.8x); 0xd63a uniV2-viaWETH=2.47e21 vs champ 9.84e20 (2.5x).
+    (_USDC, "0x2a66d51407b84b82b5aff3dec4d49f72cbcd322a"):
+        ("uniswap_v2", (_USDC, "0x2a66d51407b84b82b5aff3dec4d49f72cbcd322a")),
+    (_USDC, "0xd63aaeec20f9b74d49f8dd8e319b6edd564a7dd0"):
+        ("uniswap_v2", (_USDC, _WETH, "0xd63aaeec20f9b74d49f8dd8e319b6edd564a7dd0")),
     (_USDC, _PKT): ("uniswap_v2", (_USDC, _WETH, _PKT)),
     (_USDC, _BLCK): ("uniswap_v2", (_USDC, _WETH, _BLCK)),
     (_USDC, _MANEKI): ("uniswap_v2", (_USDC, _WETH, _MANEKI_MID, _MANEKI)),
