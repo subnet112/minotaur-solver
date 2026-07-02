@@ -55,8 +55,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.85.0-succ")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.6.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -117,6 +117,10 @@ _HOLE_ROUTES = {
     # enumeration despite offline-empty quote; NOT sealed, would regress.)
     "0x3124678d62d2aa1f615b54525310fbfda6dcf7ae":  # SNSY  (Sushi V3 WETH/SNSY fee 10000)
         ("sushi_v3", 10000),
+    # v2.5.0: WETH->0x10f434 (min=1): champ-reachable best 1.2e13 dust; real
+    # pool Sushi V3 fee-3000 = 2.16e15 (fork-proven, 178x). Same shape as SNSY.
+    "0x10f434b3d1cc13a4a79b062dcc25706f64d10d47":
+        ("sushi_v3", 3000),
     # king v46: Hydrex (Algebra Integral) — a venue this base cannot reach, so
     # these score 0/None (blind_spot_cover vs champion). Single-hop
     # exactInputSingle tin->tout; param = VERIFIED-good input tokens (a direct
@@ -313,11 +317,23 @@ _STATIC_EXOTIC_ROUTES = {
                      ((_USDC, _MID_E502, _USDP), (1, 1))),
     # V2-only tails (Uniswap V2 Router02, same builder as BEATS/_TFAD8/...).
     (_USDC, _ATA): ("uniswap_v2", (_USDC, _ATA)),
-    (_USDC, _COOKIE): ("uniswap_v2", (_USDC, _WETH, _COOKIE)),
+    # COOKIE: the uniV2 WETH/COOKIE pair is DUST (8.25e9 per 2 USDC) — the real
+    # pool is BaseSwap V2 (fork-proven: 6.01e24 delivered == quote, ~7e14x).
+    (_USDC, _COOKIE): ("baseswap_v2", (_USDC, _WETH, _COOKIE)),
     # WETH-input Cookie variant (17 zero-score corpus orders, all min=0):
     # the V2 pair IS WETH/Cookie, so this is a direct single hop. On-chain
     # getAmountsOut(1e16 WETH) = 8253624483 Cookie > 0.
-    (_WETH, _COOKIE): ("uniswap_v2", (_WETH, _COOKIE)),
+    # (3 corpus orders) BaseSwap direct delivers 3.00e25 vs uniV2 dust 8.25e9
+    # (fork-proven status=1, 3.6e15x) — the champion serves all three of its
+    # crown-winning WETH->COOKIE covers from the dust pair; we out-deliver.
+    (_WETH, _COOKIE): ("baseswap_v2", (_WETH, _COOKIE)),
+    # v2.5.0 quality-win covers (champ fills but under-delivers; uniV2 not in
+    # its engine): 0x2a66 direct=2.0e20 vs 2.28e19 (8.8x); 0xd63a viaWETH=
+    # 2.47e21 vs 9.84e20 (2.5x). Both fork-proven.
+    (_USDC, "0x2a66d51407b84b82b5aff3dec4d49f72cbcd322a"):
+        ("uniswap_v2", (_USDC, "0x2a66d51407b84b82b5aff3dec4d49f72cbcd322a")),
+    (_USDC, "0xd63aaeec20f9b74d49f8dd8e319b6edd564a7dd0"):
+        ("uniswap_v2", (_USDC, _WETH, "0xd63aaeec20f9b74d49f8dd8e319b6edd564a7dd0")),
     (_USDC, _PKT): ("uniswap_v2", (_USDC, _WETH, _PKT)),
     (_USDC, _BLCK): ("uniswap_v2", (_USDC, _WETH, _BLCK)),
     (_USDC, _MANEKI): ("uniswap_v2", (_USDC, _WETH, _MANEKI_MID, _MANEKI)),
@@ -362,6 +378,7 @@ _SUSHI_ROUTER = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f"  # SushiSwap V3 Swa
 # computes the wrong pool -> revert). Dynamic fee. Verified: 250 USDC->8712 HYDX.
 _HYDREX_ROUTER = "0x6f4bE24d7dC93b6ffcBAb3Fd0747c5817Cea3F9e"
 _PANCAKE_V2_ROUTER = "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb"  # PancakeSwap V2 Router
+_BASESWAP_V2_ROUTER = "0x327Df1E6de05895d2ab08513aaDD9313Fe505d86"  # BaseSwap V2 Router (UniV2 fork)
 _PANCAKE_FEES = (100, 500, 2500, 10000)
 _UNI_FEES = (100, 500, 3000, 10000)
 _UNI_WETH_DAI_PATH_FEES = ((3000, 100), (500, 100), (100, 100), (10000, 100))
@@ -1041,6 +1058,11 @@ class MinerSolver(BaselineSwapSolver):
                         "gas_model": 350000 + 150000 * max(1, len(param) - 1)}
             elif kind == "pancake_v2":
                 cand = {"venue": "pancake_v2", "param": tuple(param),
+                        "tokens": tuple(param), "out": max(min_out, 1),
+                        "gas_est": 150000 * max(1, len(param) - 1),
+                        "gas_model": 350000 + 150000 * max(1, len(param) - 1)}
+            elif kind == "baseswap_v2":
+                cand = {"venue": "baseswap_v2", "param": tuple(param),
                         "tokens": tuple(param), "out": max(min_out, 1),
                         "gas_est": 150000 * max(1, len(param) - 1),
                         "gas_model": 350000 + 150000 * max(1, len(param) - 1)}
@@ -1927,7 +1949,22 @@ class MinerSolver(BaselineSwapSolver):
         ts = getattr(snapshot, "timestamp", None) if snapshot else None
         deadline = int(ts or time.time()) + 300
 
-        if cand["venue"] == "pancake_v2":
+        if cand["venue"] == "baseswap_v2":
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            router = _BASESWAP_V2_ROUTER
+            tokens = [_ck(t) for t in cand.get("tokens", (tin, tout))]
+            if len(tokens) < 2:
+                raise ValueError("no baseswap v2 path")
+            selector = _keccak(
+                text="swapExactTokensForTokens(uint256,uint256,address[],address,uint256)"
+            )[:4]
+            call = "0x" + (selector + _abi_encode(
+                ["uint256", "uint256", "address[]", "address", "uint256"],
+                [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
+            )).hex()
+            route_tag = "baseswap_v2"
+        elif cand["venue"] == "pancake_v2":
             from eth_abi import encode as _abi_encode
             from eth_utils import keccak as _keccak, to_checksum_address as _ck
             router = _PANCAKE_V2_ROUTER
