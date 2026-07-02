@@ -55,8 +55,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.2.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.84.2-g12")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -195,7 +195,46 @@ _UR_ADDRESS_THIS = "0x0000000000000000000000000000000000000002"
 
 _T61FD = "0x61fd8d4ad84bf7a20e12f00b7e33cb698977dc7d"  # PancakeV2-only (unindexed)
 
+# ── v0.84.1-gaps: additional pair-keyed covers on the SAME mechanisms above
+# (slipstream multihop / UniV2 Router02 / V4-via-UR). All are USDC-input,
+# min_output <= 1 corpus orders whose only liquidity sits on venues this
+# engine's enumeration cannot see (exotic slipstream mid / V2-only pairs /
+# unindexed V4 hook pools). On-chain-verified quotes; each fires ONLY for its
+# exact (input, output) pair under the same min<=1 gate — zero regression.
+_MID_E502 = "0xe5020a6d073a794b6e7f05678707de47986fb0b6"   # slipstream tick-1 mid for USDp
+_USDP = "0x76a9a0062ec6712b99b4f63bd2b4270185759dd5"       # USDp
+_ATA = "0xb18c609796848c723eacadc0be5b71ceb2289a48"        # ATA (direct USDC V2 pair)
+_COOKIE = "0x614747c53cb1636b4b962e15e1d66d3214621100"     # Cookie (WETH V2 pair)
+_PKT = "0x917f39bb33b2483dd19546b1e8d2f09ce481ee44"        # PKT (WETH V2 pair)
+_BLCK = "0xf5de8697232a16a942f7cf706415f553ce53e27f"       # BLCK (WETH V2 pair; 2 orders)
+_MANEKI_MID = "0x05e3d6741e4ea10f73e2c7d7d5bc40bcd6c4e5a0" # MANEKI's only V2 counter-asset
+_MANEKI = "0xe6ab1cc1307b496748753e017f3dbb4d4378ca3f"     # MANEKI
+_FETCHR = "0x610a5a297fe2135289b8565ef645de2a7c00eba3"     # FETCHR (Clanker V4 hook pool)
+_SINBAD = "0x5682a3ba66eeb60e82d18865849b513ab9c9692d"     # SINBAD CREW BASE (Zora V4 hook pool)
+
+# ── v0.84.1-pd: NON-DEFAULT Aerodrome CL (Slipstream-fork) factories. Three
+# corpus tokens trade ONLY on CL pools deployed by factories other than the
+# canonical 0x5e7BB104 one, so neither the standard slipstream quoter nor the
+# standard SwapRouter 0xBE6D8f0d can see/execute them (router.exactInputSingle
+# resolves the pool via ITS OWN factory). Each fork factory ships a PAIRED
+# SwapRouter with bytecode byte-identical to the canonical Slipstream
+# SwapRouter (only the factory immutable differs — verified on-chain), so the
+# exact exactInputSingle(tickSpacing) ABI this base already encodes works
+# unchanged; only the router address differs. Fork-executed end-to-end
+# (approve + swap, output delivered to recipient) on an anvil Base fork.
+_AERO_ALT_ROUTER_ADE = "0xcbbb8035cac7d4b3ca7abb74cf7bdf900215ce0d"  # paired to factory 0xaDe65c38
+_AERO_ALT_ROUTER_F8F = "0x698cb2b6dd822994581fea6ea4fc755d1363a92f"  # paired to factory 0xf8f2eB49
+_T_SOFTWARE = "0xa100000000000d6e18bc155f425685e4badfe11c"  # SOFTWARE.ai (6 dec)
+_T_VITAFOXO = "0xe8f802b0cb13adf1a4333b541d4d3f703b8a69fa"  # VITAFOXO
+_T_CADD = "0x16f93ebc5320c89efc8701577efe49d14a276a06"      # CADD
+
 _STATIC_EXOTIC_ROUTES = {
+    # Non-default Aero CL factory pools via their factory-paired SwapRouters.
+    # Fork-verified outputs (2 USDC in): 6895112 / 145795575567138262366 /
+    # 2788533310476433557 — all >= the orders' min of 1.
+    (_USDC, _T_SOFTWARE): ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 50)),
+    (_USDC, _T_VITAFOXO): ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 2000)),
+    (_USDC, _T_CADD): ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 10)),
     (_USDC, "0xecc5f868add75f4ff9fd00bbbde12c35ba2c9c89"):
         ("aerodrome_slipstream_multihop", ((_USDC, _WETH, "0xecc5f868add75f4ff9fd00bbbde12c35ba2c9c89"), (1, 200))),
     # 0x61fd trades ONLY on PancakeSwap V2 (no indexed pools; the engine's
@@ -254,6 +293,25 @@ _STATIC_EXOTIC_ROUTES = {
         "v3_tokens": (_USDC, _ZORA), "v3_fees": (3000,),
         "pool": (_ZORA, _TCAF7, 30000, 200, _HOOK_ZORA_CREATOR),
         "settle": _ZORA, "zero_for_one": True}),
+    # ── v0.84.1-gaps additions (same mechanisms, new pairs) ──────────────
+    # USDp: standard-factory slipstream 2-hop via exotic tick-1 mid (the
+    # engine's slip 2-hop mid set is {WETH,USDC,cbBTC,AERO} so it misses it).
+    (_USDC, _USDP): ("aerodrome_slipstream_multihop",
+                     ((_USDC, _MID_E502, _USDP), (1, 1))),
+    # V2-only tails (Uniswap V2 Router02, same builder as BEATS/_TFAD8/...).
+    (_USDC, _ATA): ("uniswap_v2", (_USDC, _ATA)),
+    (_USDC, _COOKIE): ("uniswap_v2", (_USDC, _WETH, _COOKIE)),
+    (_USDC, _PKT): ("uniswap_v2", (_USDC, _WETH, _PKT)),
+    (_USDC, _BLCK): ("uniswap_v2", (_USDC, _WETH, _BLCK)),
+    (_USDC, _MANEKI): ("uniswap_v2", (_USDC, _WETH, _MANEKI_MID, _MANEKI)),
+    # V4 hook pools via the Universal Router (same shapes as _T753F / _T462F).
+    (_USDC, _FETCHR): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
+        "pool": (_WETH, _FETCHR, _V4_DYNAMIC_FEE, 200, _HOOK_BDF9),
+        "settle": _WETH, "zero_for_one": True}),
+    (_USDC, _SINBAD): ("uniswap_v4_ur", {
+        "pool": (_SINBAD, _USDC, 10000, 200, _ZORA_HOOK),
+        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
 }
 _STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC)})
 
@@ -873,6 +931,12 @@ class MinerSolver(BaselineSwapSolver):
                 cand = {"venue": "uniswap_v3", "param": int(param),
                         "out": max(min_out, 1), "gas_est": 120000,
                         "gas_model": _OFFSET_UNI + 120000}
+            elif kind == "aerodrome_slipstream_alt":
+                alt_router, tick_spacing = param
+                cand = {"venue": "aerodrome_slipstream_alt",
+                        "router": str(alt_router), "param": int(tick_spacing),
+                        "out": max(min_out, 1), "gas_est": 160000,
+                        "gas_model": _OFFSET_UNI + 160000}
             elif kind == "aerodrome_slipstream_multihop":
                 tokens, ticks = param
                 cand = {"venue": "aerodrome_slipstream_multihop",
@@ -1956,6 +2020,18 @@ class MinerSolver(BaselineSwapSolver):
                 [_ck(recipient), _ck(cand["pool"]), bool(cand["tokenAIn"]), int(spend_amount), 0])
             call = "0x" + ("a3b105ca" + enc.hex())
             route_tag = "maverick_v2"
+        elif cand["venue"] == "aerodrome_slipstream_alt":
+            # Slipstream-fork SwapRouter paired to a NON-DEFAULT CL factory.
+            # Same exactInputSingle(tickSpacing) ABI as canonical Slipstream
+            # (bytecode-identical router, different factory immutable) — reuse
+            # the proven encoder, just with the paired router address.
+            from strategies.dex_aggregator import aerodrome as _aero
+            router = cand["router"]
+            call = _aero.encode_exact_input_single(
+                token_in=tin, token_out=tout, tick_spacing=int(cand["param"]),
+                recipient=recipient, deadline=deadline, amount_in=amount_in,
+                amount_out_minimum=0)
+            route_tag = "aerodrome_slipstream_alt"
         elif cand["venue"] == "aerodrome_slipstream":
             from strategies.dex_aggregator import aerodrome as _aero
             router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
