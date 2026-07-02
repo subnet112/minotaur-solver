@@ -1361,10 +1361,19 @@ class MinerSolver(BaselineSwapSolver):
             return None
         if tout in _SWEEP_KNOWN:
             return None
-        w3 = self._get_web3(chain_id)
+        # v0.85.0 robustness: the sweep is a ~35-call fan-out that runs OUTSIDE
+        # any _bounded_call (directly on the generate_plan path), so on a cold
+        # fork RPC the shared 2s client + web3 v7's silent 5x retry ladder can
+        # stack one hung wave into 30s+ and blow the harness generate_plan kill
+        # (the order comes back None = score 0). Same fix as the enumeration:
+        # dedicated 5s quoter client (retry ladder OFF) + a single sweep-wide
+        # deadline that start-gates jobs and gates the one transport retry.
+        w3 = self._get_quoter_web3(chain_id)
         if w3 is None:
             return None
-        reach, (best_x, tag, route) = self._sweep_quotes(w3, tin, tout, amount_in)
+        reach, (best_x, tag, route) = self._sweep_quotes(
+            w3, tin, tout, amount_in,
+            deadline=time.monotonic() + _QUOTER_DEADLINE_S)
         if best_x <= 0 or best_x < max(min_out, 1) or best_x <= max(reach, 1) * _SWEEP_MIN_EDGE:
             return None
         logger.info("[sweep] exotic win %s->%s via %s: %s (reach %s)",
@@ -1377,7 +1386,7 @@ class MinerSolver(BaselineSwapSolver):
                                           int(router), amount_in, chain_id)
         return None
 
-    def _sweep_quotes(self, w3, tin, tout, amount_in):
+    def _sweep_quotes(self, w3, tin, tout, amount_in, deadline=None):
         import concurrent.futures
         from eth_abi import encode as _enc, decode as _dec
         from eth_utils import keccak as _kk, to_checksum_address as _ck
@@ -1387,10 +1396,19 @@ class MinerSolver(BaselineSwapSolver):
         sp = _kk(text="quoteExactInput(bytes,uint256)")[:4]
         av2 = _kk(text="getAmountsOut(uint256,(address,address,bool,address)[])")[:4]
         zero = "0x" + "0" * 40
+        # One deadline for the WHOLE sweep: no quote STARTS past it and the
+        # single transport retry (_quoter_call) is skipped past it, so the
+        # worst case is one in-flight socket timeout beyond the deadline
+        # (6.5 + 5 = 11.5s) instead of un-bounded retry-ladder stacking. On a
+        # healthy RPC the fan-out finishes in ~1 round-trip and never engages.
+        _deadline = time.monotonic() + _QUOTER_DEADLINE_S
+        if deadline is not None:
+            _deadline = min(_deadline, float(deadline))
 
         def _call(to, data):
             try:
-                return w3.eth.call({"to": _ck(to), "data": "0x" + data.hex()})
+                return self._quoter_call(
+                    w3, {"to": _ck(to), "data": "0x" + data.hex()}, _deadline)
             except Exception:
                 return None
 
@@ -1464,11 +1482,23 @@ class MinerSolver(BaselineSwapSolver):
                          lambda f=f: q_v3(_SWEEP_SUSHI_Q, tin, tout, amount_in, f)))
         reach_best = 0
         extra_best, extra_tag, extra_route = 0, "", None
+
+        def _guarded(fn):
+            # Don't START a quote past the sweep deadline: a late wave's socket
+            # timeout would land beyond the budget and stall the pool shutdown
+            # (the `with` block joins every submitted job before returning).
+            if time.monotonic() >= _deadline:
+                return 0
+            return fn()
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
-            futs = [(tag, route, ex.submit(fn)) for tag, route, fn in jobs]
+            futs = [(tag, route, ex.submit(_guarded, fn)) for tag, route, fn in jobs]
             for tag, route, fut in futs:
                 try:
-                    out = int(fut.result(timeout=8) or 0)
+                    # Deadline-aware collection: allow each in-flight call its
+                    # full socket timeout past the deadline, never more.
+                    _left = max(0.1, _deadline + _QUOTER_TIMEOUT_S + 0.5 - time.monotonic())
+                    out = int(fut.result(timeout=min(8.0, _left)) or 0)
                 except Exception:
                     out = 0
                 if tag == "reach":
