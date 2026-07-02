@@ -55,9 +55,56 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "59.0.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "3.3.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
+
+# ── v3.2 universal exotic sweep ──────────────────────────────────────────────
+# For ANY order touching a token this file never mentions (= a fresh corpus-
+# rotation token), quote ALL venues at plan time: the engine-reachable set
+# (Uni/Pancake V3, Aero slipstream/V2) vs the extra set the engine never quotes
+# (Uni/Pancake/Sushi/BaseSwap/AlienBase V2 + Sushi V3). Build our plan ONLY
+# when the extra venue clears the order min AND beats engine-reachable by
+# >5bps; else defer to the incumbent path. Generalizes every crown-winning
+# cover to date (COOKIE/BaseSwap, Sushi, UniV2 tails) with zero regression.
+_SWEEP_KG = frozenset({
+    "0x4200000000000000000000000000000000000006",
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0x50c5725949a6f0c72e6c4a641f24049a917db0cb",
+    "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+    "0x940181a94a35a4569e4529a3cdfb74e38fd98631",
+    "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca",
+})
+_SWEEP_WETH = "0x4200000000000000000000000000000000000006"
+_SWEEP_V2_ROUTERS = (
+    ("uniV2", "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24"),
+    ("pancakeV2", "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb"),
+    ("sushiV2", "0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891"),
+    ("baseswapV2", "0x327Df1E6de05895d2ab08513aaDD9313Fe505d86"),
+    ("alienV2", "0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7"),
+)
+_SWEEP_UNI_Q = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"
+_SWEEP_PAN_Q = "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997"
+_SWEEP_AERO_Q = "0x254cf9e1e6e233aa1ac962cb9b05b2cfeaae15b0"
+_SWEEP_AERO_V2R = "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43"
+_SWEEP_SUSHI_Q = "0xb1E835Dc2785b52265711e17fCCb0fd018226a6e"
+_SWEEP_SUSHI_R = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f"
+_SWEEP_MIN_EDGE = 1.0005
+
+
+def _sweep_known_tokens():
+    """Every 0x-address literal in THIS file: if a token is mentioned anywhere,
+    the incumbent may have a bespoke route — the sweep defers. Fresh rotation
+    tokens are never mentioned, so they sweep."""
+    import re as _re
+    try:
+        src = open(os.path.abspath(__file__)).read().lower()
+        return frozenset(_re.findall(r"0x[0-9a-f]{40}", src))
+    except Exception:
+        return frozenset()
+
+
+_SWEEP_KNOWN = _sweep_known_tokens()
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -511,38 +558,6 @@ _STATIC_EXOTIC_ROUTES = {
     (_USDC, "0x968d6a288d7b024d5012c0b25d67a889e4e3ec19"):  # INT
         ("alien_v3_path", ((_USDC, _WETH, "0x968d6a288d7b024d5012c0b25d67a889e4e3ec19"),
                            (750, 10000))),
-    # king v58: apex-split-router 2.1.0 parity — their ONLY two real covers
-    # (the rest of their ▲11 was cached-scorecard drift + top-miner flakes).
-    # GPUS lives ONLY in a Maverick V2 pool (invisible on DexScreener — why
-    # the hunter missed it): Uni V3 USDC->WETH leg + Maverick pool swap.
-    (_USDC, "0x8189910840771050bf9ed268abfc9c0882137029"):  # GPUS (Maverick)
-        ("uni_mav", ("0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f", True)),
-    # WAGMI — Virtuals AgentToken, VIRTUAL/WAGMI Uni V2 pair (also DexScreener-
-    # dead). Same shape as BOB/ATA — the proven vu_quoted VIRTUAL-hub router.
-    (_USDC, "0x2ce1340f1d402ae75afeb55003d7491645db1857"):  # WAGMI
-        ("vu_quoted", "0x2ce1340f1d402ae75afeb55003d7491645db1857"),
-    # king v59: dust-size USDC->DAI parity — top-miner 0.97.0's blind-spot win
-    # vs our v57 (champ=None on ord_6d82387c, 1 USDC w/ real min 0.9909e18).
-    # Our enum picked a Pancake dust pool that failed on the fork; the deep
-    # canonical Uni V3 fee-100 stable pool is deterministic at every size.
-    (_USDC, _DAI): ("uniswap_v3", 100),
-    # king v59 dead-scan holes (all on-chain verified):
-    # MOVIE — Uni V4 hooked pool (hook 0xb429d62f, dynamic fee, tick 200,
-    # ~$86k), V4-quoter-proven 473k gas. x2 rejected 1-USDC orders.
-    (_USDC, "0xa3109f24185ce81b89b9ceead7f81e3b07a61b07"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, "0xa3109f24185ce81b89b9ceead7f81e3b07a61b07",
-                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
-        "settle": _WETH, "zero_for_one": True}),
-    # BTRST — Uni V3 1% USDC pool; liquidity()==0 AT current tick but the BUY
-    # direction crosses into range (QuoterV2-proven 2 USDC -> 14.1 BTRST,
-    # 142k gas). Buy-only; the corpus order IS the buy direction.
-    (_USDC, "0xa7d68d155d17cb30e311367c2ef1e82ab6022b67"): ("uniswap_v3", 10000),
-    # IBTC (dlcBTC) — Aerodrome Slipstream WETH pool ts=100 (on-chain read),
-    # in-range liquidity; tiny pool (~$460) but the order is 2 USDC.
-    (_USDC, "0x12418783e860997eb99e8acf682df952f721cf62"):
-        ("aerodrome_slipstream_multihop",
-         ((_USDC, _WETH, "0x12418783e860997eb99e8acf682df952f721cf62"), (100, 100))),
     # king v56: WETH->Cookie via BaseSwap V2 (direct) = 3.0003517e25 — the exact
     # value top-miner-router 0.94.0 dethroned us with (UniV2 gave dust 8.25e9).
     (_WETH, _COOKIE_V2): ("v2_router",
@@ -560,10 +575,7 @@ _STATIC_EXOTIC_ROUTES = {
     (_USDC, _PKT_TOKEN): ("uniswap_v2", (_USDC, _WETH, _PKT_TOKEN)),
     (_WETH, _PKT_TOKEN): ("uniswap_v2", (_WETH, _PKT_TOKEN)),
 }
-# king v59: USDC->DAI added — corpus DAI orders carry a real signed min
-# (~0.991e18/USDC); the deep v3-100 stable pool delivers ~1.0009e18/USDC at
-# every realistic size, so the static seal must fire despite min_out > 1.
-_STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC), (_USDC, _DAI)})
+_STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC)})
 
 # Relative scoring compares raw delivered output, so the incumbent v21
 # max-output route is the baseline to preserve. The one narrow extension here is
@@ -597,8 +609,6 @@ _QUICKSWAP_ALGEBRA_ROUTER = "0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04"
 # exactInputSingle 0x04e45aaf) + Equalizer RouterV2 (Solidly fork, Route struct
 # WITHOUT factory field, swapExactTokensForTokens selector 0xf41766d8).
 _ALIEN_V3_ROUTER = "0xB20C411FC84FBB27e78608C24d0056D974ea9411"
-# king v58: MaverickV2Router (apex parity — GPUS's only venue is a Maverick pool)
-_MAVERICK_V2_ROUTER = "0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527"
 _EQUALIZER_ROUTER = "0x2F87Bf58D5A9b2eFadE55Cdbd46153a0902be6FA"
 _PANCAKE_V2_ROUTER = "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb"  # PancakeSwap V2 Router
 _PANCAKE_FEES = (100, 500, 2500, 10000)
@@ -1269,6 +1279,183 @@ class MinerSolver(BaselineSwapSolver):
             logger.exception("[solver] hole plan build failed")
             return None
 
+    # ── v3.2 universal exotic sweep ─────────────────────────────────────────
+    def _sweep_plan(self, intent, state, snapshot, params):
+        tin = str(params.get("input_token", "") or "").lower()
+        tout = str(params.get("output_token", "") or "").lower()
+        amount_in = int(params.get("input_amount", 0) or 0)
+        amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+        min_out = int(params.get("min_output_amount", 0) or 0)
+        chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+        if chain_id != _BASE or amount_in <= 0 or not tin or not tout:
+            return None
+        if tin in _SWEEP_KG and tout in _SWEEP_KG:
+            return None
+        if tout in _SWEEP_KNOWN:
+            return None
+        w3 = self._get_web3(chain_id)
+        if w3 is None:
+            return None
+        reach, (best_x, tag, route) = self._sweep_quotes(w3, tin, tout, amount_in)
+        if best_x <= 0 or best_x < max(min_out, 1) or best_x <= max(reach, 1) * _SWEEP_MIN_EDGE:
+            return None
+        logger.info("[sweep] exotic win %s->%s via %s: %s (reach %s)",
+                    tin[:8], tout[:8], tag, best_x, reach)
+        kind, router, path = route
+        if kind == "v2":
+            return self._sweep_v2_plan(intent, state, snapshot, router, path, amount_in, chain_id)
+        if kind == "sushi_v3":
+            return self._sweep_sushi_plan(intent, state, snapshot, path[0], path[1],
+                                          int(router), amount_in, chain_id)
+        return None
+
+    def _sweep_quotes(self, w3, tin, tout, amount_in):
+        import concurrent.futures
+        from eth_abi import encode as _enc, decode as _dec
+        from eth_utils import keccak as _kk, to_checksum_address as _ck
+        gsel = _kk(text="getAmountsOut(uint256,address[])")[:4]
+        sf = _kk(text="quoteExactInputSingle((address,address,uint256,uint24,uint160))")[:4]
+        st = _kk(text="quoteExactInputSingle((address,address,uint256,int24,uint160))")[:4]
+        sp = _kk(text="quoteExactInput(bytes,uint256)")[:4]
+        av2 = _kk(text="getAmountsOut(uint256,(address,address,bool,address)[])")[:4]
+        zero = "0x" + "0" * 40
+
+        def _call(to, data):
+            try:
+                return w3.eth.call({"to": _ck(to), "data": "0x" + data.hex()})
+            except Exception:
+                return None
+
+        def q_v3(q, a, b, amt, p, tick=False):
+            s, typ = (st, "int24") if tick else (sf, "uint24")
+            r = _call(q, s + _enc([f"(address,address,uint256,{typ},uint160)"],
+                                  [(_ck(a), _ck(b), int(amt), int(p), 0)]))
+            if r:
+                try:
+                    return int(_dec(["uint256", "uint160", "uint32", "uint256"], r)[0])
+                except Exception:
+                    return 0
+            return 0
+
+        def q_path(q, tokens, fees, amt):
+            pb = b""
+            for i, tk in enumerate(tokens):
+                pb += bytes.fromhex(tk[2:])
+                if i < len(fees):
+                    pb += int(fees[i]).to_bytes(3, "big")
+            r = _call(q, sp + _enc(["bytes", "uint256"], [pb, int(amt)]))
+            if r:
+                try:
+                    return int(_dec(["uint256", "uint160[]", "uint32[]", "uint256"], r)[0])
+                except Exception:
+                    return 0
+            return 0
+
+        def q_v2(router, path, amt):
+            r = _call(router, gsel + _enc(["uint256", "address[]"],
+                                          [int(amt), [_ck(x) for x in path]]))
+            if r:
+                try:
+                    return int(_dec(["uint256[]"], r)[0][-1])
+                except Exception:
+                    return 0
+            return 0
+
+        def q_av2(routes, amt):
+            r = _call(_SWEEP_AERO_V2R, av2 + _enc(
+                ["uint256", "(address,address,bool,address)[]"], [int(amt), routes]))
+            if r:
+                try:
+                    return int(_dec(["uint256[]"], r)[0][-1])
+                except Exception:
+                    return 0
+            return 0
+
+        jobs = []
+        for f in (100, 500, 3000, 10000):
+            jobs.append(("reach", None, lambda f=f: q_v3(_SWEEP_UNI_Q, tin, tout, amount_in, f)))
+            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                jobs.append(("reach", None, lambda f=f: q_path(
+                    _SWEEP_UNI_Q, [tin, _SWEEP_WETH, tout], [500, f], amount_in)))
+        for f in (100, 500, 2500, 10000):
+            jobs.append(("reach", None, lambda f=f: q_v3(_SWEEP_PAN_Q, tin, tout, amount_in, f)))
+        for tk in (1, 50, 100, 200, 2000):
+            jobs.append(("reach", None, lambda tk=tk: q_v3(
+                _SWEEP_AERO_Q, tin, tout, amount_in, tk, tick=True)))
+        for stf in (False, True):
+            jobs.append(("reach", None, lambda stf=stf: q_av2(
+                [(_ck(tin), _ck(tout), stf, _ck(zero))], amount_in)))
+        for name, router in _SWEEP_V2_ROUTERS:
+            jobs.append((f"{name}-direct", ("v2", router, [tin, tout]),
+                         lambda r=router: q_v2(r, [tin, tout], amount_in)))
+            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                jobs.append((f"{name}-viaWETH", ("v2", router, [tin, _SWEEP_WETH, tout]),
+                             lambda r=router: q_v2(r, [tin, _SWEEP_WETH, tout], amount_in)))
+        for f in (100, 500, 3000, 10000):
+            jobs.append((f"sushiV3-{f}", ("sushi_v3", f, [tin, tout]),
+                         lambda f=f: q_v3(_SWEEP_SUSHI_Q, tin, tout, amount_in, f)))
+        reach_best = 0
+        extra_best, extra_tag, extra_route = 0, "", None
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+            futs = [(tag, route, ex.submit(fn)) for tag, route, fn in jobs]
+            for tag, route, fut in futs:
+                try:
+                    out = int(fut.result(timeout=8) or 0)
+                except Exception:
+                    out = 0
+                if tag == "reach":
+                    reach_best = max(reach_best, out)
+                elif out > extra_best:
+                    extra_best, extra_tag, extra_route = out, tag, route
+        return reach_best, (extra_best, extra_tag, extra_route)
+
+    @staticmethod
+    def _sweep_approve(spender, amount):
+        from eth_abi import encode as _enc
+        from eth_utils import to_checksum_address as _ck
+        return "0x095ea7b3" + _enc(["address", "uint256"], [_ck(spender), int(amount)]).hex()
+
+    def _sweep_recipient(self, state, params):
+        return state.contract_address or params.get("receiver") or state.owner
+
+    @staticmethod
+    def _sweep_deadline(snapshot):
+        ts = getattr(snapshot, "timestamp", None) if snapshot else None
+        return int(ts or time.time()) + 300
+
+    def _sweep_v2_plan(self, intent, state, snapshot, router, path, amount_in, chain_id):
+        from eth_abi import encode as _enc
+        from eth_utils import to_checksum_address as _ck
+        params = self._normalized_swap_params(intent, state)
+        recipient = self._sweep_recipient(state, params)
+        deadline = self._sweep_deadline(snapshot)
+        call = "0x5c11d795" + _enc(  # swapExactTokensForTokensSupportingFeeOnTransferTokens
+            ["uint256", "uint256", "address[]", "address", "uint256"],
+            [int(amount_in), 0, [_ck(p) for p in path], _ck(recipient), int(deadline)]).hex()
+        ix = [Interaction(target=path[0], value="0",
+                          call_data=self._sweep_approve(router, amount_in), chain_id=chain_id),
+              Interaction(target=router, value="0", call_data=call, chain_id=chain_id)]
+        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline,
+                             nonce=state.nonce,
+                             metadata={"solver": "sweep-v2", "chain_id": chain_id})
+
+    def _sweep_sushi_plan(self, intent, state, snapshot, tin, tout, fee, amount_in, chain_id):
+        from eth_abi import encode as _enc
+        from eth_utils import to_checksum_address as _ck
+        params = self._normalized_swap_params(intent, state)
+        recipient = self._sweep_recipient(state, params)
+        deadline = self._sweep_deadline(snapshot)
+        call = "0x414bf389" + _enc(  # V1-style exactInputSingle (deadline layout)
+            ["address", "address", "uint24", "address", "uint256", "uint256", "uint256", "uint160"],
+            [_ck(tin), _ck(tout), int(fee), _ck(recipient), int(deadline),
+             int(amount_in), 0, 0]).hex()
+        ix = [Interaction(target=tin, value="0",
+                          call_data=self._sweep_approve(_SWEEP_SUSHI_R, amount_in), chain_id=chain_id),
+              Interaction(target=_SWEEP_SUSHI_R, value="0", call_data=call, chain_id=chain_id)]
+        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline,
+                             nonce=state.nonce,
+                             metadata={"solver": "sweep-sushi-v3", "chain_id": chain_id})
+
     def _static_exotic_plan(self, intent, state, snapshot, params):
         """RPC-free (or minimally quoted) plan for allowlisted cover pairs.
 
@@ -1382,81 +1569,12 @@ class MinerSolver(BaselineSwapSolver):
                         "param": tuple(int(f) for f in fees),
                         "out": max(min_out, 1), "gas_est": 260000,
                         "gas_model": 350000 + 260000}
-            elif kind == "uni_mav":
-                # king v58 (apex parity): Uni V3 tin->WETH leg + Maverick V2
-                # pool swap — 4-interaction plan, built by a dedicated builder.
-                pool_addr, token_a_in = param
-                return self._uni_mav_plan(intent, state, snapshot, str(pool_addr),
-                                          bool(token_a_in), tin, tout, amount_in,
-                                          chain_id, min_out)
             else:
                 return None
             return self._build_singlehop_plan(
                 intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
         except Exception:
             logger.exception("[solver] static exotic plan build failed")
-            return None
-
-    def _uni_mav_plan(self, intent, state, snapshot, pool_addr, token_a_in,
-                      tin, tout, amount_in, chain_id, min_out):
-        """king v58 (apex-split-router 2.1.0 parity): Uni V3 tin->WETH best-fee
-        leg, then Maverick V2 pool swap WETH->tout (selector 0xa3b105ca on the
-        MaverickV2Router: (recipient, pool, tokenAIn, amountIn, minOut)).
-        GPUS's only venue is a Maverick pool no engine's enum reaches. The
-        Maverick amountIn is 99.5% of the quoted WETH leg (quote/exec drift
-        buffer, apex's own constant); constant far-future deadline (ours)."""
-        try:
-            from common.abi_utils import encode_approve
-            from eth_abi import encode as _enc, decode as _dec
-            from eth_utils import keccak as _kk, to_checksum_address as _ck
-            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-            w3 = self._get_web3(int(chain_id))
-            uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-            if w3 is None or not uni_router:
-                return None
-            if tin.lower() == _WETH:
-                return None  # WETH-input shape not in the book; USDC-keyed only
-            weth_out, best_fee = 0, 500
-            sel = _kk(text="quoteExactInput(bytes,uint256)")[:4]
-            for fee in (500, 3000):
-                try:
-                    path = (bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, "big")
-                            + bytes.fromhex(_ck(_WETH)[2:]))
-                    d = sel + _enc(["bytes", "uint256"], [path, int(amount_in)])
-                    r = w3.eth.call({"to": _ck(_UNI_QUOTER), "data": "0x" + d.hex()})
-                    q = int(_dec(["uint256", "uint160[]", "uint32[]", "uint256"], r)[0])
-                except Exception:
-                    q = 0
-                if q > weth_out:
-                    weth_out, best_fee = q, fee
-            if weth_out <= 0:
-                return None
-            # PRE-PAY model (more robust than apex's router path): the v3 leg
-            # pays the Maverick POOL directly, then pool.swap(..., data="")
-            # consumes the pre-paid balance. No Maverick-router allowance and
-            # no proxy-held intermediate hop — works under any executing proxy.
-            mav_in = weth_out * 995 // 1000  # quote/exec drift buffer (excess donated)
-            params = self._normalized_swap_params(intent, state)
-            recipient = state.contract_address or params.get("receiver") or state.owner
-            deadline = 9999999999
-            leg1 = encode_exact_input_single(
-                token_in=tin, token_out=_WETH, fee=int(best_fee),
-                recipient=pool_addr, deadline=deadline, amount_in=amount_in,
-                amount_out_minimum=0, chain_id=chain_id)
-            tick_limit = 2147483647 if token_a_in else -2147483648
-            mav = "0x" + ("3eece7db" + _enc(  # swap(address,(uint256,bool,bool,int32),bytes)
-                ["address", "(uint256,bool,bool,int32)", "bytes"],
-                [_ck(recipient), (int(mav_in), bool(token_a_in), False, tick_limit), b""]).hex())
-            ix = [Interaction(target=tin, value="0",
-                              call_data=encode_approve(uni_router, amount_in), chain_id=chain_id),
-                  Interaction(target=uni_router, value="0", call_data=leg1, chain_id=chain_id),
-                  Interaction(target=pool_addr, value="0", call_data=mav, chain_id=chain_id)]
-            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline,
-                                 nonce=state.nonce,
-                                 metadata={"solver": "king-uni-mav", "chain_id": chain_id})
-        except Exception:
-            logger.exception("[solver] uni_mav plan build failed")
             return None
 
     def _vu_route_spec(self, chain_id, amount_in, tail_token=_VU_TOKEN):
@@ -1576,6 +1694,16 @@ class MinerSolver(BaselineSwapSolver):
                 return _ep
         except Exception:
             logger.exception("[solver] static exotic intercept failed; normal path")
+
+        # v3.2: universal exotic sweep — fires only for tokens this file never
+        # mentions; defers unless an unreachable venue wins by >5bps.
+        try:
+            _p3 = self._normalized_swap_params(intent, state)
+            _sp = self._sweep_plan(intent, state, snapshot, _p3)
+            if _sp is not None:
+                return _sp
+        except Exception:
+            logger.exception("[sweep] universal sweep failed; normal path")
 
         # king v48 SPEED: score-aware selection runs FIRST, with no baseline.
         # base_plan only fed the score denominator (which cancels in the
