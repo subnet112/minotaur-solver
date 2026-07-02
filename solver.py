@@ -56,8 +56,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "hydra-discovery-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.1.2")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.85.0-succ")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -340,6 +340,11 @@ _FETCHR_TOKEN = "0x610a5a297fe2135289b8565ef645de2a7c00eba3" # FETCHR (Clanker V
 # ABI works unchanged with the paired router address.
 _AERO_ALT_ROUTER_ADE = "0xcbbb8035cac7d4b3ca7abb74cf7bdf900215ce0d"  # paired to factory 0xaDe65c38
 _AERO_ALT_ROUTER_F8F = "0x698cb2b6dd822994581fea6ea4fc755d1363a92f"  # paired to factory 0xf8f2eB49
+# succession: router paired to alt-CL factory 0x8888a3d8 (Swap-event sender on
+# pool 0xeb436172; factory()==0x8888a3d8; slipstream exactInputSingle int24
+# selector 0xa026383e present; NOT bytecode-identical to the canonical paired
+# routers but ABI-compatible — fork-executed clean, scoreIntent 10000).
+_AERO_ALT_ROUTER_8888 = "0x8888eea5c97af36f764259557d2d4ca23e6b19ff"
 _T_SOFTWARE = "0xa100000000000d6e18bc155f425685e4badfe11c"  # SOFTWARE.ai (6 dec)
 _T_VITAFOXO = "0xe8f802b0cb13adf1a4333b541d4d3f703b8a69fa"  # VITAFOXO
 _T_CADD = "0x16f93ebc5320c89efc8701577efe49d14a276a06"      # CADD
@@ -472,6 +477,26 @@ _STATIC_EXOTIC_ROUTES = {
         ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 200)),
     (_WETH, "0x78e8cf657742e10eac8f64007615aa741fc76414"):  # USDL (~$135k)
         ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 10)),
+    # succession: 7 pre-coverage alt-CL-factory holes (precoverage-approved;
+    # ALL 7 fork-executed through the real scoreIntent path, score 10000 each,
+    # while the unmodified engine's plan reverts pristinely (CallFailed,
+    # delivers 0) on every one. Dynamic discovery cannot reach these: the
+    # alt-CL forks have NO quoter and the discovery sweep covers V2 forks /
+    # Aero classic / V4 only. Same proven encoder as the v53/v54 entries.
+    (_USDC, "0x35cf3f5511dc74541d6697fc89d9b68413997782"):  # UDSC (~$600k vliq)
+        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 200)),
+    (_USDC, "0x5003427ed2f63817b341932f0588880c65b7ddc4"):  # TYREA (~$57M vliq)
+        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 200)),
+    (_USDC, "0x57b41483d670d59008e8271f881ca36cf7de4c60"):  # NYC11
+        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 200)),
+    (_USDC, "0x8210c0634ab8f273806e4b7866e9db353773c44b"):  # USDf (tick-1)
+        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 1)),
+    (_USDC, "0xba515304d8153c4b162dc79f867e152df9c127eb"):  # UTY (tick-1)
+        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 1)),
+    (_USDC, "0x888d81e3ea5e8362b5f69188cbcf34fa8da4b888"):  # LARRY (0x8888 fork)
+        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_8888, 1)),
+    (_USDC, "0xf197ffc28c23e0309b5559e7a166f2c6164c80aa"):  # MXNB (F8F tick-10)
+        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 10)),
     # king v53: USDp — standard-factory slipstream 2-hop via the exotic
     # tick-1 frxUSD mid (the engine's slip 2-hop mid set misses it).
     (_USDC, _USDP_TOKEN): ("aerodrome_slipstream_multihop",
