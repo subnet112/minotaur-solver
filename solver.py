@@ -55,9 +55,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "47.0.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.2.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
 _BASE = 8453
@@ -213,6 +213,15 @@ _STATIC_EXOTIC_ROUTES = {
     (_USDC, _TFAD8): ("uniswap_v2", (_USDC, _WETH, _TFAD8)),
     (_USDC, _TAE4A): ("uniswap_v2", (_USDC, _WETH, _TAE4A)),
     (_USDC, _T3639): ("uniswap_v2", (_USDC, _WETH, _T3639)),
+    # v2.2.0 covers: live corpus min=1 orders the current champion delivers
+    # 0/None on — each token trades ONLY on Uniswap V2 (verified: no V3/
+    # Pancake/Aero/AeroV2/Sushi-V3/V4-hook route; V4 Initialize logs scanned).
+    (_USDC, "0xb18c609796848c723eacadc0be5b71ceb2289a48"):
+        ("uniswap_v2", (_USDC, "0xb18c609796848c723eacadc0be5b71ceb2289a48")),
+    (_USDC, "0xf5de8697232a16a942f7cf706415f553ce53e27f"):
+        ("uniswap_v2", (_USDC, _WETH, "0xf5de8697232a16a942f7cf706415f553ce53e27f")),
+    (_USDC, "0x917f39bb33b2483dd19546b1e8d2f09ce481ee44"):
+        ("uniswap_v2", (_USDC, _WETH, "0x917f39bb33b2483dd19546b1e8d2f09ce481ee44")),
     (_USDC, _AMPR_TOKEN): ("uniswap_v4_ur", {
         "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
         "pool": (_WETH, _AMPR_TOKEN, _V4_DYNAMIC_FEE, 200, _CLANKER_HOOK),
