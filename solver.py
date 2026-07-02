@@ -55,8 +55,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.84.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "47.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -117,6 +117,39 @@ _HOLE_ROUTES = {
     # enumeration despite offline-empty quote; NOT sealed, would regress.)
     "0x3124678d62d2aa1f615b54525310fbfda6dcf7ae":  # SNSY  (Sushi V3 WETH/SNSY fee 10000)
         ("sushi_v3", 10000),
+    # king v46: Hydrex (Algebra Integral) — a venue this base cannot reach, so
+    # these score 0/None (blind_spot_cover vs champion). Single-hop
+    # exactInputSingle tin->tout; param = VERIFIED-good input tokens (a direct
+    # Hydrex pool exists for that pair) so other inputs fall through to baseline
+    # instead of emitting a guaranteed-revert plan. HYDX: HYDX/USDC (~$298k) +
+    # HYDX/WETH -> wins USDC->HYDX (8712 HYDX) AND WETH->HYDX. DEXTF: WETH/DEXTF
+    # (~$64k) -> wins WETH->DEXTF. Fork-verified via /score at 1.0.
+    "0x00000e7efa313f4e11bfff432471ed9423ac6b30":  # HYDX (Hydrex Algebra)
+        ("hydrex", (_USDC, _WETH)),
+    "0xb69bbb15095c0949489fbb43951d2b750fa7fa89":  # DEXTF (Hydrex Algebra)
+        ("hydrex", (_WETH,)),
+    # king v47: 6 more Hydrex (Algebra Integral) holes — all champion (top-miner
+    # v0.84) /quote=0, all with a direct USDC- or WETH-paired Hydrex pool so the
+    # single-hop exactInputSingle fills. param = verified-good input token.
+    "0x55380fe7a1910dff29a47b622057ab4139da42c5":  # FXUSD (Hydrex USDC ~$337k)
+        ("hydrex", (_USDC,)),
+    "0xc48823ec67720a04a9dfd8c7d109b2c3d6622094":  # MCADE (Hydrex WETH ~$125k)
+        ("hydrex", (_WETH,)),
+    "0x3e31966d4f81c72d2a55310a6365a56a4393e98d":  # WMTX (Hydrex WETH ~$77k)
+        ("hydrex", (_WETH,)),
+    "0xb99b6df96d4d5448cc0a5b3e0ef7896df9507cf5":  # VAULT (Hydrex USDC ~$47k)
+        ("hydrex", (_USDC,)),
+    "0x5cda0e1ca4ce2af96315f7f8963c85399c172204":  # wtCOIN (Hydrex USDC ~$21k)
+        ("hydrex", (_USDC,)),
+    # king v47 (2nd batch): 4 more Hydrex holes (champion /quote=0, direct pool).
+    "0x16edb4dfc1d3368d051370699edfb280e9a1b474":  # 40ACRES (Hydrex USDC ~$22k)
+        ("hydrex", (_USDC,)),
+    "0x7afe438411ee3959c7de6f7fb76bf9c769320ba3":  # BLOCKTRONICS (Hydrex USDC ~$13k)
+        ("hydrex", (_USDC,)),
+    "0xfac77f01957ed1b3dd1cbea992199b8f85b6e886":  # FACY (Hydrex WETH ~$11k)
+        ("hydrex", (_WETH,)),
+    "0x6e0090dbecf3b4f0f9429637756cadd8fc468c54":  # MILK (Hydrex WETH ~$9k)
+        ("hydrex", (_WETH,)),
 }
 # v0.84 (top-miner-router): cap the spend on the 0963 Maverick hole. Swapping
 # the FULL input into that tiny pool reverts (price-limit) -> None; spending
@@ -232,6 +265,12 @@ _AERO_V2_ROUTER = "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43"  # Aerodrome Rout
 _PANCAKE_QUOTER = "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997"  # PancakeSwap V3 QuoterV2
 _PANCAKE_ROUTER = "0x1b81D678ffb9C0263b24A97847620C99d213eB14"  # PancakeSwap V3 SmartRouter
 _SUSHI_ROUTER = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f"  # SushiSwap V3 SwapRouter (V1-style, deadline 0x414bf389)
+# king v46: Hydrex (Algebra Integral fork) SwapRouter — a venue neither this
+# base (top-miner v0.84) nor prior kings enumerate. exactInputSingle selector
+# 0x1679c792, 8-field struct with a `deployer` field that MUST be address(0)
+# for standard pools (2-arg CREATE2 salt keccak(token0,token1); the poolDeployer
+# computes the wrong pool -> revert). Dynamic fee. Verified: 250 USDC->8712 HYDX.
+_HYDREX_ROUTER = "0x6f4bE24d7dC93b6ffcBAb3Fd0747c5817Cea3F9e"
 _PANCAKE_V2_ROUTER = "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb"  # PancakeSwap V2 Router
 _PANCAKE_FEES = (100, 500, 2500, 10000)
 _UNI_FEES = (100, 500, 3000, 10000)
@@ -780,6 +819,15 @@ class MinerSolver(BaselineSwapSolver):
                 cap = _HOLE_SPEND_CAPS.get(tout.lower())
                 if cap and amount_in > cap and min_out <= 1:
                     cand["spend_amount"] = int(cap)
+            elif kind == "hydrex":
+                # Single Hydrex (Algebra Integral) exactInputSingle tin->tout; the
+                # router derives the pool from (token0,token1). param = verified-good
+                # input tokens; other inputs fall through (no direct pool -> revert).
+                if param is not None and tin.lower() not in {a.lower() for a in param}:
+                    return None
+                cand = {"venue": "hydrex_algebra", "param": "hydrex",
+                        "out": max(min_out, 1), "gas_est": 200000,
+                        "gas_model": _OFFSET_UNI + 200000}
             else:
                 return None
             return self._build_singlehop_plan(
@@ -1860,6 +1908,23 @@ class MinerSolver(BaselineSwapSolver):
                 [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
             call = "0x" + ("414bf389" + enc.hex())
             route_tag = "sushi_v3"
+        elif cand["venue"] == "hydrex_algebra":
+            # Hydrex (Algebra Integral) SwapRouter.exactInputSingle. 8-field struct
+            # (tokenIn, tokenOut, deployer, recipient, deadline, amountIn,
+            # amountOutMinimum, limitSqrtPrice); NO fee field (dynamic fee).
+            # deployer MUST be address(0): standard Hydrex pools use the 2-arg
+            # CREATE2 salt keccak(token0,token1); the poolDeployer computes a
+            # 3-arg salt -> nonexistent address -> revert. Selector 0x1679c792.
+            from eth_abi import encode as _abi_encode
+            from eth_utils import to_checksum_address as _ck
+            router = _HYDREX_ROUTER
+            _ZERO = "0x0000000000000000000000000000000000000000"
+            enc = _abi_encode(
+                ["(address,address,address,address,uint256,uint256,uint256,uint160)"],
+                [(_ck(tin), _ck(tout), _ck(_ZERO), _ck(recipient),
+                  int(deadline), int(amount_in), 0, 0)])
+            call = "0x" + ("1679c792" + enc.hex())
+            route_tag = "hydrex_algebra"
         elif cand["venue"] == "pancake_v3_multihop":
             from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
             router = _PANCAKE_ROUTER
