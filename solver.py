@@ -56,7 +56,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.3.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.4.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -304,6 +304,11 @@ _STATIC_EXOTIC_ROUTES = {
     # pool is on BaseSwap V2 (fork-proven: swap delivers 6.01e24 == quote, ~7e14x
     # more). Same V2 Router02 ABI, different router address.
     (_USDC, _COOKIE): ("baseswap_v2", (_USDC, _WETH, _COOKIE)),
+    # v2.4.0: the SECOND live COOKIE order (WETH->COOKIE, min=0) — the champion
+    # covers only USDC->COOKIE, so it serves this one from the uniV2 dust pair
+    # (8.25e9) or standard enumeration. BaseSwap direct WETH->COOKIE delivers
+    # 3.00e25 (fork-proven: status=1, 3.6e15x more) -> we win this order too.
+    (_WETH, _COOKIE): ("baseswap_v2", (_WETH, _COOKIE)),
     (_USDC, _PKT): ("uniswap_v2", (_USDC, _WETH, _PKT)),
     (_USDC, _BLCK): ("uniswap_v2", (_USDC, _WETH, _BLCK)),
     (_USDC, _MANEKI): ("uniswap_v2", (_USDC, _WETH, _MANEKI_MID, _MANEKI)),
