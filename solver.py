@@ -55,8 +55,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "47.0.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.84.1-g9")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -195,6 +195,23 @@ _UR_ADDRESS_THIS = "0x0000000000000000000000000000000000000002"
 
 _T61FD = "0x61fd8d4ad84bf7a20e12f00b7e33cb698977dc7d"  # PancakeV2-only (unindexed)
 
+# ── v0.84.1-gaps: additional pair-keyed covers on the SAME mechanisms above
+# (slipstream multihop / UniV2 Router02 / V4-via-UR). All are USDC-input,
+# min_output <= 1 corpus orders whose only liquidity sits on venues this
+# engine's enumeration cannot see (exotic slipstream mid / V2-only pairs /
+# unindexed V4 hook pools). On-chain-verified quotes; each fires ONLY for its
+# exact (input, output) pair under the same min<=1 gate — zero regression.
+_MID_E502 = "0xe5020a6d073a794b6e7f05678707de47986fb0b6"   # slipstream tick-1 mid for USDp
+_USDP = "0x76a9a0062ec6712b99b4f63bd2b4270185759dd5"       # USDp
+_ATA = "0xb18c609796848c723eacadc0be5b71ceb2289a48"        # ATA (direct USDC V2 pair)
+_COOKIE = "0x614747c53cb1636b4b962e15e1d66d3214621100"     # Cookie (WETH V2 pair)
+_PKT = "0x917f39bb33b2483dd19546b1e8d2f09ce481ee44"        # PKT (WETH V2 pair)
+_BLCK = "0xf5de8697232a16a942f7cf706415f553ce53e27f"       # BLCK (WETH V2 pair; 2 orders)
+_MANEKI_MID = "0x05e3d6741e4ea10f73e2c7d7d5bc40bcd6c4e5a0" # MANEKI's only V2 counter-asset
+_MANEKI = "0xe6ab1cc1307b496748753e017f3dbb4d4378ca3f"     # MANEKI
+_FETCHR = "0x610a5a297fe2135289b8565ef645de2a7c00eba3"     # FETCHR (Clanker V4 hook pool)
+_SINBAD = "0x5682a3ba66eeb60e82d18865849b513ab9c9692d"     # SINBAD CREW BASE (Zora V4 hook pool)
+
 _STATIC_EXOTIC_ROUTES = {
     (_USDC, "0xecc5f868add75f4ff9fd00bbbde12c35ba2c9c89"):
         ("aerodrome_slipstream_multihop", ((_USDC, _WETH, "0xecc5f868add75f4ff9fd00bbbde12c35ba2c9c89"), (1, 200))),
@@ -245,6 +262,25 @@ _STATIC_EXOTIC_ROUTES = {
         "v3_tokens": (_USDC, _ZORA), "v3_fees": (3000,),
         "pool": (_ZORA, _TCAF7, 30000, 200, _HOOK_ZORA_CREATOR),
         "settle": _ZORA, "zero_for_one": True}),
+    # ── v0.84.1-gaps additions (same mechanisms, new pairs) ──────────────
+    # USDp: standard-factory slipstream 2-hop via exotic tick-1 mid (the
+    # engine's slip 2-hop mid set is {WETH,USDC,cbBTC,AERO} so it misses it).
+    (_USDC, _USDP): ("aerodrome_slipstream_multihop",
+                     ((_USDC, _MID_E502, _USDP), (1, 1))),
+    # V2-only tails (Uniswap V2 Router02, same builder as BEATS/_TFAD8/...).
+    (_USDC, _ATA): ("uniswap_v2", (_USDC, _ATA)),
+    (_USDC, _COOKIE): ("uniswap_v2", (_USDC, _WETH, _COOKIE)),
+    (_USDC, _PKT): ("uniswap_v2", (_USDC, _WETH, _PKT)),
+    (_USDC, _BLCK): ("uniswap_v2", (_USDC, _WETH, _BLCK)),
+    (_USDC, _MANEKI): ("uniswap_v2", (_USDC, _WETH, _MANEKI_MID, _MANEKI)),
+    # V4 hook pools via the Universal Router (same shapes as _T753F / _T462F).
+    (_USDC, _FETCHR): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
+        "pool": (_WETH, _FETCHR, _V4_DYNAMIC_FEE, 200, _HOOK_BDF9),
+        "settle": _WETH, "zero_for_one": True}),
+    (_USDC, _SINBAD): ("uniswap_v4_ur", {
+        "pool": (_SINBAD, _USDC, 10000, 200, _ZORA_HOOK),
+        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
 }
 _STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC)})
 
