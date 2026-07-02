@@ -50,13 +50,14 @@ import time
 from typing import Any
 
 from strategies.dex_aggregator.baseline_solver import BaselineSwapSolver
+from strategies.dex_aggregator.discovery import DiscoveryEngine
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "66.0.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "hydra-discovery-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.1.2")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -1259,6 +1260,26 @@ class MinerSolver(BaselineSwapSolver):
             chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
             if chain_id != _BASE or amount_in <= 0 or not tin or not tout:
                 return None
+            try:
+                w3 = self._get_web3(chain_id)
+                if w3 is not None and min_out > 1:
+                    def _q():
+                        def _call(to, data):
+                            try:
+                                return w3.eth.call({"to": to, "data": data})
+                            except Exception:
+                                return None
+                        return DiscoveryEngine(_call).aero_v2_candidates(
+                            chain_id, tin.lower(), tout.lower(), amount_in)
+                    aero = self._bounded_call(_q, timeout=3.0) or []
+                    aero = [c for c in aero if c.get("out", 0) >= min_out]
+                    if aero:
+                        logger.info("[discovery] usdbc quoted cover out=%s", aero[0]["out"])
+                        return self._build_singlehop_plan(
+                            intent, state, snapshot, aero[0], tin, tout,
+                            amount_in, chain_id)
+            except Exception:
+                logger.exception("[discovery] usdbc quoted probe failed; static fallback")
             cand = {"venue": "uniswap_v3", "param": 100, "out": max(min_out, 1),
                     "gas_est": 120000, "gas_model": _OFFSET_UNI + 120000}
             return self._build_singlehop_plan(
@@ -1769,6 +1790,50 @@ class MinerSolver(BaselineSwapSolver):
         spec = self._bounded_call(_select, timeout=6.0)
         return spec if spec else default
 
+    def _dynamic_discovery_plan(self, intent, state, snapshot, params):
+        """Dynamic route discovery for pairs nothing else serves (covers only)."""
+        try:
+            tin = str(params.get("input_token", "") or "")
+            tout = str(params.get("output_token", "") or "")
+            amount_in = int(params.get("input_amount", 0) or 0)
+            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+            min_out = int(params.get("min_output_amount", 0) or 0)
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            if chain_id not in (_BASE, 1) or amount_in <= 0 or not tin or not tout:
+                return None
+            if min_out > 1:
+                return None
+            key = (tin.lower(), tout.lower())
+            if key in _STATIC_EXOTIC_ROUTES:
+                return None
+            if str(tout).lower() in _HOLE_ROUTES:
+                return None
+            w3 = self._get_web3(chain_id)
+            if w3 is None:
+                return None
+
+            def _run():
+                def _call(to, data):
+                    try:
+                        return w3.eth.call({"to": to, "data": data})
+                    except Exception:
+                        return None
+                return DiscoveryEngine(_call).discover(
+                    chain_id, tin.lower(), tout.lower(), amount_in, min_out)
+
+            cands = self._bounded_call(_run, timeout=8.0) or []
+            cands = [c for c in cands if c.get("out", 0) > 0]
+            if not cands:
+                return None
+            cand = cands[0]
+            logger.info("[discovery] serving %s->%s via %s (out=%s)",
+                        tin[:8], tout[:8], cand.get("discovered"), cand.get("out"))
+            return self._build_singlehop_plan(
+                intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+        except Exception:
+            logger.exception("[discovery] plan build failed")
+            return None
+
     def _generate_plan_impl(self, intent, state, snapshot=None):
         # king v31.2: USDbC input gets an INSTANT, RPC-FREE static plan, returned
         # BEFORE the baseline + score-aware enumeration. Those two slow paths (the
@@ -1851,6 +1916,49 @@ class MinerSolver(BaselineSwapSolver):
             plan = base_plan
 
         plan = self._fix_multihop_v2(plan)
+        # DISCOVERY RESCUE (post-engine, superset-only): fire ONLY when the
+        # whole engine produced nothing usable — plan is None, has no swap
+        # interactions, or is the structurally-empty last resort. On any order
+        # the champion-identical engine serves, we return ITS plan untouched
+        # (byte-exact parity, zero regression by construction); discovery adds
+        # fills only where the engine (and thus the champion) delivers nothing.
+        try:
+            _md = getattr(plan, "metadata", None) or {}
+            _empty = (
+                plan is None
+                or not getattr(plan, "interactions", None)
+                or _md.get("route") == "last_resort_empty"
+                or _md.get("solver") in ("best-effort", "offline-fallback")
+            )
+            if not _empty and "solver" not in _md and _md.get("route") == "uniswap_v3":
+                # The baseline processor's BLIND default plan (no pool check —
+                # ships fee-3000 even when no pool exists; guaranteed revert).
+                # ONE getPool eth_call: pool absent -> phantom -> rescue is a
+                # pure cover (champion's identical plan reverts too, champ=0).
+                try:
+                    _p5 = self._normalized_swap_params(intent, state)
+                    _t0, _t1 = str(_p5.get("input_token","")), str(_p5.get("output_token",""))
+                    _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                    _w3 = self._get_web3(_cid)
+                    if _w3 is not None and _t0 and _t1 and _cid == _BASE:
+                        from eth_abi import encode as _e2
+                        from eth_utils import to_checksum_address as _c2
+                        _fee = int(_md.get("fee_tier", 3000) or 3000)
+                        _r = _w3.eth.call({
+                            "to": _c2("0x33128a8fC17869897dcE68Ed026d694621f6FDfD"),
+                            "data": "0x1698ee82" + _e2(["address","address","uint24"],
+                                     [_c2(_t0), _c2(_t1), _fee]).hex()})
+                        if int.from_bytes(_r[-20:], "big") == 0:
+                            _empty = True  # phantom: pool doesn't exist
+                except Exception:
+                    pass
+            if _empty:
+                _p4 = self._normalized_swap_params(intent, state)
+                _dp = self._dynamic_discovery_plan(intent, state, snapshot, _p4)
+                if _dp is not None:
+                    return _dp
+        except Exception:
+            logger.exception("[discovery] rescue failed; normal fallback")
         if plan is None:
             logger.warning("[solver] no plan from baseline/selection — last-resort plan")
             plan = self._last_resort_plan(intent, state, snapshot)
