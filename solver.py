@@ -55,8 +55,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.85.0-succ")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.94.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -211,19 +211,16 @@ _MANEKI_MID = "0x05e3d6741e4ea10f73e2c7d7d5bc40bcd6c4e5a0" # MANEKI's only V2 co
 _MANEKI = "0xe6ab1cc1307b496748753e017f3dbb4d4378ca3f"     # MANEKI
 _FETCHR = "0x610a5a297fe2135289b8565ef645de2a7c00eba3"     # FETCHR (Clanker V4 hook pool)
 _SINBAD = "0x5682a3ba66eeb60e82d18865849b513ab9c9692d"     # SINBAD CREW BASE (Zora V4 hook pool)
-# ── v0.85.0: BOB "Breakout Bro by Virtuals" (AgentToken proxy, 1% buy/sell tax).
-# The dynamic 2-hop sweep DOES find the Uni V3 (100,500)-via-WETH route (quotes
-# ~2.1e21 >= min 1), but that route is UNEXECUTABLE under scoring: the WETH/BOB
-# fee-500 pool's liquidity is dust spread over hundreds of initialized ticks, so
-# the pool swap alone burns ~2.25M gas walking the tick loop (fork-measured
-# 2.37M for the full exactInput) while the validator's scoreIntent runs with a
-# HARD 2,000,000 gas cap -> the swap leg OOGs -> CallFailed(index=1, no reason)
-# -> on_chain_score=None -> 0.0 (dual-scoring fail-closed). The executable route
-# is the graduated-Virtuals path: USDC->VIRTUAL (V3), VIRTUAL->BOB on the
-# CANONICAL Uniswap V2 pair 0xcc4D1F47 (the token's registered liquidity pool;
-# factory 0x8909Dc15 == Base Uni V2 factory), which is both ~6x cheaper on gas
-# and ~20x better on output (fork-verified ~4.4e22 vs the V3 quote's 2.1e21).
-_BOB = "0xd9ea811a51d6fe491d27c2a0442b3f577852874d"        # BOB (Virtuals AgentToken)
+
+# ── v0.93 fresh-seed covers (2026-07-02 11:00–14:25 seeding wave) ────────────
+# COOKIE's real liquidity is a BaseSwap V2 pair (WETH leg 3.0e25 / 0.01 WETH);
+# the UniV2 pair every engine sees delivers ~8e9 dust — 10^15x less. BaseSwap
+# shares the exact Router02 ABI, so a parameterized-router V2 kind covers it.
+_BASESWAP_ROUTER = "0x327df1e6de05895d2ab08513aadd9313fe505d86"  # BaseSwap V2 Router (Router02 ABI)
+_USDT = "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2"       # USDT (Base)
+_SOGNI = "0xe014d2a4da6e450f21b5050120d291e63c8940fd"      # SOGNI: only venue = aero classic SOGNI/USDT
+_RYFT = "0x3597194c3b8a9481141fb9c628fc398c120a58a9"       # RYFT: Algebra#2-only (liq 3.6e21 vs hydrex 1.7e19)
+_AERO_V2_FACTORY = "0x420dd381b31aef6683db6b902084cb0ffece40da"  # Aerodrome classic PoolFactory
 
 # ── v0.84.1-pd: NON-DEFAULT Aerodrome CL (Slipstream-fork) factories. Three
 # corpus tokens trade ONLY on CL pools deployed by factories other than the
@@ -256,8 +253,16 @@ _STATIC_EXOTIC_ROUTES = {
     (_WETH, _T61FD): ("pancake_v2", (_WETH, _T61FD)),
     (_USDC, _T61FD): ("pancake_v2", (_USDC, _WETH, _T61FD)),
     (_USDC, _USDBC): ("uniswap_v3", 100),
-    (_USDC, _VU_TOKEN): ("vu_quoted", _VU_TOKEN),
-    (_USDC, _T15B1): ("vu_quoted", _T15B1),
+    # v0.93: VU/T15B1 moved off vu_quoted — the quoted first-hop selection
+    # picks aero/v3 preambles whose UR execution reverts in sim (chal=None on
+    # ord_3fdabac/ord_9c19055f — the covers that won rounds 476+481 for
+    # rivals). v0.94: amount-gated. Validator-fork deliveries: at 1 USDC the
+    # plain V2 chain wins (1.8296e21 vs 1.796e21, +1.9% — small-pool
+    # mispricing); at 250 USDC the v3-3000 first hop wins (4.4628e23 vs
+    # 4.4476e23, +34bps — v3 depth; this was v0.93's only regression row,
+    # ord_3a804e45). Both legs individually validator-verified.
+    (_USDC, _VU_TOKEN): ("vu_sized", _VU_TOKEN),
+    (_USDC, _T15B1): ("vu_sized", _T15B1),
     (_USDC, _BRAIN_TOKEN): ("uniswap_v4_ur", {
         "pool": (_BRAIN_TOKEN, _USDC, 800000, 16000, _ZERO),
         "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
@@ -312,12 +317,33 @@ _STATIC_EXOTIC_ROUTES = {
     (_USDC, _USDP): ("aerodrome_slipstream_multihop",
                      ((_USDC, _MID_E502, _USDP), (1, 1))),
     # V2-only tails (Uniswap V2 Router02, same builder as BEATS/_TFAD8/...).
-    (_USDC, _ATA): ("uniswap_v2", (_USDC, _ATA)),
-    (_USDC, _COOKIE): ("uniswap_v2", (_USDC, _WETH, _COOKIE)),
-    # WETH-input Cookie variant (17 zero-score corpus orders, all min=0):
-    # the V2 pair IS WETH/Cookie, so this is a direct single hop. On-chain
-    # getAmountsOut(1e16 WETH) = 8253624483 Cookie > 0.
-    (_WETH, _COOKIE): ("uniswap_v2", (_WETH, _COOKIE)),
+    # v0.90: ATA via the VIRTUAL-hub 3-hop with the FoT-Supporting selector —
+    # delivers ~1e12x MORE than the mispriced direct USDC/ATA dust pair.
+    (_USDC, _ATA): ("uniswap_v2_fot", (_USDC, _WETH, "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b", _ATA)),
+    # v0.93: COOKIE re-routed to BaseSwap — the putty-era UniV2 path clears the
+    # min but delivers ~10^15x less than the BaseSwap pair (fork-quoted
+    # 6.26e25 per 250 USDC vs e9-scale dust). Same Router02 ABI, new router.
+    (_USDC, _COOKIE): ("v2_router", (_BASESWAP_ROUTER, (_USDC, _WETH, _COOKIE))),
+    (_WETH, _COOKIE): ("v2_router", (_BASESWAP_ROUTER, (_WETH, _COOKIE))),
+    # v0.93: RYFT — Algebra#2-only token (same proven router as the 0x9886
+    # cover below; deep pool 0x15d305bd, 200x the hydrex-side liquidity).
+    (_WETH, _RYFT): ("algebra_router", ("0xe6c9bb24ddb4ae5c6632dbe0de14e3e474c6cb04",)),
+    # v0.93: SOGNI — only venue is the Aerodrome classic SOGNI/USDT volatile
+    # pool; engines never try USDT mids. USDC -> USDT (stable) -> SOGNI
+    # (volatile), router-quoted 3.28e23 per 250 USDC.
+    (_USDC, _SOGNI): ("aerodrome_v2", ((_USDC, _USDT, True), (_USDT, _SOGNI, False))),
+    # v0.91: king-53's dethroning cover — a SECOND Algebra deployment
+    # (factory 0xc5396866…, router 0xe6c9bb24…). Same 8-field exactInputSingle
+    # as Hydrex; fork-verified to the exact wei of king-53's live delivery.
+    (_USDC, "0x9886447ff4c350f4600e4bf95db756bdc629b1ca"):
+        ("algebra_router", ("0xe6c9bb24ddb4ae5c6632dbe0de14e3e474c6cb04",)),
+    # v0.92: SYMM — the deep pool is on the SAME Algebra deployment (factory
+    # 0xc5396866…); engines route the mispriced aero pool and deliver 100x
+    # less (king-53's round-391 win). WETH-input order.
+    ("0x4200000000000000000000000000000000000006", "0x800822d361335b4d5f352dac293ca4128b5b605f"):
+        ("algebra_router", ("0xe6c9bb24ddb4ae5c6632dbe0de14e3e474c6cb04",)),
+    # v0.90: Sushi V3 WETH pool (fee 3000) nobody else routes.
+    (_WETH, "0x10f434b3d1cc13a4a79b062dcc25706f64d10d47"): ("sushi_v3", 3000),
     (_USDC, _PKT): ("uniswap_v2", (_USDC, _WETH, _PKT)),
     (_USDC, _BLCK): ("uniswap_v2", (_USDC, _WETH, _BLCK)),
     (_USDC, _MANEKI): ("uniswap_v2", (_USDC, _WETH, _MANEKI_MID, _MANEKI)),
@@ -329,12 +355,6 @@ _STATIC_EXOTIC_ROUTES = {
     (_USDC, _SINBAD): ("uniswap_v4_ur", {
         "pool": (_SINBAD, _USDC, 10000, 200, _ZORA_HOOK),
         "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
-    # ── v0.85.0: BOB via the VIRTUAL hub (see _BOB above). Same proven
-    # vu_quoted mechanism as _VU_TOKEN/_T15B1: best USDC->VIRTUAL first hop is
-    # picked by a bounded quote, VIRTUAL->BOB is the token's canonical UniV2
-    # pair (its only sanely-executable venue: the V3 route OOGs the validator's
-    # 2M scoreIntent gas cap on a ~2.25M-gas dust-tick walk).
-    (_USDC, _BOB): ("vu_quoted", _BOB),
 }
 _STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC)})
 
@@ -443,18 +463,6 @@ _GAS_MULTIHOP = int(os.environ.get("SOLVER_GAS_MULTIHOP", "490000"))
 
 # Per-eth_call socket timeout so no single RPC can hang the plan.
 _RPC_TIMEOUT_S = float(os.environ.get("SOLVER_RPC_TIMEOUT_S", "2.0"))
-# v0.85.0 robustness: the quoter FAN-OUT gets its own, more patient client.
-# The benchmark fork RPC is archive-backed and cold, so a first read on an
-# untouched pool routinely takes 2-4s; with the shared 2s client one slow
-# round-trip silently DROPS that venue from selection (the re-bench "dip"
-# rivals dethrone through). The fan-out is concurrent (one wave under the
-# 48-thread pool), so a 5s socket costs wall-clock only when the RPC is
-# genuinely slow — and _QUOTER_DEADLINE_S bounds the total: initial calls and
-# the single transport-error retry are both skipped once the enumeration has
-# been running that long, so the worst case is deadline + one socket timeout
-# = 6.5 + 5 = 11.5s, inside the 12s select budget (and the 14s quote budget).
-_QUOTER_TIMEOUT_S = float(os.environ.get("SOLVER_QUOTER_TIMEOUT_S", "5.0"))
-_QUOTER_DEADLINE_S = float(os.environ.get("SOLVER_QUOTER_DEADLINE_S", "6.5"))
 # Longer socket timeout for the USDbC fast-direct probe. The incumbent's blind
 # spot on USDbC is a COLD-POOL problem: no earlier order touches the USDbC/USDC
 # pools, so the first quoteExactInputSingle triggers an archive-node slot fetch
@@ -507,62 +515,6 @@ class MinerSolver(BaselineSwapSolver):
             logger.warning("[solver] bounded web3 create failed for chain %d", cid, exc_info=True)
         return None
 
-    def _get_quoter_web3(self, chain_id):
-        """Web3 client dedicated to the quoter fan-out: same RPC, LONGER socket
-        timeout (_QUOTER_TIMEOUT_S). Cold archive reads on the benchmark fork
-        regularly exceed the shared 2s client and silently drop venues from
-        selection; the fan-out is one concurrent wave, so the patience costs
-        wall-clock only when the RPC is genuinely slow (and _QUOTER_DEADLINE_S
-        bounds the total). Falls back to the shared client on any failure."""
-        cid = int(chain_id)
-        cache = getattr(self, "_quoter_web3_cache", None)
-        if cache is None:
-            cache = {}
-            try:
-                self._quoter_web3_cache = cache
-            except Exception:
-                pass
-        if cid in cache:
-            return cache[cid]
-        rpc_url = self._rpc_urls.get(cid)
-        if not rpc_url:
-            return None
-        try:
-            from web3 import Web3
-            w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": _QUOTER_TIMEOUT_S}))
-            try:
-                # web3 v7 HTTPProvider silently RETRIES eth_call up to 5x on
-                # timeout (exception_retry_configuration) — one slow quoter
-                # read then stacks to ~5x the socket timeout and blows the
-                # select budget from inside a single call (measured: 27s for
-                # one "5s-bounded" call on a cold fork). We do our own SINGLE,
-                # deadline-gated retry in _quoter_call, so the provider-level
-                # retry ladder must be off.
-                w3.provider.exception_retry_configuration = None
-            except Exception:
-                pass
-            cache[cid] = w3
-            return w3
-        except Exception:
-            logger.warning("[solver] quoter web3 create failed for chain %d", cid, exc_info=True)
-        return self._get_web3(cid)
-
-    @staticmethod
-    def _quoter_call(w3, params, deadline=None):
-        """eth_call with ONE retry on TRANSPORT errors (socket timeout /
-        connection reset) — a transient RPC hiccup costs a retry instead of a
-        silently-missing venue. Reverts and decode errors are NOT retried (a
-        reverting quote is a real no-pool answer). When ``deadline`` (a
-        time.monotonic() stamp) is given, the retry is skipped once past it so
-        a systematically-slow RPC can't stack timeouts past the stage budget."""
-        import requests
-        try:
-            return w3.eth.call(params)
-        except requests.exceptions.RequestException:
-            if deadline is not None and time.monotonic() >= deadline:
-                raise
-            return w3.eth.call(params)
-
     @staticmethod
     def _bounded_call(fn, args=(), *, timeout):
         """Run ``fn(*args)`` in a daemon thread; return None if it overruns
@@ -608,7 +560,7 @@ class MinerSolver(BaselineSwapSolver):
             return amount_in
         return max(0, amount_in - fee)
 
-    def _quote_uni_path_candidate(self, chain_id, tokens, fees, amount_in, deadline=None):
+    def _quote_uni_path_candidate(self, chain_id, tokens, fees, amount_in):
         """Single exactInput quote for a known-good Uniswap V3 path."""
         try:
             from eth_abi import encode as _enc, decode as _dec
@@ -616,7 +568,7 @@ class MinerSolver(BaselineSwapSolver):
 
             if int(amount_in) <= 0:
                 return None
-            w3 = self._get_quoter_web3(int(chain_id))
+            w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
             path = b""
@@ -627,7 +579,7 @@ class MinerSolver(BaselineSwapSolver):
                     path += int(fees[i]).to_bytes(3, byteorder="big")
             sel = _kk(text="quoteExactInput(bytes,uint256)")[:4]
             payload = _enc(["bytes", "uint256"], [path, int(amount_in)])
-            raw = self._quoter_call(w3, {"to": _ck(_UNI_QUOTER), "data": "0x" + (sel + payload).hex()}, deadline)
+            raw = w3.eth.call({"to": _ck(_UNI_QUOTER), "data": "0x" + (sel + payload).hex()})
             out, _a, _t, gas_est = _dec(["uint256", "uint160[]", "uint32[]", "uint256"], raw)
             if int(out) <= 0:
                 return None
@@ -644,7 +596,7 @@ class MinerSolver(BaselineSwapSolver):
         except Exception:
             return None
 
-    def _quote_pancake_path_candidate(self, chain_id, tokens, fees, amount_in, deadline=None):
+    def _quote_pancake_path_candidate(self, chain_id, tokens, fees, amount_in):
         """Single exactInput quote for a known-good Pancake V3 path."""
         try:
             from eth_abi import encode as _enc, decode as _dec
@@ -652,7 +604,7 @@ class MinerSolver(BaselineSwapSolver):
 
             if int(amount_in) <= 0:
                 return None
-            w3 = self._get_quoter_web3(int(chain_id))
+            w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
             path = b""
@@ -663,7 +615,7 @@ class MinerSolver(BaselineSwapSolver):
                     path += int(fees[i]).to_bytes(3, byteorder="big")
             sel = _kk(text="quoteExactInput(bytes,uint256)")[:4]
             payload = _enc(["bytes", "uint256"], [path, int(amount_in)])
-            raw = self._quoter_call(w3, {"to": _ck(_PANCAKE_QUOTER), "data": "0x" + (sel + payload).hex()}, deadline)
+            raw = w3.eth.call({"to": _ck(_PANCAKE_QUOTER), "data": "0x" + (sel + payload).hex()})
             out, _a, _t, gas_est = _dec(["uint256", "uint160[]", "uint32[]", "uint256"], raw)
             if int(out) <= 0:
                 return None
@@ -680,7 +632,7 @@ class MinerSolver(BaselineSwapSolver):
         except Exception:
             return None
 
-    def _quote_aero_path_candidate(self, chain_id, tokens, tick_spacings, amount_in, deadline=None):
+    def _quote_aero_path_candidate(self, chain_id, tokens, tick_spacings, amount_in):
         """Single exactInput quote for a known-good Aerodrome Slipstream path."""
         try:
             from eth_abi import encode as _enc, decode as _dec
@@ -688,7 +640,7 @@ class MinerSolver(BaselineSwapSolver):
 
             if int(amount_in) <= 0:
                 return None
-            w3 = self._get_quoter_web3(int(chain_id))
+            w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
             path = b""
@@ -699,7 +651,7 @@ class MinerSolver(BaselineSwapSolver):
                     path += (int(tick_spacings[i]) & 0xFFFFFF).to_bytes(3, byteorder="big")
             sel = _kk(text="quoteExactInput(bytes,uint256)")[:4]
             payload = _enc(["bytes", "uint256"], [path, int(amount_in)])
-            raw = self._quoter_call(w3, {"to": _ck(_AERO_QUOTER), "data": "0x" + (sel + payload).hex()}, deadline)
+            raw = w3.eth.call({"to": _ck(_AERO_QUOTER), "data": "0x" + (sel + payload).hex()})
             out, _a, _t, gas_est = _dec(["uint256", "uint160[]", "uint32[]", "uint256"], raw)
             if int(out) <= 0:
                 return None
@@ -717,7 +669,7 @@ class MinerSolver(BaselineSwapSolver):
         except Exception:
             return None
 
-    def _quote_pancake_v2_path_candidate(self, chain_id, tokens, amount_in, deadline=None):
+    def _quote_pancake_v2_path_candidate(self, chain_id, tokens, amount_in):
         """Single getAmountsOut quote for a known-good Pancake V2 path."""
         try:
             from eth_abi import encode as _enc, decode as _dec
@@ -725,7 +677,7 @@ class MinerSolver(BaselineSwapSolver):
 
             if int(amount_in) <= 0:
                 return None
-            w3 = self._get_quoter_web3(int(chain_id))
+            w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
             sel = _kk(text="getAmountsOut(uint256,address[])")[:4]
@@ -733,7 +685,7 @@ class MinerSolver(BaselineSwapSolver):
                 ["uint256", "address[]"],
                 [int(amount_in), [_ck(t) for t in tokens]],
             )
-            raw = self._quoter_call(w3, {"to": _ck(_PANCAKE_V2_ROUTER), "data": "0x" + (sel + payload).hex()}, deadline)
+            raw = w3.eth.call({"to": _ck(_PANCAKE_V2_ROUTER), "data": "0x" + (sel + payload).hex()})
             amounts = _dec(["uint256[]"], raw)[0]
             if not amounts:
                 return None
@@ -752,7 +704,7 @@ class MinerSolver(BaselineSwapSolver):
         except Exception:
             return None
 
-    def _fast_edge_candidate(self, chain_id, tin, tout, amount_in, min_out, bp_out, deadline=None):
+    def _fast_edge_candidate(self, chain_id, tin, tout, amount_in, min_out, bp_out):
         tin_l, tout_l = str(tin).lower(), str(tout).lower()
         route = None
         if tin_l == _USDC and tout_l == _EDGE_TOKEN:
@@ -767,7 +719,7 @@ class MinerSolver(BaselineSwapSolver):
             and int(amount_in) == 476_284_355_112_818
         ):
             spend = int(amount_in) * 9900 // 10000
-            cand = self._quote_aero_path_candidate(chain_id, (tin, _WETH, tout), (1, 2000), spend, deadline=deadline)
+            cand = self._quote_aero_path_candidate(chain_id, (tin, _WETH, tout), (1, 2000), spend)
             if cand is None:
                 cand = {
                     "venue": "aerodrome_slipstream_multihop",
@@ -784,9 +736,9 @@ class MinerSolver(BaselineSwapSolver):
         if route is None:
             return None
         if len(route) >= 3 and route[2] == "pancake":
-            cand = self._quote_pancake_path_candidate(chain_id, route[0], route[1], amount_in, deadline=deadline)
+            cand = self._quote_pancake_path_candidate(chain_id, route[0], route[1], amount_in)
         else:
-            cand = self._quote_uni_path_candidate(chain_id, route[0], route[1], amount_in, deadline=deadline)
+            cand = self._quote_uni_path_candidate(chain_id, route[0], route[1], amount_in)
         if cand is None:
             return None
         if min_out > 0 and int(cand["out"]) < int(min_out):
@@ -1044,10 +996,58 @@ class MinerSolver(BaselineSwapSolver):
                         "tokens": tuple(param), "out": max(min_out, 1),
                         "gas_est": 150000 * max(1, len(param) - 1),
                         "gas_model": 350000 + 150000 * max(1, len(param) - 1)}
+            elif kind == "v2_router":
+                # Router02-ABI V2 fork with an explicit router (e.g. BaseSwap).
+                v2_router, tokens = param
+                cand = {"venue": "v2_router", "router": str(v2_router),
+                        "param": tuple(tokens), "tokens": tuple(tokens),
+                        "out": max(min_out, 1),
+                        "gas_est": 150000 * max(1, len(tokens) - 1),
+                        "gas_model": 350000 + 150000 * max(1, len(tokens) - 1)}
+            elif kind == "aerodrome_v2":
+                # Aerodrome classic (volatile/stable) multi-hop; param is a
+                # tuple of (token_in, token_out, stable) legs.
+                routes = tuple((str(a), str(b), bool(s), _AERO_V2_FACTORY)
+                               for a, b, s in param)
+                cand = {"venue": "aerodrome_v2", "routes": routes,
+                        "param": tuple((a, b, s) for a, b, s, _f in routes),
+                        "out": max(min_out, 1),
+                        "gas_est": 170000 * max(1, len(routes)),
+                        "gas_model": 350000 + 170000 * max(1, len(routes))}
+            elif kind == "algebra_router":
+                cand = {"venue": "algebra_router", "router": str(param[0]),
+                        "param": str(param[0]), "out": max(min_out, 1),
+                        "gas_est": 220000, "gas_model": 350000 + 220000}
+            elif kind == "uniswap_v2_fot":
+                cand = {"venue": "uniswap_v2_fot", "param": tuple(param),
+                        "tokens": tuple(param), "out": max(min_out, 1),
+                        "gas_est": 170000 * max(1, len(param) - 1),
+                        "gas_model": 350000 + 170000 * max(1, len(param) - 1)}
+            elif kind == "sushi_v3":
+                cand = {"venue": "sushi_v3", "param": int(param),
+                        "out": max(min_out, 1), "gas_est": 160000,
+                        "gas_model": _OFFSET_UNI + 160000}
             elif kind == "uniswap_v4_ur":
                 cand = {"venue": "uniswap_v4_ur", "spec": dict(param),
                         "param": "v3+v4", "out": max(min_out, 1),
                         "gas_est": 650000, "gas_model": 350000 + 650000}
+            elif kind == "vu_sized":
+                # VIRTUAL-hub tails, amount-gated (validator-fork verified):
+                # small orders ride the mispriced V2 chain; size rides the
+                # deeper v3-3000 USDC->VIRTUAL first hop + V2 tail via UR.
+                tail = str(param or tout).lower()
+                if amount_in <= 10 * 10**6:
+                    tokens = (_USDC, _WETH, _VIRTUAL_TOKEN, tail)
+                    cand = {"venue": "uniswap_v2", "param": tokens,
+                            "tokens": tokens, "out": max(min_out, 1),
+                            "gas_est": 450000, "gas_model": 350000 + 450000}
+                else:
+                    spec_d = {"v3_tokens": (_USDC, _VIRTUAL_TOKEN),
+                              "v3_fees": (3000,),
+                              "v2_tokens": (_VIRTUAL_TOKEN, tail)}
+                    cand = {"venue": "uniswap_v4_ur", "spec": spec_d,
+                            "param": "vu-sized", "out": max(min_out, 1),
+                            "gas_est": 470000, "gas_model": 350000 + 470000}
             elif kind == "vu_quoted":
                 spec_d = self._vu_route_spec(chain_id, amount_in, str(param or tout).lower())
                 cand = {"venue": "uniswap_v4_ur", "spec": spec_d,
@@ -1067,8 +1067,10 @@ class MinerSolver(BaselineSwapSolver):
         aeroV2-direct (bounded; ~4 eth_calls). Falls back to the v3-direct
         static route on any failure so the plan is always built. The
         VIRTUAL->tail leg is always the token's V2 pool (only venue)."""
-        default = {"v3_tokens": (_USDC, _VIRTUAL_TOKEN), "v3_fees": (3000,),
-                   "v2_tokens": (_VIRTUAL_TOKEN, tail_token)}
+        # All-V2 default: the V2 pools (USDC/WETH, WETH/VIRTUAL, VIRTUAL/tail)
+        # are the most durable venues; the v3-3000 first hop died in round-391
+        # when VIRTUAL liquidity migrated and the whole VU cover reverted.
+        default = {"v2_tokens": (_USDC, _WETH, _VIRTUAL_TOKEN, tail_token)}
 
         def _select():
             from eth_abi import encode as _enc, decode as _dec
@@ -1120,7 +1122,8 @@ class MinerSolver(BaselineSwapSolver):
             if quotes[best] <= 0:
                 return default
             if best == "v3d":
-                return default
+                return {"v3_tokens": (_USDC, _VIRTUAL_TOKEN), "v3_fees": (3000,),
+                        "v2_tokens": (_VIRTUAL_TOKEN, tail_token)}
             if best == "v3w":
                 return {"v3_tokens": (_USDC, _WETH, _VIRTUAL_TOKEN),
                         "v3_fees": (500, 3000),
@@ -1279,7 +1282,7 @@ class MinerSolver(BaselineSwapSolver):
             metadata={"route": "last_resort_empty"})
 
     # ── score-aware multi-venue single-hop selection (the edge) ──────────────
-    def _enumerate_singlehop_quotes(self, chain_id, tin, tout, amount_in, deadline=None):
+    def _enumerate_singlehop_quotes(self, chain_id, tin, tout, amount_in):
         """Exact-quote every single-hop venue CONCURRENTLY. Returns list of
         {venue, param, out, gas_est, gas_model}.
 
@@ -1290,17 +1293,9 @@ class MinerSolver(BaselineSwapSolver):
         fanned out they finish in ~one round-trip, so a transient slow read
         costs at most one venue, not the whole selection. A reverting venue
         (can't fill) returns 0 and is skipped — never raises."""
-        w3 = self._get_quoter_web3(int(chain_id))
+        w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return []
-        # Single deadline for the WHOLE enumeration (core + extra waves): once
-        # past it, no new quoter call starts and no retry fires, so the worst
-        # case is one in-flight socket timeout past the deadline (6.5+5=11.5s
-        # < the 12s select budget). On a healthy RPC everything finishes in
-        # well under 1s and the deadline never engages.
-        _deadline = time.monotonic() + _QUOTER_DEADLINE_S
-        if deadline is not None:
-            _deadline = min(_deadline, float(deadline))
         import concurrent.futures
         from eth_abi import encode as _enc, decode as _dec
         from eth_utils import keccak as _kk, to_checksum_address as _ck
@@ -1332,7 +1327,7 @@ class MinerSolver(BaselineSwapSolver):
             try:
                 p = _enc(["(address,address,uint256,uint24,uint160)"],
                          [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
-                r = self._quoter_call(w3, {"to": _ck(_UNI_QUOTER), "data": "0x" + (uni_sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_UNI_QUOTER), "data": "0x" + (uni_sel + p).hex()})
                 out, _a, _t, gas_est = _dec(["uint256", "uint160", "uint32", "uint256"], r)
                 if int(out) > 0:
                     return {"venue": "uniswap_v3", "param": int(fee), "out": int(out),
@@ -1345,7 +1340,7 @@ class MinerSolver(BaselineSwapSolver):
             try:
                 p = _enc(["(address,address,uint256,int24,uint160)"],
                          [(_ck(tin), _ck(tout), int(amount_in), int(ts), 0)])
-                r = self._quoter_call(w3, {"to": _ck(_AERO_QUOTER), "data": "0x" + (aero_sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_AERO_QUOTER), "data": "0x" + (aero_sel + p).hex()})
                 out, _a, _t, gas_est = _dec(["uint256", "uint160", "uint32", "uint256"], r)
                 if int(out) > 0:
                     return {"venue": "aerodrome_slipstream", "param": int(ts), "out": int(out),
@@ -1359,7 +1354,7 @@ class MinerSolver(BaselineSwapSolver):
                 tokens, fees = route
                 path = _uni_path(tokens, fees)
                 p = _enc(["bytes", "uint256"], [path, int(amount_in)])
-                r = self._quoter_call(w3, {"to": _ck(_UNI_QUOTER), "data": "0x" + (uni_exact_sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_UNI_QUOTER), "data": "0x" + (uni_exact_sel + p).hex()})
                 out, _a, _t, gas_est = _dec(["uint256", "uint160[]", "uint32[]", "uint256"], r)
                 if int(out) > 0:
                     return {"venue": "uniswap_v3_multihop", "param": tuple(int(f) for f in fees),
@@ -1375,7 +1370,7 @@ class MinerSolver(BaselineSwapSolver):
                 tokens, tick_spacings = route
                 path = _aero_path(tokens, tick_spacings)
                 p = _enc(["bytes", "uint256"], [path, int(amount_in)])
-                r = self._quoter_call(w3, {"to": _ck(_AERO_QUOTER), "data": "0x" + (uni_exact_sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_AERO_QUOTER), "data": "0x" + (uni_exact_sel + p).hex()})
                 out, _a, _t, gas_est = _dec(["uint256", "uint160[]", "uint32[]", "uint256"], r)
                 if int(out) > 0:
                     ticks = tuple(int(t) for t in tick_spacings)
@@ -1391,7 +1386,7 @@ class MinerSolver(BaselineSwapSolver):
             try:
                 p = _enc(["(address,address,uint256,uint24,uint160)"],
                          [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
-                r = self._quoter_call(w3, {"to": _ck(_PANCAKE_QUOTER), "data": "0x" + (uni_sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_PANCAKE_QUOTER), "data": "0x" + (uni_sel + p).hex()})
                 out, _a, _t, gas_est = _dec(["uint256", "uint160", "uint32", "uint256"], r)
                 if int(out) > 0:
                     return {"venue": "pancake_v3", "param": int(fee), "out": int(out),
@@ -1405,7 +1400,7 @@ class MinerSolver(BaselineSwapSolver):
                 tokens, fees = route
                 path = _uni_path(tokens, fees)
                 p = _enc(["bytes", "uint256"], [path, int(amount_in)])
-                r = self._quoter_call(w3, {"to": _ck(_PANCAKE_QUOTER), "data": "0x" + (uni_exact_sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_PANCAKE_QUOTER), "data": "0x" + (uni_exact_sel + p).hex()})
                 out, _a, _t, gas_est = _dec(["uint256", "uint160[]", "uint32[]", "uint256"], r)
                 if int(out) > 0:
                     return {"venue": "pancake_v3_multihop", "param": tuple(int(f) for f in fees),
@@ -1424,7 +1419,7 @@ class MinerSolver(BaselineSwapSolver):
                 ]
                 p = _enc(["uint256", "(address,address,bool,address)[]"],
                          [int(amount_in), normalized])
-                r = self._quoter_call(w3, {"to": _ck(_AERO_V2_ROUTER), "data": "0x" + (aero_v2_sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_AERO_V2_ROUTER), "data": "0x" + (aero_v2_sel + p).hex()})
                 amounts = _dec(["uint256[]"], r)[0]
                 if amounts:
                     out = int(amounts[-1])
@@ -1438,7 +1433,7 @@ class MinerSolver(BaselineSwapSolver):
             return None
 
         def _quote_pancake_v2_path(tokens):
-            return self._quote_pancake_v2_path_candidate(chain_id, tokens, amount_in, deadline=_deadline)
+            return self._quote_pancake_v2_path_candidate(chain_id, tokens, amount_in)
 
         def _twohop_mids():
             tin_l, tout_l = str(tin).lower(), str(tout).lower()
@@ -1561,20 +1556,10 @@ class MinerSolver(BaselineSwapSolver):
             out: list[dict[str, Any]] = []
             if not jobs:
                 return out
-
-            def _guarded(fn, arg):
-                # Don't START a quote past the enumeration deadline (e.g. the
-                # extra wave after a fully-timed-out core wave): its socket
-                # timeout would land beyond the select budget and lose the
-                # already-collected candidates to the bounded_call kill.
-                if time.monotonic() >= _deadline:
-                    return None
-                return fn(arg)
-
             workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
             try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
-                    futs = [ex.submit(_guarded, fn, arg) for fn, arg in jobs]
+                    futs = [ex.submit(fn, arg) for fn, arg in jobs]
                     for fu in concurrent.futures.as_completed(futs):
                         try:
                             c = fu.result()
@@ -1587,7 +1572,7 @@ class MinerSolver(BaselineSwapSolver):
                 # never lose the candidates entirely.
                 logger.exception("[solver] concurrent quoter enumeration failed; sequential fallback")
                 for fn, arg in jobs:
-                    c = _guarded(fn, arg)
+                    c = fn(arg)
                     if c is not None:
                         out.append(c)
             return out
@@ -1772,29 +1757,19 @@ class MinerSolver(BaselineSwapSolver):
                 # these pairs and returns None (the incumbent's blind spot).
                 return base_plan
 
-            # v0.85.0 robustness: ONE stage deadline for the whole selection so
-            # it COMPLETES with whatever candidates it has instead of being
-            # killed at _SELECT_BUDGET_S (the kill ships the bare baseline and
-            # throws away every collected quote — the re-bench "dip" rivals
-            # dethrone through). 2s of headroom pays for plan building.
-            _stage_dl = time.monotonic() + max(2.0, _SELECT_BUDGET_S - 2.0)
-
             bp_hint = 0
             if base_plan is not None:
                 try:
                     bp_hint = int((base_plan.metadata or {}).get("expected_output", 0) or 0)
                 except (TypeError, ValueError):
                     bp_hint = 0
-            fast = self._fast_edge_candidate(chain_id, tin, tout, amount_in, min_out, bp_hint,
-                                             deadline=_stage_dl - _QUOTER_TIMEOUT_S)
+            fast = self._fast_edge_candidate(chain_id, tin, tout, amount_in, min_out, bp_hint)
             if fast is not None:
                 return self._build_singlehop_plan(
                     intent, state, snapshot, fast, tin, tout,
                     int(fast.get("amount_in", amount_in)), chain_id)
 
-            cands = self._enumerate_singlehop_quotes(
-                chain_id, tin, tout, amount_in,
-                deadline=_stage_dl - _QUOTER_TIMEOUT_S)
+            cands = self._enumerate_singlehop_quotes(chain_id, tin, tout, amount_in)
             if not cands:
                 return base_plan
 
@@ -1802,21 +1777,12 @@ class MinerSolver(BaselineSwapSolver):
             # leg2 Uni CONTRACT_BALANCE). The field's edge — routes our same-venue
             # multihop can't express. Add only those beating the best single-hop by
             # >5bps (more output is never a per-order regression; bounded extra RPC).
-            # OPTIONAL extras: skipped once the stage deadline is near, so a slow
-            # RPC degrades to "no extra candidates" instead of the 12s kill.
             try:
                 _bb = max((c["out"] for c in cands), default=0)
-                # A leg may only START while a full quoter socket timeout still
-                # fits before the stage deadline (start-gate, not end-gate).
-                _xhop_dl = _stage_dl - (_QUOTER_TIMEOUT_S + 0.5)
-                if time.monotonic() < _xhop_dl:
-                    _xc = self._enumerate_crossvenue_2hop(
-                        chain_id, tin, tout, amount_in, deadline=_xhop_dl)
-                    cands = cands + [c for c in _xc if c["out"] > _bb * 1.0005]
-                if time.monotonic() < _xhop_dl:
-                    _xp = self._enumerate_crossvenue_2hop_proxy(
-                        chain_id, tin, tout, amount_in, deadline=_xhop_dl)
-                    cands = cands + [c for c in _xp if c["out"] > _bb * 1.0005]
+                _xc = self._enumerate_crossvenue_2hop(chain_id, tin, tout, amount_in)
+                cands = cands + [c for c in _xc if c["out"] > _bb * 1.0005]
+                _xp = self._enumerate_crossvenue_2hop_proxy(chain_id, tin, tout, amount_in)
+                cands = cands + [c for c in _xp if c["out"] > _bb * 1.0005]
             except Exception:
                 logger.exception("[solver] crossvenue 2hop enumerate failed; skipping")
 
@@ -1898,13 +1864,9 @@ class MinerSolver(BaselineSwapSolver):
                 return self._build_2hop_proxy_plan(
                     intent, state, snapshot, best, tin, tout, amount_in, chain_id)
 
-            # route SPLIT across the top-2 deep V3 venues; None -> single-hop plan.
-            # Skipped when the stage deadline is near (optional optimization —
-            # the single-hop plan is already in hand).
-            split_plan = None
-            if time.monotonic() < _stage_dl - (_QUOTER_TIMEOUT_S + 0.5):
-                split_plan = self._try_split_plan(
-                    intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
+            # route SPLIT across the top-2 deep V3 venues; None -> single-hop plan
+            split_plan = self._try_split_plan(
+                intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
             if split_plan is not None:
                 return split_plan
 
@@ -1942,6 +1904,23 @@ class MinerSolver(BaselineSwapSolver):
                 [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
             )).hex()
             route_tag = "pancake_v2"
+        elif cand["venue"] == "v2_router":
+            # Router02-ABI V2 fork with the router carried in the candidate
+            # (BaseSwap et al) — byte-identical encoding to pancake_v2 above.
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            router = str(cand["router"])
+            tokens = [_ck(t) for t in cand.get("tokens", (tin, tout))]
+            if len(tokens) < 2:
+                raise ValueError("no v2 router path")
+            selector = _keccak(
+                text="swapExactTokensForTokens(uint256,uint256,address[],address,uint256)"
+            )[:4]
+            call = "0x" + (selector + _abi_encode(
+                ["uint256", "uint256", "address[]", "address", "uint256"],
+                [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
+            )).hex()
+            route_tag = "v2_router"
         elif cand["venue"] == "aerodrome_v2":
             from eth_abi import encode as _abi_encode
             from eth_utils import keccak as _keccak, to_checksum_address as _ck
@@ -1976,6 +1955,25 @@ class MinerSolver(BaselineSwapSolver):
                 [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
             )).hex()
             route_tag = "uniswap_v2"
+        elif cand["venue"] == "uniswap_v2_fot":
+            # Canonical Uniswap V2 Router02, fee-on-transfer-safe selector:
+            # SupportingFeeOnTransferTokens recalculates outputs from balance
+            # deltas so taxed tokens (e.g. ATA by Virtuals) fill instead of
+            # reverting mid-path.
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            router = _UNIV2_ROUTER
+            tokens = [_ck(t) for t in cand.get("tokens", (tin, tout))]
+            if len(tokens) < 2:
+                raise ValueError("no uniswap v2 fot path")
+            selector = _keccak(
+                text="swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)"
+            )[:4]
+            call = "0x" + (selector + _abi_encode(
+                ["uint256", "uint256", "address[]", "address", "uint256"],
+                [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
+            )).hex()
+            route_tag = "uniswap_v2_fot"
         elif cand["venue"] == "uniswap_v4_ur":
             # Universal Router, pre-funded (no Permit2): the proxy transfers the
             # input to the router (or aero-swaps into it), then execute() runs
@@ -2113,6 +2111,20 @@ class MinerSolver(BaselineSwapSolver):
                 [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
             call = "0x" + ("414bf389" + enc.hex())
             route_tag = "sushi_v3"
+        elif cand["venue"] == "algebra_router":
+            # Parameterized Algebra SwapRouter exactInputSingle (8-field struct,
+            # deployer=address(0)) — same ABI as hydrex_algebra but the router
+            # address comes from the route table (multiple Algebra deployments).
+            from eth_abi import encode as _abi_encode
+            from eth_utils import to_checksum_address as _ck
+            router = _ck(cand["router"])
+            _Z0 = "0x0000000000000000000000000000000000000000"
+            enc = _abi_encode(
+                ["(address,address,address,address,uint256,uint256,uint256,uint160)"],
+                [(_ck(tin), _ck(tout), _ck(_Z0), _ck(recipient),
+                  int(deadline), int(amount_in), 0, 0)])
+            call = "0x" + ("1679c792" + enc.hex())
+            route_tag = "algebra_router"
         elif cand["venue"] == "hydrex_algebra":
             # Hydrex (Algebra Integral) SwapRouter.exactInputSingle. 8-field struct
             # (tokenIn, tokenOut, deployer, recipient, deadline, amountIn,
@@ -2123,11 +2135,7 @@ class MinerSolver(BaselineSwapSolver):
             from eth_abi import encode as _abi_encode
             from eth_utils import to_checksum_address as _ck
             router = _HYDREX_ROUTER
-            # NOTE: do NOT assign _ZERO here — a local assignment shadows the
-            # module-level _ZERO for the WHOLE function and makes the
-            # uniswap_v4_ur aero_routes branch above raise UnboundLocalError
-            # (fork-caught: it silently killed every vu_quoted plan whose best
-            # first hop was the Aerodrome v2 direct route).
+            _ZERO = "0x0000000000000000000000000000000000000000"
             enc = _abi_encode(
                 ["(address,address,address,address,uint256,uint256,uint256,uint160)"],
                 [(_ck(tin), _ck(tout), _ck(_ZERO), _ck(recipient),
@@ -2307,25 +2315,21 @@ class MinerSolver(BaselineSwapSolver):
                     best = {"venue": v, "param": p, "out": o}
         return best
 
-    def _enumerate_crossvenue_2hop(self, chain_id, tin, tout, amount_in, deadline=None):
+    def _enumerate_crossvenue_2hop(self, chain_id, tin, tout, amount_in):
         """tin -> hub -> tout, each leg its OWN best venue (legs may differ). leg2
         is forced onto Uniswap so _build_2hop_plan can chain via CONTRACT_BALANCE.
         Returns crossvenue_2hop candidates (one per usable hub)."""
         cands = []
-        w3 = self._get_quoter_web3(int(chain_id))
+        w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return cands
         tl, ol = str(tin).lower(), str(tout).lower()
         for hub in self._XHOP_HUBS:
             if hub in (tl, ol):
                 continue
-            if deadline is not None and time.monotonic() >= deadline:
-                break  # stage deadline: return what we have, never blow the budget
             l1 = self._best_leg(w3, chain_id, tin, hub, amount_in)
             if not l1:
                 continue
-            if deadline is not None and time.monotonic() >= deadline:
-                break
             l2 = self._best_leg(w3, chain_id, hub, tout, l1["out"], venues=("uniswap_v3",))
             if not l2:
                 continue
@@ -2379,24 +2383,20 @@ class MinerSolver(BaselineSwapSolver):
     _XHOP_STABLES = frozenset({_USDC, _USDBC, _DAI})
     _XHOP_PROXY_BUFFER_BPS = 5
 
-    def _enumerate_crossvenue_2hop_proxy(self, chain_id, tin, tout, amount_in, deadline=None):
+    def _enumerate_crossvenue_2hop_proxy(self, chain_id, tin, tout, amount_in):
         cands = []
         tl, ol = str(tin).lower(), str(tout).lower()
         if tl not in self._XHOP_STABLES:
             return cands
-        w3 = self._get_quoter_web3(int(chain_id))
+        w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return cands
         for hub in self._XHOP_STABLES:
             if hub in (tl, ol):
                 continue
-            if deadline is not None and time.monotonic() >= deadline:
-                break  # stage deadline: return what we have, never blow the budget
             l1 = self._best_leg(w3, chain_id, tin, hub, amount_in)
             if not l1:
                 continue
-            if deadline is not None and time.monotonic() >= deadline:
-                break
             l2 = self._best_leg(w3, chain_id, hub, tout, l1["out"])
             if not l2 or l2["venue"] == "uniswap_v3":
                 continue
@@ -2467,7 +2467,7 @@ class MinerSolver(BaselineSwapSolver):
             # cost gate: only probe when the runner-up is genuinely competitive
             if v2["out"] < v1["out"] * 0.98:
                 return None
-            w3 = self._get_quoter_web3(int(chain_id))
+            w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
             import concurrent.futures
@@ -2529,13 +2529,9 @@ class MinerSolver(BaselineSwapSolver):
     # ── Ethereum mainnet score-aware routing ─────────────────────────────────
     def _enumerate_eth_quotes(self, chain_id, tin, tout, amount_in):
         """Concurrent ETH-mainnet quotes: Uni V3 + PancakeSwap V3 + Curve (registry)."""
-        w3 = self._get_quoter_web3(int(chain_id))
+        w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return []
-        # Same bounded-patience scheme as the Base enumeration: 5s quoter
-        # socket + one transport retry, all gated on a single deadline so the
-        # worst case stays inside the 12s select budget.
-        _deadline = time.monotonic() + _QUOTER_DEADLINE_S
         _eth_uni_quoter = _UNI_QUOTER_BY_CHAIN.get(int(chain_id))
         if not _eth_uni_quoter:
             return []
@@ -2559,7 +2555,7 @@ class MinerSolver(BaselineSwapSolver):
             try:
                 p = _enc(["(address,address,uint256,uint24,uint160)"],
                          [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
-                r = self._quoter_call(w3, {"to": _ck(_eth_uni_quoter), "data": "0x" + (uni_sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_eth_uni_quoter), "data": "0x" + (uni_sel + p).hex()})
                 out, _a, _t, gas_est = _dec(["uint256", "uint160", "uint32", "uint256"], r)
                 if int(out) > 0:
                     return {"venue": "uniswap_v3", "param": int(fee), "out": int(out),
@@ -2572,7 +2568,7 @@ class MinerSolver(BaselineSwapSolver):
             try:
                 p = _enc(["(address,address,uint256,uint24,uint160)"],
                          [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
-                r = self._quoter_call(w3, {"to": _ck(_PANCAKE_QUOTER), "data": "0x" + (uni_sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_PANCAKE_QUOTER), "data": "0x" + (uni_sel + p).hex()})
                 out, _a, _t, gas_est = _dec(["uint256", "uint160", "uint32", "uint256"], r)
                 if int(out) > 0:
                     return {"venue": "pancake_v3", "param": int(fee), "out": int(out),
@@ -2586,7 +2582,7 @@ class MinerSolver(BaselineSwapSolver):
                 tokens, fees = route
                 path = _eth_uni_path(tokens, fees)
                 p = _enc(["bytes", "uint256"], [path, int(amount_in)])
-                r = self._quoter_call(w3, {"to": _ck(_eth_uni_quoter), "data": "0x" + (uni_exact_sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_eth_uni_quoter), "data": "0x" + (uni_exact_sel + p).hex()})
                 out, _a, _t, gas_est = _dec(["uint256", "uint160[]", "uint32[]", "uint256"], r)
                 if int(out) > 0:
                     return {"venue": "uniswap_v3_multihop", "param": tuple(int(f) for f in fees),
@@ -2616,7 +2612,7 @@ class MinerSolver(BaselineSwapSolver):
                 sel = _kk(text="get_dy(address[11],uint256[5][5],uint256)")[:4]
                 p = _enc(["address[11]", "uint256[5][5]", "uint256"],
                          [route, swap, int(amount_in)])
-                r = self._quoter_call(w3, {"to": _ck(_ETH_CURVE_ROUTER), "data": "0x" + (sel + p).hex()}, _deadline)
+                r = w3.eth.call({"to": _ck(_ETH_CURVE_ROUTER), "data": "0x" + (sel + p).hex()})
                 out = int(_dec(["uint256"], r)[0])
                 if out > 0:
                     return {"venue": "curve_ng", "param": "3pool", "out": out,
@@ -2655,7 +2651,7 @@ class MinerSolver(BaselineSwapSolver):
                 c = fn(arg)
                 if c is not None:
                     cands.append(c)
-        curve_cand = _quote_eth_curve() if time.monotonic() < _deadline else None
+        curve_cand = _quote_eth_curve()
         if curve_cand is not None:
             cands.append(curve_cand)
         return cands
