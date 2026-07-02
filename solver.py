@@ -55,8 +55,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.85.1-pk")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "59.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
 
 # Base (chain 8453) only — the whole live order book is Base.
@@ -511,6 +511,38 @@ _STATIC_EXOTIC_ROUTES = {
     (_USDC, "0x968d6a288d7b024d5012c0b25d67a889e4e3ec19"):  # INT
         ("alien_v3_path", ((_USDC, _WETH, "0x968d6a288d7b024d5012c0b25d67a889e4e3ec19"),
                            (750, 10000))),
+    # king v58: apex-split-router 2.1.0 parity — their ONLY two real covers
+    # (the rest of their ▲11 was cached-scorecard drift + top-miner flakes).
+    # GPUS lives ONLY in a Maverick V2 pool (invisible on DexScreener — why
+    # the hunter missed it): Uni V3 USDC->WETH leg + Maverick pool swap.
+    (_USDC, "0x8189910840771050bf9ed268abfc9c0882137029"):  # GPUS (Maverick)
+        ("uni_mav", ("0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f", True)),
+    # WAGMI — Virtuals AgentToken, VIRTUAL/WAGMI Uni V2 pair (also DexScreener-
+    # dead). Same shape as BOB/ATA — the proven vu_quoted VIRTUAL-hub router.
+    (_USDC, "0x2ce1340f1d402ae75afeb55003d7491645db1857"):  # WAGMI
+        ("vu_quoted", "0x2ce1340f1d402ae75afeb55003d7491645db1857"),
+    # king v59: dust-size USDC->DAI parity — top-miner 0.97.0's blind-spot win
+    # vs our v57 (champ=None on ord_6d82387c, 1 USDC w/ real min 0.9909e18).
+    # Our enum picked a Pancake dust pool that failed on the fork; the deep
+    # canonical Uni V3 fee-100 stable pool is deterministic at every size.
+    (_USDC, _DAI): ("uniswap_v3", 100),
+    # king v59 dead-scan holes (all on-chain verified):
+    # MOVIE — Uni V4 hooked pool (hook 0xb429d62f, dynamic fee, tick 200,
+    # ~$86k), V4-quoter-proven 473k gas. x2 rejected 1-USDC orders.
+    (_USDC, "0xa3109f24185ce81b89b9ceead7f81e3b07a61b07"): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
+        "pool": (_WETH, "0xa3109f24185ce81b89b9ceead7f81e3b07a61b07",
+                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
+        "settle": _WETH, "zero_for_one": True}),
+    # BTRST — Uni V3 1% USDC pool; liquidity()==0 AT current tick but the BUY
+    # direction crosses into range (QuoterV2-proven 2 USDC -> 14.1 BTRST,
+    # 142k gas). Buy-only; the corpus order IS the buy direction.
+    (_USDC, "0xa7d68d155d17cb30e311367c2ef1e82ab6022b67"): ("uniswap_v3", 10000),
+    # IBTC (dlcBTC) — Aerodrome Slipstream WETH pool ts=100 (on-chain read),
+    # in-range liquidity; tiny pool (~$460) but the order is 2 USDC.
+    (_USDC, "0x12418783e860997eb99e8acf682df952f721cf62"):
+        ("aerodrome_slipstream_multihop",
+         ((_USDC, _WETH, "0x12418783e860997eb99e8acf682df952f721cf62"), (100, 100))),
     # king v56: WETH->Cookie via BaseSwap V2 (direct) = 3.0003517e25 — the exact
     # value top-miner-router 0.94.0 dethroned us with (UniV2 gave dust 8.25e9).
     (_WETH, _COOKIE_V2): ("v2_router",
@@ -528,7 +560,10 @@ _STATIC_EXOTIC_ROUTES = {
     (_USDC, _PKT_TOKEN): ("uniswap_v2", (_USDC, _WETH, _PKT_TOKEN)),
     (_WETH, _PKT_TOKEN): ("uniswap_v2", (_WETH, _PKT_TOKEN)),
 }
-_STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC)})
+# king v59: USDC->DAI added — corpus DAI orders carry a real signed min
+# (~0.991e18/USDC); the deep v3-100 stable pool delivers ~1.0009e18/USDC at
+# every realistic size, so the static seal must fire despite min_out > 1.
+_STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC), (_USDC, _DAI)})
 
 # Relative scoring compares raw delivered output, so the incumbent v21
 # max-output route is the baseline to preserve. The one narrow extension here is
@@ -562,6 +597,8 @@ _QUICKSWAP_ALGEBRA_ROUTER = "0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04"
 # exactInputSingle 0x04e45aaf) + Equalizer RouterV2 (Solidly fork, Route struct
 # WITHOUT factory field, swapExactTokensForTokens selector 0xf41766d8).
 _ALIEN_V3_ROUTER = "0xB20C411FC84FBB27e78608C24d0056D974ea9411"
+# king v58: MaverickV2Router (apex parity — GPUS's only venue is a Maverick pool)
+_MAVERICK_V2_ROUTER = "0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527"
 _EQUALIZER_ROUTER = "0x2F87Bf58D5A9b2eFadE55Cdbd46153a0902be6FA"
 _PANCAKE_V2_ROUTER = "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb"  # PancakeSwap V2 Router
 _PANCAKE_FEES = (100, 500, 2500, 10000)
@@ -1345,12 +1382,81 @@ class MinerSolver(BaselineSwapSolver):
                         "param": tuple(int(f) for f in fees),
                         "out": max(min_out, 1), "gas_est": 260000,
                         "gas_model": 350000 + 260000}
+            elif kind == "uni_mav":
+                # king v58 (apex parity): Uni V3 tin->WETH leg + Maverick V2
+                # pool swap — 4-interaction plan, built by a dedicated builder.
+                pool_addr, token_a_in = param
+                return self._uni_mav_plan(intent, state, snapshot, str(pool_addr),
+                                          bool(token_a_in), tin, tout, amount_in,
+                                          chain_id, min_out)
             else:
                 return None
             return self._build_singlehop_plan(
                 intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
         except Exception:
             logger.exception("[solver] static exotic plan build failed")
+            return None
+
+    def _uni_mav_plan(self, intent, state, snapshot, pool_addr, token_a_in,
+                      tin, tout, amount_in, chain_id, min_out):
+        """king v58 (apex-split-router 2.1.0 parity): Uni V3 tin->WETH best-fee
+        leg, then Maverick V2 pool swap WETH->tout (selector 0xa3b105ca on the
+        MaverickV2Router: (recipient, pool, tokenAIn, amountIn, minOut)).
+        GPUS's only venue is a Maverick pool no engine's enum reaches. The
+        Maverick amountIn is 99.5% of the quoted WETH leg (quote/exec drift
+        buffer, apex's own constant); constant far-future deadline (ours)."""
+        try:
+            from common.abi_utils import encode_approve
+            from eth_abi import encode as _enc, decode as _dec
+            from eth_utils import keccak as _kk, to_checksum_address as _ck
+            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+            w3 = self._get_web3(int(chain_id))
+            uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+            if w3 is None or not uni_router:
+                return None
+            if tin.lower() == _WETH:
+                return None  # WETH-input shape not in the book; USDC-keyed only
+            weth_out, best_fee = 0, 500
+            sel = _kk(text="quoteExactInput(bytes,uint256)")[:4]
+            for fee in (500, 3000):
+                try:
+                    path = (bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, "big")
+                            + bytes.fromhex(_ck(_WETH)[2:]))
+                    d = sel + _enc(["bytes", "uint256"], [path, int(amount_in)])
+                    r = w3.eth.call({"to": _ck(_UNI_QUOTER), "data": "0x" + d.hex()})
+                    q = int(_dec(["uint256", "uint160[]", "uint32[]", "uint256"], r)[0])
+                except Exception:
+                    q = 0
+                if q > weth_out:
+                    weth_out, best_fee = q, fee
+            if weth_out <= 0:
+                return None
+            # PRE-PAY model (more robust than apex's router path): the v3 leg
+            # pays the Maverick POOL directly, then pool.swap(..., data="")
+            # consumes the pre-paid balance. No Maverick-router allowance and
+            # no proxy-held intermediate hop — works under any executing proxy.
+            mav_in = weth_out * 995 // 1000  # quote/exec drift buffer (excess donated)
+            params = self._normalized_swap_params(intent, state)
+            recipient = state.contract_address or params.get("receiver") or state.owner
+            deadline = 9999999999
+            leg1 = encode_exact_input_single(
+                token_in=tin, token_out=_WETH, fee=int(best_fee),
+                recipient=pool_addr, deadline=deadline, amount_in=amount_in,
+                amount_out_minimum=0, chain_id=chain_id)
+            tick_limit = 2147483647 if token_a_in else -2147483648
+            mav = "0x" + ("3eece7db" + _enc(  # swap(address,(uint256,bool,bool,int32),bytes)
+                ["address", "(uint256,bool,bool,int32)", "bytes"],
+                [_ck(recipient), (int(mav_in), bool(token_a_in), False, tick_limit), b""]).hex())
+            ix = [Interaction(target=tin, value="0",
+                              call_data=encode_approve(uni_router, amount_in), chain_id=chain_id),
+                  Interaction(target=uni_router, value="0", call_data=leg1, chain_id=chain_id),
+                  Interaction(target=pool_addr, value="0", call_data=mav, chain_id=chain_id)]
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline,
+                                 nonce=state.nonce,
+                                 metadata={"solver": "king-uni-mav", "chain_id": chain_id})
+        except Exception:
+            logger.exception("[solver] uni_mav plan build failed")
             return None
 
     def _vu_route_spec(self, chain_id, amount_in, tail_token=_VU_TOKEN):
