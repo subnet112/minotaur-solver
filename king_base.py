@@ -2484,9 +2484,30 @@ class MinerSolver(BaselineSwapSolver):
         w3 = self._get_web3(chain_id)
         if w3 is None:
             return None
-        reach, (best_x, tag, route) = self._sweep_quotes(w3, tin, tout, amount_in)
+        _ck_key = (tin, tout, int(amount_in))
+        _cache = getattr(self, "_sweep_run_cache", None)
+        if _cache is None:
+            _cache = {}
+            self._sweep_run_cache = _cache
+        if _ck_key in _cache:
+            reach, (best_x, tag, route) = _cache[_ck_key]
+        else:
+            reach, (best_x, tag, route) = self._sweep_quotes(w3, tin, tout, amount_in)
+            _cache[_ck_key] = (reach, (best_x, tag, route))
         if best_x <= 0 or best_x < max(min_out, 1) or best_x <= max(reach, 1) * _SWEEP_MIN_EDGE:
             return None
+        # v4.1: execution-verify the top candidates via eth_simulateV1 (exactly
+        # as the app will run them: approve+swap FROM the app address with a
+        # balance override). Pick by ACTUAL delivered (catches transfer-tax /
+        # hook divergence), drop reverters (a reverting plan scores 0). Any
+        # error (e.g. proxy without eth_simulateV1) -> quote-ranked candidate.
+        try:
+            _ver = self._sweep_verify_pick(
+                w3, state, params, tin, tout, amount_in, min_out, reach)
+            if _ver is not None:
+                best_x, tag, route = _ver
+        except Exception:
+            logger.exception("[sweep] verify failed; quote-ranked pick")
         logger.info("[sweep] exotic win %s->%s via %s: %s (reach %s)",
                     tin[:8], tout[:8], tag, best_x, reach)
         kind, router, path = route
@@ -2501,7 +2522,249 @@ class MinerSolver(BaselineSwapSolver):
                                         bool(token_a_in), amount_in, chain_id)
         return None
 
+    # ── v4.0 GOVERNED SWEEP: all quoter calls in ONE Multicall3 round-trip ──
+    # The threaded sweep costs ~35 sequential RPC round-trips per exotic order;
+    # under the 900s benchmark kill that tail-drops orders (verdict=dropped).
+    # aggregate3 packs every quote into one eth_call (allowFailure per call),
+    # plus a small phase-2 call for Maverick pool quotes. ~20x less wall time,
+    # identical semantics/return. Any failure falls back to the threaded impl.
+    _MC3 = "0xcA11bde05977b3631167028862bE2a173976CA11"
+
+    # ── v4.1 execution verification (CoW-style pre-settlement simulation) ──
+    _SWEEP_BAL_SLOTS = {
+        "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": 9,   # USDC (FiatTokenV2)
+        "0x4200000000000000000000000000000000000006": 3,   # WETH9
+    }
+
+    def _sweep_verify_pick(self, w3, state, params, tin, tout, amount_in, min_out, reach):
+        """Simulate the top-K sweep candidates and return (delivered, tag, route)
+        of the best ACTUAL outcome, or None to keep the quote-ranked pick."""
+        slot_idx = self._SWEEP_BAL_SLOTS.get(tin.lower())
+        app = getattr(state, "contract_address", None)
+        cands = [c for c in getattr(self, "_sweep_topk", [])
+                 if c[0] >= max(min_out, 1) and c[0] > max(reach, 1) * _SWEEP_MIN_EDGE]
+        if slot_idx is None or not app or not cands:
+            return None
+        import concurrent.futures
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(cands)) as ex:
+            futs = {ex.submit(self._sweep_simulate_one, w3, app, tin, tout,
+                              amount_in, slot_idx, c): c for c in cands}
+            for fut, c in futs.items():
+                try:
+                    delivered = int(fut.result(timeout=6) or 0)
+                except Exception:
+                    delivered = -1  # sim errored (e.g. method unsupported)
+                results.append((delivered, c))
+        if all(d < 0 for d, _ in results):
+            return None            # simulation unavailable -> quote-ranked
+        ok = [(d, c) for d, c in results if d >= max(min_out, 1)]
+        if not ok:
+            return None            # nothing verified above min -> keep quote pick
+        d, (q_out, tag, route) = max(ok, key=lambda x: x[0])
+        return (d, tag + "+sim", route)
+
+    def _sweep_simulate_one(self, w3, app, tin, tout, amount_in, slot_idx, cand):
+        """eth_simulateV1 one candidate: [approve, swap] from the app with an
+        input-balance override; delivered = sum of tout Transfer logs to app."""
+        from eth_abi import encode as _enc
+        from eth_utils import keccak as _kk, to_checksum_address as _ck
+        q_out, tag, route = cand
+        kind, router, path = route
+        deadline = 2 ** 48
+        if kind == "v2":
+            spender = router
+            call = "0x5c11d795" + _enc(
+                ["uint256", "uint256", "address[]", "address", "uint256"],
+                [int(amount_in), 0, [_ck(p) for p in path], _ck(app), deadline]).hex()
+            target = router
+        elif kind == "sushi_v3":
+            spender = _SWEEP_SUSHI_R
+            call = "0x414bf389" + _enc(
+                ["address", "address", "uint24", "address", "uint256", "uint256", "uint256", "uint160"],
+                [_ck(tin), _ck(tout), int(router), _ck(app), deadline,
+                 int(amount_in), 0, 0]).hex()
+            target = _SWEEP_SUSHI_R
+        elif kind == "maverick":
+            pool, token_a_in = router
+            spender = _SWEEP_MAV_R2
+            call = "0xa3b105ca" + _enc(
+                ["address", "address", "bool", "uint256", "uint256"],
+                [_ck(app), _ck(pool), bool(token_a_in), int(amount_in), 0]).hex()
+            target = _SWEEP_MAV_R2
+        else:
+            return -1
+        appr = "0x" + (_kk(text="approve(address,uint256)")[:4] + _enc(
+            ["address", "uint256"], [_ck(spender), int(amount_in)])).hex()
+        slot = "0x" + _kk(_enc(["address", "uint256"], [_ck(app), int(slot_idx)])).hex()
+        bal_hex = "0x" + (int(amount_in) * 2).to_bytes(32, "big").hex()
+        res = w3.provider.make_request("eth_simulateV1", [{
+            "blockStateCalls": [{
+                "stateOverrides": {
+                    _ck(tin): {"stateDiff": {slot: bal_hex}},
+                    _ck(app): {"balance": "0x" + (10 ** 18).to_bytes(32, "big").hex()},
+                },
+                "calls": [
+                    {"from": _ck(app), "to": _ck(tin), "data": appr},
+                    {"from": _ck(app), "to": _ck(target), "data": call},
+                ],
+            }],
+            "validation": False, "traceTransfers": False,
+        }, "latest"])
+        if "error" in res:
+            return -1
+        calls = (res.get("result") or [{}])[0].get("calls") or []
+        if len(calls) < 2 or calls[-1].get("status") != "0x1":
+            return 0               # simulated REVERT -> candidate delivers nothing
+        transfer_sig = "0x" + _kk(text="Transfer(address,address,uint256)").hex()
+        delivered = 0
+        for lg in calls[-1].get("logs", []):
+            try:
+                if (lg.get("address", "").lower() == tout.lower()
+                        and lg["topics"][0] == transfer_sig
+                        and lg["topics"][2][-40:] == app[2:].lower()):
+                    delivered += int(lg["data"], 16)
+            except Exception:
+                continue
+        return delivered
+
     def _sweep_quotes(self, w3, tin, tout, amount_in):
+        try:
+            return self._sweep_quotes_mc(w3, tin, tout, amount_in)
+        except Exception:
+            logger.exception("[sweep] multicall path failed; threaded fallback")
+            return self._sweep_quotes_slow(w3, tin, tout, amount_in)
+
+    def _sweep_quotes_mc(self, w3, tin, tout, amount_in):
+        from eth_abi import encode as _enc, decode as _dec
+        from eth_utils import keccak as _kk, to_checksum_address as _ck
+        gsel = _kk(text="getAmountsOut(uint256,address[])")[:4]
+        sf = _kk(text="quoteExactInputSingle((address,address,uint256,uint24,uint160))")[:4]
+        st = _kk(text="quoteExactInputSingle((address,address,uint256,int24,uint160))")[:4]
+        sp = _kk(text="quoteExactInput(bytes,uint256)")[:4]
+        av2 = _kk(text="getAmountsOut(uint256,(address,address,bool,address)[])")[:4]
+        lk = _kk(text="lookup(address,address,uint256,uint256)")[:4]
+        calc = _kk(text="calculateSwap(address,uint128,bool,bool,int32)")[:4]
+        agg3 = _kk(text="aggregate3((address,bool,bytes)[])")[:4]
+        zero = "0x" + "0" * 40
+
+        def enc_v3(a, b, amt, p, tick=False):
+            s, typ = (st, "int24") if tick else (sf, "uint24")
+            return s + _enc([f"(address,address,uint256,{typ},uint160)"],
+                            [(_ck(a), _ck(b), int(amt), int(p), 0)])
+
+        def enc_path(tokens, fees, amt):
+            pb = b""
+            for i, tk in enumerate(tokens):
+                pb += bytes.fromhex(tk[2:])
+                if i < len(fees):
+                    pb += int(fees[i]).to_bytes(3, "big")
+            return sp + _enc(["bytes", "uint256"], [pb, int(amt)])
+
+        def enc_v2(path, amt):
+            return gsel + _enc(["uint256", "address[]"],
+                               [int(amt), [_ck(x) for x in path]])
+
+        # (target, calldata, kind, tag, route) — kind picks the decoder
+        jobs = []
+        for f in (100, 500, 3000, 10000):
+            jobs.append((_SWEEP_UNI_Q, enc_v3(tin, tout, amount_in, f), "v3", "reach", None))
+            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                jobs.append((_SWEEP_UNI_Q, enc_path([tin, _SWEEP_WETH, tout], [500, f], amount_in),
+                             "path", "reach", None))
+        for f in (100, 500, 2500, 10000):
+            jobs.append((_SWEEP_PAN_Q, enc_v3(tin, tout, amount_in, f), "v3", "reach", None))
+        for tk in (1, 50, 100, 200, 2000):
+            jobs.append((_SWEEP_AERO_Q, enc_v3(tin, tout, amount_in, tk, tick=True), "v3", "reach", None))
+        for stf in (False, True):
+            jobs.append((_SWEEP_AERO_V2R,
+                         av2 + _enc(["uint256", "(address,address,bool,address)[]"],
+                                    [int(amount_in), [(_ck(tin), _ck(tout), stf, _ck(zero))]]),
+                         "v2", "reach", None))
+        for name, router in _SWEEP_V2_ROUTERS:
+            jobs.append((router, enc_v2([tin, tout], amount_in), "v2",
+                         f"{name}-direct", ("v2", router, [tin, tout])))
+            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                jobs.append((router, enc_v2([tin, _SWEEP_WETH, tout], amount_in), "v2",
+                             f"{name}-viaWETH", ("v2", router, [tin, _SWEEP_WETH, tout])))
+        uni_v2 = _SWEEP_V2_ROUTERS[0][1]
+        if _SWEEP_VIRTUAL not in (tin, tout):
+            jobs.append((uni_v2, enc_v2([tin, _SWEEP_VIRTUAL, tout], amount_in), "v2",
+                         "uniV2-viaVIRTUAL", ("v2", uni_v2, [tin, _SWEEP_VIRTUAL, tout])))
+            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                jobs.append((uni_v2, enc_v2([tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout], amount_in), "v2",
+                             "uniV2-WETH-VIRTUAL", ("v2", uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout])))
+        for f in (100, 500, 3000, 10000):
+            jobs.append((_SWEEP_SUSHI_Q, enc_v3(tin, tout, amount_in, f), "v3",
+                         f"sushiV3-{f}", ("sushi_v3", f, [tin, tout])))
+        lo, hi = sorted([tin, tout])
+        jobs.append((_SWEEP_MAV_F,
+                     lk + _enc(["address", "address", "uint256", "uint256"],
+                               [_ck(lo), _ck(hi), 0, 5]),
+                     "mavlk", "maverick", None))
+
+        def mc(call_jobs):
+            data = agg3 + _enc(["(address,bool,bytes)[]"],
+                               [[(_ck(tgt), True, cd) for tgt, cd, *_ in call_jobs]])
+            raw = w3.eth.call({"to": _ck(self._MC3), "data": "0x" + data.hex(),
+                               "gas": 45_000_000})
+            return _dec(["(bool,bytes)[]"], raw)[0]
+
+        results = mc(jobs)
+        reach_best = 0
+        extra_best, extra_tag, extra_route = 0, "", None
+        _extras = []
+        mav_pools = []
+        for (tgt, cd, kind, tag, route), (ok, ret) in zip(jobs, results):
+            if not ok or not ret:
+                continue
+            out = 0
+            try:
+                if kind == "v3":
+                    out = int(_dec(["uint256", "uint160", "uint32", "uint256"], ret)[0])
+                elif kind == "path":
+                    out = int(_dec(["uint256", "uint160[]", "uint32[]", "uint256"], ret)[0])
+                elif kind == "v2":
+                    out = int(_dec(["uint256[]"], ret)[0][-1])
+                elif kind == "mavlk":
+                    mav_pools = list(_dec(["address[]"], ret)[0])[:3]
+                    continue
+            except Exception:
+                continue
+            if tag == "reach":
+                reach_best = max(reach_best, out)
+            else:
+                if route is not None and out > 0:
+                    _extras.append((out, tag, route))
+                if out > extra_best:
+                    extra_best, extra_tag, extra_route = out, tag, route
+
+        if mav_pools:
+            token_a_in = tin.lower() == lo.lower()
+            tick = 2147483647 if token_a_in else -2147483648
+            mjobs = [(_SWEEP_MAV_Q,
+                      calc + _enc(["address", "uint128", "bool", "bool", "int32"],
+                                  [_ck(pool), int(amount_in), token_a_in, False, tick]),
+                      "mav", "maverick-direct", ("maverick", (pool, token_a_in), [tin, tout]))
+                     for pool in mav_pools]
+            try:
+                for (tgt, cd, kind, tag, route), (ok, ret) in zip(mjobs, mc(mjobs)):
+                    if not ok or not ret:
+                        continue
+                    try:
+                        out = int(_dec(["uint256", "uint256", "uint256"], ret)[1])
+                    except Exception:
+                        continue
+                    _extras.append((out, tag, route))
+                    if out > extra_best:
+                        extra_best, extra_tag, extra_route = out, tag, route
+            except Exception:
+                pass
+        _extras.sort(key=lambda x: -x[0])
+        self._sweep_topk = _extras[:3]
+        return reach_best, (extra_best, extra_tag, extra_route)
+
+    def _sweep_quotes_slow(self, w3, tin, tout, amount_in):
         import concurrent.futures
         from eth_abi import encode as _enc, decode as _dec
         from eth_utils import keccak as _kk, to_checksum_address as _ck
