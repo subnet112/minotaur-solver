@@ -654,6 +654,45 @@ _STATIC_EXOTIC_ROUTES = {
         ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
     (_USDC, "0x37d3d61a304695619433bc05ef841e889f69debf"):  # DONNIE (maverick dead; aero-hub live)
         ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
+    # king v80: 6 FRESH Uni-V4 champ/clone-blind holes (2026-07-03 GT+Initialize
+    # sweep). The published v4.1 sweep quotes v3/aeroCL/v2/sushi/maverick ONLY —
+    # it has NO V4 singleton path, so on every V4-hook/hookless pool it delivers
+    # 0 while we fill = guaranteed new-rows, not ties. Each PoolKey decoded from
+    # the PoolManager Initialize log (currency0/1, fee, tickSpacing, hooks) and
+    # /score-validated before ship. Deep liquidity = large delivered value.
+    # POD — native-ETH hookless V4 (fee 10000 ts 200, ~$4.97M). GAPPY shape.
+    (_USDC, "0xed664536023d8e4b1640c394777d34abaff1df8f"): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,), "unwrap_weth": True,
+        "pool": (_ZERO, "0xed664536023d8e4b1640c394777d34abaff1df8f", 10000, 200, _ZERO),
+        "settle": _ZERO, "zero_for_one": True}),
+    # DOT — native-ETH hookless V4 (fee 10000 ts 200, ~$311k). GAPPY shape.
+    (_USDC, "0x23a2847d772803f9efc64b4277b782b06296fe51"): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,), "unwrap_weth": True,
+        "pool": (_ZERO, "0x23a2847d772803f9efc64b4277b782b06296fe51", 10000, 200, _ZERO),
+        "settle": _ZERO, "zero_for_one": True}),
+    # OpenAI — USDC-direct hookless V4 (fee 100 ts 1, ~$2.69M). BRAIN shape.
+    (_USDC, "0x43d6e8f4e413028365e9cf83d1e6c2181e8e3b07"): ("uniswap_v4_ur", {
+        "pool": ("0x43d6e8f4e413028365e9cf83d1e6c2181e8e3b07", _USDC, 100, 1, _ZERO),
+        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
+    # GITLAWB — WETH dyn-fee V4 hook 0xbb7784a4 (ts 200, ~$1.86M). AMPR shape.
+    (_USDC, "0x5f980dcfc4c0fa3911554cf5ab288ed0eb13dba3"): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
+        "pool": (_WETH, "0x5f980dcfc4c0fa3911554cf5ab288ed0eb13dba3",
+                 _V4_DYNAMIC_FEE, 200, "0xbb7784a4d481184283ed89619a3e3ed143e1adc0"),
+        "settle": _WETH, "zero_for_one": True}),
+    # Surplus — WETH dyn-fee V4 hook 0xbb7784a4 (ts 200, ~$1.49M). AMPR shape.
+    (_USDC, "0xc52aedec3374422d7510e294cfaa90799595cba3"): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
+        "pool": (_WETH, "0xc52aedec3374422d7510e294cfaa90799595cba3",
+                 _V4_DYNAMIC_FEE, 200, "0xbb7784a4d481184283ed89619a3e3ed143e1adc0"),
+        "settle": _WETH, "zero_for_one": True}),
+    # BASEMATE — WETH dyn-fee V4 hook 0xbdf9 (_HOOK_BDF9, ts 200, ~$141k).
+    # currency0=token so WETH->token is zero_for_one=False (T2FC3 shape).
+    (_USDC, "0x07e61d8a4e197dfc269e90d7ece1df0d26702ba3"): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
+        "pool": ("0x07e61d8a4e197dfc269e90d7ece1df0d26702ba3", _WETH,
+                 _V4_DYNAMIC_FEE, 200, _HOOK_BDF9),
+        "settle": _WETH, "zero_for_one": False}),
     # BTRST — Uni V3 1% USDC pool; liquidity()==0 AT current tick but the BUY
     # direction crosses into range (QuoterV2-proven 2 USDC -> 14.1 BTRST,
     # 142k gas). Buy-only; the corpus order IS the buy direction.
