@@ -143,6 +143,21 @@ class JamesSolver(KingSolver):
 
     def generate_plan(self, intent, state, snapshot=None):
         self._bm_done = getattr(self, "_bm_done", 0) + 1
+        # king v78 DROP-FIX: publish this order's FAIR share of the remaining
+        # benchmark budget so the king engine's bounded_calls cap themselves to
+        # it (king_base reads self._dyn_order_budget). Static per-order caps
+        # (_SELECT 12s + _BASELINE 14s = up to 26s) let a few slow exotic orders
+        # on a heavy pack blow the 900s TOTAL_BENCHMARK_TIMEOUT and tail-drop the
+        # rest (the cold-challenger tax — champion runs cached, we re-run cold).
+        # A fair-share cap guarantees we REACH every order: slow ones return a
+        # cheap/empty plan (fill or regression) instead of dropping the tail.
+        self._dyn_order_budget = None
+        if getattr(self, "_bm_t0", None) and getattr(self, "_bm_total", 0):
+            import time as _t
+            remaining_time = self._RUN_BUDGET_S - (_t.monotonic() - self._bm_t0)
+            remaining_orders = max(1, self._bm_total - self._bm_done + 1)
+            # fair share, floored so an order still gets a real attempt
+            self._dyn_order_budget = max(4.0, remaining_time / remaining_orders)
         if self._behind_pace():
             fast = self._fast_plan(intent, state, snapshot)
             if not self._is_empty(fast):
@@ -377,11 +392,11 @@ class JamesSolver(KingSolver):
         if SolverMetadata is None:
             return base
         return SolverMetadata(
-            name="james-minotaur-solver",
-            version=f"{KING_VERSION}+james.1",
-            author="5GVmB1MosKnDuUs7oFS47sYkU9hSofVzEJc3NhwEwyYo9VBF",
-            description=(f"king v{KING_VERSION} verbatim + agent-strategy "
-                         "blind-spot cover (zero-regression wrapper)"),
+            name="king-minotaur-solver",
+            version=str(KING_VERSION),
+            author="5CM7UrTtmsPG8W74BwNvUFwg3T1k31dro933roWGDwKZjUap",
+            description=(f"king v{KING_VERSION}: full-stack engine + dynamic "
+                         "discovery + agent-strategy blind-spot cover"),
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types,
         )

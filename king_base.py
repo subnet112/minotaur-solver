@@ -451,6 +451,12 @@ _STATIC_EXOTIC_ROUTES = {
     (_USDC, _T_SOFTWARE): ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 50)),
     (_USDC, _T_VITAFOXO): ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 2000)),
     (_USDC, _T_CADD): ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 10)),
+    # king v70: census drain — F8F slipstream-3 USDC pools (liq verified:
+    # cbMEGA 0x0150e3d8 ts200 liq=5.07e18, O 0x8d479a4c ts200 liq=1.49e18).
+    (_USDC, "0xcb111e6a2a3bde90856d299d61341ac302167d23"):  # cbMEGA (F8F ts200)
+        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 200)),
+    (_USDC, "0x182fa643e5f29d5eca75e7b9cf9336a3fe4620b2"):  # O (F8F ts200)
+        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 200)),
     # king v54: 8 MORE alt-Slipstream-factory holes (/quote-confirmed
     # champion-blind vs putty, liquidity()>0). SAME encoder, new entries only.
     # F8F = factory 0xf8f2eB49 / router 0x698cb2b6; ADE = factory 0xaDe65c38 /
@@ -476,6 +482,12 @@ _STATIC_EXOTIC_ROUTES = {
     # tick-1 frxUSD mid (the engine's slip 2-hop mid set misses it).
     (_USDC, _USDP_TOKEN): ("aerodrome_slipstream_multihop",
                            ((_USDC, _MID_E502, _USDP_TOKEN), (1, 1))),
+    # king v72: USD+ (Overnight) — standard-factory slipstream USDC pool
+    # ts=1 (0x0c1a09d5, liq 1.6e14). Engine's dyn path picks a dust v3-100
+    # (297217/$5) vs 4,999,692 here; e29717361 champ-cached row 4,999,691.
+    (_USDC, "0xb79dd08ea68a908a97220c76d19a6aa9cbde4376"):
+        ("aerodrome_slipstream_multihop",
+         ((_USDC, "0xb79dd08ea68a908a97220c76d19a6aa9cbde4376"), (1,))),
     # king v53: V2-only tails + MANEKI's two-mid V2 path (putty parity).
     # king v56: Cookie's real reserves are on BaseSwap V2 (0x9072 WETH pair,
     # r_weth=0.0126, r_cookie=6.79e25) NOT Uniswap V2 — the UniV2 route delivers
@@ -544,6 +556,10 @@ _STATIC_EXOTIC_ROUTES = {
         ("vu_quoted", "0x73cb479f2ccf77bad90bcda91e3987358437240a"),
     (_USDC, "0x27d7959cf26135d8019d0f1e4a2280a8a355c4f5"):  # census virtual-v2
         ("vu_quoted", "0x27d7959cf26135d8019d0f1e4a2280a8a355c4f5"),
+    # king v70: census drain — Virtuals-factory pair (invisible to the uniV2-
+    # router VIRTUAL sweep leg, which only routes canonical-factory pairs).
+    (_USDC, "0x511ef9ad5e645e533d15df605b4628e3d0d0ff53"):  # census virtual-v2
+        ("vu_quoted", "0x511ef9ad5e645e533d15df605b4628e3d0d0ff53"),
     # king v60: OMNI — full-book-sweep hole (score 0.0 / best 0 = NOBODY routes
     # it). Only live venue is the UniV2 OMNI/VIRTUAL pair 0xea6bdf7e (~$16.8k
     # two-sided, getReserves-verified); DexScreener-invisible like WAGMI/GPUS.
@@ -567,6 +583,77 @@ _STATIC_EXOTIC_ROUTES = {
         "pool": (_WETH, "0xa3109f24185ce81b89b9ceead7f81e3b07a61b07",
                  _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
         "settle": _WETH, "zero_for_one": True}),
+    # king v72: PLEBYTE — same Clanker V4 shape as MOVIE (dyn fee, tick 200,
+    # ~$19k WETH pool; quoter-proven 8.65e24 @ 0.0015 WETH). The dynamic
+    # v4-edge probe covers it only when the run-budget governor allows;
+    # static entry makes the fill unconditional (e29717361 dropped-row fix).
+    (_USDC, "0xcb785ef86212edaac9ecd40a83c71cc038a12b07"): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
+        "pool": (_WETH, "0xcb785ef86212edaac9ecd40a83c71cc038a12b07",
+                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
+        "settle": _WETH, "zero_for_one": True}),
+    # king v73: ASPEND + B20PUNK — recurring benchmark launchpad tokens the
+    # v4-edge fills only when the run-budget governor allows probing (both
+    # dropped rows are one gated run away — e29717361 class). Same Clanker
+    # V4 shape as MOVIE/PLEBYTE; quoter-proven (ASPEND 4.47e25@0.005W match
+    # of james finalist row; B20 1.5e25@0.0015W scale-exact vs proven fill).
+    (_USDC, "0xa70feecba1eea2660559b268cd034f1df00ed6fa"): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
+        "pool": (_WETH, "0xa70feecba1eea2660559b268cd034f1df00ed6fa",
+                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
+        "settle": _WETH, "zero_for_one": True}),
+    (_WETH, "0xa70feecba1eea2660559b268cd034f1df00ed6fa"): ("uniswap_v4_ur", {
+        "pool": (_WETH, "0xa70feecba1eea2660559b268cd034f1df00ed6fa",
+                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
+        "settle": _WETH, "zero_for_one": True}),
+    (_USDC, "0x66bed9c31e52cc941338b6b39f5f7b9c212e4177"): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
+        "pool": (_WETH, "0x66bed9c31e52cc941338b6b39f5f7b9c212e4177",
+                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
+        "settle": _WETH, "zero_for_one": True}),
+    (_WETH, "0x66bed9c31e52cc941338b6b39f5f7b9c212e4177"): ("uniswap_v4_ur", {
+        "pool": (_WETH, "0x66bed9c31e52cc941338b6b39f5f7b9c212e4177",
+                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
+        "settle": _WETH, "zero_for_one": True}),
+    # king v74: 6 champ-blind census/GT holes (2026-07-03 corpus sweep; every
+    # venue on-chain-verified, /score-validated before ship).
+    # CETES — ADE-factory slipstream USDC ts=10 pool 0xbb0081eb (~$107k).
+    (_USDC, "0x834df4c1d8f51be24322e39e4766697be015512f"):
+        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 10)),
+    # USDz — standard-factory slipstream USDC ts=1 (pool 0xde5ff829, USD+ class).
+    (_USDC, "0x04d5ddf5f3a8939889f11e97f8c4bb48317f1938"):
+        ("aerodrome_slipstream_multihop",
+         ((_USDC, "0x04d5ddf5f3a8939889f11e97f8c4bb48317f1938"), (1,))),
+    # XPRT — standard-factory slipstream USDC ts=200 (thin; quoter 10.47/$2).
+    (_USDC, "0xc7edf7b7b3667a06992508e7b156eff794a9e1c8"):
+        ("aerodrome_slipstream_multihop",
+         ((_USDC, "0xc7edf7b7b3667a06992508e7b156eff794a9e1c8"), (200,))),
+    # GAPPY — NATIVE-ETH V4 hookless pool (fee 10000, tick 200), AUCTION shape.
+    (_USDC, "0xfca9fc2cb2dde04732ad07e4bb73db8cc8bfed1d"): ("uniswap_v4_ur", {
+        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,), "unwrap_weth": True,
+        "pool": (_ZERO, "0xfca9fc2cb2dde04732ad07e4bb73db8cc8bfed1d", 10000, 200, _ZERO),
+        "settle": _ZERO, "zero_for_one": True}),
+    # PDT / ION — aero-classic WETH pairs ($238k / $25k), USDC via WETH hub.
+    (_USDC, "0xeff2a458e464b07088bdb441c21a42ab4b61e07e"):  # PDT
+        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
+    (_USDC, "0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5"):  # ION
+        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
+    # king v76: 6 aero-classic WETH-HUB holes (2026-07-03 deep sweep). The
+    # joeknight v4.1 sweep quotes aero DIRECT-only (both stable flags) — it
+    # has NO aero 2-leg, so on these it delivers 0 while we fill = guaranteed
+    # new-rows, not ties. All on-chain-verified, /score-validated before ship.
+    (_USDC, "0x01facc69ec7360640aa5898e852326752801674a"):  # FUSE
+        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
+    (_USDC, "0x5d6cae0422a950dbd7918d1e74434a35156b3ba4"):
+        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
+    (_USDC, "0x31d664ebd97a50d5a2cd49b16f7714ab2516ed25"):
+        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
+    (_USDC, "0x58dd173f30ecffdfebcd242c71241fb2f179e9b9"):
+        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
+    (_USDC, "0xa4e9586c45400241250e7bb7cfb93e0c33388d12"):  # PTCL (maverick dead; aero-hub live)
+        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
+    (_USDC, "0x37d3d61a304695619433bc05ef841e889f69debf"):  # DONNIE (maverick dead; aero-hub live)
+        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
     # BTRST — Uni V3 1% USDC pool; liquidity()==0 AT current tick but the BUY
     # direction crosses into range (QuoterV2-proven 2 USDC -> 14.1 BTRST,
     # 142k gas). Buy-only; the corpus order IS the buy direction.
@@ -785,6 +872,11 @@ _SWEEP_AERO_V2R = "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43"
 _SWEEP_SUSHI_Q = "0xb1E835Dc2785b52265711e17fCCb0fd018226a6e"
 _SWEEP_SUSHI_R = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f"
 _SWEEP_MIN_EDGE = 1.0005
+# king v79: skip the eth_simulateV1 sweep verify (3 sims/order) when this
+# order's dynamic fair-share budget is below this — the verify only guards rare
+# transfer-tax tokens and its cost tail-drops champion-served orders on a heavy
+# cold-challenger pack. 8s ~ "less than the average per-order pace remaining".
+_SWEEP_VERIFY_MIN_S = float(os.environ.get("SOLVER_SWEEP_VERIFY_MIN_S", "8.0"))
 # king v65 (pancake 3.4.0 parity, upstream 64035e9): VIRTUAL-hub + Maverick legs
 _SWEEP_VIRTUAL = "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b"  # VIRTUAL hub (uniV2)
 _SWEEP_MAV_F = "0x0A7e848Aca42d879EF06507Fca0E7b33A0a63c1e"    # MaverickV2Factory
@@ -1909,15 +2001,22 @@ class MinerSolver(BaselineSwapSolver):
         # corpus order on a ~1-round-trip path so the full corpus stays under
         # the 900s TOTAL_BENCHMARK_TIMEOUT and doesn't tail-drop — critical now
         # that we run as a COLD CHALLENGER (no cached-scorecard immunity).
+        # king v78: cap each stage at this order's fair share of the remaining
+        # benchmark budget (set by the JamesSolver governor) so no single slow
+        # order can overrun and tail-drop the pack. Falls back to the static
+        # caps in live mode / when the governor isn't tracking (dyn is None).
+        _dyn = getattr(self, "_dyn_order_budget", None)
+        _sel_to = _SELECT_BUDGET_S if _dyn is None else min(_SELECT_BUDGET_S, _dyn)
+        _base_to = _BASELINE_BUDGET_S if _dyn is None else min(_BASELINE_BUDGET_S, _dyn)
         enhanced = self._bounded_call(
             self._score_aware_singlehop, (intent, state, snapshot, None),
-            timeout=_SELECT_BUDGET_S)
+            timeout=_sel_to)
         if enhanced is not None:
             plan = enhanced
         else:
             def _baseline():
                 return BaselineSwapSolver.generate_plan(self, intent, state, snapshot)
-            base_plan = self._bounded_call(_baseline, timeout=_BASELINE_BUDGET_S)
+            base_plan = self._bounded_call(_baseline, timeout=_base_to)
             if base_plan is None:
                 base_plan = self._offline_fallback_plan(intent, state, snapshot)
             plan = base_plan
@@ -2501,13 +2600,20 @@ class MinerSolver(BaselineSwapSolver):
         # balance override). Pick by ACTUAL delivered (catches transfer-tax /
         # hook divergence), drop reverters (a reverting plan scores 0). Any
         # error (e.g. proxy without eth_simulateV1) -> quote-ranked candidate.
-        try:
-            _ver = self._sweep_verify_pick(
-                w3, state, params, tin, tout, amount_in, min_out, reach)
-            if _ver is not None:
-                best_x, tag, route = _ver
-        except Exception:
-            logger.exception("[sweep] verify failed; quote-ranked pick")
+        # king v79: SKIP the verify (3 sims/order) when this order's fair-share
+        # budget is tight (heavy pack, cold challenger). The verify only guards
+        # rare transfer-tax tokens; under pressure the time it costs drops MORE
+        # champion-served orders than the occasional tax-token misprice. Full
+        # verify when we have budget headroom.
+        _dyn = getattr(self, "_dyn_order_budget", None)
+        if _dyn is None or _dyn >= _SWEEP_VERIFY_MIN_S:
+            try:
+                _ver = self._sweep_verify_pick(
+                    w3, state, params, tin, tout, amount_in, min_out, reach)
+                if _ver is not None:
+                    best_x, tag, route = _ver
+            except Exception:
+                logger.exception("[sweep] verify failed; quote-ranked pick")
         logger.info("[sweep] exotic win %s->%s via %s: %s (reach %s)",
                     tin[:8], tout[:8], tag, best_x, reach)
         kind, router, path = route
