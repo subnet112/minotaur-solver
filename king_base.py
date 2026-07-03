@@ -693,6 +693,37 @@ _STATIC_EXOTIC_ROUTES = {
         "pool": ("0x07e61d8a4e197dfc269e90d7ece1df0d26702ba3", _WETH,
                  _V4_DYNAMIC_FEE, 200, _HOOK_BDF9),
         "settle": _WETH, "zero_for_one": False}),
+    # king v81: USDC-DIRECT Clanker-V4 holes, NEW Clanker hook 0xd60d6b21
+    # (KyberSwap-confirmed uniswap-v4-clanker; PoolKey decoded from Initialize:
+    # fee=dynamic ts=200 hook=0xd60d..68cc; USDC->token DIRECT, not via WETH, so
+    # our WETH-leg discovery misses them = the exact class the rival dethrone-
+    # flooded us with, all vanity ...b07 addresses). BRAIN USDC-direct shape.
+    # currency0 = min(USDC 0x8335.., token); zero_for_one True iff USDC is c0.
+    # b338 (0xb3>0x83): c0=USDC, zfo=True — the rival's e29717834 win-row.
+    (_USDC, "0xb338f81331a883bda6e24d3a5b2ce2919eba5b07"): ("uniswap_v4_ur", {
+        "pool": (_USDC, "0xb338f81331a883bda6e24d3a5b2ce2919eba5b07",
+                 _V4_DYNAMIC_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),
+        "settle": _USDC, "zero_for_one": True, "sweep_settle": True}),
+    # 24bc (0x24<0x83): c0=token, zfo=False.
+    (_USDC, "0x24bc862e4a8aca815facc8d0275b1eb2e266db07"): ("uniswap_v4_ur", {
+        "pool": ("0x24bc862e4a8aca815facc8d0275b1eb2e266db07", _USDC,
+                 _V4_DYNAMIC_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),
+        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
+    # 1a97 (0x1a<0x83): c0=token, zfo=False.
+    (_USDC, "0x1a97511d5ee479eb19fa74a1899ac3e6d7ff9b07"): ("uniswap_v4_ur", {
+        "pool": ("0x1a97511d5ee479eb19fa74a1899ac3e6d7ff9b07", _USDC,
+                 _V4_DYNAMIC_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),
+        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
+    # a84d (0xa8>0x83): c0=USDC, zfo=True.
+    (_USDC, "0xa84d5982c070d06cb5ab4a0bd77a810ba0d39b07"): ("uniswap_v4_ur", {
+        "pool": (_USDC, "0xa84d5982c070d06cb5ab4a0bd77a810ba0d39b07",
+                 _V4_DYNAMIC_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),
+        "settle": _USDC, "zero_for_one": True, "sweep_settle": True}),
+    # 39ce (0x39<0x83): c0=token, zfo=False.
+    (_USDC, "0x39ce693a45c51c7b5c73af7528547eabe466eb07"): ("uniswap_v4_ur", {
+        "pool": ("0x39ce693a45c51c7b5c73af7528547eabe466eb07", _USDC,
+                 _V4_DYNAMIC_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),
+        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
     # BTRST — Uni V3 1% USDC pool; liquidity()==0 AT current tick but the BUY
     # direction crosses into range (QuoterV2-proven 2 USDC -> 14.1 BTRST,
     # 142k gas). Buy-only; the corpus order IS the buy direction.

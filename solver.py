@@ -32,25 +32,6 @@ logger = logging.getLogger(__name__)
 
 _STRATEGIES_DIR = Path(__file__).parent / "strategies"
 
-# gimly edge: NEOKI is a USDC-paired Clanker-style V4 pool (fee 8388608, tick 200)
-# on hook 0xd60d6b21 — NOT in this champion's V4 hook grid {Clanker, BDF9, Zora,
-# ...}, so it computes the wrong pool_id -> liquidity 0 -> CANNOT route NEOKI
-# (live champion quote=0, VERIFIED). Exact-key static covers served in ~0ms via the
-# inherited uniswap_v4_ur builder (V4Quoter out=2.44e25 for 5 USDC, VERIFIED) ->
-# blind_spot_cover, zero regression (a miss sims to 0 == champion's 0 = parity).
-_GIMLY_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
-_GIMLY_NEOKI = "0xb338f81331a883bda6e24d3a5b2ce2919eba5b07"
-_GIMLY_NEOKI_HOOK = "0xd60d6b218116cfd801e28f78d011a203d2b068cc"
-_GIMLY_NEOKI_COVERS = {
-    (_GIMLY_USDC, _GIMLY_NEOKI, _amt): {
-        "venue": "uniswap_v4_ur",
-        "spec": {"pool": (_GIMLY_USDC, _GIMLY_NEOKI, 8388608, 200, _GIMLY_NEOKI_HOOK),
-                 "settle": _GIMLY_USDC, "zero_for_one": True},
-        "param": "v4-neoki", "out": 1, "gas_est": 650000, "gas_model": 1000000,
-    }
-    for _amt in (5000000, 3000000, 7000000, 2000000, 10000000, 1000000, 4000000, 6000000)
-}
-
 
 def _load_agent_strategies() -> dict:
     """Load Strategy classes from strategies/<app_id>/strategy.py, keyed by
@@ -162,25 +143,6 @@ class JamesSolver(KingSolver):
 
     def generate_plan(self, intent, state, snapshot=None):
         self._bm_done = getattr(self, "_bm_done", 0) + 1
-        # gimly: NEOKI static cover FIRST (~0ms, no RPC) — before the pace governor
-        # and the king pipeline, so it always fires and costs no run budget. The
-        # champion can't route NEOKI (hook not in its grid) -> blind_spot_cover.
-        try:
-            _gp = self._normalized_swap_params(intent, state)
-            _gkey = (str(_gp.get("input_token", "") or "").lower(),
-                     str(_gp.get("output_token", "") or "").lower(),
-                     int(_gp.get("input_amount", 0) or 0))
-            _gcov = _GIMLY_NEOKI_COVERS.get(_gkey)
-            if _gcov is not None:
-                _gcid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                if _gcid == 8453:
-                    _gplan = self._build_singlehop_plan(
-                        intent, state, snapshot, _gcov, _gkey[0], _gkey[1], _gkey[2], _gcid)
-                    if not self._is_empty(_gplan):
-                        logger.info("[gimly] NEOKI static cover served (%s)", _gkey[2])
-                        return _gplan
-        except Exception:
-            logger.exception("[gimly] NEOKI cover failed; deferring to champion")
         # king v78 DROP-FIX: publish this order's FAIR share of the remaining
         # benchmark budget so the king engine's bounded_calls cap themselves to
         # it (king_base reads self._dyn_order_budget). Static per-order caps
@@ -430,7 +392,7 @@ class JamesSolver(KingSolver):
         if SolverMetadata is None:
             return base
         return SolverMetadata(
-            name="gimly",
+            name="king-minotaur-solver",
             version=str(KING_VERSION),
             author="5CM7UrTtmsPG8W74BwNvUFwg3T1k31dro933roWGDwKZjUap",
             description=(f"king v{KING_VERSION}: full-stack engine + dynamic "
