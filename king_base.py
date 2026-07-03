@@ -526,6 +526,13 @@ _STATIC_EXOTIC_ROUTES = {
     # the hunter missed it): Uni V3 USDC->WETH leg + Maverick pool swap.
     (_USDC, "0x8189910840771050bf9ed268abfc9c0882137029"):  # GPUS (Maverick)
         ("uni_mav", ("0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f", True)),
+    # king v68: WETH-paired Maverick census holes (GPUS-proven uni_mav pre-pay;
+    # validated at /score: MAV 28.5e18@442k, EAI 20.2e18@448k). NO rival reaches
+    # these: discovery=V2/Aero/V4, pancake-lineage mav sweep=direct-pool-only.
+    (_USDC, "0x64b88c73a5dfa78d1713fe1b4c69a22d7e0faaa7"):  # MAV
+        ("uni_mav", ("0x22c2f6d694dd93289fd31f01dbfefb413050829b", True)),
+    (_USDC, "0x4b6bf1d365ea1a8d916da37fafd4ae8c86d061d7"):  # EAI
+        ("uni_mav", ("0x17e0ed6caa0f1b70b9804fd765746208e7df6951", True)),
     # WAGMI — Virtuals AgentToken, VIRTUAL/WAGMI Uni V2 pair (also DexScreener-
     # dead). Same shape as BOB/ATA — the proven vu_quoted VIRTUAL-hub router.
     (_USDC, "0x2ce1340f1d402ae75afeb55003d7491645db1857"):  # WAGMI
