@@ -582,3 +582,5 @@ except Exception:  # pragma: no cover - shim self-disables, champion untouched
             "[putty] shim import/setup failed; champion solver left unchanged")
     except Exception:
         pass
+
+# putty-submit 0.86.3-pk 1783090231
