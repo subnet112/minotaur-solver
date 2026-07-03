@@ -23,8 +23,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "king-minotaur-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "81.0.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "viking-mino-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "92.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "martindev0207")
 
 _BASE = 8453
