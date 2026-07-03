@@ -441,3 +441,5 @@ class JamesSolver(KingSolver):
 
 
 SOLVER_CLASS = JamesSolver
+
+# putty-submit 0.86.3-pk 1783072929
