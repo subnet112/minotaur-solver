@@ -24,7 +24,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "viking-mino-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "92.0.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "96.0.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "martindev0207")
 
 _BASE = 8453
@@ -82,6 +82,10 @@ _APEX_HOLE_ROUTES = {
     # (MANEKI removed — the champion has since absorbed it -> now matched, not a win.)
     "0x2ce1340f1d402ae75afeb55003d7491645db1857":
         ("uni_v2_via", (_VIRTUAL, _UNIV2_ROUTER)),
+    # (0dca08cf uni_mav BENCHED: /score 0.0 twice with IDENTICAL gas 311859 =
+    # deterministic revert in _uni_mav_plan for this pool (not RPC noise).
+    # tokenAIn=False per tokenA()=token; suspect flag semantics or tickLimit.
+    # Debug offline before shipping — never ship unverified.)
 }
 
 

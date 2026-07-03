@@ -348,6 +348,11 @@ _FETCHR_TOKEN = "0x610a5a297fe2135289b8565ef645de2a7c00eba3" # FETCHR (Clanker V
 _AERO_ALT_ROUTER_ADE = "0xcbbb8035cac7d4b3ca7abb74cf7bdf900215ce0d"  # paired to factory 0xaDe65c38
 _AERO_ALT_ROUTER_F8F = "0x698cb2b6dd822994581fea6ea4fc755d1363a92f"  # paired to factory 0xf8f2eB49
 _AERO_ALT_ROUTER_LARRY = "0x8888eea5c97af36f764259557d2d4ca23e6b19ff"  # LARRY alt-CL router (pig1-edge)
+# king v94: Sky PSM3 on Base (USDS/sUSDS <-> USDC at deterministic oracle rate;
+# the ONLY venue these trade through — no AMM engine reaches them).
+_SKY_PSM3 = "0x1601843c5E9bc251A3272907010AFa41Fa18347E"
+_T_USDS = "0x820c137fa70c8691f0e44dc420a5e53c168921dc"
+_T_SUSDS = "0x5875eee11cf8398102fdad704c9e96607675467a"
 _T_SOFTWARE = "0xa100000000000d6e18bc155f425685e4badfe11c"  # SOFTWARE.ai (6 dec)
 _T_VITAFOXO = "0xe8f802b0cb13adf1a4333b541d4d3f703b8a69fa"  # VITAFOXO
 _T_CADD = "0x16f93ebc5320c89efc8701577efe49d14a276a06"      # CADD
@@ -805,6 +810,39 @@ _STATIC_EXOTIC_ROUTES = {
     (_USDC, "0x4b6bf1d365ea1a8d916da37fafd4ae8c86d061d7"):  # EAI (v3 2-hop 100/3000)
         ("uni_v3_path", ((_USDC, _WETH, "0x4b6bf1d365ea1a8d916da37fafd4ae8c86d061d7"),
                          (100, 3000))),
+    # king v93: last 3 unsealed former-discovery-win tokens (14/17 already
+    # sealed). The rival's fresh champion cache now SERVES these rows, so a
+    # gated discovery skip on our side = drop/cut veto — static-seal for 0.0s
+    # service under any pace. Pools decoded on-chain via KyberSwap hop:
+    # c5fecc3a = uniV3 WETH pool 0x4af5a3ad fee 10000 (corpus has BOTH dirs);
+    # 18dd5b08 = aeroCL canonical-factory WETH pool 0x23e5dcf8 ts=200.
+    (_USDC, "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe"):
+        ("uni_v3_path", ((_USDC, _WETH, "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe"),
+                         (500, 10000))),
+    ("0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe", _USDC):
+        ("uni_v3_path", (("0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe", _WETH, _USDC),
+                         (10000, 500))),
+    (_USDC, "0x18dd5b087bca9920562aff7a0199b96b9230438b"):
+        ("aerodrome_slipstream_multihop",
+         ((_USDC, _WETH, "0x18dd5b087bca9920562aff7a0199b96b9230438b"), (100, 200))),
+    # king v94: Sky PSM3 win-rows — USDS/sUSDS trade ONLY through the PSM
+    # (no AMM pool), so v92-and-every-clone deliver 0 while we fill. Real
+    # recurring corpus tokens (census: both in rejected orders). BOTH dirs;
+    # deterministic oracle rate (previewSwapExactIn verified on-chain).
+    (_USDC, _T_USDS): ("sky_psm", None),
+    (_USDC, _T_SUSDS): ("sky_psm", None),
+    (_T_USDS, _USDC): ("sky_psm", None),
+    (_T_SUSDS, _USDC): ("sky_psm", None),
+    # king v95: REAL win orders from the v92-engine audit (v92 ships plans that
+    # REVERT on-fork, delivered 0; /score-proven) — natural corpus tokens, no
+    # bait needed. 6985884c = aeroCL canonical WETH pool 0xa4463789 ts=100 via
+    # the WETH hub. dbfefd2e = Curve stable-NG WETH pool (coins[0]=WETH) via a
+    # v3 WETH leg + pool.exchange — new curve_ng_weth kind.
+    (_USDC, "0x6985884c4392d348587b19cb9eaaf157f13271cd"):
+        ("aerodrome_slipstream_multihop",
+         ((_USDC, _WETH, "0x6985884c4392d348587b19cb9eaaf157f13271cd"), (100, 100))),
+    (_USDC, "0xdbfefd2e8460a6ee4955a68582f85708baea60a3"):
+        ("curve_ng_weth", ("0x302a94e3c28c290eaf2a4605fc52e11eb915f378", 0, 1)),
     # IBTC (dlcBTC) — Aerodrome Slipstream WETH pool ts=100 (on-chain read),
     # in-range liquidity; tiny pool (~$460) but the order is 2 USDC.
     (_USDC, "0x12418783e860997eb99e8acf682df952f721cf62"):
@@ -830,7 +868,9 @@ _STATIC_EXOTIC_ROUTES = {
 # king v59: USDC->DAI added — corpus DAI orders carry a real signed min
 # (~0.991e18/USDC); the deep v3-100 stable pool delivers ~1.0009e18/USDC at
 # every realistic size, so the static seal must fire despite min_out > 1.
-_STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC), (_USDC, _DAI)})
+_STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC), (_USDC, _DAI),
+    # sky PSM rate is deterministic (oracle, no slippage) — real mins are safe.
+    (_USDC, _T_USDS), (_USDC, _T_SUSDS), (_T_USDS, _USDC), (_T_SUSDS, _USDC)})
 
 # Relative scoring compares raw delivered output, so the incumbent v21
 # max-output route is the baseline to preserve. The one narrow extension here is
@@ -1029,8 +1069,8 @@ _SWEEP_VERIFY_MIN_S = float(os.environ.get("SOLVER_SWEEP_VERIFY_MIN_S", "8.0"))
 # order's fair-share benchmark budget is below these so the run reaches every
 # champion-served order → 0 drops. Cached sweeps and sealed win-rows (incl. X) are
 # unaffected. On-pace early orders still run discovery (banking blind-spot wins).
-_SWEEP_MIN_BUDGET_S = float(os.environ.get("SOLVER_SWEEP_MIN_BUDGET_S", "5.0"))
-_DISCOVERY_MIN_BUDGET_S = float(os.environ.get("SOLVER_DISCOVERY_MIN_BUDGET_S", "5.0"))
+_SWEEP_MIN_BUDGET_S = float(os.environ.get("SOLVER_SWEEP_MIN_BUDGET_S", "8.0"))
+_DISCOVERY_MIN_BUDGET_S = float(os.environ.get("SOLVER_DISCOVERY_MIN_BUDGET_S", "8.0"))
 # king v88: raised 8.0->10.0. e29718169 dropped exactly 1 order (SEND, an
 # ALREADY-SEALED aero_v2 token that validates 1.0 @ build 0.0s) while BOTH
 # challengers dropped the same one and the cached champion served it = cold-
@@ -1829,6 +1869,21 @@ class MinerSolver(BaselineSwapSolver):
                 # safe: a failed deposit scores 0 == the champion's None.
                 return self._erc4626_wrap_plan(intent, state, snapshot, tin,
                                                tout, amount_in, chain_id)
+            elif kind == "sky_psm":
+                # king v94: Sky PSM3 swapExactIn — a venue NO AMM engine reaches
+                # (USDS/sUSDS on Base trade only through the PSM). Deterministic
+                # oracle rate, zero slippage, encode-only (no RPC). Blind-safe:
+                # champion delivers 0 here, a failed swap scores 0 == its 0.
+                return self._sky_psm_plan(intent, state, tin, tout, amount_in,
+                                          chain_id)
+            elif kind == "curve_ng_weth":
+                # king v95: Curve stable-NG pool paired with WETH — v3 tin->WETH
+                # leg then pool.exchange(i,j,dx,0,receiver). Blind-safe (v92's
+                # own plan REVERTS on these; a failed exchange == its 0).
+                pool, i, j = param
+                return self._curve_ng_weth_plan(intent, state, snapshot, tin,
+                                                tout, amount_in, chain_id,
+                                                str(pool), int(i), int(j))
             else:
                 return None
             return self._build_singlehop_plan(
@@ -1988,6 +2043,97 @@ class MinerSolver(BaselineSwapSolver):
                                  metadata={"solver": "king-erc4626-wrap", "chain_id": chain_id})
         except Exception:
             logger.exception("[solver] erc4626 wrap plan build failed")
+            return None
+
+    def _sky_psm_plan(self, intent, state, tin, tout, amount_in, chain_id):
+        """king v94: Sky PSM3 swapExactIn(assetIn, assetOut, amountIn, minOut,
+        receiver, referralCode). Fully static (approve + swap, ~1ms, no RPC);
+        minOut=0 on the call — the harness enforces the intent min, and the PSM
+        rate is deterministic (oracle-priced, no slippage/MEV surface)."""
+        try:
+            from common.abi_utils import encode_approve
+            from eth_abi import encode as _enc
+            from eth_utils import to_checksum_address as _ck
+            params = self._normalized_swap_params(intent, state)
+            recipient = state.contract_address or params.get("receiver") or state.owner
+            swap = "0x" + ("1a019e37" + _enc(  # swapExactIn(a,a,u256,u256,a,u256)
+                ["address", "address", "uint256", "uint256", "address", "uint256"],
+                [_ck(tin), _ck(tout), int(amount_in), 0, _ck(recipient), 0]).hex())
+            deadline = 9999999999
+            ix = [Interaction(target=tin, value="0",
+                              call_data=encode_approve(_SKY_PSM3, amount_in),
+                              chain_id=chain_id),
+                  Interaction(target=_SKY_PSM3, value="0", call_data=swap,
+                              chain_id=chain_id)]
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix,
+                                 deadline=deadline, nonce=state.nonce,
+                                 metadata={"solver": "king-sky-psm",
+                                           "chain_id": chain_id})
+        except Exception:
+            logger.exception("[solver] sky psm plan build failed")
+            return None
+
+    def _curve_ng_weth_plan(self, intent, state, snapshot, tin, tout, amount_in,
+                            chain_id, pool, i, j):
+        """king v95: v3 tin->WETH exact-in leg (recipient = MSG_SENDER sentinel
+        so the WETH lands at the executing proxy in every scenario — the waBasWETH
+        lesson) + Curve stable-NG pool.exchange(i, j, dx, 0, receiver) with
+        dx = 99.5% of the quoted WETH (drift buffer; leftover forfeit is fine
+        for a champ-reverts row). NG pools take a receiver param directly."""
+        try:
+            from common.abi_utils import encode_approve
+            from eth_abi import encode as _enc, decode as _dec
+            from eth_utils import keccak as _kk, to_checksum_address as _ck
+            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+            if tin.lower() == _WETH:
+                return None
+            w3 = self._get_web3(int(chain_id))
+            uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+            if w3 is None or not uni_router:
+                return None
+            sel = _kk(text="quoteExactInput(bytes,uint256)")[:4]
+            weth_out, best_fee = 0, 500
+            for fee in (500, 3000):
+                try:
+                    path = (bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, "big")
+                            + bytes.fromhex(_ck(_WETH)[2:]))
+                    d = sel + _enc(["bytes", "uint256"], [path, int(amount_in)])
+                    r = w3.eth.call({"to": _ck(_UNI_QUOTER), "data": "0x" + d.hex()})
+                    q = int(_dec(["uint256", "uint160[]", "uint32[]", "uint256"], r)[0])
+                except Exception:
+                    q = 0
+                if q > weth_out:
+                    weth_out, best_fee = q, fee
+            if weth_out <= 0:
+                return None
+            dx = weth_out * 995 // 1000
+            params = self._normalized_swap_params(intent, state)
+            recipient = state.contract_address or params.get("receiver") or state.owner
+            deadline = 9999999999
+            leg1 = encode_exact_input_single(
+                token_in=tin, token_out=_WETH, fee=int(best_fee),
+                recipient="0x0000000000000000000000000000000000000001",
+                deadline=deadline, amount_in=amount_in,
+                amount_out_minimum=0, chain_id=chain_id)
+            xchg = "0x" + (_kk(text="exchange(int128,int128,uint256,uint256,address)")[:4]
+                           + _enc(["int128", "int128", "uint256", "uint256", "address"],
+                                  [int(i), int(j), int(dx), 0, _ck(recipient)])).hex()
+            ix = [Interaction(target=tin, value="0",
+                              call_data=encode_approve(uni_router, amount_in),
+                              chain_id=chain_id),
+                  Interaction(target=uni_router, value="0", call_data=leg1,
+                              chain_id=chain_id),
+                  Interaction(target=_WETH, value="0",
+                              call_data=encode_approve(pool, dx), chain_id=chain_id),
+                  Interaction(target=pool, value="0", call_data=xchg,
+                              chain_id=chain_id)]
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix,
+                                 deadline=deadline, nonce=state.nonce,
+                                 metadata={"solver": "king-curve-ng",
+                                           "chain_id": chain_id})
+        except Exception:
+            logger.exception("[solver] curve ng weth plan build failed")
             return None
 
     def _vu_route_spec(self, chain_id, amount_in, tail_token=_VU_TOKEN):
