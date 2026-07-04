@@ -24,7 +24,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.87.1-edge")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.87.4-edge")
 # v0.107.0 (2026-07-04, "botz-v4"): Botz 0xca179f39… trades ONLY on a hookless
 # Uniswap V4 pool (USDC/Botz fee=100 ts=1, pool 0x07f46075…; verified via V4
 # Initialize logs + real PoolManager swap receipts — every V3/V2/Aero/Sushi/
