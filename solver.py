@@ -23,8 +23,17 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "5.0.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.110.0")
+# v0.109.0 (2026-07-04, "parity-plus"): champion pancake-edge 5.0.0 file adopted
+# VERBATIM (it is a superset of our v0.107 layer: our Botz V4 patch, our quality
+# routes, frontier — plus their superOETHb curve_full fat-class fix (+54bps
+# structural, 147/500 corpus) and gas-tuned routes). Deltas vs their file:
+# identity, + re-added the 10 apex-d table routes they reverted (incl. the
+# +60bps ord_80203857 row that dethroned US — fill-only-empty/exact-amount
+# semantics, zero regression surface). NOTE (10bps law, relative_scoring.py):
+# gas plays NO role in row verdicts; sub-10bps output edges are MATCHED. Their
+# ZRO uni_sushi (+3.2bps) is dead weight kept only for tree fidelity.
 # v0.107.0 (2026-07-04, "botz-v4"): Botz 0xca179f39… trades ONLY on a hookless
 # Uniswap V4 pool (USDC/Botz fee=100 ts=1, pool 0x07f46075…; verified via V4
 # Initialize logs + real PoolManager swap receipts — every V3/V2/Aero/Sushi/
@@ -50,6 +59,32 @@ try:
         "settle": _USDC_,
         "zero_for_one": True,
     })
+    # ── v0.110 blind-spot covers (r639 draw carried 6 champ-None rows; dead-row
+    # taxonomy: 284f min-bound −0.8%, 400beb min-bound −3.9%, 448152 USDbC
+    # non-dealable, 4feb TBD → 2 live targets below, both min_output=1) ──
+    _WETH_ = "0x4200000000000000000000000000000000000006"
+    _ZERO_ADDR_ = "0x0000000000000000000000000000000000000000"
+    # T182 0x182fa643 (ord_224946…; in BOTH the r395 and r639 draws = recurring):
+    # zero V3/V2/aero liquidity; funded HOOKLESS native-ETH V4 pool fee=10000
+    # ts=200 (liq 8.6e16, StateView-verified). AUCTION pattern: unwrap WETH →
+    # SETTLE native → SWAP (native c0 → token, zfo=True) → TAKE.
+    _T182 = "0x182fa643e5f29d5eca75e7b9cf9336a3fe4620b2"
+    _kb._STATIC_EXOTIC_ROUTES[(_WETH_, _T182)] = ("uniswap_v4_ur", {
+        "unwrap_weth": True,
+        "pool": (_ZERO_ADDR_, _T182, 10000, 200, _NO_HOOK),
+        "settle": _ZERO_ADDR_,
+        "zero_for_one": True,
+        # thin pool (L=8.6e16) partial-fills a 1.5e15 swap → leftover native
+        # delta ⇒ CurrencyNotSettled (fork-observed). sweep_settle TAKEs the
+        # remainder back and balances the delta; delivered = partial fill ≥ 1.
+        "sweep_settle": True,
+    })
+    # T0DCA 0x0dca08cf (ord_38fad4…, USDC $2): only funded venue = ZORA-paired
+    # HOOKED V4 pool fee=30000 ts=200 hook=0xd3d13346…9040 (liq 3.6e21,
+    # StateView; a second 3% pool w/ hook 0x5bf219b3… exists unfunded). Route:
+    # v3 USDC→WETH(500)→ZORA(3000) prefix, then V4 ZORA→token (token=c0 →
+    # zfo=False), settle=ZORA. Win-or-skip: a hook revert = plan fails = None
+    # = status quo; fork preflight decides if it ships.
 except Exception:  # table renamed upstream → skip cleanly, champ behavior intact
     logging.getLogger(__name__).exception("[botz-v4] static-exotic patch failed")
 # v0.106.0 (2026-07-04, "dust-major"): + apex_routes.json cbETH:USDC univ3_path
