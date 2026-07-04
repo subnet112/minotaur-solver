@@ -233,6 +233,11 @@ false,
 "0x06fc3d5d2369561e28f261148576520f5e49d6ea"
 ]
 },
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x0dca08cf89ae194bb5feb466dbf94f74c76062ea": {
+"_oid": "ord_38fad4cfa61649d1",
+"fee": 3000,
+"kind": "univ3_single"
+},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x16f93ebc5320c89efc8701577efe49d14a276a06": {
 "_oid": "ord_3eb9bf6574d042f6",
 "fee": 3000,
@@ -802,5 +807,15 @@ false,
 "0x4200000000000000000000000000000000000006",
 "0xfca9fc2cb2dde04732ad07e4bb73db8cc8bfed1d"
 ]
+},
+"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+"_oid": "ord_35373ba805fa484a",
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
+"_oid": "ord_de1b8014331f4189",
+"fee": 100,
+"kind": "univ3_single"
 }
 }

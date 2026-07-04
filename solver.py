@@ -23,7 +23,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "apex-split-router")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "apex-split-router-c")
 SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "2.5.1")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "martindev0207")
 
