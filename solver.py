@@ -36,7 +36,7 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.87.1-edge")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.87.4-edge")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
 
 _USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
