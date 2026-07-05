@@ -2274,3 +2274,5 @@ except Exception:  # pragma: no cover - shim self-disables, champion untouched
         pass
 
 # SHIMMD5:1050a91b6b0c
+
+# putty-submit 0.87.3-edge 1783264290
