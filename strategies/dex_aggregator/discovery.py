@@ -77,6 +77,8 @@ ZORA_CREATOR_HOOK = "0xd61a675f8a0c67a73dc3b54fb7318b4d91409040"
 # planted benchmark orders + the standard static tiers. Order = hit likelihood.
 V4_KEY_GRID = (
     (V4_DYN_FEE, 200, CLANKER_HOOK),
+    (V4_DYN_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),  # census launchpad (NEOKI family, 709 pools/2d)
+    (V4_DYN_FEE, 200, "0xbdf938149ac6a781f94faa0ed45e6a0e984c6544"),  # census launchpad #2 (488 pools/2d)
     (V4_DYN_FEE, 200, HOOK_BDF9),
     (30000, 200, ZORA_CREATOR_HOOK),
     (10000, 200, ZORA_HOOK),
