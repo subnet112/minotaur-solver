@@ -24,7 +24,18 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.114.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.116.0")
+# v0.116.0 (2026-07-05, "hydra-seal"): isolated r29720125 hard-edge
+# absorption only. Hydra/blue/apex proved ord_80203857 fBOMB via-WETH Aerodrome
+# at +139bps with no regressions for hydra; v0.115's old direct fBOMB pin had
+# become stale. Viking proved ord_4932894 18dd at +huge but its full tree had
+# 20 regressions, so absorb only the direct Aerodrome route. Both are exact
+# amount, min=1, and /score-preflight valid.
+# v0.115.0 (2026-07-05, "hold"): reign-defense fresh-repo ship of the crown-#3
+# winning tree (v0.114 verbatim: champion 21fbde3 base + T182/curve_full/Botz).
+# BURNED-REPO LAW: v0.114 adoption advances that private PR head -> same-repo
+# fires 400; this fresh repo keeps the racer defending through the reign while
+# the next offense edge (Zora-hook / fat-class) is developed as v0.116.
 # v0.114.0 (2026-07-05, "dominate"): rebased on champion 21fbde3 (apex-c) so
 # ord_45a3 inherits their native Algebra/Hydrex route (matches 2.898e21, no
 # regression) + their 3 blind-spot univ3 covers; our full stack rides on top
@@ -273,7 +284,19 @@ _APEX_QUALITY_ROUTES = {
         "kind": "aero_v2",
         "routes": [
             ["0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+             "0x4200000000000000000000000000000000000006", False,
+             "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"],
+            ["0x4200000000000000000000000000000000000006",
              "0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979", False,
+             "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"],
+        ],
+    },
+    ("0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+     "0x18dd5b087bca9920562aff7a0199b96b9230438b", 2_000_000): {
+        "kind": "aero_v2",
+        "routes": [
+            ["0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+             "0x18dd5b087bca9920562aff7a0199b96b9230438b", False,
              "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"],
         ],
     },
