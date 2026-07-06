@@ -25,7 +25,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.87.2-edge")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.87.5-edge")
 # v0.122.0 (2026-07-05, "app-da6-revert"): r29720795 proved the
 # app_da6c96b84c60 first-shot path was regression-heavy (39 worse rows, many
 # champ-served cover gaps) when it pre-empted the champion/base path. Revert to
@@ -2288,3 +2288,5 @@ except Exception:  # pragma: no cover - shim self-disables, champion untouched
         pass
 
 # SHIMMD5:1050a91b6b0c
+
+# putty-nonce 0.87.5-edge 1783332423144484435-1117347
