@@ -2288,3 +2288,5 @@ except Exception:  # pragma: no cover - shim self-disables, champion untouched
         pass
 
 # SHIMMD5:1050a91b6b0c
+
+# putty-nonce 0.87.2-edge 1783336893176294192-1117347
