@@ -38,9 +38,9 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "hydra-discovery-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.45.1")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "5.4.8")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 _USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 _USDBC = "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca"
