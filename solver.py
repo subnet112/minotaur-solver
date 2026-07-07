@@ -23,7 +23,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.87.5-edge")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.87.2-edge")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "martindev0207")
 
 _KING_REPLAY_CACHE = None
@@ -785,3 +785,5 @@ except Exception:  # pragma: no cover - shim self-disables, champion untouched
 # SHIMMD5:1050a91b6b0c
 
 # putty-nonce 0.87.5-edge 1783375497651419507-1117347
+
+# putty-nonce 0.87.2-edge 1783388710300278551-1117347
