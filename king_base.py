@@ -53,6 +53,9 @@ from strategies.dex_aggregator.baseline_solver import BaselineSwapSolver
 from strategies.dex_aggregator.discovery import DiscoveryEngine
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+from king_consts import *  # noqa: F401,F403
+from king_tables1 import _STATIC_EXOTIC_ROUTES  # noqa: F401
+from king_tables2 import _HOLE_ROUTES  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -61,17 +64,6 @@ SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.1.2")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
 
 # Base (chain 8453) only — the whole live order book is Base.
-_BASE = 8453
-_WETH = "0x4200000000000000000000000000000000000006"
-_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
-_CBBTC = "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf"
-_AERO = "0x940181a94a35a4569e4529a3cdfb74e38fd98631"
-_DAI = "0x50c5725949a6f0c72e6c4a641f24049a917db0cb"
-_USDBC = "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca"
-_EDGE_TOKEN = "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe"
-_DEGEN_TOKEN = "0x4ed4e862860bed51a9570b96d89af5e1b0efefed"
-_TAX_EDGE_TOKEN = "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22"
-_ZERO = "0x0000000000000000000000000000000000000000"
 
 # king v31: inputs the incumbent leaves as a blind spot (delivers None) because
 # its full single-hop enumeration (many two-hop + aero-v2 quotes) blows the
@@ -101,184 +93,6 @@ _FAST_DIRECT_INPUTS = frozenset({_USDBC})
 # a Maverick V2 pool. amountOutMinimum=0 + the order carries a low min, so any
 # positive fill clears it. Output -> app (recipient=contract_address) so
 # DexAggregatorApp._gained() counts it. Zero regression: scoped to this exact set.
-_MAVERICK_ROUTER = "0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527"  # MaverickV2Router
-_HOLE_ROUTES = {
-    # token: ("maverick", (pool_address, tokenAIn_for_USDC->token))
-    "0xad20523a7dc37babc1cc74897e4977232b3d02e5":
-        ("maverick", ("0x73be69ad437d636b12cc4804701b5283cb4285f5", True)),
-    "0x0963a1abaf36ca88c21032b82e479353126a1c4b":
-        ("maverick", ("0x5d5b4bfa3619ee3b49a154cfdf7243359570aafe", False)),
-    # Direct USDC->token single-hop on the token's deep tier, built RPC-free.
-    "0x6921c09f2b5cee21a929591a070d4b0354dbee8d":
-        ("sushi_v3", 100),
-    # SNSY: verified UNSUPPORTED hole — live corpus order WETH->SNSY scores 0.0
-    # (champion cannot fill), v41 fills via Sushi (fork /score success, 1.0).
-    # WETH-paired pool; a non-WETH input reverts -> 0 == champion's 0 -> skip.
-    # (BEPE was tested too but scores 1.0 — champion DOES route it via live
-    # enumeration despite offline-empty quote; NOT sealed, would regress.)
-    "0x3124678d62d2aa1f615b54525310fbfda6dcf7ae":  # SNSY  (Sushi V3 WETH/SNSY fee 10000)
-        ("sushi_v3", 10000),
-    # king v46: Hydrex (Algebra Integral) — a venue this base cannot reach, so
-    # these score 0/None (blind_spot_cover vs champion). Single-hop
-    # exactInputSingle tin->tout; param = VERIFIED-good input tokens (a direct
-    # Hydrex pool exists for that pair) so other inputs fall through to baseline
-    # instead of emitting a guaranteed-revert plan. HYDX: HYDX/USDC (~$298k) +
-    # HYDX/WETH -> wins USDC->HYDX (8712 HYDX) AND WETH->HYDX. DEXTF: WETH/DEXTF
-    # (~$64k) -> wins WETH->DEXTF. Fork-verified via /score at 1.0.
-    "0x00000e7efa313f4e11bfff432471ed9423ac6b30":  # HYDX (Hydrex Algebra)
-        ("hydrex", (_USDC, _WETH)),
-    "0xb69bbb15095c0949489fbb43951d2b750fa7fa89":  # DEXTF (Hydrex Algebra)
-        ("hydrex", (_WETH,)),
-    # king v47: 6 more Hydrex (Algebra Integral) holes — all champion (top-miner
-    # v0.84) /quote=0, all with a direct USDC- or WETH-paired Hydrex pool so the
-    # single-hop exactInputSingle fills. param = verified-good input token.
-    "0x55380fe7a1910dff29a47b622057ab4139da42c5":  # FXUSD (Hydrex USDC ~$337k)
-        ("hydrex", (_USDC,)),
-    "0xc48823ec67720a04a9dfd8c7d109b2c3d6622094":  # MCADE (Hydrex WETH ~$125k)
-        ("hydrex", (_WETH,)),
-    "0x3e31966d4f81c72d2a55310a6365a56a4393e98d":  # WMTX (Hydrex WETH ~$77k)
-        ("hydrex", (_WETH,)),
-    "0xb99b6df96d4d5448cc0a5b3e0ef7896df9507cf5":  # VAULT (Hydrex USDC ~$47k)
-        ("hydrex", (_USDC,)),
-    "0x5cda0e1ca4ce2af96315f7f8963c85399c172204":  # wtCOIN (Hydrex USDC ~$21k)
-        ("hydrex", (_USDC,)),
-    # king v47 (2nd batch): 4 more Hydrex holes (champion /quote=0, direct pool).
-    "0x16edb4dfc1d3368d051370699edfb280e9a1b474":  # 40ACRES (Hydrex USDC ~$22k)
-        ("hydrex", (_USDC,)),
-    "0x7afe438411ee3959c7de6f7fb76bf9c769320ba3":  # BLOCKTRONICS (Hydrex USDC ~$13k)
-        ("hydrex", (_USDC,)),
-    # king v64: FACY hydrex pool now REVERTS (scored 0.0); the live venue is the
-    # direct Aerodrome V2 USDC pool (audit: 1279e18 vs hydrex 0).
-    "0xfac77f01957ed1b3dd1cbea992199b8f85b6e886":  # FACY (Aero V2 USDC direct)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    "0x6e0090dbecf3b4f0f9429637756cadd8fc468c54":  # MILK (Hydrex WETH ~$9k)
-        ("hydrex", (_WETH,)),
-    # king 1.2.0: Aerodrome V2 pairs on the CANONICAL Aerodrome factory
-    # (0x420DD381...e40da — the same factory the base already has an
-    # aerodrome_v2 encoder for) that just aren't in the base's hardcoded
-    # allowlist. On-chain-confirmed non-drained volatile WETH pools.
-    "0xfb31f85a8367210b2e4ed2360d2da9dc2d2ccc95":  # EDEL (Aero V2 WETH ~$597k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    "0x8c0d3adcf8ce094e1ae437557ec90a6374dc9bdd":  # OVPP (Aero V2 WETH ~$391k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    # king v85: discovery-win token from e29718073 A/B (we serve via aero-CL
-    # discovery, champ drops). Aero V2 volatile WETH pool on the CANONICAL
-    # factory (0xc238f8ea; factory+stable=False on-chain confirmed) — static-seal
-    # so it serves at the instant intercept (survives v84 behind-pace gating)
-    # instead of depending on live discovery. WETH-in single hop.
-    "0x01facc69ec7360640aa5898e852326752801674a":  # (Aero V2 WETH)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    # king v50: 20 more Aerodrome V2 (canonical factory) holes from the
-    # 2026-07-02 sweep — every one /quote=0 both dirs vs champion AND
-    # on-chain getReserves() nonzero AND /score-validated 1.0 before ship.
-    # All volatile pools direct-paired with the verified input token.
-    "0xeab49138ba2ea6dd776220fe26b7b8e446638956":  # SEND (USDC ~$1.42M)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    "0x93dc5cb35627a759848c7a7f0079ea7b49e435a5":  # MET (WETH ~$1.26M)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    "0x9b5e262cf9bb04869ab40b19af91d2dc85761722":  # NOCK (USDC ~$935k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    "0x767a739d1a152639e9ea1d8c1bd55fdc5b217d7f":  # VEIL (WETH ~$460k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    "0x1b4617734c43f6159f3a70b7e06d883647512778":  # AWE (USDC ~$359k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    "0xed9ae3def8d6f052971bb8b6d1975ff267cf9aad":  # BLUAI (WETH ~$170k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    "0xe88419a3fc78364cfe3de88080ee4853fab754c6":  # ROBA (USDC ~$128k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    "0x0dc28efba8c6e0c14fa7391636b8bec86c4c83d6":  # BSB (USDC ~$110k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    "0x3bbcb624cb9a1f73163a886f460f47603e5e4425":  # HANDL (USDC ~$91k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    "0xe2b1dc2d4a3b4e59fdf0c47b71a7a86391a8b35a":  # RWA (USDC ~$88k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    "0xef5997c2cf2f6c138196f8a6203afc335206b3c1":  # OWB (USDC ~$79k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    "0x11dc28d01984079b7efe7763b533e6ed9e3722b9":  # SYND (WETH ~$79k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    "0x7431ada8a591c955a994a21710752ef9b882b8e3":  # MOR (WETH ~$63k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    "0xc0041ef357b183448b235a8ea73ce4e4ec8c265f":  # COOKIE (WETH ~$55k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    "0xeffc8815487084a97edfdff968b56ea123421acb":  # VIBES (WETH ~$47k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    "0xa81a52b4dda010896cdd386c7fbdc5cdc835ba23":  # TRAC (WETH ~$39k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    # DAG/OFC/Kendu/ZERC: initial /score reverts were CustomError 0x203d82d8
-    # = Aerodrome Expired() (drifted-anvil deadline artifact, NOT a factory
-    # mismatch — on-chain factory()==canonical, stable()==false for all 4).
-    # Re-sealed after the constant-deadline hardening.
-    "0xecff4d80f54cf55c626e52f304a8891645961e72":  # DAG (WETH ~$32k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    "0x752c5a95d202972e124390f30a50154409d3c858":  # OFC (USDC ~$32k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    "0xef73611f98da6e57e0776317957af61b59e09ed7":  # Kendu (WETH ~$28k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH)),
-    "0xa3a2cdd230f9b3ff6e01a01534a3ed3cbf049815":  # ZERC (USDC ~$25k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC)),
-    # king v51: QuickSwap V4 (Algebra) WETH-paired pools, liquidity()>0 verified.
-    # king v66: SYMM REVERTED to quickswap. The v64 aero upgrade won USDC->SYMM
-    # at $2 (256e18 vs 136e18) but LOST WETH->SYMM at 0.05 WETH (10905e18 vs
-    # champ quickswap 11091e18 = -1.67% regression, e29716962). The Algebra
-    # WETH/SYMM pool ($392k) is deeper; quickswap matched ALL directions for
-    # weeks. Safety over one win row.
-    "0x800822d361335b4d5f352dac293ca4128b5b605f":  # SYMM (QuickSwap WETH ~$392k)
-        ("quickswap", (_WETH,)),
-    "0x7094c27f342dbadfbbed005b219431595e33b305":  # QUICK (QuickSwap WETH ~$95k)
-        ("quickswap", (_WETH,)),
-    "0x9bba915f036158582c20b51113b925f243a1a1a1":  # IMGN (QuickSwap WETH ~$88k)
-        ("quickswap", (_WETH,)),
-    # king v52: 6 more QuickSwap V4 (Algebra) direct pools, liquidity()>0.
-    "0x3597194c3b8a9481141fb9c628fc398c120a58a9":  # RYFT (WETH ~$47k)
-        ("quickswap", (_WETH,)),
-    "0xae35ff1bc4fbb45aaeef9768a3d9610786cac98b":  # stratETH (WETH ~$42k)
-        ("quickswap", (_WETH,)),
-    "0x16332535e2c27da578bc2e82beb09ce9d3c8eb07":  # ClawBank (WETH ~$11.7k)
-        ("quickswap", (_WETH,)),
-    "0xe5f2fe713cdb192c85e67a912ff8891b4e636614":  # stratUSD (USDC ~$39k)
-        ("quickswap", (_USDC,)),
-    "0x9886447ff4c350f4600e4bf95db756bdc629b1ca":  # CERE (USDC ~$35k)
-        ("quickswap", (_USDC,)),
-    "0x862a1226e6ea04e34ea3ddb4346c7a2c693e06ab":  # PENMT (USDC ~$19k)
-        ("quickswap", (_USDC,)),
-    # king v52: BaseSwap V2 (UniV2 fork) WETH-paired pools, reserves verified.
-    # Generic V2-fork kind: param = (router, verified_input, optional hub).
-    "0x546d239032b24eceee0cb05c92fc39090846adc7":  # SEED (BaseSwap WETH ~$41k)
-        ("v2_router", ("0x327Df1E6de05895d2ab08513aaDD9313Fe505d86", _WETH)),
-    "0x78a087d713be963bf307b18f2ff8122ef9a63ae9":  # BSWAP (BaseSwap WETH ~$16k)
-        ("v2_router", ("0x327Df1E6de05895d2ab08513aaDD9313Fe505d86", _WETH)),
-    "0x90678c02823b21772fa7e91b27ee70490257567b":  # ALTITUDE (BaseSwap WETH ~$14k)
-        ("v2_router", ("0x327Df1E6de05895d2ab08513aaDD9313Fe505d86", _WETH)),
-    # king v52: Alien Base V3 (UniV3 fork, SwapRouter02-style NO-deadline
-    # exactInputSingle 0x04e45aaf). MONSTRO pool fee=10000/tick200, liq>0.
-    "0x1d3be1cc80ca89ddbabe5b5c254af63200e708f7":  # MONSTRO (USDC ~$17.9k)
-        ("alien_v3", (10000, _USDC)),
-    # king v52: Equalizer (Solidly fork, Route[] WITHOUT factory field,
-    # swapExactTokensForTokens selector 0xf41766d8). Reserves verified.
-    "0xe2a74f0847c8bd4a55418fea488831ad6a0cc998":  # PZERO (Equalizer USDC ~$11.7k)
-        ("equalizer", (_USDC,)),
-    "0xbef29bcffffc0c435f64eb4058c890c8f269415c":  # OPP (Equalizer USDC ~$14.3k)
-        ("equalizer", (_USDC,)),
-    # king v52: SOGNI — Aero V2 two-leg via USDT hub; leg1 USDC->USDT is the
-    # STABLE pool (4-tuple param adds the leg1 stable flag).
-    "0xe014d2a4da6e450f21b5050120d291e63c8940fd":  # SOGNI (via USDT, ~$233k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC,
-                     "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2", True)),
-    # king v51: exotic-paired Aerodrome V2 tokens via two-leg Route[] through
-    # a hub (both legs canonical-factory volatile, reserves verified on-chain).
-    "0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979":  # fBOMB (via AERO, ~$1.7M)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC,
-                     "0x940181a94a35a4569e4529a3cdfb74e38fd98631")),
-    "0x9eaf8c1e34f05a589eda6bafdf391cf6ad3cb239":  # YFI (via wstETH, ~$890k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH,
-                     "0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452")),
-    "0x940a319b75861014a220d9c6c144d108552b089b":  # DEUS (via VIRTUAL, ~$811k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH,
-                     "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b")),
-    "0xed6e000def95780fb89734c07ee2ce9f6dcaf110":  # EDGE (via cbBTC, ~$468k)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _WETH,
-                     "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf")),
-}
 # v0.84 (top-miner-router): cap the spend on the 0963 Maverick hole. Swapping
 # the FULL input into that tiny pool reverts (price-limit) -> None; spending
 # 1 USDC fills and clears the min<=1 order. Fork-verified: delivers ~10e18
@@ -294,577 +108,22 @@ _HOLE_SPEND_CAPS = {
 # app's scoreIntent path before inclusion. Each entry fires ONLY for its
 # exact (input, output) pair and only when the order's min_output <= 1
 # (except the allowlisted stable pair) — zero regression surface.
-_UNIV2_ROUTER = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24"   # Uniswap V2 Router02 (Base)
-_UNIVERSAL_ROUTER = "0x6ff5693b99212da76ad316178a184ab56d299b43"  # Uniswap Universal Router (v3+v4)
-_UNI_SWAPROUTER02 = "0x2626664c2603336E57B271c5C0b26F421741e481"  # Uniswap SwapRouter02 (Base)
-_ZORA = "0x1111111111166b7fe7bd91427724b487980afc69"
-_VIRTUAL_TOKEN = "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b"
-_VU_TOKEN = "0x511ef9ad5e645e533d15df605b4628e3d0d0ff53"
-_BEATS_TOKEN = "0x315b8c9a1123c10228d469551033440441b41f0b"
-_AMPR_TOKEN = "0x494c4cf6c8f971ddfca95184282b86220fab9b07"
-_BUTLER_TOKEN = "0x84b9c2be78ad93843c96c106a22f12ccb2cfdb07"
-_DEPLOYER_TOKEN = "0xae7dc6559aeaadd8a3c156fe695a650c7095c9ce"
-_BRAIN_TOKEN = "0x35e7942e91876eb0c24a891128e559a744fe8b07"
-_T15B1 = "0x15b15fa54b629c634958e8bd639b2fc8af654974"
-_TFAD8 = "0xfad8cb754230dbfd249db0e8eccb5142dd675a0d"
-_TAE4A = "0xae4a37d554c6d6f3e398546d8566b25052e0169c"
-_T3639 = "0x3639e6f4c224ebd1bf6373c3d97917d33e0492bb"
-_T2FC3 = "0x2fc3dd4dacfd1b2fabac157de8727b54bade4b07"
-_T753F = "0x753f2af0f46361c9ae6fc347797f99b0c9e82ba3"
-_T462F = "0x462f0085cb261ab49ad048a2b35ee77135684308"
-_TCA41 = "0xca416d6d3c2b3a8a2c48419b53dd611420ffa776"
-_TCAF7 = "0xcaf75598b8b9a6e645b60d882845d361f549f5ec"
-_CLANKER_HOOK = "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"
-_ZORA_HOOK = "0xc8d077444625eb300a427a6dfb2b1dbf9b159040"
-_HOOK_BDF9 = "0xbdf938149ac6a781f94faa0ed45e6a0e984c6544"
-_HOOK_ZORA_CREATOR = "0xd61a675f8a0c67a73dc3b54fb7318b4d91409040"
 # king v50: V4 hook pools (per-hook safety verified: Clanker static-fee /
 # Doppler multicurve afterSwap-only / inert init-only / Flaunch bid-wall).
-_HOOK_AVC_DOPPLER = "0x892d3c2b4abeaaf67d52a7b29783e2161b7cad40"
-_HOOK_AUCTION_AQUINAS = "0xd3c1f2174f37f88811f99b1b1b4c1356c0246000"
-_HOOK_BEAM_FLAUNCH = "0x8dc3b85e1dc1c846ebf3971179a751896842e5dc"
-_AVC_TOKEN = "0x06fc3d5d2369561e28f261148576520f5e49d6ea"
-_AUCTION_TOKEN = "0x05af98aebec91aef2bd893614a2c333c58855012"
-_BEAM_TOKEN = "0x2a66d51407b84b82b5aff3dec4d49f72cbcd322a"
-_FLETH_TOKEN = "0x000000000d564d5be76f7f0d28fe52605afc7cf8"
-_BLCK_TOKEN = "0xf5de8697232a16a942f7cf706415f553ce53e27f"
-_PKT_TOKEN = "0x917f39bb33b2483dd19546b1e8d2f09ce481ee44"
-_SINBAD_TOKEN = "0x5682a3ba66eeb60e82d18865849b513ab9c9692d"
 # king v53: forward-port of putty-king-solver 0.84.2-g12's published covers
 # (upstream 168d9c1, purely-additive diff verified) so we match the NEW
 # champion everywhere it beats the old one. Their dust-ATA route is NOT
 # ported — our vu_quoted ATA delivers ~1e14x more (win, not tie).
-_MID_E502 = "0xe5020a6d073a794b6e7f05678707de47986fb0b6"   # slipstream tick-1 mid for USDp (frxUSD)
-_USDP_TOKEN = "0x76a9a0062ec6712b99b4f63bd2b4270185759dd5"  # USDp
-_COOKIE_V2 = "0x614747c53cb1636b4b962e15e1d66d3214621100"   # Cookie (UniV2 WETH pair; NOT our Aero COOKIE)
-_BOB_TOKEN = "0xd9ea811a51d6fe491d27c2a0442b3f577852874d"    # BOB (Virtuals AgentToken) — putty 0.85.0 parity
-_MANEKI_MID = "0x05e3d6741e4ea10f73e2c7d7d5bc40bcd6c4e5a0"  # MANEKI's only V2 counter-asset
-_MANEKI_TOKEN = "0xe6ab1cc1307b496748753e017f3dbb4d4378ca3f" # MANEKI
-_FETCHR_TOKEN = "0x610a5a297fe2135289b8565ef645de2a7c00eba3" # FETCHR (Clanker V4 hook pool)
 # Non-default Aerodrome CL (Slipstream-fork) factories: each fork factory has
 # a PAIRED SwapRouter bytecode-identical to the canonical one (only the
 # factory immutable differs), so the standard exactInputSingle(tickSpacing)
 # ABI works unchanged with the paired router address.
-_AERO_ALT_ROUTER_ADE = "0xcbbb8035cac7d4b3ca7abb74cf7bdf900215ce0d"  # paired to factory 0xaDe65c38
-_AERO_ALT_ROUTER_F8F = "0x698cb2b6dd822994581fea6ea4fc755d1363a92f"  # paired to factory 0xf8f2eB49
-_AERO_ALT_ROUTER_LARRY = "0x8888eea5c97af36f764259557d2d4ca23e6b19ff"  # LARRY alt-CL router (pig1-edge)
 # king v94: Sky PSM3 on Base (USDS/sUSDS <-> USDC at deterministic oracle rate;
 # the ONLY venue these trade through — no AMM engine reaches them).
-_SKY_PSM3 = "0x1601843c5E9bc251A3272907010AFa41Fa18347E"
-_T_USDS = "0x820c137fa70c8691f0e44dc420a5e53c168921dc"
-_T_SUSDS = "0x5875eee11cf8398102fdad704c9e96607675467a"
-_T_SOFTWARE = "0xa100000000000d6e18bc155f425685e4badfe11c"  # SOFTWARE.ai (6 dec)
-_T_VITAFOXO = "0xe8f802b0cb13adf1a4333b541d4d3f703b8a69fa"  # VITAFOXO
-_T_CADD = "0x16f93ebc5320c89efc8701577efe49d14a276a06"      # CADD
-_V4_DYNAMIC_FEE = 8388608          # 0x800000 dynamic-fee sentinel (Clanker pools)
 _UR_CONTRACT_BALANCE = 1 << 255    # UR "spend my whole router balance"
-_UR_ADDRESS_THIS = "0x0000000000000000000000000000000000000002"
 
-_T61FD = "0x61fd8d4ad84bf7a20e12f00b7e33cb698977dc7d"  # PancakeV2-only (unindexed)
-_ATA_TOKEN = "0xb18c609796848c723eacadc0be5b71ceb2289a48"  # ATA (Uniswap V2 ATA/VIRTUAL ~$15k; direct
 # ATA/USDC pool is drained, reserve ~$0.000001 -- same trap as LEET/BTRST, do NOT route direct)
 
-_STATIC_EXOTIC_ROUTES = {
-    (_USDC, "0xecc5f868add75f4ff9fd00bbbde12c35ba2c9c89"):
-        ("aerodrome_slipstream_multihop", ((_USDC, _WETH, "0xecc5f868add75f4ff9fd00bbbde12c35ba2c9c89"), (1, 200))),
-    # 0x61fd trades ONLY on PancakeSwap V2 (no indexed pools; the engine's
-    # pancake-v2 path shapes never quote it). gimly's 2 dethroning covers were
-    # exactly these WETH->0x61fd orders — serve them from the static table.
-    (_WETH, _T61FD): ("pancake_v2", (_WETH, _T61FD)),
-    (_USDC, _T61FD): ("pancake_v2", (_USDC, _WETH, _T61FD)),
-    (_USDC, _USDBC): ("uniswap_v3", 100),
-    (_USDC, _VU_TOKEN): ("vu_quoted", _VU_TOKEN),
-    (_USDC, _T15B1): ("vu_quoted", _T15B1),
-    (_USDC, _BRAIN_TOKEN): ("uniswap_v4_ur", {
-        "pool": (_BRAIN_TOKEN, _USDC, 800000, 16000, _ZERO),
-        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
-    (_USDC, _BEATS_TOKEN): ("uniswap_v2", (_USDC, _WETH, _BEATS_TOKEN)),
-    (_USDC, _TFAD8): ("uniswap_v2", (_USDC, _WETH, _TFAD8)),
-    (_USDC, _TAE4A): ("uniswap_v2", (_USDC, _WETH, _TAE4A)),
-    (_USDC, _T3639): ("uniswap_v2", (_USDC, _WETH, _T3639)),
-    (_USDC, _AMPR_TOKEN): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, _AMPR_TOKEN, _V4_DYNAMIC_FEE, 200, _CLANKER_HOOK),
-        "settle": _WETH, "zero_for_one": True}),
-    # king v85: discovery-win token from e29718073 A/B (WETH->a70feecb, we serve
-    # via _james_v4_edge WETH-leg discovery, champ drops). Uniswap-V4 Clanker pool
-    # (poolId 0x4125b2f9..., fee=dyn tick=200 hook=_CLANKER_HOOK, WETH-in confirmed
-    # via KyberSwap poolExtra). WETH(0x42)<token(0xa7) => c0=WETH, zero_for_one=
-    # True. WETH-DIRECT (no v3 prefix); static-seal so it survives v84 gating.
-    (_WETH, "0xa70feecba1eea2660559b268cd034f1df00ed6fa"): ("uniswap_v4_ur", {
-        "pool": (_WETH, "0xa70feecba1eea2660559b268cd034f1df00ed6fa",
-                 _V4_DYNAMIC_FEE, 200, _CLANKER_HOOK),
-        "settle": _WETH, "zero_for_one": True, "sweep_settle": True}),
-    # king v87: another confirmed +new discovery-win token (WETH->2fc3dd4d, champ
-    # drops, we serve via V4-clanker discovery). Static-seal it into a win-row so
-    # it survives v84's discovery gating + can be flood-baited. Uniswap-V4 Clanker
-    # (fee=dyn tick=200 hook=_CLANKER_HOOK, KyberSwap poolExtra confirmed).
-    # token(0x2f)<WETH(0x42) => c0=token, zero_for_one=False (selling WETH=c1).
-    (_WETH, "0x2fc3dd4dacfd1b2fabac157de8727b54bade4b07"): ("uniswap_v4_ur", {
-        "pool": ("0x2fc3dd4dacfd1b2fabac157de8727b54bade4b07", _WETH,
-                 _V4_DYNAMIC_FEE, 200, _CLANKER_HOOK),
-        "settle": _WETH, "zero_for_one": False, "sweep_settle": True}),
-    (_USDC, _BUTLER_TOKEN): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, _BUTLER_TOKEN, _V4_DYNAMIC_FEE, 200, _CLANKER_HOOK),
-        "settle": _WETH, "zero_for_one": True}),
-    (_USDC, _T2FC3): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_T2FC3, _WETH, _V4_DYNAMIC_FEE, 200, _CLANKER_HOOK),
-        "settle": _WETH, "zero_for_one": False}),
-    (_USDC, _T753F): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, _T753F, _V4_DYNAMIC_FEE, 200, _HOOK_BDF9),
-        "settle": _WETH, "zero_for_one": True}),
-    (_USDC, _T462F): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _USDBC), "v3_fees": (100,),
-        "pool": (_T462F, _USDBC, 100000, 2000, _ZERO),
-        "settle": _USDBC, "zero_for_one": False, "sweep_settle": True}),
-    (_USDC, _DEPLOYER_TOKEN): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _ZORA), "v3_fees": (3000,),
-        "pool": (_ZORA, _DEPLOYER_TOKEN, 10000, 200, _ZORA_HOOK),
-        "settle": _ZORA, "zero_for_one": True}),
-    (_USDC, _TCA41): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _ZORA), "v3_fees": (3000,),
-        "pool": (_ZORA, _TCA41, 30000, 200, _HOOK_ZORA_CREATOR),
-        "settle": _ZORA, "zero_for_one": True}),
-    (_USDC, _TCAF7): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _ZORA), "v3_fees": (3000,),
-        "pool": (_ZORA, _TCAF7, 30000, 200, _HOOK_ZORA_CREATOR),
-        "settle": _ZORA, "zero_for_one": True}),
-    # king v49: ATA -- pancake-edge-router v2.2.0 dethroned v47 on hist:ord_323c8a9b
-    # (USDC->ATA); champion (us) returned no route. ATA has NO real direct USDC
-    # pair (that pool is drained, ~$0.000001 reserve); real depth is ATA/VIRTUAL
-    # UniV2 (~$15k), identical shape to VU/LBM -- reuse the existing generic
-    # "vu_quoted" VIRTUAL-hub router unchanged (zero new low-level code).
-    (_USDC, _ATA_TOKEN): ("vu_quoted", _ATA_TOKEN),
-    # king v50: WETH-input directions the engine covers with a REVERTING V3
-    # plan (delivers 0; /score-confirmed) while a live V4 pool exists. The
-    # USDC-input directions of CLAWIAI/AVC already route (score 1.0) -- only
-    # the broken WETH directions are sealed. Same encoder as the inherited
-    # V4 entries above; hooks verified safe (Clanker static-fee / Doppler
-    # multicurve afterSwap-only).
-    (_WETH, _T2FC3): ("uniswap_v4_ur", {
-        "pool": (_T2FC3, _WETH, _V4_DYNAMIC_FEE, 200, _CLANKER_HOOK),
-        "settle": _WETH, "zero_for_one": False}),
-    (_WETH, _AVC_TOKEN): ("uniswap_v4_ur", {
-        "pool": (_AVC_TOKEN, _WETH, 40000, 10, _HOOK_AVC_DOPPLER),
-        "settle": _WETH, "zero_for_one": False}),
-    # king v50: AUCTION trades only on a NATIVE-ETH V4 pool (currency0 =
-    # address(0), fee 10000, tick 60, inert init-only hook) -- both input
-    # directions revert today. Route: [v3 USDC->WETH] -> UNWRAP_WETH ->
-    # V4 settle native ETH -> AUCTION.
-    (_USDC, _AUCTION_TOKEN): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,), "unwrap_weth": True,
-        "pool": (_ZERO, _AUCTION_TOKEN, 10000, 60, _HOOK_AUCTION_AQUINAS),
-        "settle": _ZERO, "zero_for_one": True}),
-    (_WETH, _AUCTION_TOKEN): ("uniswap_v4_ur", {
-        "unwrap_weth": True,
-        "pool": (_ZERO, _AUCTION_TOKEN, 10000, 60, _HOOK_AUCTION_AQUINAS),
-        "settle": _ZERO, "zero_for_one": True}),
-    # king v50: BEAM trades only against flETH (Flaunch) on V4 -- two-hop
-    # inside one V4_SWAP: native ETH ->(hookless ETH/flETH 0.3%)-> flETH
-    # ->(BEAM/flETH fee0, Flaunch bid-wall hook)-> BEAM. OPEN_DELTA chains
-    # the legs; both directions revert today.
-    (_USDC, _BEAM_TOKEN): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,), "unwrap_weth": True,
-        "pools": (((_ZERO, _FLETH_TOKEN, 3000, 60, _ZERO), True),
-                  ((_FLETH_TOKEN, _BEAM_TOKEN, 0, 60, _HOOK_BEAM_FLAUNCH), True)),
-        "settle": _ZERO}),
-    (_WETH, _BEAM_TOKEN): ("uniswap_v4_ur", {
-        "unwrap_weth": True,
-        "pools": (((_ZERO, _FLETH_TOKEN, 3000, 60, _ZERO), True),
-                  ((_FLETH_TOKEN, _BEAM_TOKEN, 0, 60, _HOOK_BEAM_FLAUNCH), True)),
-        "settle": _ZERO}),
-    # king v53: putty 0.84.2-g12 parity — alt-factory slipstream pools via
-    # their factory-paired SwapRouters (fork-verified by putty; bytecode-
-    # identical routers, different factory immutable).
-    (_USDC, _T_SOFTWARE): ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 50)),
-    (_USDC, _T_VITAFOXO): ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 2000)),
-    (_USDC, _T_CADD): ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 10)),
-    # king v70: census drain — F8F slipstream-3 USDC pools (liq verified:
-    # cbMEGA 0x0150e3d8 ts200 liq=5.07e18, O 0x8d479a4c ts200 liq=1.49e18).
-    (_USDC, "0xcb111e6a2a3bde90856d299d61341ac302167d23"):  # cbMEGA (F8F ts200)
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 200)),
-    (_USDC, "0x182fa643e5f29d5eca75e7b9cf9336a3fe4620b2"):  # O (F8F ts200)
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 200)),
-    # king v54: 8 MORE alt-Slipstream-factory holes (/quote-confirmed
-    # champion-blind vs putty, liquidity()>0). SAME encoder, new entries only.
-    # F8F = factory 0xf8f2eB49 / router 0x698cb2b6; ADE = factory 0xaDe65c38 /
-    # router 0xcbbb8035. (SERV skipped: champion routes it; 7 more UNVERIFIED
-    # via API-502 during the owner's rule redeploy — recheck for v55.)
-    (_USDC, "0x182fa643e5f29d5eca75e7b9cf9336a3fe4620b2"):  # O (~$1.95M)
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 200)),
-    (_USDC, "0xcb111e6a2a3bde90856d299d61341ac302167d23"):  # cbMEGA (~$1.55M)
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 200)),
-    (_USDC, "0x8b7dde054be9d180c1be7fae0874697374a49832"):  # PROS (~$707k)
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 1)),
-    (_USDC, "0x11030f79109269d796fd0fb956d6244e502757f7"):  # CTR (~$554k)
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 1)),
-    (_USDC, "0x896a0b1f23479e4438ad086c0bda159361294250"):  # HOLI (~$210k)
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 2000)),
-    (_USDC, "0xf09e4c8193f16019f0573f370f9a997b11f56638"):  # WARD (~$108k)
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 200)),
-    (_USDC, "0x020940df9f5e77338a094d55b5b5914122a804a5"):  # RBNT (~$101k)
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 200)),
-    (_WETH, "0x78e8cf657742e10eac8f64007615aa741fc76414"):  # USDL (~$135k)
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 10)),
-    # king v53: USDp — standard-factory slipstream 2-hop via the exotic
-    # tick-1 frxUSD mid (the engine's slip 2-hop mid set misses it).
-    (_USDC, _USDP_TOKEN): ("aerodrome_slipstream_multihop",
-                           ((_USDC, _MID_E502, _USDP_TOKEN), (1, 1))),
-    # king v72: USD+ (Overnight) — standard-factory slipstream USDC pool
-    # ts=1 (0x0c1a09d5, liq 1.6e14). Engine's dyn path picks a dust v3-100
-    # (297217/$5) vs 4,999,692 here; e29717361 champ-cached row 4,999,691.
-    (_USDC, "0xb79dd08ea68a908a97220c76d19a6aa9cbde4376"):
-        ("aerodrome_slipstream_multihop",
-         ((_USDC, "0xb79dd08ea68a908a97220c76d19a6aa9cbde4376"), (1,))),
-    # king v53: V2-only tails + MANEKI's two-mid V2 path (putty parity).
-    # king v56: Cookie's real reserves are on BaseSwap V2 (0x9072 WETH pair,
-    # r_weth=0.0126, r_cookie=6.79e25) NOT Uniswap V2 — the UniV2 route delivers
-    # dust (8.25e9) while BaseSwap delivers 3.0e25 (top-miner 0.94.0's exact win
-    # value). Route via BaseSwap: USDC->WETH->Cookie 2-hop = 6.25e25.
-    (_USDC, _COOKIE_V2): ("v2_router",
-                          ("0x327Df1E6de05895d2ab08513aaDD9313Fe505d86", _USDC, _WETH)),
-    (_USDC, _MANEKI_TOKEN): ("uniswap_v2", (_USDC, _WETH, _MANEKI_MID, _MANEKI_TOKEN)),
-    # king v53: FETCHR — Clanker-family V4 hook pool via UR (putty parity).
-    (_USDC, _FETCHR_TOKEN): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, _FETCHR_TOKEN, _V4_DYNAMIC_FEE, 200, _HOOK_BDF9),
-        "settle": _WETH, "zero_for_one": True}),
-    # king v52: SINBAD — the token putty-king-solver won an order on.
-    # Uniswap V4 SINBAD/USDC pool (fee 10000, tick 200), hook = the SAME
-    # Zora hook this table already trades through (AFTER_SWAP-only flags,
-    # cannot alter swap deltas). currency0=SINBAD, currency1=USDC ->
-    # USDC input = zeroForOne False, settle USDC (no v3 leg needed).
-    (_USDC, _SINBAD_TOKEN): ("uniswap_v4_ur", {
-        "pool": (_SINBAD_TOKEN, _USDC, 10000, 200, _ZORA_HOOK),
-        "settle": _USDC, "zero_for_one": False}),
-    # king v55: putty 0.85.0-succ parity — BOB (Virtuals AgentToken, routed
-    # USDC->VIRTUAL->BOB on the canonical Uni V2 pair via our vu_quoted hub;
-    # the V3 route OOGs the 2M scoreIntent gas cap per putty's own note) +
-    # the WETH->COOKIE direction they added (we already had USDC->COOKIE).
-    (_USDC, _BOB_TOKEN): ("vu_quoted", _BOB_TOKEN),
-    # king v57: top-miner-router 0.94.0 parity — their only cover v56 lacked
-    # (their v0.90 "Sushi V3 WETH pool nobody else routes"; they serve it, so
-    # missing it = catastrophic row vs them as champion). Our sushi_v3 kind +
-    # encoder already exist; this is just the table entry.
-    (_WETH, "0x10f434b3d1cc13a4a79b062dcc25706f64d10d47"): ("sushi_v3", 3000),
-    # king v57 hunt: USDC directions of two champion-blind Aero-V2 covers whose
-    # _HOLE_ROUTES entries are WETH-only (COOKIE-aero x2 + Kendu x1 rejected
-    # orders in book) — 2-leg volatile Route[] via the WETH hub.
-    (_USDC, "0xc0041ef357b183448b235a8ea73ce4e4ec8c265f"):  # COOKIE (Aero)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    (_USDC, "0xef73611f98da6e57e0776317957af61b59e09ed7"):  # Kendu
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    # king v57 hunt: INT — AlienBase-only token (WETH/INT fee-10000, ~$20k;
-    # only other venue is an $8 v4 pool). USDC reaches it via the fee-750
-    # USDC/WETH hub on the same deployment (fee-3000 hub is EMPTY).
-    (_USDC, "0x968d6a288d7b024d5012c0b25d67a889e4e3ec19"):  # INT
-        ("alien_v3_path", ((_USDC, _WETH, "0x968d6a288d7b024d5012c0b25d67a889e4e3ec19"),
-                           (750, 10000))),
-    # king v58: apex-split-router 2.1.0 parity — their ONLY two real covers
-    # (the rest of their ▲11 was cached-scorecard drift + top-miner flakes).
-    # GPUS lives ONLY in a Maverick V2 pool (invisible on DexScreener — why
-    # the hunter missed it): Uni V3 USDC->WETH leg + Maverick pool swap.
-    (_USDC, "0x8189910840771050bf9ed268abfc9c0882137029"):  # GPUS (Maverick)
-        ("uni_mav", ("0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f", True)),
-    # king v68: WETH-paired Maverick census holes (GPUS-proven uni_mav pre-pay;
-    # validated at /score: MAV 28.5e18@442k, EAI 20.2e18@448k). NO rival reaches
-    # these: discovery=V2/Aero/V4, pancake-lineage mav sweep=direct-pool-only.
-    (_USDC, "0x64b88c73a5dfa78d1713fe1b4c69a22d7e0faaa7"):  # MAV
-        ("uni_mav", ("0x22c2f6d694dd93289fd31f01dbfefb413050829b", True)),
-    (_USDC, "0x4b6bf1d365ea1a8d916da37fafd4ae8c86d061d7"):  # EAI
-        ("uni_mav", ("0x17e0ed6caa0f1b70b9804fd765746208e7df6951", True)),
-    # WAGMI — Virtuals AgentToken, VIRTUAL/WAGMI Uni V2 pair (also DexScreener-
-    # dead). Same shape as BOB/ATA — the proven vu_quoted VIRTUAL-hub router.
-    (_USDC, "0x2ce1340f1d402ae75afeb55003d7491645db1857"):  # WAGMI
-        ("vu_quoted", "0x2ce1340f1d402ae75afeb55003d7491645db1857"),
-    # king v64: pancake-edge 3.4.0's two new-win tokens (e29716919 ▲2) — both
-    # Virtuals AgentTokens with a live VIRTUAL/token V2 pair (census-verified
-    # reserves) and NO standard venue. Same proven vu_quoted hub shape as WAGMI.
-    (_USDC, "0x73cb479f2ccf77bad90bcda91e3987358437240a"):  # 3.4.0 win 5.69x
-        ("vu_quoted", "0x73cb479f2ccf77bad90bcda91e3987358437240a"),
-    (_USDC, "0x27d7959cf26135d8019d0f1e4a2280a8a355c4f5"):  # census virtual-v2
-        ("vu_quoted", "0x27d7959cf26135d8019d0f1e4a2280a8a355c4f5"),
-    # king v70: census drain — Virtuals-factory pair (invisible to the uniV2-
-    # router VIRTUAL sweep leg, which only routes canonical-factory pairs).
-    (_USDC, "0x511ef9ad5e645e533d15df605b4628e3d0d0ff53"):  # census virtual-v2
-        ("vu_quoted", "0x511ef9ad5e645e533d15df605b4628e3d0d0ff53"),
-    # king v60: OMNI — full-book-sweep hole (score 0.0 / best 0 = NOBODY routes
-    # it). Only live venue is the UniV2 OMNI/VIRTUAL pair 0xea6bdf7e (~$16.8k
-    # two-sided, getReserves-verified); DexScreener-invisible like WAGMI/GPUS.
-    (_USDC, "0xb58f9704c7a80d2775222f7cb2eed28beb9a06be"):  # OMNI
-        ("vu_quoted", "0xb58f9704c7a80d2775222f7cb2eed28beb9a06be"),
-    # king v61: waBasWETH — ERC4626 wrapper over Aave Base WETH (~$97k
-    # backing, maxDeposit open). No pool: v3 USDC->WETH + deposit(). Blind-
-    # safe cover (failed deposit == champ's 0).
-    (_USDC, "0xe298b938631f750dd409fb18227c4a23dcdaab9b"):  # waBasWETH
-        ("erc4626_wrap", None),
-    # king v59: dust-size USDC->DAI parity — top-miner 0.97.0's blind-spot win
-    # vs our v57 (champ=None on ord_6d82387c, 1 USDC w/ real min 0.9909e18).
-    # Our enum picked a Pancake dust pool that failed on the fork; the deep
-    # canonical Uni V3 fee-100 stable pool is deterministic at every size.
-    (_USDC, _DAI): ("uniswap_v3", 100),
-    # king v59 dead-scan holes (all on-chain verified):
-    # MOVIE — Uni V4 hooked pool (hook 0xb429d62f, dynamic fee, tick 200,
-    # ~$86k), V4-quoter-proven 473k gas. x2 rejected 1-USDC orders.
-    (_USDC, "0xa3109f24185ce81b89b9ceead7f81e3b07a61b07"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, "0xa3109f24185ce81b89b9ceead7f81e3b07a61b07",
-                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
-        "settle": _WETH, "zero_for_one": True}),
-    # king v72: PLEBYTE — same Clanker V4 shape as MOVIE (dyn fee, tick 200,
-    # ~$19k WETH pool; quoter-proven 8.65e24 @ 0.0015 WETH). The dynamic
-    # v4-edge probe covers it only when the run-budget governor allows;
-    # static entry makes the fill unconditional (e29717361 dropped-row fix).
-    (_USDC, "0xcb785ef86212edaac9ecd40a83c71cc038a12b07"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, "0xcb785ef86212edaac9ecd40a83c71cc038a12b07",
-                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
-        "settle": _WETH, "zero_for_one": True}),
-    # king v73: ASPEND + B20PUNK — recurring benchmark launchpad tokens the
-    # v4-edge fills only when the run-budget governor allows probing (both
-    # dropped rows are one gated run away — e29717361 class). Same Clanker
-    # V4 shape as MOVIE/PLEBYTE; quoter-proven (ASPEND 4.47e25@0.005W match
-    # of james finalist row; B20 1.5e25@0.0015W scale-exact vs proven fill).
-    (_USDC, "0xa70feecba1eea2660559b268cd034f1df00ed6fa"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, "0xa70feecba1eea2660559b268cd034f1df00ed6fa",
-                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
-        "settle": _WETH, "zero_for_one": True}),
-    (_WETH, "0xa70feecba1eea2660559b268cd034f1df00ed6fa"): ("uniswap_v4_ur", {
-        "pool": (_WETH, "0xa70feecba1eea2660559b268cd034f1df00ed6fa",
-                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
-        "settle": _WETH, "zero_for_one": True}),
-    (_USDC, "0x66bed9c31e52cc941338b6b39f5f7b9c212e4177"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, "0x66bed9c31e52cc941338b6b39f5f7b9c212e4177",
-                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
-        "settle": _WETH, "zero_for_one": True}),
-    (_WETH, "0x66bed9c31e52cc941338b6b39f5f7b9c212e4177"): ("uniswap_v4_ur", {
-        "pool": (_WETH, "0x66bed9c31e52cc941338b6b39f5f7b9c212e4177",
-                 _V4_DYNAMIC_FEE, 200, "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
-        "settle": _WETH, "zero_for_one": True}),
-    # king v74: 6 champ-blind census/GT holes (2026-07-03 corpus sweep; every
-    # venue on-chain-verified, /score-validated before ship).
-    # CETES — ADE-factory slipstream USDC ts=10 pool 0xbb0081eb (~$107k).
-    (_USDC, "0x834df4c1d8f51be24322e39e4766697be015512f"):
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 10)),
-    # USDz — standard-factory slipstream USDC ts=1 (pool 0xde5ff829, USD+ class).
-    (_USDC, "0x04d5ddf5f3a8939889f11e97f8c4bb48317f1938"):
-        ("aerodrome_slipstream_multihop",
-         ((_USDC, "0x04d5ddf5f3a8939889f11e97f8c4bb48317f1938"), (1,))),
-    # XPRT — standard-factory slipstream USDC ts=200 (thin; quoter 10.47/$2).
-    (_USDC, "0xc7edf7b7b3667a06992508e7b156eff794a9e1c8"):
-        ("aerodrome_slipstream_multihop",
-         ((_USDC, "0xc7edf7b7b3667a06992508e7b156eff794a9e1c8"), (200,))),
-    # GAPPY — NATIVE-ETH V4 hookless pool (fee 10000, tick 200), AUCTION shape.
-    (_USDC, "0xfca9fc2cb2dde04732ad07e4bb73db8cc8bfed1d"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,), "unwrap_weth": True,
-        "pool": (_ZERO, "0xfca9fc2cb2dde04732ad07e4bb73db8cc8bfed1d", 10000, 200, _ZERO),
-        "settle": _ZERO, "zero_for_one": True}),
-    # PDT / ION — aero-classic WETH pairs ($238k / $25k), USDC via WETH hub.
-    (_USDC, "0xeff2a458e464b07088bdb441c21a42ab4b61e07e"):  # PDT
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    (_USDC, "0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5"):  # ION
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    # king v76: 6 aero-classic WETH-HUB holes (2026-07-03 deep sweep). The
-    # joeknight v4.1 sweep quotes aero DIRECT-only (both stable flags) — it
-    # has NO aero 2-leg, so on these it delivers 0 while we fill = guaranteed
-    # new-rows, not ties. All on-chain-verified, /score-validated before ship.
-    (_USDC, "0x01facc69ec7360640aa5898e852326752801674a"):  # FUSE
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    (_USDC, "0x5d6cae0422a950dbd7918d1e74434a35156b3ba4"):
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    (_USDC, "0x31d664ebd97a50d5a2cd49b16f7714ab2516ed25"):
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    (_USDC, "0x58dd173f30ecffdfebcd242c71241fb2f179e9b9"):
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    (_USDC, "0xa4e9586c45400241250e7bb7cfb93e0c33388d12"):  # PTCL (maverick dead; aero-hub live)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    (_USDC, "0x37d3d61a304695619433bc05ef841e889f69debf"):  # DONNIE (maverick dead; aero-hub live)
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    # king v91: 3 recurring corpus USDC-input exotics our DISCOVERY serves in
-    # 5-24s (v90 proof) — static-seal so they build 0.0s (beats rivals' live
-    # discovery in the net-better race + immune to pace gating + kills the
-    # 9d0e8f5b/7002458b tail-drop class from e29718073). Venues per KyberSwap +
-    # on-chain: 9d0e8f5b/7002458b = aero-classic WETH pairs (canonical factory,
-    # pools 0xac4e562d / 0x8ea4c49b, stable=False) via the WETH hub; d63aaeec =
-    # UniV2 WETH pair via the V2 2-hop path.
-    (_USDC, "0x9d0e8f5b25384c7310cb8c6ae32c8fbeb645d083"):
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    (_USDC, "0x7002458b1df59eccb57387bc79ffc7c29e22e6f7"):
-        ("aero_v2", ("0x420DD381b31aEf6683db6B902084cB0FFECe40Da", _USDC, _WETH)),
-    (_USDC, "0xd63aaeec20f9b74d49f8dd8e319b6edd564a7dd0"):
-        ("uniswap_v2", (_USDC, _WETH, "0xd63aaeec20f9b74d49f8dd8e319b6edd564a7dd0")),
-    # king v80: 6 FRESH Uni-V4 champ/clone-blind holes (2026-07-03 GT+Initialize
-    # sweep). The published v4.1 sweep quotes v3/aeroCL/v2/sushi/maverick ONLY —
-    # it has NO V4 singleton path, so on every V4-hook/hookless pool it delivers
-    # 0 while we fill = guaranteed new-rows, not ties. Each PoolKey decoded from
-    # the PoolManager Initialize log (currency0/1, fee, tickSpacing, hooks) and
-    # /score-validated before ship. Deep liquidity = large delivered value.
-    # POD — native-ETH hookless V4 (fee 10000 ts 200, ~$4.97M). GAPPY shape.
-    (_USDC, "0xed664536023d8e4b1640c394777d34abaff1df8f"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,), "unwrap_weth": True,
-        "pool": (_ZERO, "0xed664536023d8e4b1640c394777d34abaff1df8f", 10000, 200, _ZERO),
-        "settle": _ZERO, "zero_for_one": True}),
-    # DOT — native-ETH hookless V4 (fee 10000 ts 200, ~$311k). GAPPY shape.
-    (_USDC, "0x23a2847d772803f9efc64b4277b782b06296fe51"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,), "unwrap_weth": True,
-        "pool": (_ZERO, "0x23a2847d772803f9efc64b4277b782b06296fe51", 10000, 200, _ZERO),
-        "settle": _ZERO, "zero_for_one": True}),
-    # OpenAI — USDC-direct hookless V4 (fee 100 ts 1, ~$2.69M). BRAIN shape.
-    (_USDC, "0x43d6e8f4e413028365e9cf83d1e6c2181e8e3b07"): ("uniswap_v4_ur", {
-        "pool": ("0x43d6e8f4e413028365e9cf83d1e6c2181e8e3b07", _USDC, 100, 1, _ZERO),
-        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
-    # GITLAWB — WETH dyn-fee V4 hook 0xbb7784a4 (ts 200, ~$1.86M). AMPR shape.
-    (_USDC, "0x5f980dcfc4c0fa3911554cf5ab288ed0eb13dba3"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, "0x5f980dcfc4c0fa3911554cf5ab288ed0eb13dba3",
-                 _V4_DYNAMIC_FEE, 200, "0xbb7784a4d481184283ed89619a3e3ed143e1adc0"),
-        "settle": _WETH, "zero_for_one": True}),
-    # Surplus — WETH dyn-fee V4 hook 0xbb7784a4 (ts 200, ~$1.49M). AMPR shape.
-    (_USDC, "0xc52aedec3374422d7510e294cfaa90799595cba3"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": (_WETH, "0xc52aedec3374422d7510e294cfaa90799595cba3",
-                 _V4_DYNAMIC_FEE, 200, "0xbb7784a4d481184283ed89619a3e3ed143e1adc0"),
-        "settle": _WETH, "zero_for_one": True}),
-    # BASEMATE — WETH dyn-fee V4 hook 0xbdf9 (_HOOK_BDF9, ts 200, ~$141k).
-    # currency0=token so WETH->token is zero_for_one=False (T2FC3 shape).
-    (_USDC, "0x07e61d8a4e197dfc269e90d7ece1df0d26702ba3"): ("uniswap_v4_ur", {
-        "v3_tokens": (_USDC, _WETH), "v3_fees": (500,),
-        "pool": ("0x07e61d8a4e197dfc269e90d7ece1df0d26702ba3", _WETH,
-                 _V4_DYNAMIC_FEE, 200, _HOOK_BDF9),
-        "settle": _WETH, "zero_for_one": False}),
-    # king v81: USDC-DIRECT Clanker-V4 holes, NEW Clanker hook 0xd60d6b21
-    # (KyberSwap-confirmed uniswap-v4-clanker; PoolKey decoded from Initialize:
-    # fee=dynamic ts=200 hook=0xd60d..68cc; USDC->token DIRECT, not via WETH, so
-    # our WETH-leg discovery misses them = the exact class the rival dethrone-
-    # flooded us with, all vanity ...b07 addresses). BRAIN USDC-direct shape.
-    # currency0 = min(USDC 0x8335.., token); zero_for_one True iff USDC is c0.
-    # b338 (0xb3>0x83): c0=USDC, zfo=True — the rival's e29717834 win-row.
-    (_USDC, "0xb338f81331a883bda6e24d3a5b2ce2919eba5b07"): ("uniswap_v4_ur", {
-        "pool": (_USDC, "0xb338f81331a883bda6e24d3a5b2ce2919eba5b07",
-                 _V4_DYNAMIC_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),
-        "settle": _USDC, "zero_for_one": True, "sweep_settle": True}),
-    # 24bc (0x24<0x83): c0=token, zfo=False.
-    (_USDC, "0x24bc862e4a8aca815facc8d0275b1eb2e266db07"): ("uniswap_v4_ur", {
-        "pool": ("0x24bc862e4a8aca815facc8d0275b1eb2e266db07", _USDC,
-                 _V4_DYNAMIC_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),
-        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
-    # 1a97 (0x1a<0x83): c0=token, zfo=False.
-    (_USDC, "0x1a97511d5ee479eb19fa74a1899ac3e6d7ff9b07"): ("uniswap_v4_ur", {
-        "pool": ("0x1a97511d5ee479eb19fa74a1899ac3e6d7ff9b07", _USDC,
-                 _V4_DYNAMIC_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),
-        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
-    # a84d (0xa8>0x83): c0=USDC, zfo=True.
-    (_USDC, "0xa84d5982c070d06cb5ab4a0bd77a810ba0d39b07"): ("uniswap_v4_ur", {
-        "pool": (_USDC, "0xa84d5982c070d06cb5ab4a0bd77a810ba0d39b07",
-                 _V4_DYNAMIC_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),
-        "settle": _USDC, "zero_for_one": True, "sweep_settle": True}),
-    # 39ce (0x39<0x83): c0=token, zfo=False.
-    (_USDC, "0x39ce693a45c51c7b5c73af7528547eabe466eb07"): ("uniswap_v4_ur", {
-        "pool": ("0x39ce693a45c51c7b5c73af7528547eabe466eb07", _USDC,
-                 _V4_DYNAMIC_FEE, 200, "0xd60d6b218116cfd801e28f78d011a203d2b068cc"),
-        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
-    # king v83: COUNTER to pig1-edge (hk 5GuhqBcEU3SZEW). Their PUTTY shim = our
-    # v81 + 5 Aerodrome slipstream-fork alt-CL tokens we deliver 0 on. Seal all 5
-    # (aerodrome_slipstream_alt: exactInputSingle(tickSpacing) on the alt router)
-    # to MATCH them (no regression), PLUS win-row X below to dethrone. Routers/ts
-    # copied verbatim from their published a9b1cff shim; /score-validated.
-    (_USDC, "0x5003427ed2f63817b341932f0588880c65b7ddc4"):  # TYREA
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 200)),
-    (_USDC, "0x8210c0634ab8f273806e4b7866e9db353773c44b"):  # USDf
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 1)),
-    (_USDC, "0xba515304d8153c4b162dc79f867e152df9c127eb"):  # UTY
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_ADE, 1)),
-    (_USDC, "0x888d81e3ea5e8362b5f69188cbcf34fa8da4b888"):  # LARRY
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_LARRY, 1)),
-    (_USDC, "0xf197ffc28c23e0309b5559e7a166f2c6164c80aa"):  # MXNB
-        ("aerodrome_slipstream_alt", (_AERO_ALT_ROUTER_F8F, 10)),
-    # WIN-ROW X: 0x717678c1 — USDC-DIRECT hookless V4 (fee 901000, ts 18020),
-    # census-DEAD (v81 & pig1-edge both deliver 0), KyberSwap-confirmed single-hop
-    # uniswap-v4 (~1.79e23 for 2 USDC). BRAIN shape (c0=token, zero_for_one=False).
-    (_USDC, "0x717678c1f1c5338f2f81a65e0d54e48bbcf20910"): ("uniswap_v4_ur", {
-        "pool": ("0x717678c1f1c5338f2f81a65e0d54e48bbcf20910", _USDC,
-                 901000, 18020, _ZERO),
-        "settle": _USDC, "zero_for_one": False, "sweep_settle": True}),
-    # BTRST — Uni V3 1% USDC pool; liquidity()==0 AT current tick but the BUY
-    # direction crosses into range (QuoterV2-proven 2 USDC -> 14.1 BTRST,
-    # 142k gas). Buy-only; the corpus order IS the buy direction.
-    # king v64: BTRST — the direct v3-10000 pool delivers only ~54% of the
-    # 2-hop USDC-500-WETH-10000-BTRST route (putty's cert row 26.39e18 vs our
-    # old direct 14.15e18 = 0.536x regression in e29716914). Multi-hop exactInput
-    # on SwapRouter02; score-aware single-hop would otherwise mask the 2-hop.
-    (_USDC, "0xa7d68d155d17cb30e311367c2ef1e82ab6022b67"):  # BTRST (v3 2-hop)
-        ("uni_v3_path", ((_USDC, _WETH, "0xa7d68d155d17cb30e311367c2ef1e82ab6022b67"),
-                         (500, 10000))),
-    # king v92: counter putty-shim 0.87.1 (upstream 0903f7f) epsilon-edge. Their
-    # fork-proven ▲ rows vs the champion wrapper route — MAV +394.7% and EAI
-    # +3147% output via uniV3 USDC->WETH->tok exactInput (their exact fee paths).
-    # Sealing the same routes turns their 2 exclusive wins into ties.
-    (_USDC, "0x64b88c73a5dfa78d1713fe1b4c69a22d7e0faaa7"):  # MAV (v3 2-hop 100/10000)
-        ("uni_v3_path", ((_USDC, _WETH, "0x64b88c73a5dfa78d1713fe1b4c69a22d7e0faaa7"),
-                         (100, 10000))),
-    (_USDC, "0x4b6bf1d365ea1a8d916da37fafd4ae8c86d061d7"):  # EAI (v3 2-hop 100/3000)
-        ("uni_v3_path", ((_USDC, _WETH, "0x4b6bf1d365ea1a8d916da37fafd4ae8c86d061d7"),
-                         (100, 3000))),
-    # king v93: last 3 unsealed former-discovery-win tokens (14/17 already
-    # sealed). The rival's fresh champion cache now SERVES these rows, so a
-    # gated discovery skip on our side = drop/cut veto — static-seal for 0.0s
-    # service under any pace. Pools decoded on-chain via KyberSwap hop:
-    # c5fecc3a = uniV3 WETH pool 0x4af5a3ad fee 10000 (corpus has BOTH dirs);
-    # 18dd5b08 = aeroCL canonical-factory WETH pool 0x23e5dcf8 ts=200.
-    (_USDC, "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe"):
-        ("uni_v3_path", ((_USDC, _WETH, "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe"),
-                         (500, 10000))),
-    ("0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe", _USDC):
-        ("uni_v3_path", (("0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe", _WETH, _USDC),
-                         (10000, 500))),
-    (_USDC, "0x18dd5b087bca9920562aff7a0199b96b9230438b"):
-        ("aerodrome_slipstream_multihop",
-         ((_USDC, _WETH, "0x18dd5b087bca9920562aff7a0199b96b9230438b"), (100, 200))),
-    # king v94: Sky PSM3 win-rows — USDS/sUSDS trade ONLY through the PSM
-    # (no AMM pool), so v92-and-every-clone deliver 0 while we fill. Real
-    # recurring corpus tokens (census: both in rejected orders). BOTH dirs;
-    # deterministic oracle rate (previewSwapExactIn verified on-chain).
-    (_USDC, _T_USDS): ("sky_psm", None),
-    (_USDC, _T_SUSDS): ("sky_psm", None),
-    (_T_USDS, _USDC): ("sky_psm", None),
-    (_T_SUSDS, _USDC): ("sky_psm", None),
-    # king v95: REAL win orders from the v92-engine audit (v92 ships plans that
-    # REVERT on-fork, delivered 0; /score-proven) — natural corpus tokens, no
-    # bait needed. 6985884c = aeroCL canonical WETH pool 0xa4463789 ts=100 via
-    # the WETH hub. dbfefd2e = Curve stable-NG WETH pool (coins[0]=WETH) via a
-    # v3 WETH leg + pool.exchange — new curve_ng_weth kind.
-    (_USDC, "0x6985884c4392d348587b19cb9eaaf157f13271cd"):
-        ("aerodrome_slipstream_multihop",
-         ((_USDC, _WETH, "0x6985884c4392d348587b19cb9eaaf157f13271cd"), (100, 100))),
-    (_USDC, "0xdbfefd2e8460a6ee4955a68582f85708baea60a3"):
-        ("curve_ng_weth", ("0x302a94e3c28c290eaf2a4605fc52e11eb915f378", 0, 1)),
-    # IBTC (dlcBTC) — Aerodrome Slipstream WETH pool ts=100 (on-chain read),
-    # in-range liquidity; tiny pool (~$460) but the order is 2 USDC.
-    (_USDC, "0x12418783e860997eb99e8acf682df952f721cf62"):
-        ("aerodrome_slipstream_multihop",
-         ((_USDC, _WETH, "0x12418783e860997eb99e8acf682df952f721cf62"), (100, 100))),
-    # king v56: WETH->Cookie via BaseSwap V2 (direct) = 3.0003517e25 — the exact
-    # value top-miner-router 0.94.0 dethroned us with (UniV2 gave dust 8.25e9).
-    (_WETH, _COOKIE_V2): ("v2_router",
-                          ("0x327Df1E6de05895d2ab08513aaDD9313Fe505d86", _WETH)),
-    (_WETH, _SINBAD_TOKEN): ("uniswap_v4_ur", {
-        "v3_tokens": (_WETH, _USDC), "v3_fees": (500,),
-        "pool": (_SINBAD_TOKEN, _USDC, 10000, 200, _ZORA_HOOK),
-        "settle": _USDC, "zero_for_one": False}),
-    # king v50: BLCK + PKT — pancake-edge-router v2.2.0's other two UniV2-only
-    # covers (champion parity, kills the worse-verdict exposure) PLUS the
-    # WETH-input directions it lacks. Real in-range UniV2 WETH pools verified
-    # on-chain (BLCK/WETH ~22 WETH reserve, PKT/WETH ~49 WETH).
-    (_USDC, _BLCK_TOKEN): ("uniswap_v2", (_USDC, _WETH, _BLCK_TOKEN)),
-    (_WETH, _BLCK_TOKEN): ("uniswap_v2", (_WETH, _BLCK_TOKEN)),
-    (_USDC, _PKT_TOKEN): ("uniswap_v2", (_USDC, _WETH, _PKT_TOKEN)),
-    (_WETH, _PKT_TOKEN): ("uniswap_v2", (_WETH, _PKT_TOKEN)),
-}
 # king v59: USDC->DAI added — corpus DAI orders carry a real signed min
 # (~0.991e18/USDC); the deep v3-100 stable pool delivers ~1.0009e18/USDC at
 # every realistic size, so the static seal must fire despite min_out > 1.
@@ -883,31 +142,19 @@ _GAS_WEIGHT = float(os.environ.get("SOLVER_GAS_WEIGHT", "0.0"))
 _NET_WETH_PLATFORM_FEE = os.environ.get("SOLVER_NET_WETH_PLATFORM_FEE", "0").lower() in {"1", "true", "yes"}
 
 # On-chain quoters (view eth_call; never sends a tx).
-_UNI_QUOTER = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"   # Uniswap V3 QuoterV2
-_AERO_QUOTER = "0x254cf9e1e6e233aa1ac962cb9b05b2cfeaae15b0"  # Aerodrome Slipstream Quoter
-_AERO_V2_ROUTER = "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43"  # Aerodrome Router
-_PANCAKE_QUOTER = "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997"  # PancakeSwap V3 QuoterV2
-_PANCAKE_ROUTER = "0x1b81D678ffb9C0263b24A97847620C99d213eB14"  # PancakeSwap V3 SmartRouter
-_SUSHI_ROUTER = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f"  # SushiSwap V3 SwapRouter (V1-style, deadline 0x414bf389)
 # king v46: Hydrex (Algebra Integral fork) SwapRouter — a venue neither this
 # base (top-miner v0.84) nor prior kings enumerate. exactInputSingle selector
 # 0x1679c792, 8-field struct with a `deployer` field that MUST be address(0)
 # for standard pools (2-arg CREATE2 salt keccak(token0,token1); the poolDeployer
 # computes the wrong pool -> revert). Dynamic fee. Verified: 250 USDC->8712 HYDX.
-_HYDREX_ROUTER = "0x6f4bE24d7dC93b6ffcBAb3Fd0747c5817Cea3F9e"
 # king v51: QuickSwap V4 on Base = Algebra Integral, SAME struct/selector as
 # Hydrex (0x1679c792 exactInputSingle, 8-field WITH deployer; deployer MUST be
 # address(0) for standard factory pools — bytecode-verified, old 7-field
 # selector absent). Only the router address differs.
-_QUICKSWAP_ALGEBRA_ROUTER = "0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04"
 # king v52: Alien Base V3 SwapRouter (UniV3 fork, SwapRouter02-style NO-deadline
 # exactInputSingle 0x04e45aaf) + Equalizer RouterV2 (Solidly fork, Route struct
 # WITHOUT factory field, swapExactTokensForTokens selector 0xf41766d8).
-_ALIEN_V3_ROUTER = "0xB20C411FC84FBB27e78608C24d0056D974ea9411"
 # king v58: MaverickV2Router (apex parity — GPUS's only venue is a Maverick pool)
-_MAVERICK_V2_ROUTER = "0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527"
-_EQUALIZER_ROUTER = "0x2F87Bf58D5A9b2eFadE55Cdbd46153a0902be6FA"
-_PANCAKE_V2_ROUTER = "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb"  # PancakeSwap V2 Router
 _PANCAKE_FEES = (100, 500, 2500, 10000)
 _UNI_FEES = (100, 500, 3000, 10000)
 _UNI_WETH_DAI_PATH_FEES = ((3000, 100), (500, 100), (100, 100), (10000, 100))
@@ -947,18 +194,11 @@ _AERO_KG_TWOHOP_TICKS = ((1, 1), (100, 1), (1, 100), (100, 100),
 # The champion is Base-only: its score-aware engine bails for non-Base chains and
 # falls back to the WEAK baseline (single Uni V3 / single-tick math, no Curve).
 # A strong score-aware path on these chains beats that baseline on every order.
-_ETH = 1
-_BT = 964
 # Uniswap V3 QuoterV2 per chain (verified on-chain: quoteExactInputSingle works).
 _UNI_QUOTER_BY_CHAIN = {
     _ETH: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",   # Ethereum mainnet QuoterV2
 }
 # Mainnet major tokens (lowercase, like the Base set).
-_ETH_WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-_ETH_USDC = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
-_ETH_USDT = "0xdac17f958d2ee523a2206206994597c13d831ec7"
-_ETH_DAI  = "0x6b175474e89094c44da98b954eedeac495271d0f"
-_ETH_WBTC = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
 _ETH_HUBS = (_ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_DAI, _ETH_WBTC)
 _ETH_UNI_FEES = (100, 500, 3000, 10000)
 _ETH_UNI_FEES_TWOHOP = ((500, 500), (500, 3000), (3000, 500), (3000, 3000),
@@ -971,8 +211,6 @@ _ETH_UNI_FEES_TWOHOP = ((500, 500), (500, 3000), (3000, 500), (3000, 3000),
 # size (Uni's USDC/DAI pool is thin and collapses on 2M+ orders; 3pool doesn't).
 # The OLD registry's get_best_rate is intentionally NOT used: it routes through
 # ancient cToken lending pools and returns phantom quotes that revert on exec.
-_ETH_CURVE_ROUTER = "0x45312ea0eFf7E09C83CBE249fa1d7598c4C8cd4e"
-_ETH_3POOL = "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7"
 _ETH_3POOL_IDX = {_ETH_DAI: 0, _ETH_USDC: 1, _ETH_USDT: 2}   # coin order in 3pool
 
 # Score-proxy gas model: actual executeIntent gas ≈ fixed harness/proxy
@@ -1024,8 +262,6 @@ _QUOTER_MAX_WORKERS = int(os.environ.get("SOLVER_QUOTER_MAX_WORKERS", "48"))
 _QUOTER_TIMEOUT_S = float(os.environ.get("SOLVER_QUOTER_TIMEOUT_S", "5.0"))
 
 # V1/V2 exactInput selectors for the multi-hop SwapRouter02 repair (insurance).
-_V1_EXACT_INPUT = "0xc04b8d59"
-_V2_EXACT_INPUT = "0xb858183f"
 
 
 # king v63: universal exotic sweep constants (ported verbatim from
@@ -1038,7 +274,6 @@ _SWEEP_KG = frozenset({
     "0x940181a94a35a4569e4529a3cdfb74e38fd98631",
     "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca",
 })
-_SWEEP_WETH = "0x4200000000000000000000000000000000000006"
 _SWEEP_V2_ROUTERS = (
     ("uniV2", "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24"),
     ("pancakeV2", "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb"),
@@ -1046,13 +281,6 @@ _SWEEP_V2_ROUTERS = (
     ("baseswapV2", "0x327Df1E6de05895d2ab08513aaDD9313Fe505d86"),
     ("alienV2", "0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7"),
 )
-_SWEEP_UNI_Q = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"
-_SWEEP_PAN_Q = "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997"
-_SWEEP_AERO_Q = "0x254cf9e1e6e233aa1ac962cb9b05b2cfeaae15b0"
-_SWEEP_AERO_V2R = "0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43"
-_SWEEP_SUSHI_Q = "0xb1E835Dc2785b52265711e17fCCb0fd018226a6e"
-_SWEEP_SUSHI_R = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f"
-_SWEEP_MIN_EDGE = 1.0005
 # king v79: skip the eth_simulateV1 sweep verify (3 sims/order) when this
 # order's dynamic fair-share budget is below this — the verify only guards rare
 # transfer-tax tokens and its cost tail-drops champion-served orders on a heavy
@@ -1083,10 +311,6 @@ _DISCOVERY_MIN_BUDGET_S = float(os.environ.get("SOLVER_DISCOVERY_MIN_BUDGET_S", 
 # ungated) + canonical churn (score_aware, ungated); only budget-heavy discovery
 # wins are traded away -- and those were the very thing causing the tail-drop.
 # king v65 (pancake 3.4.0 parity, upstream 64035e9): VIRTUAL-hub + Maverick legs
-_SWEEP_VIRTUAL = "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b"  # VIRTUAL hub (uniV2)
-_SWEEP_MAV_F = "0x0A7e848Aca42d879EF06507Fca0E7b33A0a63c1e"    # MaverickV2Factory
-_SWEEP_MAV_Q = "0xb40AfdB85a07f37aE217E7D6462e609900dD8D7A"    # MaverickV2Quoter
-_SWEEP_MAV_R2 = "0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527"   # MaverickV2Router
 
 
 
@@ -3608,6 +2832,219 @@ class MinerSolver(BaselineSwapSolver):
             logger.exception("[solver] score-aware selection failed; keeping base plan")
             return base_plan
 
+    def _shp_pancake_v2(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        """Extracted venue branch (factorization Stage B — verbatim body)."""
+        from common.abi_utils import encode_approve  # noqa: F401
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        router = _PANCAKE_V2_ROUTER
+        tokens = [_ck(t) for t in cand.get("tokens", (tin, tout))]
+        if len(tokens) < 2:
+            raise ValueError("no pancake v2 path")
+        selector = _keccak(
+            text="swapExactTokensForTokens(uint256,uint256,address[],address,uint256)"
+        )[:4]
+        call = "0x" + (selector + _abi_encode(
+            ["uint256", "uint256", "address[]", "address", "uint256"],
+            [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
+        )).hex()
+        route_tag = "pancake_v2"
+        return router, call, route_tag
+
+    def _shp_aerodrome_v2(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        """Extracted venue branch (factorization Stage B — verbatim body)."""
+        from common.abi_utils import encode_approve  # noqa: F401
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        router = _AERO_V2_ROUTER
+        routes = [
+            (_ck(a), _ck(b), bool(stable), _ck(factory))
+            for a, b, stable, factory in cand.get("routes", ())
+        ]
+        if not routes:
+            raise ValueError("no aerodrome v2 routes")
+        selector = _keccak(
+            text="swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)"
+        )[:4]
+        call = "0x" + (selector + _abi_encode(
+            ["uint256", "uint256", "(address,address,bool,address)[]", "address", "uint256"],
+            [int(amount_in), 0, routes, _ck(recipient), int(deadline)],
+        )).hex()
+        route_tag = "aerodrome_v2"
+        return router, call, route_tag
+
+    def _shp_uniswap_v2(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        """Extracted venue branch (factorization Stage B — verbatim body)."""
+        from common.abi_utils import encode_approve  # noqa: F401
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        router = _UNIV2_ROUTER
+        tokens = [_ck(t) for t in cand.get("tokens", (tin, tout))]
+        if len(tokens) < 2:
+            raise ValueError("no uniswap v2 path")
+        selector = _keccak(
+            text="swapExactTokensForTokens(uint256,uint256,address[],address,uint256)"
+        )[:4]
+        call = "0x" + (selector + _abi_encode(
+            ["uint256", "uint256", "address[]", "address", "uint256"],
+            [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
+        )).hex()
+        route_tag = "uniswap_v2"
+        return router, call, route_tag
+
+    def _shp_uniswap_v4_ur(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        """Extracted venue branch (factorization Stage B — verbatim body)."""
+        from common.abi_utils import encode_approve  # noqa: F401
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        spec = cand["spec"]
+        ur = _ck(_UNIVERSAL_ROUTER)
+        commands = b""
+        inputs = []
+        has_v4 = bool(spec.get("pool") or spec.get("pools"))
+        has_v2 = bool(spec.get("v2_tokens"))
+        pre_interactions = None
+        if spec.get("aero_routes"):
+            aero_router = _ck(_AERO_V2_ROUTER)
+            routes = [
+                (_ck(a), _ck(b), bool(stable), _ck(_ZERO))
+                for a, b, stable in spec["aero_routes"]
+            ]
+            aero_sel = _keccak(
+                text="swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)"
+            )[:4]
+            aero_call = "0x" + (aero_sel + _abi_encode(
+                ["uint256", "uint256", "(address,address,bool,address)[]", "address", "uint256"],
+                [int(amount_in), 0, routes, ur, int(deadline)],
+            )).hex()
+            pre_interactions = [
+                Interaction(target=tin, value="0",
+                            call_data=encode_approve(aero_router, int(amount_in)),
+                            chain_id=chain_id),
+                Interaction(target=aero_router, value="0", call_data=aero_call,
+                            chain_id=chain_id),
+            ]
+        if spec.get("v3_tokens"):
+            v3_tokens = list(spec["v3_tokens"])
+            v3_fees = list(spec["v3_fees"])
+            path = b""
+            for i, tok in enumerate(v3_tokens):
+                path += bytes.fromhex(_ck(tok)[2:])
+                if i < len(v3_fees):
+                    path += int(v3_fees[i]).to_bytes(3, "big")
+            v3_recipient = _UR_ADDRESS_THIS if (has_v4 or has_v2) else recipient
+            inputs.append(_abi_encode(
+                ["address", "uint256", "uint256", "bytes", "bool"],
+                [_ck(v3_recipient), int(_UR_CONTRACT_BALANCE), 0, path, False]))
+            commands += bytes([0x00])  # V3_SWAP_EXACT_IN
+        if spec.get("unwrap_weth"):
+            # king v50: native-ETH V4 pools (currency0 = address(0)) need
+            # the router's WETH balance unwrapped before SETTLE(native).
+            # UNWRAP_WETH unwraps the router's ENTIRE WETH balance to
+            # ADDRESS_THIS (the router itself), so the following V4 SETTLE
+            # with currency=address(0) pays from router ETH.
+            inputs.append(_abi_encode(
+                ["address", "uint256"], [_ck(_UR_ADDRESS_THIS), 0]))
+            commands += bytes([0x0C])  # UNWRAP_WETH
+        if has_v4:
+            # king v50: "pools" = multi-leg V4 path chained via OPEN_DELTA
+            # (amountIn=0 on every leg after SETTLE opens the delta);
+            # "pool" (single leg) keeps the original inherited shape.
+            if spec.get("pools"):
+                legs = [(pk, bool(zfo)) for pk, zfo in spec["pools"]]
+            else:
+                legs = [(spec["pool"], bool(spec["zero_for_one"]))]
+            action_list = [0x0B] + [0x06] * len(legs) + [0x0E]  # SETTLE, SWAP*, TAKE
+            settle = _abi_encode(
+                ["address", "uint256", "bool"],
+                [_ck(spec["settle"]), int(_UR_CONTRACT_BALANCE), False])
+            swaps = []
+            for (c0, c1, fee, tick_spacing, hooks), zfo in legs:
+                swaps.append(_abi_encode(
+                    ["((address,address,uint24,int24,address),bool,uint128,uint128,bytes)"],
+                    [((_ck(c0), _ck(c1), int(fee), int(tick_spacing), _ck(hooks)),
+                      zfo, 0, 0, b"")]))
+            take = _abi_encode(
+                ["address", "address", "uint256"],
+                [_ck(tout), _ck(recipient), 0])
+            params_list = [settle] + swaps + [take]
+            if spec.get("sweep_settle"):
+                action_list.append(0x0E)
+                params_list.append(_abi_encode(
+                    ["address", "address", "uint256"],
+                    [_ck(spec["settle"]), _ck(recipient), 0]))
+            inputs.append(_abi_encode(
+                ["bytes", "bytes[]"], [bytes(action_list), params_list]))
+            commands += bytes([0x10])  # V4_SWAP
+        if has_v2:
+            v2_tokens = [_ck(t) for t in spec["v2_tokens"]]
+            inputs.append(_abi_encode(
+                ["address", "uint256", "uint256", "address[]", "bool"],
+                [_ck(recipient), int(_UR_CONTRACT_BALANCE), 0, v2_tokens, False]))
+            commands += bytes([0x08])  # V2_SWAP_EXACT_IN
+        if not commands:
+            raise ValueError("empty universal-router spec")
+        exec_call = "0x" + (_keccak(text="execute(bytes,bytes[],uint256)")[:4] + _abi_encode(
+            ["bytes", "bytes[]", "uint256"],
+            [commands, inputs, int(deadline)])).hex()
+        if pre_interactions is not None:
+            interactions = pre_interactions + [
+                Interaction(target=ur, value="0", call_data=exec_call, chain_id=chain_id),
+            ]
+        else:
+            transfer_call = "0x" + (_keccak(text="transfer(address,uint256)")[:4] + _abi_encode(
+                ["address", "uint256"], [ur, int(amount_in)])).hex()
+            interactions = [
+                Interaction(target=tin, value="0", call_data=transfer_call, chain_id=chain_id),
+                Interaction(target=ur, value="0", call_data=exec_call, chain_id=chain_id),
+            ]
+        logger.info("[solver] score-aware uniswap_v4_ur out=%d gas_model=%d",
+                    cand["out"], cand["gas_model"])
+        return ExecutionPlan(
+            intent_id=intent.app_id, interactions=interactions, deadline=deadline,
+            nonce=state.nonce,
+            metadata={"solver": "score-aware-router", "route": "uniswap_v4_ur",
+                      "venue_param": "v3+v4", "expected_output": str(cand["out"]),
+                      "chain_id": chain_id})
+
+    def _shp_alien_v3_path(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        """Extracted venue branch (factorization Stage B — verbatim body)."""
+        from common.abi_utils import encode_approve  # noqa: F401
+        from eth_abi import encode as _abi_encode
+        from eth_utils import to_checksum_address as _ck
+        router = _ALIEN_V3_ROUTER
+        tokens = cand["tokens"]; fees = cand["fees"]
+        path = b""
+        for i, t in enumerate(tokens):
+            path += bytes.fromhex(_ck(t)[2:])
+            if i < len(fees):
+                path += int(fees[i]).to_bytes(3, "big")
+        enc = _abi_encode(
+            ["(bytes,address,uint256,uint256)"],
+            [(path, _ck(recipient), int(amount_in), 0)])
+        call = "0x" + ("b858183f" + enc.hex())
+        route_tag = "alien_v3_path"
+        return router, call, route_tag
+
+    def _shp_uni_v3_path(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        """Extracted venue branch (factorization Stage B — verbatim body)."""
+        from common.abi_utils import encode_approve  # noqa: F401
+        from eth_abi import encode as _abi_encode
+        from eth_utils import to_checksum_address as _ck
+        router = _UNI_SWAPROUTER02
+        tokens = cand["tokens"]; fees = cand["fees"]
+        path = b""
+        for i, t in enumerate(tokens):
+            path += bytes.fromhex(_ck(t)[2:])
+            if i < len(fees):
+                path += int(fees[i]).to_bytes(3, "big")
+        enc = _abi_encode(
+            ["(bytes,address,uint256,uint256)"],
+            [(path, _ck(recipient), int(amount_in), 0)])
+        call = "0x" + ("b858183f" + enc.hex())
+        route_tag = "uni_v3_path"
+        return router, call, route_tag
+
     def _build_singlehop_plan(self, intent, state, snapshot, cand, tin, tout, amount_in, chain_id):
         """Build approve + exactInputSingle for the chosen venue.
 
@@ -3623,54 +3060,12 @@ class MinerSolver(BaselineSwapSolver):
         deadline = 9999999999
 
         if cand["venue"] == "pancake_v2":
-            from eth_abi import encode as _abi_encode
-            from eth_utils import keccak as _keccak, to_checksum_address as _ck
-            router = _PANCAKE_V2_ROUTER
-            tokens = [_ck(t) for t in cand.get("tokens", (tin, tout))]
-            if len(tokens) < 2:
-                raise ValueError("no pancake v2 path")
-            selector = _keccak(
-                text="swapExactTokensForTokens(uint256,uint256,address[],address,uint256)"
-            )[:4]
-            call = "0x" + (selector + _abi_encode(
-                ["uint256", "uint256", "address[]", "address", "uint256"],
-                [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
-            )).hex()
-            route_tag = "pancake_v2"
+            router, call, route_tag = self._shp_pancake_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "aerodrome_v2":
-            from eth_abi import encode as _abi_encode
-            from eth_utils import keccak as _keccak, to_checksum_address as _ck
-            router = _AERO_V2_ROUTER
-            routes = [
-                (_ck(a), _ck(b), bool(stable), _ck(factory))
-                for a, b, stable, factory in cand.get("routes", ())
-            ]
-            if not routes:
-                raise ValueError("no aerodrome v2 routes")
-            selector = _keccak(
-                text="swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)"
-            )[:4]
-            call = "0x" + (selector + _abi_encode(
-                ["uint256", "uint256", "(address,address,bool,address)[]", "address", "uint256"],
-                [int(amount_in), 0, routes, _ck(recipient), int(deadline)],
-            )).hex()
-            route_tag = "aerodrome_v2"
+            router, call, route_tag = self._shp_aerodrome_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "uniswap_v2":
             # Canonical Uniswap V2 Router02 (same V2 ABI as pancake_v2 above).
-            from eth_abi import encode as _abi_encode
-            from eth_utils import keccak as _keccak, to_checksum_address as _ck
-            router = _UNIV2_ROUTER
-            tokens = [_ck(t) for t in cand.get("tokens", (tin, tout))]
-            if len(tokens) < 2:
-                raise ValueError("no uniswap v2 path")
-            selector = _keccak(
-                text="swapExactTokensForTokens(uint256,uint256,address[],address,uint256)"
-            )[:4]
-            call = "0x" + (selector + _abi_encode(
-                ["uint256", "uint256", "address[]", "address", "uint256"],
-                [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
-            )).hex()
-            route_tag = "uniswap_v2"
+            router, call, route_tag = self._shp_uniswap_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "uniswap_v4_ur":
             # Universal Router, pre-funded (no Permit2): the proxy transfers the
             # input to the router (or aero-swaps into it), then execute() runs
@@ -3681,117 +3076,7 @@ class MinerSolver(BaselineSwapSolver):
             #                      TAKE output -> the app, optional settle sweep)
             #   V2_SWAP_EXACT_IN  (amountIn=CONTRACT_BALANCE, recipient=app)
             # Output lands at the app so _gained() counts it. Fork-verified.
-            from eth_abi import encode as _abi_encode
-            from eth_utils import keccak as _keccak, to_checksum_address as _ck
-            spec = cand["spec"]
-            ur = _ck(_UNIVERSAL_ROUTER)
-            commands = b""
-            inputs = []
-            has_v4 = bool(spec.get("pool") or spec.get("pools"))
-            has_v2 = bool(spec.get("v2_tokens"))
-            pre_interactions = None
-            if spec.get("aero_routes"):
-                aero_router = _ck(_AERO_V2_ROUTER)
-                routes = [
-                    (_ck(a), _ck(b), bool(stable), _ck(_ZERO))
-                    for a, b, stable in spec["aero_routes"]
-                ]
-                aero_sel = _keccak(
-                    text="swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)"
-                )[:4]
-                aero_call = "0x" + (aero_sel + _abi_encode(
-                    ["uint256", "uint256", "(address,address,bool,address)[]", "address", "uint256"],
-                    [int(amount_in), 0, routes, ur, int(deadline)],
-                )).hex()
-                pre_interactions = [
-                    Interaction(target=tin, value="0",
-                                call_data=encode_approve(aero_router, int(amount_in)),
-                                chain_id=chain_id),
-                    Interaction(target=aero_router, value="0", call_data=aero_call,
-                                chain_id=chain_id),
-                ]
-            if spec.get("v3_tokens"):
-                v3_tokens = list(spec["v3_tokens"])
-                v3_fees = list(spec["v3_fees"])
-                path = b""
-                for i, tok in enumerate(v3_tokens):
-                    path += bytes.fromhex(_ck(tok)[2:])
-                    if i < len(v3_fees):
-                        path += int(v3_fees[i]).to_bytes(3, "big")
-                v3_recipient = _UR_ADDRESS_THIS if (has_v4 or has_v2) else recipient
-                inputs.append(_abi_encode(
-                    ["address", "uint256", "uint256", "bytes", "bool"],
-                    [_ck(v3_recipient), int(_UR_CONTRACT_BALANCE), 0, path, False]))
-                commands += bytes([0x00])  # V3_SWAP_EXACT_IN
-            if spec.get("unwrap_weth"):
-                # king v50: native-ETH V4 pools (currency0 = address(0)) need
-                # the router's WETH balance unwrapped before SETTLE(native).
-                # UNWRAP_WETH unwraps the router's ENTIRE WETH balance to
-                # ADDRESS_THIS (the router itself), so the following V4 SETTLE
-                # with currency=address(0) pays from router ETH.
-                inputs.append(_abi_encode(
-                    ["address", "uint256"], [_ck(_UR_ADDRESS_THIS), 0]))
-                commands += bytes([0x0C])  # UNWRAP_WETH
-            if has_v4:
-                # king v50: "pools" = multi-leg V4 path chained via OPEN_DELTA
-                # (amountIn=0 on every leg after SETTLE opens the delta);
-                # "pool" (single leg) keeps the original inherited shape.
-                if spec.get("pools"):
-                    legs = [(pk, bool(zfo)) for pk, zfo in spec["pools"]]
-                else:
-                    legs = [(spec["pool"], bool(spec["zero_for_one"]))]
-                action_list = [0x0B] + [0x06] * len(legs) + [0x0E]  # SETTLE, SWAP*, TAKE
-                settle = _abi_encode(
-                    ["address", "uint256", "bool"],
-                    [_ck(spec["settle"]), int(_UR_CONTRACT_BALANCE), False])
-                swaps = []
-                for (c0, c1, fee, tick_spacing, hooks), zfo in legs:
-                    swaps.append(_abi_encode(
-                        ["((address,address,uint24,int24,address),bool,uint128,uint128,bytes)"],
-                        [((_ck(c0), _ck(c1), int(fee), int(tick_spacing), _ck(hooks)),
-                          zfo, 0, 0, b"")]))
-                take = _abi_encode(
-                    ["address", "address", "uint256"],
-                    [_ck(tout), _ck(recipient), 0])
-                params_list = [settle] + swaps + [take]
-                if spec.get("sweep_settle"):
-                    action_list.append(0x0E)
-                    params_list.append(_abi_encode(
-                        ["address", "address", "uint256"],
-                        [_ck(spec["settle"]), _ck(recipient), 0]))
-                inputs.append(_abi_encode(
-                    ["bytes", "bytes[]"], [bytes(action_list), params_list]))
-                commands += bytes([0x10])  # V4_SWAP
-            if has_v2:
-                v2_tokens = [_ck(t) for t in spec["v2_tokens"]]
-                inputs.append(_abi_encode(
-                    ["address", "uint256", "uint256", "address[]", "bool"],
-                    [_ck(recipient), int(_UR_CONTRACT_BALANCE), 0, v2_tokens, False]))
-                commands += bytes([0x08])  # V2_SWAP_EXACT_IN
-            if not commands:
-                raise ValueError("empty universal-router spec")
-            exec_call = "0x" + (_keccak(text="execute(bytes,bytes[],uint256)")[:4] + _abi_encode(
-                ["bytes", "bytes[]", "uint256"],
-                [commands, inputs, int(deadline)])).hex()
-            if pre_interactions is not None:
-                interactions = pre_interactions + [
-                    Interaction(target=ur, value="0", call_data=exec_call, chain_id=chain_id),
-                ]
-            else:
-                transfer_call = "0x" + (_keccak(text="transfer(address,uint256)")[:4] + _abi_encode(
-                    ["address", "uint256"], [ur, int(amount_in)])).hex()
-                interactions = [
-                    Interaction(target=tin, value="0", call_data=transfer_call, chain_id=chain_id),
-                    Interaction(target=ur, value="0", call_data=exec_call, chain_id=chain_id),
-                ]
-            logger.info("[solver] score-aware uniswap_v4_ur out=%d gas_model=%d",
-                        cand["out"], cand["gas_model"])
-            return ExecutionPlan(
-                intent_id=intent.app_id, interactions=interactions, deadline=deadline,
-                nonce=state.nonce,
-                metadata={"solver": "score-aware-router", "route": "uniswap_v4_ur",
-                          "venue_param": "v3+v4", "expected_output": str(cand["out"]),
-                          "chain_id": chain_id})
+            return self._shp_uniswap_v4_ur(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "uniswap_v3_multihop":
             from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
             from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
@@ -3874,38 +3159,12 @@ class MinerSolver(BaselineSwapSolver):
             # king v57: Alien Base V3 multi-hop exactInput — SwapRouter02-style
             # (bytes path, recipient, amountIn, amountOutMinimum), NO deadline,
             # selector 0xb858183f. Path bytes = token(20)+fee(3)+...+token(20).
-            from eth_abi import encode as _abi_encode
-            from eth_utils import to_checksum_address as _ck
-            router = _ALIEN_V3_ROUTER
-            tokens = cand["tokens"]; fees = cand["fees"]
-            path = b""
-            for i, t in enumerate(tokens):
-                path += bytes.fromhex(_ck(t)[2:])
-                if i < len(fees):
-                    path += int(fees[i]).to_bytes(3, "big")
-            enc = _abi_encode(
-                ["(bytes,address,uint256,uint256)"],
-                [(path, _ck(recipient), int(amount_in), 0)])
-            call = "0x" + ("b858183f" + enc.hex())
-            route_tag = "alien_v3_path"
+            router, call, route_tag = self._shp_alien_v3_path(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "uni_v3_path":
             # king v64: Uni V3 multi-hop exactInput on SwapRouter02 — identical
             # SwapRouter02-style struct (bytes path, recipient, amountIn,
             # amountOutMinimum), NO deadline, selector 0xb858183f.
-            from eth_abi import encode as _abi_encode
-            from eth_utils import to_checksum_address as _ck
-            router = _UNI_SWAPROUTER02
-            tokens = cand["tokens"]; fees = cand["fees"]
-            path = b""
-            for i, t in enumerate(tokens):
-                path += bytes.fromhex(_ck(t)[2:])
-                if i < len(fees):
-                    path += int(fees[i]).to_bytes(3, "big")
-            enc = _abi_encode(
-                ["(bytes,address,uint256,uint256)"],
-                [(path, _ck(recipient), int(amount_in), 0)])
-            call = "0x" + ("b858183f" + enc.hex())
-            route_tag = "uni_v3_path"
+            router, call, route_tag = self._shp_uni_v3_path(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "equalizer":
             # king v52: Equalizer RouterV2 (Solidly fork) — Route struct is
             # (from, to, stable) with NO factory field, selector 0xf41766d8.
@@ -4602,3 +3861,5 @@ class MinerSolver(BaselineSwapSolver):
 
 
 SOLVER_CLASS = MinerSolver
+
+

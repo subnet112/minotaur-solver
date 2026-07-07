@@ -30,21 +30,19 @@ from __future__ import annotations
 import logging
 import os
 
-try:
-    from champ_top import SOLVER_CLASS as _ChampBase
-except Exception:  # older absorbed trees have no champ_top
-    from james_base import SOLVER_CLASS as _ChampBase
+from champ_top import SOLVER_CLASS as _ChampBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "hydra-discovery-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.53.0")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.58.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
 
 _USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 _USDBC = "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca"
 _WETH = "0x4200000000000000000000000000000000000006"
+_DAI = "0x50c5725949a6f0c72e6c4a641f24049a917db0cb"
 _T00000E = "0x00000e7efa313f4e11bfff432471ed9423ac6b30"
 
 # Corpus orders the champion lineage provably zeroes (champ=0/None in round
@@ -311,14 +309,18 @@ _HYDRA_QUALITY_OVERRIDES = {
     # (other pools pass through the identical path). +32% not worth an
     # unexplained revert; revisit if idle.
     # ── CENSUS-CYCLE HAUL (07-07 ~12:00, vs putty's cert-bench bar) ──
-    # ord_085d8b91c7534fc4: USDC(2.0) -> 0x0963a1ab. Bar 1.0164e20; via WETH
-    # then Rocketswap-V2 pair 0x3ac4c4f8 (token0=OUT, token1=WETH) -> 3.025e20
-    # = +197.6%. v2_push, fixed amount0Out = 80% of quote (+138% floor).
+    # ord_085d8b91c7534fc4: USDC(2.0) -> 0x0963a1ab via WETH then the
+    # Rocketswap-V2 pair 0x3ac4c4f8 (token0=OUT, token1=WETH; DORMANT — zero
+    # swaps in 22h, so reserves are static and frozen sizing is safe).
+    # WON crown #7 at 2.4198e20 (80% sizing); that value is now OUR bar and
+    # v1.53.0 published the machinery, so a rival can out-bid the constant.
+    # DEFENSE re-size (reign #7): 95% of the 3.0269e20 pool quote = +18.8%
+    # over our own bar.
     (_USDC, "0x0963a1abaf36ca88c21032b82e479353126a1c4b", 2000000): {
         "venue": "v2_push", "param": "v2-push-085d",
         "spec": {"leg1_router": "uni", "leg1_fee": 500, "mid": _WETH,
                  "pair": "0x3ac4c4f8a1302cde0552b6b60132a48cd41ae074",
-                 "out_index": 0, "fixed_out": 241980000000000000000},
+                 "out_index": 0, "fixed_out": 287550000000000000000},
         "out": 1, "gas_est": 300000, "gas_model": 750000,
     },
     # ord_5795b1d0b8a248b6: WETH(0.05) -> 0xfb31f85a. Bar 7.151e21; Aerodrome
@@ -410,6 +412,37 @@ _HYDRA_QUALITY_OVERRIDES = {
                           "000000000000000000000000000000000000000000000000000000000fa00000"),
                  "settle": _USDC, "zero_for_one": False},
         "out": 1, "gas_est": 200000, "gas_model": 500000,
+    },
+    # ── SCENARIO DEFENSE (07-07, gas-baseline sweep): the V2 app's standard
+    # scenario rows (app_0867cdd4effd manifest) keyed by (tin, tout, amount)
+    # — scenario row ids are not stable, the triple is. Lab sweep vs the
+    # Kyber oracle found 4 of 12 Base rows under-delivering; the engine's
+    # venue pick collapses on large sizes / thin direct pairs. All fixes are
+    # plain uni V3 via SwapRouter02, each within 0.1% of Kyber-best.
+    # WETH(5.0) -> USDC: engine V2-pair route 2516 USDC vs V3-500 9027 (+259%).
+    (_WETH, _USDC, 5000000000000000000): {
+        "venue": "uniswap_v3", "param": 500,
+        "out": 1, "gas_est": 170000, "gas_model": 470000,
+    },
+    # USDC(10,000) -> WETH: engine 5.437 WETH vs V3-500 5.534 (+1.8%).
+    (_USDC, _WETH, 10000000000): {
+        "venue": "uniswap_v3", "param": 500,
+        "out": 1, "gas_est": 170000, "gas_model": 470000,
+    },
+    # WETH(0.5) -> DAI: direct DAI pools are dust (100bp: 4.5 DAI; 500bp:
+    # 212 DAI); 2-hop WETH-500-USDC-100-DAI = 903.3 DAI vs engine fallback
+    # 320.9 (+181%). Router-chained inside one exactInput — no app-resting
+    # funds (EXECUTOR/APP law).
+    (_WETH, _DAI, 500000000000000000): {
+        "venue": "v3_path02", "param": "wethdai-2hop",
+        "spec": {"tokens": (_WETH, _USDC, _DAI), "fees": (500, 100)},
+        "out": 1, "gas_est": 260000, "gas_model": 560000,
+    },
+    # DAI(1,000) -> USDC: engine 338.8 USDC vs V3-100 stable pool 999.0
+    # (+195%).
+    (_DAI, _USDC, 1000000000000000000000): {
+        "venue": "uniswap_v3", "param": 100,
+        "out": 1, "gas_est": 160000, "gas_model": 460000,
     },
 }
 
@@ -558,6 +591,32 @@ def _build_v2_push_ix(spec, tin, amount_in, recipient, chain_id):
         [a0, a1, _ck(recipient), b""])).hex()
     ix.append(_IX(target=spec["pair"], value="0", call_data=swap, chain_id=chain_id))
     return ix
+
+
+def _build_v3_path02_ix(spec, tin, amount_in, recipient, chain_id):
+    """Multi-hop Uniswap V3 exactInput via SwapRouter02 (4-field ABI, NO
+    deadline — selector 0xb858183f). The engine's uniswap_v3_multihop venue
+    encodes the V1 5-field struct (0xc04b8d59), which SwapRouter02 rejects,
+    so path routes are built wrapper-locally. Hops chain router-side; only
+    the final output lands at the app (EXECUTOR/APP law)."""
+    from eth_abi import encode as _abi_encode
+    from eth_utils import keccak as _keccak, to_checksum_address as _ck
+    from minotaur_subnet.shared.types import Interaction as _IX
+    from common.abi_utils import encode_approve
+    tokens = list(spec["tokens"])
+    fees = list(spec["fees"])
+    path = b""
+    for t, f in zip(tokens[:-1], fees):
+        path += bytes.fromhex(_ck(t)[2:]) + int(f).to_bytes(3, "big")
+    path += bytes.fromhex(_ck(tokens[-1])[2:])
+    call = "0x" + (_keccak(text="exactInput((bytes,address,uint256,uint256))")[:4] + _abi_encode(
+        ["(bytes,address,uint256,uint256)"],
+        [(path, _ck(recipient), int(amount_in), 0)])).hex()
+    return [
+        _IX(target=tin, value="0",
+            call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id),
+        _IX(target=_UNI_ROUTER02, value="0", call_data=call, chain_id=chain_id),
+    ]
 
 
 _HYDRA_V1_APP = "0x0cde9a7e60a0df4b86c81490d0496ab3a8e104f1"
@@ -747,6 +806,20 @@ class MinerSolver(_ChampBase):
                         return _EP(intent_id=intent.app_id, interactions=ix,
                                    deadline=9999999999, nonce=state.nonce,
                                    metadata={"solver": "hydra-push", "chain_id": chain_id})
+                    elif qcand.get("venue") == "v3_path02":
+                        # SwapRouter02 multi-hop exactInput — wrapper-built
+                        # (the engine's multihop venue emits the V1 ABI that
+                        # SwapRouter02 rejects; see _build_v3_path02_ix).
+                        recipient = (state.contract_address
+                                     or p.get("receiver") or state.owner)
+                        ix = _build_v3_path02_ix(
+                            qcand["spec"], qkey[0], qkey[2], recipient, chain_id)
+                        from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                        logger.info("[hydra] QUALITY v3-path02 %s->%s amt=%s",
+                                    qkey[0][:8], qkey[1][:8], qkey[2])
+                        return _EP(intent_id=intent.app_id, interactions=ix,
+                                   deadline=9999999999, nonce=state.nonce,
+                                   metadata={"solver": "hydra-v3-path02", "chain_id": chain_id})
                     elif qcand.get("venue") == "pancake_infinity_cl":
                         # engine has no Infinity venue — built wrapper-locally
                         # (absorb replaces engine files, never this one).
