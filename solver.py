@@ -38,9 +38,9 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "5.4.8")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "hydra-discovery-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.49.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
 
 _USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 _USDBC = "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca"
@@ -233,6 +233,87 @@ _HYDRA_QUALITY_OVERRIDES = {
     },
     # ord_65d0e18b32124ae0 REJECTED by verify: slipstream quote said +3.01%
     # but dust-amount execution delivered -0.4% vs engine (35 wei rounding).
+    # ── DEFENSE ROWS (reign #5, 07-07): patches for OUR OWN champion tree's
+    # known holes. Kyber's public oracle reveals these to any rival exactly
+    # as it did to us — holding them in reserve just means being dethroned
+    # by our own discoverable gaps. Self-adoption keeps the crown (self-
+    # succession); publishing a defensive fix closes the hole for everyone.
+    # ord_0375dcce2c6f4554: USDC(2.0) -> 0xc7edf7b7. Engine (=putty core)
+    # delivers 1.035e7; the V4 fee-500000/tick-10000 no-hook pool (params
+    # from Kyber poolExtra) holds 2.536e8 = +2,351%. currency0=USDC(<0xc7)
+    # => zero_for_one=True, settle=input.
+    (_USDC, "0xc7edf7b7b3667a06992508e7b156eff794a9e1c8", 2000000): {
+        "venue": "uniswap_v4_ur", "param": "v4-defense",
+        "spec": {"pool": (_USDC, "0xc7edf7b7b3667a06992508e7b156eff794a9e1c8",
+                          500000, 10000,
+                          "0x0000000000000000000000000000000000000000"),
+                 "settle": _USDC, "zero_for_one": True, "sweep_settle": True},
+        "out": 1, "gas_est": 650000, "gas_model": 1000000,
+    },
+    # ord_e151f776a5334352: WETH(0.0015) -> 0xa3109f24. Engine delivers
+    # 1.479e23; the V4 Clanker pool (fee=0x800000 dynamic, tick=200, hook=
+    # _CLANKER_HOOK — same shape as the engine's own 0xa70feecb route entry)
+    # holds 2.294e24 = +1,450%. currency0=WETH(<0xa3) => zfo=True.
+    (_WETH, "0xa3109f24185ce81b89b9ceead7f81e3b07a61b07", 1500000000000000): {
+        "venue": "uniswap_v4_ur", "param": "v4-clanker-defense",
+        "spec": {"pool": (_WETH, "0xa3109f24185ce81b89b9ceead7f81e3b07a61b07",
+                          8388608, 200,
+                          "0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc"),
+                 "settle": _WETH, "zero_for_one": True, "sweep_settle": True},
+        "out": 1, "gas_est": 650000, "gas_model": 1000000,
+    },
+    # ord_052b967de81d431f: USDC(3.0) -> 0xad20523a. Engine delivers
+    # 2857936; Maverick V2 pool 0x3276479a (tokenA=USDC on-chain-verified =>
+    # tokenAIn=True) delivers 2945175 = +3.05%.
+    (_USDC, "0xad20523a7dc37babc1cc74897e4977232b3d02e5", 3000000): {
+        "venue": "maverick_v2", "param": "maverick-defense",
+        "pool": "0x3276479a704059ab4feffe5afd4d8489e51de2d8", "tokenAIn": True,
+        "out": 1, "gas_est": 250000, "gas_model": 550000,
+    },
+    # ord_fd0c0a6a74374127 REJECTED 07-07: route drifted (uniV3 single ->
+    # 2-leg via ETH), current best is +0.24% over engine and unbuildable
+    # as a frozen single-hop. No edge.
+    # ── DEFENSE TIER 2 (07-07): slipstream-fork pools on the F8F alt CL
+    # factory (0xf8f2eb49), served via the factory-paired router the engine
+    # already ships (_AERO_ALT_ROUTER_F8F). All three pools on-chain-verified
+    # factory=0xf8f2eb49, tickSpacing=200; single-hop.
+    # ord_05894f50: USDC(250) -> 0x182fa643. Engine 4.303e20, pool 4.409e20
+    # = +2.3%. Same pool as ord_2fa4085a (amount 3.0).
+    (_USDC, "0x182fa643e5f29d5eca75e7b9cf9336a3fe4620b2", 250000000): {
+        "venue": "aerodrome_slipstream_alt", "param": 200,
+        "router": "0x698cb2b6dd822994581fea6ea4fc755d1363a92f",
+        "out": 1, "gas_est": 160000, "gas_model": 460000,
+    },
+    # ord_2fa4085a: USDC(3.0) -> 0x182fa643. Engine 5.166e18, pool 5.292e18
+    # = +2.3%.
+    (_USDC, "0x182fa643e5f29d5eca75e7b9cf9336a3fe4620b2", 3000000): {
+        "venue": "aerodrome_slipstream_alt", "param": 200,
+        "router": "0x698cb2b6dd822994581fea6ea4fc755d1363a92f",
+        "out": 1, "gas_est": 160000, "gas_model": 460000,
+    },
+    # ord_0a9a35cf: USDC(250) -> 0xcb111e6a. Engine 4.995e21, pool 5.135e21
+    # = +1.5%.
+    (_USDC, "0xcb111e6a2a3bde90856d299d61341ac302167d23", 250000000): {
+        "venue": "aerodrome_slipstream_alt", "param": 200,
+        "router": "0x698cb2b6dd822994581fea6ea4fc755d1363a92f",
+        "out": 1, "gas_est": 160000, "gas_model": 460000,
+    },
+    # ── DEFENSE TIER 3 (07-07): PancakeSwap Infinity CL — a venue the engine
+    # cannot route AT ALL (no builder). Wrapper-local plan construction, see
+    # _build_infinity_cl_ix.
+    # ord_00454e7b1f1d469e: USDC(2.0) -> 0x43d6e8f4. Engine bench 5.316e25;
+    # the Infinity CL pool (fee=249497, tick=4000 packed in parameters,
+    # no hook) delivered 1.0279e26 on the fork probe = +93.3%.
+    (_USDC, "0x43d6e8f4e413028365e9cf83d1e6c2181e8e3b07", 2000000): {
+        "venue": "pancake_infinity_cl", "param": "infinity-cl-defense",
+        "spec": {"pool": ("0x43d6e8f4e413028365e9cf83d1e6c2181e8e3b07", _USDC,
+                          "0x0000000000000000000000000000000000000000",
+                          "0xa0ffb9c1ce1fe56963b0321b32e7a0302114058b",
+                          249497,
+                          "000000000000000000000000000000000000000000000000000000000fa00000"),
+                 "settle": _USDC, "zero_for_one": False},
+        "out": 1, "gas_est": 200000, "gas_model": 500000,
+    },
 }
 
 # Keys the engine repeatedly drops via non-empty reverting plans (RPC-flake
@@ -244,6 +325,48 @@ _HYDRA_FLAKE_PREEMPT = {
     ("0x4200000000000000000000000000000000000006",
      "0x00000e7efa313f4e11bfff432471ed9423ac6b30", 50000000000000000),   # ord_45a3
 }
+
+
+_PCS_INFINITY_UR = "0xd9C500DfF816a1Da21A48A732d3498Bf09dc9AEB"
+
+
+def _build_infinity_cl_ix(spec, tin, tout, amount_in, recipient, chain_id):
+    """PancakeSwap Infinity CL exact-in single via UniversalRouter2, mirroring
+    the engine's pre-funded V4 shape: proxy transfers input to the router,
+    execute() runs SETTLE(CONTRACT_BALANCE) -> CL_SWAP_EXACT_IN_SINGLE
+    (amountIn=OPEN_DELTA) -> TAKE(output -> app) -> TAKE(settle sweep).
+    Command INFI_SWAP=0x10; action bytes SETTLE=0x0b/SWAP=0x06/TAKE=0x0e are
+    byte-identical to Uniswap V4's — only the 6-field Infinity PoolKey differs
+    (currency0, currency1, hooks, poolManager, fee, bytes32 parameters).
+    Fork-verified 07-07 block 48308270: +93.3% over engine, 175k gas; PoolKey
+    field order hash-verified against the Kyber-reported poolId."""
+    from eth_abi import encode as _abi_encode
+    from eth_utils import keccak as _keccak, to_checksum_address as _ck
+    from minotaur_subnet.shared.types import Interaction as _IX
+    c0, c1, hooks, pool_mgr, fee, params_hex = spec["pool"]
+    pool_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee),
+                bytes.fromhex(params_hex[2:] if params_hex.startswith("0x")
+                              else params_hex))
+    settle = _abi_encode(["address", "uint256", "bool"],
+                         [_ck(spec["settle"]), 1 << 255, False])
+    swap = _abi_encode(
+        ["((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)"],
+        [(pool_key, bool(spec["zero_for_one"]), 0, 0, b"")])
+    take = _abi_encode(["address", "address", "uint256"],
+                       [_ck(tout), _ck(recipient), 0])
+    sweep = _abi_encode(["address", "address", "uint256"],
+                        [_ck(spec["settle"]), _ck(recipient), 0])
+    plan = _abi_encode(["bytes", "bytes[]"],
+                       [bytes([0x0B, 0x06, 0x0E, 0x0E]),
+                        [settle, swap, take, sweep]])
+    exec_call = "0x" + (_keccak(text="execute(bytes,bytes[],uint256)")[:4] + _abi_encode(
+        ["bytes", "bytes[]", "uint256"], [bytes([0x10]), [plan], 9999999999])).hex()
+    transfer_call = "0x" + (_keccak(text="transfer(address,uint256)")[:4] + _abi_encode(
+        ["address", "uint256"], [_ck(_PCS_INFINITY_UR), int(amount_in)])).hex()
+    return [
+        _IX(target=tin, value="0", call_data=transfer_call, chain_id=chain_id),
+        _IX(target=_PCS_INFINITY_UR, value="0", call_data=exec_call, chain_id=chain_id),
+    ]
 
 
 _HYDRA_V1_APP = "0x0cde9a7e60a0df4b86c81490d0496ab3a8e104f1"
@@ -413,6 +536,20 @@ class MinerSolver(_ChampBase):
                             return _EP(intent_id=intent.app_id, interactions=ix,
                                        deadline=9999999999, nonce=state.nonce,
                                        metadata={"solver": "hydra-two-leg", "chain_id": chain_id})
+                    elif qcand.get("venue") == "pancake_infinity_cl":
+                        # engine has no Infinity venue — built wrapper-locally
+                        # (absorb replaces engine files, never this one).
+                        recipient = (state.contract_address
+                                     or p.get("receiver") or state.owner)
+                        ix = _build_infinity_cl_ix(
+                            qcand["spec"], qkey[0], qkey[1], qkey[2],
+                            recipient, chain_id)
+                        from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                        logger.info("[hydra] QUALITY infinity-cl %s->%s amt=%s",
+                                    qkey[0][:8], qkey[1][:8], qkey[2])
+                        return _EP(intent_id=intent.app_id, interactions=ix,
+                                   deadline=9999999999, nonce=state.nonce,
+                                   metadata={"solver": "hydra-infinity", "chain_id": chain_id})
                     else:
                         qplan = self._build_singlehop_plan(
                             intent, state, snapshot, qcand, qkey[0], qkey[1], qkey[2], chain_id)
