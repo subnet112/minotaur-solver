@@ -38,8 +38,8 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "pancake-edge-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "5.4.8")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.87.4-edge")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
 
 _USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
@@ -1231,3 +1231,5 @@ except Exception:  # pragma: no cover - shim self-disables, champion untouched
         pass
 
 # SHIMMD5:1050a91b6b0c
+
+# putty-nonce 0.87.4-edge 1783411169949483539-1117347
