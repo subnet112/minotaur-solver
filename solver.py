@@ -38,8 +38,8 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-king-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.87.2-edge")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "hydra-discovery-router")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.53.0")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
 
 _USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
@@ -298,6 +298,103 @@ _HYDRA_QUALITY_OVERRIDES = {
         "router": "0x698cb2b6dd822994581fea6ea4fc755d1363a92f",
         "out": 1, "gas_est": 160000, "gas_model": 460000,
     },
+    # ── OFFENSE BATCH (07-07 post-dethrone): multi-leg rows vs joeknight's
+    # byte-identical engine. LESSON (explains every historical two_leg
+    # failure incl. 0c53): interactions run from the EXECUTOR but
+    # recipient=app — funds resting at the app mid-plan are UNREACHABLE.
+    # Legs must chain router->router/pool-side (the engine's own v3_tokens
+    # prefix) or use push-payment venues (V2 pair / Maverick pool).
+    # ord_8cbe1a0f84034413: USDC(2.0) -> 0xa7d68d15. Engine 2.371e19; via
+    # WETH then the V4 fee-3000/tick-60 no-hook pool -> 3.155e19 = +32%.
+    # ord_8cbe1a0f REJECTED by verify (07-07): both the UR v3-prefix and the
+    # V4-push shape STF inside execute for the 0xa7d6 pool — token-specific
+    # (other pools pass through the identical path). +32% not worth an
+    # unexplained revert; revisit if idle.
+    # ── CENSUS-CYCLE HAUL (07-07 ~12:00, vs putty's cert-bench bar) ──
+    # ord_085d8b91c7534fc4: USDC(2.0) -> 0x0963a1ab. Bar 1.0164e20; via WETH
+    # then Rocketswap-V2 pair 0x3ac4c4f8 (token0=OUT, token1=WETH) -> 3.025e20
+    # = +197.6%. v2_push, fixed amount0Out = 80% of quote (+138% floor).
+    (_USDC, "0x0963a1abaf36ca88c21032b82e479353126a1c4b", 2000000): {
+        "venue": "v2_push", "param": "v2-push-085d",
+        "spec": {"leg1_router": "uni", "leg1_fee": 500, "mid": _WETH,
+                 "pair": "0x3ac4c4f8a1302cde0552b6b60132a48cd41ae074",
+                 "out_index": 0, "fixed_out": 241980000000000000000},
+        "out": 1, "gas_est": 300000, "gas_model": 750000,
+    },
+    # ord_5795b1d0b8a248b6: WETH(0.05) -> 0xfb31f85a. Bar 7.151e21; Aerodrome
+    # V2 volatile pool 0x566bee7e (70bp) -> 7.457e21 = +4.28%. Single-hop.
+    (_WETH, "0xfb31f85a8367210b2e4ed2360d2da9dc2d2ccc95", 50000000000000000): {
+        "venue": "aerodrome_v2", "param": "aero-v2-5795",
+        "routes": ((_WETH, "0xfb31f85a8367210b2e4ed2360d2da9dc2d2ccc95", False,
+                    "0x0000000000000000000000000000000000000000"),),
+        "out": 1, "gas_est": 150000, "gas_model": 450000,
+    },
+    # ord_a060d4fb / ord_fd0c0a6a: AERO -> USDC (two amounts, same vein).
+    # Bar 1060255 / 6181384; Slipstream pool 0xa4fdd479 on the DEFAULT CL
+    # factory (0x5e7bb104, tickSpacing 100 on-chain-verified) = +2.37% both.
+    # Dynamic router call — no frozen sizing.
+    ("0x940181a94a35a4569e4529a3cdfb74e38fd98631", _USDC, 1810085037592989043): {
+        "venue": "aerodrome_slipstream", "param": 100,
+        "out": 1, "gas_est": 160000, "gas_model": 460000,
+    },
+    ("0x940181a94a35a4569e4529a3cdfb74e38fd98631", _USDC, 10553019078968575235): {
+        "venue": "aerodrome_slipstream", "param": 100,
+        "out": 1, "gas_est": 160000, "gas_model": 460000,
+    },
+    # ord_01a01fdb31eb4ac1 (kipseli haul, 07-07): USDC(2.0) -> 0xfac77f01.
+    # Kyber's best PUBLIC route (kipseli-prop RFQ excluded — unbakeable) is
+    # single-hop Aerodrome V2 volatile pool 0xddc75f43 (fee 30bp): 1.561e21
+    # vs engine bench 1.435e21 = +8.8%.
+    (_USDC, "0xfac77f01957ed1b3dd1cbea992199b8f85b6e886", 2000000): {
+        "venue": "aerodrome_v2", "param": "aero-v2-01a0",
+        "routes": ((_USDC, "0xfac77f01957ed1b3dd1cbea992199b8f85b6e886", False,
+                    "0x0000000000000000000000000000000000000000"),),
+        "out": 1, "gas_est": 150000, "gas_model": 450000,
+    },
+    # ord_5b48fd28034a437d (reign #6 defense): USDC(2.0) -> 0x9dba38e9 via
+    # V4 x V4 (both fee-10000/tick-200/no-hook), chained inside ONE UR
+    # execute via the engine's native "pools" OPEN_DELTA multi-leg. Engine
+    # bench 3.669e32; Kyber 1.538e37 = +4.19M%. c0 orderings: pool1
+    # USDC<0xa6de => zfo True; pool2 0x9dba<0xa6de, input=0xa6de(c1) =>
+    # zfo False.
+    (_USDC, "0x9dba38e9cadcf67d1959390a8c0c1deee619f0f2", 2000000): {
+        "venue": "uniswap_v4_ur", "param": "v4x2-5b48",
+        "spec": {"pools": (
+                    ((_USDC, "0xa6de7624947d2b56d5d3f0351452d369428cec73",
+                      10000, 200,
+                      "0x0000000000000000000000000000000000000000"), True),
+                    (("0x9dba38e9cadcf67d1959390a8c0c1deee619f0f2",
+                      "0xa6de7624947d2b56d5d3f0351452d369428cec73",
+                      10000, 200,
+                      "0x0000000000000000000000000000000000000000"), False),
+                 ),
+                 "settle": _USDC, "sweep_settle": True},
+        "out": 1, "gas_est": 900000, "gas_model": 1300000,
+    },
+    # ord_06f3adfecaaf43d3: USDC(2.0) -> 0x64b88c73. Engine 1.341e20; via
+    # WETH then Maverick pool 0x6d94a757 (tokenA=WETH; quoter 67k gas,
+    # healthy) -> ~2.0e20 = +50%. PUSH: leg1 uni-500 lands WETH AT THE POOL
+    # (~1.128e15), pool.swap(amount=1.0e15, push mode) -> app.
+    (_USDC, "0x64b88c73a5dfa78d1713fe1b4c69a22d7e0faaa7", 2000000): {
+        "venue": "maverick_push", "param": "mav-push-06f3",
+        "spec": {"leg1_router": "uni", "leg1_fee": 500, "mid": _WETH,
+                 "pool": "0x6d94a757839ea95fa4870cedd56a0604601733d0",
+                 "swap_amount": 1000000000000000, "token_a_in": True},
+        "out": 1, "gas_est": 350000, "gas_model": 800000,
+    },
+    # ord_ff1a741945b241a6: USDC(2.0) -> 0xe6ab1cc1. Engine 5.324e22;
+    # pancake-500 USDC->0x0b3e3284 (3.683e18) then V2 pair 0xd71a1325 ->
+    # 1.205e23 = +124%. PUSH: leg1 lands token0 AT THE PAIR,
+    # pair.swap(amount1Out = 80% of quote) -> app (haircut absorbs drift;
+    # 0.80 x 2.24 = +79% still).
+    (_USDC, "0xe6ab1cc1307b496748753e017f3dbb4d4378ca3f", 2000000): {
+        "venue": "v2_push", "param": "v2-push-ff1a",
+        "spec": {"leg1_router": "pancake", "leg1_fee": 500,
+                 "mid": "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",
+                 "pair": "0xd71a1325ba0e88049482f65877bfca5e22677ccb",
+                 "out_index": 1, "fixed_out": 96400000000000000000000},
+        "out": 1, "gas_est": 300000, "gas_model": 750000,
+    },
     # ── DEFENSE TIER 3 (07-07): PancakeSwap Infinity CL — a venue the engine
     # cannot route AT ALL (no builder). Wrapper-local plan construction, see
     # _build_infinity_cl_ix.
@@ -367,6 +464,100 @@ def _build_infinity_cl_ix(spec, tin, tout, amount_in, recipient, chain_id):
         _IX(target=tin, value="0", call_data=transfer_call, chain_id=chain_id),
         _IX(target=_PCS_INFINITY_UR, value="0", call_data=exec_call, chain_id=chain_id),
     ]
+
+
+_UNI_ROUTER02 = "0x2626664c2603336E57B271c5C0b26F421741e481"
+_PANCAKE_SMART_ROUTER = "0x1b81D678ffb9C0263b24A97847620C99d213eB14"
+
+
+def _leg1_swap_ix(spec, tin, amount_in, land_at, chain_id):
+    """Exact-in V3-style swap of the order input, output landing AT the next
+    leg's pool/pair (push-chaining — funds must never rest at the app
+    mid-plan; the executor can't spend from there)."""
+    from eth_abi import encode as _abi_encode
+    from eth_utils import keccak as _keccak, to_checksum_address as _ck
+    from minotaur_subnet.shared.types import Interaction as _IX
+    mid = spec["mid"]
+    fee = int(spec["leg1_fee"])
+    if spec["leg1_router"] == "pancake":
+        router = _PANCAKE_SMART_ROUTER
+        call = "0x" + (_keccak(text="exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))")[:4] + _abi_encode(
+            ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
+            [(_ck(tin), _ck(mid), fee, _ck(land_at), 9999999999,
+              int(amount_in), 0, 0)])).hex()
+    else:
+        router = _UNI_ROUTER02
+        call = "0x" + (_keccak(text="exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))")[:4] + _abi_encode(
+            ["(address,address,uint24,address,uint256,uint256,uint160)"],
+            [(_ck(tin), _ck(mid), fee, _ck(land_at),
+              int(amount_in), 0, 0)])).hex()
+    from common.abi_utils import encode_approve
+    return [
+        _IX(target=tin, value="0",
+            call_data=encode_approve(router, int(amount_in)), chain_id=chain_id),
+        _IX(target=router, value="0", call_data=call, chain_id=chain_id),
+    ]
+
+
+def _build_maverick_push_ix(spec, tin, amount_in, recipient, chain_id):
+    """leg1 lands mid AT the Maverick pool, then pool.swap in push mode
+    (data=b'' -> pool pays itself from its balance delta) -> app."""
+    from eth_abi import encode as _abi_encode
+    from eth_utils import keccak as _keccak, to_checksum_address as _ck
+    from minotaur_subnet.shared.types import Interaction as _IX
+    ix = _leg1_swap_ix(spec, tin, amount_in, spec["pool"], chain_id)
+    swap = "0x" + (_keccak(text="swap(address,(uint256,bool,bool,int32),bytes)")[:4] + _abi_encode(
+        ["address", "(uint256,bool,bool,int32)", "bytes"],
+        [_ck(recipient), (int(spec["swap_amount"]), bool(spec["token_a_in"]),
+                          False, 2**31 - 1 if spec["token_a_in"] else -(2**31) + 1),
+         b""])).hex()
+    ix.append(_IX(target=spec["pool"], value="0", call_data=swap, chain_id=chain_id))
+    return ix
+
+
+def _build_univ4_push_ix(spec, tin, tout, amount_in, recipient, chain_id):
+    """leg1 lands mid AT the Uniswap Universal Router, then a V4-only
+    execute: SETTLE(mid, CONTRACT_BALANCE, payerIsUser=False) -> swap ->
+    TAKE(tout -> app) -> TAKE(mid sweep). Mirrors the engine's aero->UR
+    chaining; avoids the UR V3-prefix Permit2/STF path entirely."""
+    from eth_abi import encode as _abi_encode
+    from eth_utils import keccak as _keccak, to_checksum_address as _ck
+    from minotaur_subnet.shared.types import Interaction as _IX
+    ur = "0x6fF5693b99212Da76ad316178A184AB56D299b43"
+    ix = _leg1_swap_ix(spec, tin, amount_in, ur, chain_id)
+    c0, c1, fee, tick, hooks = spec["pool"]
+    settle = _abi_encode(["address", "uint256", "bool"],
+                         [_ck(spec["settle"]), 1 << 255, False])
+    swap = _abi_encode(
+        ["((address,address,uint24,int24,address),bool,uint128,uint128,bytes)"],
+        [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)),
+          bool(spec["zero_for_one"]), 0, 0, b"")])
+    take = _abi_encode(["address", "address", "uint256"],
+                       [_ck(tout), _ck(recipient), 0])
+    sweep = _abi_encode(["address", "address", "uint256"],
+                        [_ck(spec["settle"]), _ck(recipient), 0])
+    plan = _abi_encode(["bytes", "bytes[]"],
+                       [bytes([0x0B, 0x06, 0x0E, 0x0E]),
+                        [settle, swap, take, sweep]])
+    exec_call = "0x" + (_keccak(text="execute(bytes,bytes[],uint256)")[:4] + _abi_encode(
+        ["bytes", "bytes[]", "uint256"], [bytes([0x10]), [plan], 9999999999])).hex()
+    ix.append(_IX(target=ur, value="0", call_data=exec_call, chain_id=chain_id))
+    return ix
+
+
+def _build_v2_push_ix(spec, tin, amount_in, recipient, chain_id):
+    """leg1 lands mid AT the V2 pair, then pair.swap(fixed out, to=app) —
+    push-native; the haircut vs quote absorbs reserve drift."""
+    from eth_abi import encode as _abi_encode
+    from eth_utils import keccak as _keccak, to_checksum_address as _ck
+    from minotaur_subnet.shared.types import Interaction as _IX
+    ix = _leg1_swap_ix(spec, tin, amount_in, spec["pair"], chain_id)
+    a0, a1 = (0, int(spec["fixed_out"])) if int(spec["out_index"]) == 1 else (int(spec["fixed_out"]), 0)
+    swap = "0x" + (_keccak(text="swap(uint256,uint256,address,bytes)")[:4] + _abi_encode(
+        ["uint256", "uint256", "address", "bytes"],
+        [a0, a1, _ck(recipient), b""])).hex()
+    ix.append(_IX(target=spec["pair"], value="0", call_data=swap, chain_id=chain_id))
+    return ix
 
 
 _HYDRA_V1_APP = "0x0cde9a7e60a0df4b86c81490d0496ab3a8e104f1"
@@ -536,6 +727,26 @@ class MinerSolver(_ChampBase):
                             return _EP(intent_id=intent.app_id, interactions=ix,
                                        deadline=9999999999, nonce=state.nonce,
                                        metadata={"solver": "hydra-two-leg", "chain_id": chain_id})
+                    elif qcand.get("venue") in ("maverick_push", "v2_push",
+                                                "univ4_push"):
+                        recipient = (state.contract_address
+                                     or p.get("receiver") or state.owner)
+                        if qcand["venue"] == "univ4_push":
+                            ix = _build_univ4_push_ix(
+                                qcand["spec"], qkey[0], qkey[1], qkey[2],
+                                recipient, chain_id)
+                        else:
+                            builder = (_build_maverick_push_ix
+                                       if qcand["venue"] == "maverick_push"
+                                       else _build_v2_push_ix)
+                            ix = builder(qcand["spec"], qkey[0], qkey[2],
+                                         recipient, chain_id)
+                        from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                        logger.info("[hydra] QUALITY %s %s->%s amt=%s",
+                                    qcand["venue"], qkey[0][:8], qkey[1][:8], qkey[2])
+                        return _EP(intent_id=intent.app_id, interactions=ix,
+                                   deadline=9999999999, nonce=state.nonce,
+                                   metadata={"solver": "hydra-push", "chain_id": chain_id})
                     elif qcand.get("venue") == "pancake_infinity_cl":
                         # engine has no Infinity venue — built wrapper-locally
                         # (absorb replaces engine files, never this one).
@@ -1368,5 +1579,3 @@ except Exception:  # pragma: no cover - shim self-disables, champion untouched
         pass
 
 # SHIMMD5:1050a91b6b0c
-
-# putty-nonce 0.87.2-edge 1783414994208523014-1117347
