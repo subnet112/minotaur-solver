@@ -3045,6 +3045,175 @@ class MinerSolver(BaselineSwapSolver):
         route_tag = "uni_v3_path"
         return router, call, route_tag
 
+    def _shp_uniswap_v3_multihop(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+        from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
+        router = UNISWAP_V3_ROUTERS.get(chain_id)
+        if not router:
+            raise ValueError("no uniswap router")
+        path = encode_swap_path(list(cand["tokens"]), list(cand["fees"]))
+        call = encode_exact_input(
+            path=path, recipient=recipient, deadline=deadline,
+            amount_in=amount_in, amount_out_minimum=0)
+        route_tag = "uniswap_v3_multihop"
+        return router, call, route_tag
+
+    def _shp_pancake_v3(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        # PancakeSwap V3 SmartRouter exactInputSingle = V1-style WITH deadline
+        # (0x414bf389), NOT SwapRouter02 (the no-deadline ABI reverts = dropped swap).
+        from eth_abi import encode as _abi_encode
+        from eth_utils import to_checksum_address as _ck
+        router = _PANCAKE_ROUTER
+        enc = _abi_encode(
+            ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
+            [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
+        call = "0x" + ("414bf389" + enc.hex())
+        route_tag = "pancake_v3"
+        return router, call, route_tag
+
+    def _shp_sushi_v3(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        # SushiSwap V3 SwapRouter exactInputSingle = V1-style WITH deadline
+        # (0x414bf389); same ABI as Pancake's SmartRouter.
+        from eth_abi import encode as _abi_encode
+        from eth_utils import to_checksum_address as _ck
+        router = _SUSHI_ROUTER
+        enc = _abi_encode(
+            ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
+            [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
+        call = "0x" + ("414bf389" + enc.hex())
+        route_tag = "sushi_v3"
+        return router, call, route_tag
+
+    def _shp_algebra(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        # Algebra Integral SwapRouter.exactInputSingle (Hydrex + QuickSwap
+        # V4 share the byte-identical periphery). 8-field struct
+        # (tokenIn, tokenOut, deployer, recipient, deadline, amountIn,
+        # amountOutMinimum, limitSqrtPrice); NO fee field (dynamic fee).
+        # deployer MUST be address(0): standard pools use the 2-arg
+        # CREATE2 salt keccak(token0,token1); the poolDeployer computes a
+        # 3-arg salt -> nonexistent address -> revert. Selector 0x1679c792.
+        from eth_abi import encode as _abi_encode
+        from eth_utils import to_checksum_address as _ck
+        router = (_QUICKSWAP_ALGEBRA_ROUTER
+                  if cand["venue"] == "quickswap_algebra" else _HYDREX_ROUTER)
+        enc = _abi_encode(
+            ["(address,address,address,address,uint256,uint256,uint256,uint160)"],
+            [(_ck(tin), _ck(tout), _ck(_ZERO), _ck(recipient),
+              int(deadline), int(amount_in), 0, 0)])
+        call = "0x" + ("1679c792" + enc.hex())
+        route_tag = cand["venue"]
+        return router, call, route_tag
+
+    def _shp_v2_fork(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        # king v52: generic UniV2-fork router (BaseSwap etc.), standard
+        # swapExactTokensForTokens — same ABI as uniswap_v2/pancake_v2.
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        router = cand["router"]
+        tokens = [_ck(t) for t in cand["tokens"]]
+        selector = _keccak(
+            text="swapExactTokensForTokens(uint256,uint256,address[],address,uint256)"
+        )[:4]
+        call = "0x" + (selector + _abi_encode(
+            ["uint256", "uint256", "address[]", "address", "uint256"],
+            [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
+        )).hex()
+        route_tag = "v2_fork"
+        return router, call, route_tag
+
+    def _shp_alien_v3(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        # king v52: Alien Base V3 SwapRouter02-style exactInputSingle —
+        # 7-field struct WITHOUT deadline, selector 0x04e45aaf.
+        from eth_abi import encode as _abi_encode
+        from eth_utils import to_checksum_address as _ck
+        router = _ALIEN_V3_ROUTER
+        enc = _abi_encode(
+            ["(address,address,uint24,address,uint256,uint256,uint160)"],
+            [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient),
+              int(amount_in), 0, 0)])
+        call = "0x" + ("04e45aaf" + enc.hex())
+        route_tag = "alien_v3"
+        return router, call, route_tag
+
+    def _shp_equalizer(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        # king v52: Equalizer RouterV2 (Solidly fork) — Route struct is
+        # (from, to, stable) with NO factory field, selector 0xf41766d8.
+        from eth_abi import encode as _abi_encode
+        from eth_utils import to_checksum_address as _ck
+        router = _EQUALIZER_ROUTER
+        enc = _abi_encode(
+            ["uint256", "uint256", "(address,address,bool)[]", "address", "uint256"],
+            [int(amount_in), 0, [(_ck(tin), _ck(tout), False)],
+             _ck(recipient), int(deadline)])
+        call = "0x" + ("f41766d8" + enc.hex())
+        route_tag = "equalizer"
+        return router, call, route_tag
+
+    def _shp_pancake_v3_multihop(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
+        router = _PANCAKE_ROUTER
+        path = encode_swap_path(list(cand["tokens"]), list(cand["fees"]))
+        call = encode_exact_input(
+            path=path, recipient=recipient, deadline=deadline,
+            amount_in=amount_in, amount_out_minimum=0)
+        route_tag = "pancake_v3_multihop"
+        return router, call, route_tag
+
+    def _shp_maverick_v2(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        # MaverickV2Router.exactInputSingle(address recipient, address pool,
+        # bool tokenAIn, uint256 amountIn, uint256 amountOutMinimum) — plain
+        # ERC20 approve + push swap, output -> recipient (the app). Selector
+        # 0xa3b105ca. Used for tokens the incumbent can't route (Maverick-only).
+        from eth_abi import encode as _abi_encode
+        from eth_utils import to_checksum_address as _ck
+        router = _MAVERICK_ROUTER
+        spend_amount = int(cand.get("spend_amount") or amount_in)
+        enc = _abi_encode(
+            ["address", "address", "bool", "uint256", "uint256"],
+            [_ck(recipient), _ck(cand["pool"]), bool(cand["tokenAIn"]), int(spend_amount), 0])
+        call = "0x" + ("a3b105ca" + enc.hex())
+        route_tag = "maverick_v2"
+        return router, call, route_tag
+
+    def _shp_aerodrome_slipstream(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        from strategies.dex_aggregator import aerodrome as _aero
+        router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
+        if not router:
+            raise ValueError("no aerodrome router")
+        call = _aero.encode_exact_input_single(
+            token_in=tin, token_out=tout, tick_spacing=int(cand["param"]),
+            recipient=recipient, deadline=deadline, amount_in=amount_in,
+            amount_out_minimum=0)
+        route_tag = "aerodrome_slipstream"
+        return router, call, route_tag
+
+    def _shp_aerodrome_slipstream_multihop(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        from strategies.dex_aggregator import aerodrome as _aero
+        router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
+        if not router:
+            raise ValueError("no aerodrome router")
+        path = _aero.encode_path(list(cand["tokens"]), list(cand["tick_spacings"]))
+        call = _aero.encode_exact_input(
+            path=path, recipient=recipient, deadline=deadline,
+            amount_in=amount_in, amount_out_minimum=0)
+        route_tag = "aerodrome_slipstream_multihop"
+        return router, call, route_tag
+
+    def _shp_aerodrome_slipstream_alt(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
+        # king v53 (putty parity): Slipstream-fork SwapRouter paired to a
+        # NON-DEFAULT CL factory. Same exactInputSingle(tickSpacing) ABI
+        # as canonical Slipstream (bytecode-identical router, different
+        # factory immutable) — reuse the proven encoder with the paired
+        # router address.
+        from strategies.dex_aggregator import aerodrome as _aero
+        router = cand["router"]
+        call = _aero.encode_exact_input_single(
+            token_in=tin, token_out=tout, tick_spacing=int(cand["param"]),
+            recipient=recipient, deadline=deadline, amount_in=amount_in,
+            amount_out_minimum=0)
+        route_tag = "aerodrome_slipstream_alt"
+        return router, call, route_tag
+
     def _build_singlehop_plan(self, intent, state, snapshot, cand, tin, tout, amount_in, chain_id):
         """Build approve + exactInputSingle for the chosen venue.
 
@@ -3078,83 +3247,17 @@ class MinerSolver(BaselineSwapSolver):
             # Output lands at the app so _gained() counts it. Fork-verified.
             return self._shp_uniswap_v4_ur(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "uniswap_v3_multihop":
-            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-            from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
-            router = UNISWAP_V3_ROUTERS.get(chain_id)
-            if not router:
-                raise ValueError("no uniswap router")
-            path = encode_swap_path(list(cand["tokens"]), list(cand["fees"]))
-            call = encode_exact_input(
-                path=path, recipient=recipient, deadline=deadline,
-                amount_in=amount_in, amount_out_minimum=0)
-            route_tag = "uniswap_v3_multihop"
+            router, call, route_tag = self._shp_uniswap_v3_multihop(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "pancake_v3":
-            # PancakeSwap V3 SmartRouter exactInputSingle = V1-style WITH deadline
-            # (0x414bf389), NOT SwapRouter02 (the no-deadline ABI reverts = dropped swap).
-            from eth_abi import encode as _abi_encode
-            from eth_utils import to_checksum_address as _ck
-            router = _PANCAKE_ROUTER
-            enc = _abi_encode(
-                ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
-                [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
-            call = "0x" + ("414bf389" + enc.hex())
-            route_tag = "pancake_v3"
+            router, call, route_tag = self._shp_pancake_v3(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "sushi_v3":
-            # SushiSwap V3 SwapRouter exactInputSingle = V1-style WITH deadline
-            # (0x414bf389); same ABI as Pancake's SmartRouter.
-            from eth_abi import encode as _abi_encode
-            from eth_utils import to_checksum_address as _ck
-            router = _SUSHI_ROUTER
-            enc = _abi_encode(
-                ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
-                [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
-            call = "0x" + ("414bf389" + enc.hex())
-            route_tag = "sushi_v3"
+            router, call, route_tag = self._shp_sushi_v3(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] in ("hydrex_algebra", "quickswap_algebra"):
-            # Algebra Integral SwapRouter.exactInputSingle (Hydrex + QuickSwap
-            # V4 share the byte-identical periphery). 8-field struct
-            # (tokenIn, tokenOut, deployer, recipient, deadline, amountIn,
-            # amountOutMinimum, limitSqrtPrice); NO fee field (dynamic fee).
-            # deployer MUST be address(0): standard pools use the 2-arg
-            # CREATE2 salt keccak(token0,token1); the poolDeployer computes a
-            # 3-arg salt -> nonexistent address -> revert. Selector 0x1679c792.
-            from eth_abi import encode as _abi_encode
-            from eth_utils import to_checksum_address as _ck
-            router = (_QUICKSWAP_ALGEBRA_ROUTER
-                      if cand["venue"] == "quickswap_algebra" else _HYDREX_ROUTER)
-            enc = _abi_encode(
-                ["(address,address,address,address,uint256,uint256,uint256,uint160)"],
-                [(_ck(tin), _ck(tout), _ck(_ZERO), _ck(recipient),
-                  int(deadline), int(amount_in), 0, 0)])
-            call = "0x" + ("1679c792" + enc.hex())
-            route_tag = cand["venue"]
+            router, call, route_tag = self._shp_algebra(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "v2_fork":
-            # king v52: generic UniV2-fork router (BaseSwap etc.), standard
-            # swapExactTokensForTokens — same ABI as uniswap_v2/pancake_v2.
-            from eth_abi import encode as _abi_encode
-            from eth_utils import keccak as _keccak, to_checksum_address as _ck
-            router = cand["router"]
-            tokens = [_ck(t) for t in cand["tokens"]]
-            selector = _keccak(
-                text="swapExactTokensForTokens(uint256,uint256,address[],address,uint256)"
-            )[:4]
-            call = "0x" + (selector + _abi_encode(
-                ["uint256", "uint256", "address[]", "address", "uint256"],
-                [int(amount_in), 0, tokens, _ck(recipient), int(deadline)],
-            )).hex()
-            route_tag = "v2_fork"
+            router, call, route_tag = self._shp_v2_fork(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "alien_v3":
-            # king v52: Alien Base V3 SwapRouter02-style exactInputSingle —
-            # 7-field struct WITHOUT deadline, selector 0x04e45aaf.
-            from eth_abi import encode as _abi_encode
-            from eth_utils import to_checksum_address as _ck
-            router = _ALIEN_V3_ROUTER
-            enc = _abi_encode(
-                ["(address,address,uint24,address,uint256,uint256,uint160)"],
-                [(_ck(tin), _ck(tout), int(cand["param"]), _ck(recipient),
-                  int(amount_in), 0, 0)])
-            call = "0x" + ("04e45aaf" + enc.hex())
-            route_tag = "alien_v3"
+            router, call, route_tag = self._shp_alien_v3(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "alien_v3_path":
             # king v57: Alien Base V3 multi-hop exactInput — SwapRouter02-style
             # (bytes path, recipient, amountIn, amountOutMinimum), NO deadline,
@@ -3166,72 +3269,17 @@ class MinerSolver(BaselineSwapSolver):
             # amountOutMinimum), NO deadline, selector 0xb858183f.
             router, call, route_tag = self._shp_uni_v3_path(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "equalizer":
-            # king v52: Equalizer RouterV2 (Solidly fork) — Route struct is
-            # (from, to, stable) with NO factory field, selector 0xf41766d8.
-            from eth_abi import encode as _abi_encode
-            from eth_utils import to_checksum_address as _ck
-            router = _EQUALIZER_ROUTER
-            enc = _abi_encode(
-                ["uint256", "uint256", "(address,address,bool)[]", "address", "uint256"],
-                [int(amount_in), 0, [(_ck(tin), _ck(tout), False)],
-                 _ck(recipient), int(deadline)])
-            call = "0x" + ("f41766d8" + enc.hex())
-            route_tag = "equalizer"
+            router, call, route_tag = self._shp_equalizer(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "pancake_v3_multihop":
-            from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
-            router = _PANCAKE_ROUTER
-            path = encode_swap_path(list(cand["tokens"]), list(cand["fees"]))
-            call = encode_exact_input(
-                path=path, recipient=recipient, deadline=deadline,
-                amount_in=amount_in, amount_out_minimum=0)
-            route_tag = "pancake_v3_multihop"
+            router, call, route_tag = self._shp_pancake_v3_multihop(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "maverick_v2":
-            # MaverickV2Router.exactInputSingle(address recipient, address pool,
-            # bool tokenAIn, uint256 amountIn, uint256 amountOutMinimum) — plain
-            # ERC20 approve + push swap, output -> recipient (the app). Selector
-            # 0xa3b105ca. Used for tokens the incumbent can't route (Maverick-only).
-            from eth_abi import encode as _abi_encode
-            from eth_utils import to_checksum_address as _ck
-            router = _MAVERICK_ROUTER
-            spend_amount = int(cand.get("spend_amount") or amount_in)
-            enc = _abi_encode(
-                ["address", "address", "bool", "uint256", "uint256"],
-                [_ck(recipient), _ck(cand["pool"]), bool(cand["tokenAIn"]), int(spend_amount), 0])
-            call = "0x" + ("a3b105ca" + enc.hex())
-            route_tag = "maverick_v2"
+            router, call, route_tag = self._shp_maverick_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "aerodrome_slipstream":
-            from strategies.dex_aggregator import aerodrome as _aero
-            router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
-            if not router:
-                raise ValueError("no aerodrome router")
-            call = _aero.encode_exact_input_single(
-                token_in=tin, token_out=tout, tick_spacing=int(cand["param"]),
-                recipient=recipient, deadline=deadline, amount_in=amount_in,
-                amount_out_minimum=0)
-            route_tag = "aerodrome_slipstream"
+            router, call, route_tag = self._shp_aerodrome_slipstream(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "aerodrome_slipstream_multihop":
-            from strategies.dex_aggregator import aerodrome as _aero
-            router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
-            if not router:
-                raise ValueError("no aerodrome router")
-            path = _aero.encode_path(list(cand["tokens"]), list(cand["tick_spacings"]))
-            call = _aero.encode_exact_input(
-                path=path, recipient=recipient, deadline=deadline,
-                amount_in=amount_in, amount_out_minimum=0)
-            route_tag = "aerodrome_slipstream_multihop"
+            router, call, route_tag = self._shp_aerodrome_slipstream_multihop(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         elif cand["venue"] == "aerodrome_slipstream_alt":
-            # king v53 (putty parity): Slipstream-fork SwapRouter paired to a
-            # NON-DEFAULT CL factory. Same exactInputSingle(tickSpacing) ABI
-            # as canonical Slipstream (bytecode-identical router, different
-            # factory immutable) — reuse the proven encoder with the paired
-            # router address.
-            from strategies.dex_aggregator import aerodrome as _aero
-            router = cand["router"]
-            call = _aero.encode_exact_input_single(
-                token_in=tin, token_out=tout, tick_spacing=int(cand["param"]),
-                recipient=recipient, deadline=deadline, amount_in=amount_in,
-                amount_out_minimum=0)
-            route_tag = "aerodrome_slipstream_alt"
+            router, call, route_tag = self._shp_aerodrome_slipstream_alt(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         else:
             from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
             from strategies.dex_aggregator.v3_codec import encode_exact_input_single
