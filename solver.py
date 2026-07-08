@@ -35,9 +35,14 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "hydra-discovery-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "1.61.2")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top")
+def _solver_identity():
+    """Solver identity strings, each overridable via environment."""
+    return (os.environ.get("MINOTAUR_SOLVER_NAME", "putty-clean-solver"),
+            os.environ.get("MINOTAUR_SOLVER_VERSION", "2.0.0-clean"),
+            os.environ.get("MINOTAUR_SOLVER_AUTHOR", "top"))
+
+
+SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _solver_identity()
 
 _USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 _USDBC = "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca"
@@ -57,8 +62,15 @@ _T00000E = "0x00000e7efa313f4e11bfff432471ed9423ac6b30"
 # keyed on undealable inputs are inert (kept in case the simulator upgrades);
 # only USDC/WETH-input holes are winnable targets.
 import ast as _hw_ast
-_HW_DATA = _hw_ast.literal_eval(open(os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "hydra_wrap_data.txt")).read())
+
+
+def _load_hydra_wrap_data():
+    """Parse the static-cover data file shipped alongside this module."""
+    return _hw_ast.literal_eval(open(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "hydra_wrap_data.txt")).read())
+
+
+_HW_DATA = _load_hydra_wrap_data()
 _HYDRA_STATIC_COVERS = _HW_DATA["static_covers"]
 _HYDRA_QUALITY_OVERRIDES = _HW_DATA["quality_overrides"]
 _HYDRA_FLAKE_PREEMPT = _HW_DATA["flake_preempt"]
@@ -434,94 +446,110 @@ class MinerSolver(_ChampBase):
 
     def _hydra_serve_quality(self, intent, state, snapshot, p, qkey, qcand, chain_id):
         if qcand.get("venue") == "two_leg":
-            # fixed-intermediate 2-hop: leg1 exact-in lands at the app, leg2
-            # spends a FIXED amount sized under leg1's quote (headroom absorbs
-            # pool drift; re-baked per absorb/census cycle).
-            ix = []
-            for leg in qcand["legs"]:
-                lp = self._build_singlehop_plan(
-                    intent, state, snapshot, leg["cand"],
-                    leg["tin"], leg["tout"], leg["amt"], chain_id)
-                if lp is None or not getattr(lp, "interactions", None):
-                    ix = []
-                    break
-                ix.extend(lp.interactions)
-            if ix:
-                from minotaur_subnet.shared.types import ExecutionPlan as _EP
-                logger.info("[hydra] QUALITY two-leg %s->%s amt=%s",
-                            qkey[0][:8], qkey[1][:8], qkey[2])
-                return _EP(intent_id=intent.app_id, interactions=ix,
-                           deadline=9999999999, nonce=state.nonce,
-                           metadata={"solver": "hydra-two-leg", "chain_id": chain_id})
-            return None
+            return self._hydra_quality_two_leg(intent, state, snapshot, qkey,
+                                               qcand, chain_id)
         if qcand.get("venue") in ("maverick_push", "v2_push", "univ4_push"):
-            recipient = (state.contract_address
-                         or p.get("receiver") or state.owner)
-            if qcand["venue"] == "univ4_push":
-                ix = _build_univ4_push_ix(
-                    qcand["spec"], qkey[0], qkey[1], qkey[2],
-                    recipient, chain_id)
-            else:
-                builder = (_build_maverick_push_ix
-                           if qcand["venue"] == "maverick_push"
-                           else _build_v2_push_ix)
-                spec = qcand["spec"]
-                if spec.get("size_pct"):
-                    # dynamic sizing: the bench executes at the plan block, so
-                    # a same-block leg1 quote == leg1 delivery exactly — size
-                    # the push at size_pct/1000 of it instead of the frozen
-                    # drift-safety haircut. Quote failure falls back to the
-                    # frozen swap_amount.
-                    try:
-                        q = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
-                        if q:
-                            spec = dict(spec)
-                            spec["swap_amount"] = q * int(spec["size_pct"]) // 1000
-                            logger.info("[hydra] dynamic push size %s (leg1 %s)",
-                                        spec["swap_amount"], q)
-                    except Exception:
-                        logger.exception("[hydra] leg1 quote failed; frozen size")
-                ix = builder(spec, qkey[0], qkey[2],
-                             recipient, chain_id)
-            from minotaur_subnet.shared.types import ExecutionPlan as _EP
-            logger.info("[hydra] QUALITY %s %s->%s amt=%s",
-                        qcand["venue"], qkey[0][:8], qkey[1][:8], qkey[2])
-            return _EP(intent_id=intent.app_id, interactions=ix,
-                       deadline=9999999999, nonce=state.nonce,
-                       metadata={"solver": "hydra-push", "chain_id": chain_id})
+            return self._hydra_quality_push(intent, state, p, qkey, qcand,
+                                            chain_id)
         if qcand.get("venue") == "v3_path02":
-            # SwapRouter02 multi-hop exactInput — wrapper-built (the engine's
-            # multihop venue emits the V1 ABI that SwapRouter02 rejects).
-            recipient = (state.contract_address
-                         or p.get("receiver") or state.owner)
-            ix = _build_v3_path02_ix(
-                qcand["spec"], qkey[0], qkey[2], recipient, chain_id)
-            from minotaur_subnet.shared.types import ExecutionPlan as _EP
-            logger.info("[hydra] QUALITY v3-path02 %s->%s amt=%s",
-                        qkey[0][:8], qkey[1][:8], qkey[2])
-            return _EP(intent_id=intent.app_id, interactions=ix,
-                       deadline=9999999999, nonce=state.nonce,
-                       metadata={"solver": "hydra-v3-path02", "chain_id": chain_id})
+            return self._hydra_quality_v3_path02(intent, state, p, qkey,
+                                                 qcand, chain_id)
         if qcand.get("venue") == "pancake_infinity_cl":
-            # engine has no Infinity venue — built wrapper-locally (absorb
-            # replaces engine files, never this one).
-            recipient = (state.contract_address
-                         or p.get("receiver") or state.owner)
-            ix = _build_infinity_cl_ix(
-                qcand["spec"], qkey[0], qkey[1], qkey[2],
-                recipient, chain_id)
-            from minotaur_subnet.shared.types import ExecutionPlan as _EP
-            logger.info("[hydra] QUALITY infinity-cl %s->%s amt=%s",
-                        qkey[0][:8], qkey[1][:8], qkey[2])
-            return _EP(intent_id=intent.app_id, interactions=ix,
-                       deadline=9999999999, nonce=state.nonce,
-                       metadata={"solver": "hydra-infinity", "chain_id": chain_id})
+            return self._hydra_quality_infinity(intent, state, p, qkey,
+                                                qcand, chain_id)
         qplan = self._build_singlehop_plan(
             intent, state, snapshot, qcand, qkey[0], qkey[1], qkey[2], chain_id)
         if qplan is not None:
             logger.info("[hydra] QUALITY override %s->%s amt=%s via %s",
                         qkey[0][:8], qkey[1][:8], qkey[2], qcand["param"])
         return qplan
+
+    def _hydra_quality_two_leg(self, intent, state, snapshot, qkey, qcand, chain_id):
+        # fixed-intermediate 2-hop: leg1 exact-in lands at the app, leg2
+        # spends a FIXED amount sized under leg1's quote (headroom absorbs
+        # pool drift; re-baked per absorb/census cycle).
+        ix = []
+        for leg in qcand["legs"]:
+            lp = self._build_singlehop_plan(
+                intent, state, snapshot, leg["cand"],
+                leg["tin"], leg["tout"], leg["amt"], chain_id)
+            if lp is None or not getattr(lp, "interactions", None):
+                ix = []
+                break
+            ix.extend(lp.interactions)
+        if ix:
+            from minotaur_subnet.shared.types import ExecutionPlan as _EP
+            logger.info("[hydra] QUALITY two-leg %s->%s amt=%s",
+                        qkey[0][:8], qkey[1][:8], qkey[2])
+            return _EP(intent_id=intent.app_id, interactions=ix,
+                       deadline=9999999999, nonce=state.nonce,
+                       metadata={"solver": "hydra-two-leg", "chain_id": chain_id})
+        return None
+
+    def _hydra_quality_push(self, intent, state, p, qkey, qcand, chain_id):
+        recipient = (state.contract_address
+                     or p.get("receiver") or state.owner)
+        if qcand["venue"] == "univ4_push":
+            ix = _build_univ4_push_ix(
+                qcand["spec"], qkey[0], qkey[1], qkey[2],
+                recipient, chain_id)
+        else:
+            builder = (_build_maverick_push_ix
+                       if qcand["venue"] == "maverick_push"
+                       else _build_v2_push_ix)
+            spec = qcand["spec"]
+            if spec.get("size_pct"):
+                # dynamic sizing: the bench executes at the plan block, so
+                # a same-block leg1 quote == leg1 delivery exactly — size
+                # the push at size_pct/1000 of it instead of the frozen
+                # drift-safety haircut. Quote failure falls back to the
+                # frozen swap_amount.
+                try:
+                    q = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
+                    if q:
+                        spec = dict(spec)
+                        spec["swap_amount"] = q * int(spec["size_pct"]) // 1000
+                        logger.info("[hydra] dynamic push size %s (leg1 %s)",
+                                    spec["swap_amount"], q)
+                except Exception:
+                    logger.exception("[hydra] leg1 quote failed; frozen size")
+            ix = builder(spec, qkey[0], qkey[2],
+                         recipient, chain_id)
+        from minotaur_subnet.shared.types import ExecutionPlan as _EP
+        logger.info("[hydra] QUALITY %s %s->%s amt=%s",
+                    qcand["venue"], qkey[0][:8], qkey[1][:8], qkey[2])
+        return _EP(intent_id=intent.app_id, interactions=ix,
+                   deadline=9999999999, nonce=state.nonce,
+                   metadata={"solver": "hydra-push", "chain_id": chain_id})
+
+    def _hydra_quality_v3_path02(self, intent, state, p, qkey, qcand, chain_id):
+        # SwapRouter02 multi-hop exactInput — wrapper-built (the engine's
+        # multihop venue emits the V1 ABI that SwapRouter02 rejects).
+        recipient = (state.contract_address
+                     or p.get("receiver") or state.owner)
+        ix = _build_v3_path02_ix(
+            qcand["spec"], qkey[0], qkey[2], recipient, chain_id)
+        from minotaur_subnet.shared.types import ExecutionPlan as _EP
+        logger.info("[hydra] QUALITY v3-path02 %s->%s amt=%s",
+                    qkey[0][:8], qkey[1][:8], qkey[2])
+        return _EP(intent_id=intent.app_id, interactions=ix,
+                   deadline=9999999999, nonce=state.nonce,
+                   metadata={"solver": "hydra-v3-path02", "chain_id": chain_id})
+
+    def _hydra_quality_infinity(self, intent, state, p, qkey, qcand, chain_id):
+        # engine has no Infinity venue — built wrapper-locally (absorb
+        # replaces engine files, never this one).
+        recipient = (state.contract_address
+                     or p.get("receiver") or state.owner)
+        ix = _build_infinity_cl_ix(
+            qcand["spec"], qkey[0], qkey[1], qkey[2],
+            recipient, chain_id)
+        from minotaur_subnet.shared.types import ExecutionPlan as _EP
+        logger.info("[hydra] QUALITY infinity-cl %s->%s amt=%s",
+                    qkey[0][:8], qkey[1][:8], qkey[2])
+        return _EP(intent_id=intent.app_id, interactions=ix,
+                   deadline=9999999999, nonce=state.nonce,
+                   metadata={"solver": "hydra-infinity", "chain_id": chain_id})
 
     def _hydra_quote_leg1(self, spec, tin, amount_in, chain_id):
         """Same-block QuoterV2 quote of a push route's leg1 (uni/pancake V3
@@ -629,11 +657,6 @@ class MinerSolver(_ChampBase):
         amt = int(p.get("input_amount", 0) or 0)
         if not tin or not tout or amt <= 0:
             return None
-        WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-        FEE = {  # deepest-tier guesses for majors; default 3000
-            frozenset((WETH, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")): 500,   # WETH/USDC
-            frozenset((WETH, "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599")): 3000,  # WETH/WBTC
-        }
         ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564"  # SwapRouter (V1 ABI, deadline)
         recip = str(p.get("receiver", "") or "0x0000000000000000000000000000000000000001")
         approve = _IX(target=_ck(tin), value="0",
@@ -647,14 +670,7 @@ class MinerSolver(_ChampBase):
                 if i < len(fees):
                     b += fees[i].to_bytes(3, "big")
             return b
-        if frozenset((tin, tout)) in FEE:
-            tokens, fees = [tin, tout], [FEE[frozenset((tin, tout))]]
-        elif WETH not in (tin, tout):
-            f1 = FEE.get(frozenset((tin, WETH)), 3000)
-            f2 = FEE.get(frozenset((WETH, tout)), 3000)
-            tokens, fees = [tin, WETH, tout], [f1, f2]
-        else:
-            tokens, fees = [tin, tout], [3000]
+        tokens, fees = self._hydra_eth_route(tin, tout)
         swap_data = "0xc04b8d59" + _enc(  # exactInput((bytes,address,uint256,uint256,uint256))
             ["(bytes,address,uint256,uint256,uint256)"],
             [(path_bytes(tokens, fees), _ck(recip), 9999999999, amt, 0)]).hex()
@@ -664,6 +680,24 @@ class MinerSolver(_ChampBase):
         return _EP(intent_id=intent.app_id, interactions=[approve, swap],
                    deadline=9999999999, nonce=state.nonce,
                    metadata={"solver": "hydra-eth-fastpath", "chain_id": 1})
+
+    def _hydra_eth_route(self, tin, tout):
+        """Token/fee route for the mainnet fastpath: known-pair fee tier if
+        tabled, else 2-hop via WETH (default fee 3000)."""
+        WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+        FEE = {  # deepest-tier guesses for majors; default 3000
+            frozenset((WETH, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")): 500,   # WETH/USDC
+            frozenset((WETH, "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599")): 3000,  # WETH/WBTC
+        }
+        if frozenset((tin, tout)) in FEE:
+            tokens, fees = [tin, tout], [FEE[frozenset((tin, tout))]]
+        elif WETH not in (tin, tout):
+            f1 = FEE.get(frozenset((tin, WETH)), 3000)
+            f2 = FEE.get(frozenset((WETH, tout)), 3000)
+            tokens, fees = [tin, WETH, tout], [f1, f2]
+        else:
+            tokens, fees = [tin, tout], [3000]
+        return tokens, fees
 
     def _hydra_census_plan(self, intent, state, snapshot, hooked_only):
         p = self._normalized_swap_params(intent, state)
@@ -736,29 +770,43 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
 
     _putty_log = _putty_logging.getLogger("putty_shim")
 
-    _PUTTY_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # 6-dec, Base
-    _PUTTY_WETH = "0x4200000000000000000000000000000000000006"
-    _PUTTY_BASE_CHAIN = 8453
-    _PUTTY_DEADLINE = 9999999999  # constant far-future deadline (drifted-anvil safe)
-    _PUTTY_APPROVE_SEL = bytes.fromhex("095ea7b3")  # approve(address,uint256)
-    _PUTTY_EXACT_IN_SINGLE_SEL = bytes.fromhex("a026383e")  # slipstream exactInputSingle(int24 tickSpacing)
-    # --- epsilon-edge additions (all selectors precomputed, keccak-free) ---
-    _PUTTY_TRANSFER_SEL = bytes.fromhex("a9059cbb")      # transfer(address,uint256)
-    _PUTTY_PAIR_SWAP_SEL = bytes.fromhex("022c0d9f")     # swap(uint256,uint256,address,bytes)
-    _PUTTY_DEPOSIT_SEL = bytes.fromhex("6e553f65")       # ERC4626 deposit(uint256,address)
-    _PUTTY_GET_AMOUNT_OUT_SEL = bytes.fromhex("f140a35a")  # aeroV2 pair getAmountOut(uint256,address)
-    _PUTTY_QUOTE_SINGLE_SEL = bytes.fromhex("c6a5026a")  # QuoterV2 quoteExactInputSingle(tuple)
-    _PUTTY_R02_SINGLE_SEL = bytes.fromhex("04e45aaf")    # SwapRouter02 exactInputSingle (no deadline)
-    _PUTTY_R02_PATH_SEL = bytes.fromhex("b858183f")      # SwapRouter02 exactInput((bytes,addr,u256,u256))
-    _PUTTY_UNI_R02 = "0x2626664c2603336E57B271c5C0b26F421741e481"
-    _PUTTY_UNI_QUOTER = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"  # QuoterV2
-    _PUTTY_MSG_SENDER = "0x0000000000000000000000000000000000000001"  # R02 recipient sentinel = proxy
-    # --- 2026-07-04 fat-class additions (superOETHb + ZRO) ---
-    _PUTTY_OLD_SINGLE_SEL = bytes.fromhex("414bf389")    # V1-style exactInputSingle (with deadline)
-    _PUTTY_CURVE_XCHG_SEL = bytes.fromhex("ddc1f59d")    # curve NG exchange(int128,int128,u256,u256,address)
-    _PUTTY_SUSHI_V3_ROUTER = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f"  # Sushi V3 SwapRouter (deadline-style)
-    _PUTTY_SUSHI_V3_QUOTER = "0xb1E835Dc2785b52265711e17fCCb0fd018226a6e"  # Sushi V3 QuoterV2 (uni ABI)
-    _PUTTY_CURVE_SUPEROETHB = "0x302a94e3c28c290eaf2a4605fc52e11eb915f378"  # Curve NG superOETHb/WETH (coins: 0=WETH, 1=superOETHb)
+    def _putty_shim_constants():
+        """Fixed shim constants: Base token/venue addresses plus precomputed
+        4-byte selectors (keccak-free at import time). Returned in the exact
+        order of the module-level unpack below."""
+        return (
+            "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",  # USDC (6-dec, Base)
+            "0x4200000000000000000000000000000000000006",  # WETH
+            8453,  # Base chain id
+            9999999999,  # constant far-future deadline (drifted-anvil safe)
+            bytes.fromhex("095ea7b3"),  # approve(address,uint256)
+            bytes.fromhex("a026383e"),  # slipstream exactInputSingle(int24 tickSpacing)
+            # --- epsilon-edge additions (all selectors precomputed, keccak-free) ---
+            bytes.fromhex("a9059cbb"),  # transfer(address,uint256)
+            bytes.fromhex("022c0d9f"),  # swap(uint256,uint256,address,bytes)
+            bytes.fromhex("6e553f65"),  # ERC4626 deposit(uint256,address)
+            bytes.fromhex("f140a35a"),  # aeroV2 pair getAmountOut(uint256,address)
+            bytes.fromhex("c6a5026a"),  # QuoterV2 quoteExactInputSingle(tuple)
+            bytes.fromhex("04e45aaf"),  # SwapRouter02 exactInputSingle (no deadline)
+            bytes.fromhex("b858183f"),  # SwapRouter02 exactInput((bytes,addr,u256,u256))
+            "0x2626664c2603336E57B271c5C0b26F421741e481",  # Uniswap SwapRouter02
+            "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a",  # QuoterV2
+            "0x0000000000000000000000000000000000000001",  # R02 recipient sentinel = proxy
+            # --- 2026-07-04 fat-class additions (superOETHb + ZRO) ---
+            bytes.fromhex("414bf389"),  # V1-style exactInputSingle (with deadline)
+            bytes.fromhex("ddc1f59d"),  # curve NG exchange(int128,int128,u256,u256,address)
+            "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f",  # Sushi V3 SwapRouter (deadline-style)
+            "0xb1E835Dc2785b52265711e17fCCb0fd018226a6e",  # Sushi V3 QuoterV2 (uni ABI)
+            "0x302a94e3c28c290eaf2a4605fc52e11eb915f378",  # Curve NG superOETHb/WETH (coins: 0=WETH, 1=superOETHb)
+        )
+
+    (_PUTTY_USDC, _PUTTY_WETH, _PUTTY_BASE_CHAIN, _PUTTY_DEADLINE,
+     _PUTTY_APPROVE_SEL, _PUTTY_EXACT_IN_SINGLE_SEL, _PUTTY_TRANSFER_SEL,
+     _PUTTY_PAIR_SWAP_SEL, _PUTTY_DEPOSIT_SEL, _PUTTY_GET_AMOUNT_OUT_SEL,
+     _PUTTY_QUOTE_SINGLE_SEL, _PUTTY_R02_SINGLE_SEL, _PUTTY_R02_PATH_SEL,
+     _PUTTY_UNI_R02, _PUTTY_UNI_QUOTER, _PUTTY_MSG_SENDER,
+     _PUTTY_OLD_SINGLE_SEL, _PUTTY_CURVE_XCHG_SEL, _PUTTY_SUSHI_V3_ROUTER,
+     _PUTTY_SUSHI_V3_QUOTER, _PUTTY_CURVE_SUPEROETHB) = _putty_shim_constants()
 
     # output_token (lowercased) -> (alt SwapRouter, tickSpacing). All 5 are
     # fork-proven exclusive: input == USDC, venue == aerodrome slipstream-fork
@@ -810,7 +858,9 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
     #                   pays app; amounts via pair.getAmountOut at plan
     #                   time (RPC; exact on the pinned benchmark fork)
     # aero_pd hops: (token_in, pair, in_is_token0)
-    _PUTTY_SUBS = {
+    def _putty_subs_table():
+        """USDC-input epsilon-edge substitution entries (doctrine above)."""
+        return {
         # NOTE waBasWETH 0xe298b938 (ERC4626 vault) was DROPPED 2026-07-03:
         # re-hunt vs champion viking-mino-solver 92.0.0 (origin/main 3a5e391,
         # Base fork @48147358, real scoreIntent) shows the champion NOW FILLS it
@@ -898,14 +948,18 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
             "kind": "uni_sushi",
             "sushi_fee": 500,
             "lo": 1000000, "hi": 4000000},
-    }
+        }
+
+    _PUTTY_SUBS = _putty_subs_table()
 
     # ------------------------------------------------------------------
     # WETH-INPUT substitution table (input == WETH). Same aero_pd builder;
     # the first-hop transfer sends hops[0][0] (= WETH here). Fork-proven vs
     # champion viking-mino-solver 92.0.0 (origin/main 3a5e391, Base fork
     # @48147358, exact corpus params) under real scoreIntent.
-    _PUTTY_SUBS_WETH = {
+    def _putty_weth_subs_table():
+        """WETH-input epsilon-edge substitution entries (doctrine above)."""
+        return {
         # WETH->01facc — 1-hop aeroV2 pool-direct (the SAME WETH<->01facc pair
         # that is hop2 of the USDC->01facc entry). 2026-07-03: champion routes
         # this via a costlier path (473,976 vs OUR route; champ delivered
@@ -944,7 +998,9 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
             "hops": (("0x4200000000000000000000000000000000000006",
                       "0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515", True),),
             "lo": 100000000000000, "hi": 10000000000000000},
-    }
+        }
+
+    _PUTTY_SUBS_WETH = _putty_weth_subs_table()
 
     # rpc url captured from initialize(); plan-time quotes need it
     _PUTTY_RPC = {"url": None}
@@ -1115,25 +1171,13 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
         return out
 
     def _putty_sub_interactions(spec, token_out, amount_in, recipient, chain_id):
-        """Build the substituted interaction list for one table entry."""
+        """Build the substituted interaction list for one table entry.
+
+        The per-kind builders close over this call's spec/token_out/amount_in/
+        recipient/chain_id; each returns the full interaction list."""
         kind = spec["kind"]
-        if kind == "univ3_single":
-            return [
-                _putty_ix(_PUTTY_USDC,
-                          _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id),
-                _putty_ix(_PUTTY_UNI_R02,
-                          _putty_r02_single(token_out, spec["fee"], recipient,
-                                            amount_in), chain_id),
-            ]
-        if kind == "univ3_path":
-            return [
-                _putty_ix(_PUTTY_USDC,
-                          _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id),
-                _putty_ix(_PUTTY_UNI_R02,
-                          _putty_r02_path(spec["mids"], token_out, spec["fees"],
-                                          recipient, amount_in), chain_id),
-            ]
-        if kind == "erc4626":
+
+        def _build_erc4626_sub():
             quoted = _putty_quote_usdc_weth(spec["fee"], amount_in)
             return [
                 _putty_ix(_PUTTY_USDC,
@@ -1148,7 +1192,8 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                         ["uint256", "address"],
                         [int(quoted), _putty_ck(recipient)])).hex(), chain_id),
             ]
-        if kind == "curve_full":
+
+        def _build_curve_full_sub():
             # uni-v3 best-fee USDC->WETH (recipient = MSG_SENDER sentinel =
             # proxy) + approve + Curve NG pool.exchange(i, j, FULL exact
             # quote, 0, app). QuoterV2 is bit-exact vs execution on the
@@ -1170,7 +1215,8 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                         [int(spec["i"]), int(spec["j"]), int(weth_out), 0,
                          _putty_ck(recipient)])).hex(), chain_id),
             ]
-        if kind == "uni_sushi":
+
+        def _build_uni_sushi_sub():
             # uni-v3 best-fee USDC->WETH (sentinel -> proxy) chained into
             # Sushi V3 exactInputSingle (V1-style, deadline) WETH->token_out,
             # dx = the exact WETH quote. Sanity: sushi quote must be > 0 or
@@ -1196,7 +1242,8 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                           chain_id),
                 _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id),
             ]
-        if kind == "aero_pd":
+
+        def _build_aero_pd_sub():
             hops = spec["hops"]
             # transfer the ACTUAL input token (= hops[0][0]) to the first pair.
             # For every USDC-input entry hops[0][0] IS USDC, so this is byte-
@@ -1215,6 +1262,31 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                         [a0, a1, _putty_ck(to), b""])).hex(), chain_id))
                 cur = out
             return ixs
+
+        if kind == "univ3_single":
+            return [
+                _putty_ix(_PUTTY_USDC,
+                          _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id),
+                _putty_ix(_PUTTY_UNI_R02,
+                          _putty_r02_single(token_out, spec["fee"], recipient,
+                                            amount_in), chain_id),
+            ]
+        if kind == "univ3_path":
+            return [
+                _putty_ix(_PUTTY_USDC,
+                          _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id),
+                _putty_ix(_PUTTY_UNI_R02,
+                          _putty_r02_path(spec["mids"], token_out, spec["fees"],
+                                          recipient, amount_in), chain_id),
+            ]
+        if kind == "erc4626":
+            return _build_erc4626_sub()
+        if kind == "curve_full":
+            return _build_curve_full_sub()
+        if kind == "uni_sushi":
+            return _build_uni_sushi_sub()
+        if kind == "aero_pd":
+            return _build_aero_pd_sub()
         raise RuntimeError(f"putty: unknown sub kind {kind}")
 
     def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
@@ -1260,49 +1332,56 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                 pass
             return super().initialize(*args, **kwargs)
 
+        def _putty_edge_plan(self, intent, state):
+            """Return a substituted plan for a tabled order, else None."""
+            get = _putty_state_getter(state)
+            tin = str(get("input_token") or "").strip()
+            tout = str(get("output_token") or "").strip()
+            amount_in = int(get("input_amount") or 0)
+            route = _PUTTY_ROUTES.get(tout.lower())
+            if (route is not None
+                    and tin.lower() == _PUTTY_USDC.lower()
+                    and amount_in > 0):
+                router, tick_spacing = route
+                plan = _putty_build_alt_plan(
+                    intent, state, tout, amount_in, router, tick_spacing)
+                if plan is not None and plan.interactions:
+                    _putty_log.info(
+                        "[putty] alt-CL substitution for %s router=%s tick=%s",
+                        tout, router, tick_spacing)
+                    return plan
+            spec = _PUTTY_SUBS.get(tout.lower())
+            if (spec is not None
+                    and tin.lower() == _PUTTY_USDC.lower()
+                    and spec["lo"] <= amount_in <= spec["hi"]):
+                plan = _putty_build_sub_plan(
+                    intent, state, spec, tout, amount_in)
+                if plan is not None and plan.interactions:
+                    _putty_log.info(
+                        "[putty] eps substitution %s for %s amt=%s",
+                        spec["kind"], tout, amount_in)
+                    return plan
+            spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
+            if (spec_w is not None
+                    and tin.lower() == _PUTTY_WETH.lower()
+                    and spec_w["lo"] <= amount_in <= spec_w["hi"]):
+                plan = _putty_build_sub_plan(
+                    intent, state, spec_w, tout, amount_in)
+                if plan is not None and plan.interactions:
+                    _putty_log.info(
+                        "[putty] eps WETH substitution %s for %s amt=%s",
+                        spec_w["kind"], tout, amount_in)
+                    return plan
+            return None
+
         def generate_plan(self, *args, **kwargs):
             try:
                 intent = args[0] if len(args) > 0 else kwargs.get("intent", kwargs.get("app"))
                 state = args[1] if len(args) > 1 else kwargs.get("state")
                 if state is not None:
-                    get = _putty_state_getter(state)
-                    tin = str(get("input_token") or "").strip()
-                    tout = str(get("output_token") or "").strip()
-                    amount_in = int(get("input_amount") or 0)
-                    route = _PUTTY_ROUTES.get(tout.lower())
-                    if (route is not None
-                            and tin.lower() == _PUTTY_USDC.lower()
-                            and amount_in > 0):
-                        router, tick_spacing = route
-                        plan = _putty_build_alt_plan(
-                            intent, state, tout, amount_in, router, tick_spacing)
-                        if plan is not None and plan.interactions:
-                            _putty_log.info(
-                                "[putty] alt-CL substitution for %s router=%s tick=%s",
-                                tout, router, tick_spacing)
-                            return plan
-                    spec = _PUTTY_SUBS.get(tout.lower())
-                    if (spec is not None
-                            and tin.lower() == _PUTTY_USDC.lower()
-                            and spec["lo"] <= amount_in <= spec["hi"]):
-                        plan = _putty_build_sub_plan(
-                            intent, state, spec, tout, amount_in)
-                        if plan is not None and plan.interactions:
-                            _putty_log.info(
-                                "[putty] eps substitution %s for %s amt=%s",
-                                spec["kind"], tout, amount_in)
-                            return plan
-                    spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
-                    if (spec_w is not None
-                            and tin.lower() == _PUTTY_WETH.lower()
-                            and spec_w["lo"] <= amount_in <= spec_w["hi"]):
-                        plan = _putty_build_sub_plan(
-                            intent, state, spec_w, tout, amount_in)
-                        if plan is not None and plan.interactions:
-                            _putty_log.info(
-                                "[putty] eps WETH substitution %s for %s amt=%s",
-                                spec_w["kind"], tout, amount_in)
-                            return plan
+                    plan = self._putty_edge_plan(intent, state)
+                    if plan is not None:
+                        return plan
             except Exception:
                 _putty_log.exception("[putty] edge failed; deferring to champion plan")
             # pass-through: byte-identical to the champion on every other order

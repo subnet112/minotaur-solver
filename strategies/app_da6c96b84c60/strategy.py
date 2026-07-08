@@ -157,6 +157,145 @@ def _find_best_fee_tier(w3: Any, factory: str, token_a: str, token_b: str) -> in
     return best_fee
 
 
+def _extract_swap_params(state: IntentState) -> tuple[str, str, int, int, int]:
+    """Mechanically extracted from generate_plan: parameter parsing."""
+    typed = getattr(state, "typed_context", None)
+    raw = getattr(state, "raw_params", {}) or {}
+
+    input_token = getattr(typed, "input_token", "") or raw.get("input_token", "")
+    output_token = getattr(typed, "output_token", "") or raw.get("output_token", "")
+    input_amount = int(
+        getattr(typed, "input_amount", 0) or raw.get("input_amount", "0") or 0
+    )
+    min_output_amount = int(
+        getattr(typed, "min_output_amount", 0)
+        or getattr(typed, "suggested_min_output", 0)
+        or raw.get("min_output_amount", "0")
+        or raw.get("suggested_min_output", "0")
+        or 0
+    )
+
+    chain_id = state.chain_id or 8453
+
+    amount_out_minimum = min_output_amount if min_output_amount > 0 else 1
+    return input_token, output_token, input_amount, amount_out_minimum, chain_id
+
+
+def _discover_route(
+    rpc_url: str | None, input_token: str, output_token: str
+) -> tuple[int | None, bytes | None]:
+    """Mechanically extracted from generate_plan: route/fee-tier discovery."""
+    # --- Dynamic pool discovery via live RPC (falls back to static table
+    # / single-hop default when no RPC is configured or discovery fails).
+    fee: int | None = None
+    multihop_path: bytes | None = None
+
+    if rpc_url:
+        try:
+            from web3 import Web3
+
+            w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": 3}))
+            fee = _find_best_fee_tier(
+                w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token
+            )
+            if fee is None:
+                # Try 2-hop bridges: WETH first, then USDC, since either
+                # may have the only liquid pool for a long-tail pair.
+                for bridge in (WETH, USDC):
+                    if (
+                        input_token.lower() == bridge.lower()
+                        or output_token.lower() == bridge.lower()
+                    ):
+                        continue
+                    fee_in = _find_best_fee_tier(
+                        w3, UNISWAP_V3_FACTORY_BASE, input_token, bridge
+                    )
+                    fee_out = _find_best_fee_tier(
+                        w3, UNISWAP_V3_FACTORY_BASE, bridge, output_token
+                    )
+                    if fee_in is not None and fee_out is not None:
+                        multihop_path = _encode_path(
+                            input_token, fee_in, bridge, fee_out, output_token
+                        )
+                        break
+        except Exception:
+            fee = None
+            multihop_path = None
+
+    if fee is None and multihop_path is None:
+        # No RPC available, or discovery failed to find any route via
+        # factory probing above. Before giving up, verify a pool
+        # actually exists at one of the standard fee tiers (rather than
+        # blindly emitting calldata against a tier with no liquidity).
+        if rpc_url:
+            try:
+                from web3 import Web3
+
+                w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": 3}))
+                for candidate_fee in _FEE_TIER_PROBE_ORDER:
+                    pool = _get_pool(
+                        w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token,
+                        candidate_fee,
+                    )
+                    if pool is not None:
+                        fee = candidate_fee
+                        break
+            except Exception:
+                pass
+        if fee is None:
+            # Absolute last resort: static table / default fee tier.
+            fee = _fee_for_pair(input_token, output_token)
+    return fee, multihop_path
+
+
+def _build_swap_calldata(
+    chain_id: int,
+    input_token: str,
+    output_token: str,
+    fee: int | None,
+    multihop_path: bytes | None,
+    input_amount: int,
+    amount_out_minimum: int,
+) -> str:
+    """Mechanically extracted from generate_plan: swap calldata encoding."""
+    if multihop_path is not None:
+        # exactInput (multihop) always takes the 5-field struct with a
+        # deadline param, on both V1 and V2 (SwapRouter02) routers.
+        # Only exactInputSingle differs between V1/V2 — V2 drops the
+        # deadline field there, but exactInput keeps it on every chain.
+        deadline_param = int(time.time()) + 300
+        swap_calldata = _encode_exact_input_v1(
+            path=multihop_path,
+            recipient=APP_CONTRACT_ADDRESS,
+            deadline=deadline_param,
+            amount_in=input_amount,
+            amount_out_minimum=amount_out_minimum,
+        )
+    elif chain_id in SWAP_ROUTER_V2_CHAINS:
+        swap_calldata = _encode_exact_input_single_v2(
+            token_in=input_token,
+            token_out=output_token,
+            fee=fee,
+            recipient=APP_CONTRACT_ADDRESS,
+            amount_in=input_amount,
+            amount_out_minimum=amount_out_minimum,
+            sqrt_price_limit_x96=0,
+        )
+    else:
+        # Fallback: V1 encoding with deadline (not expected on Base, but
+        # keeps the strategy safe if chain routing ever changes).
+        from minotaur_subnet.sdk.selectors import EXACT_INPUT_SINGLE_SELECTOR_V1
+
+        deadline_param = int(time.time()) + 300
+        encoded_params = encode(
+            ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
+            [(input_token, output_token, fee, APP_CONTRACT_ADDRESS,
+              deadline_param, input_amount, amount_out_minimum, 0)],
+        )
+        swap_calldata = "0x" + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex()
+    return swap_calldata
+
+
 class DexAggregatorStrategy(Strategy):
     APP_ID = "app_da6c96b84c60"
     INTENT_FUNCTIONS = ["swap"]
@@ -167,125 +306,28 @@ class DexAggregatorStrategy(Strategy):
         state: IntentState,
         snapshot: MarketSnapshot | None = None,
     ) -> ExecutionPlan:
-        typed = getattr(state, "typed_context", None)
-        raw = getattr(state, "raw_params", {}) or {}
-
-        input_token = getattr(typed, "input_token", "") or raw.get("input_token", "")
-        output_token = getattr(typed, "output_token", "") or raw.get("output_token", "")
-        input_amount = int(
-            getattr(typed, "input_amount", 0) or raw.get("input_amount", "0") or 0
-        )
-        min_output_amount = int(
-            getattr(typed, "min_output_amount", 0)
-            or getattr(typed, "suggested_min_output", 0)
-            or raw.get("min_output_amount", "0")
-            or raw.get("suggested_min_output", "0")
-            or 0
-        )
-
-        chain_id = state.chain_id or 8453
-
-        amount_out_minimum = min_output_amount if min_output_amount > 0 else 1
-
-        # --- Dynamic pool discovery via live RPC (falls back to static table
-        # / single-hop default when no RPC is configured or discovery fails).
-        fee: int | None = None
-        multihop_path: bytes | None = None
+        (
+            input_token,
+            output_token,
+            input_amount,
+            amount_out_minimum,
+            chain_id,
+        ) = _extract_swap_params(state)
 
         rpc_url = self.rpc_for(chain_id)
-        if rpc_url:
-            try:
-                from web3 import Web3
-
-                w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": 3}))
-                fee = _find_best_fee_tier(
-                    w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token
-                )
-                if fee is None:
-                    # Try 2-hop bridges: WETH first, then USDC, since either
-                    # may have the only liquid pool for a long-tail pair.
-                    for bridge in (WETH, USDC):
-                        if (
-                            input_token.lower() == bridge.lower()
-                            or output_token.lower() == bridge.lower()
-                        ):
-                            continue
-                        fee_in = _find_best_fee_tier(
-                            w3, UNISWAP_V3_FACTORY_BASE, input_token, bridge
-                        )
-                        fee_out = _find_best_fee_tier(
-                            w3, UNISWAP_V3_FACTORY_BASE, bridge, output_token
-                        )
-                        if fee_in is not None and fee_out is not None:
-                            multihop_path = _encode_path(
-                                input_token, fee_in, bridge, fee_out, output_token
-                            )
-                            break
-            except Exception:
-                fee = None
-                multihop_path = None
-
-        if fee is None and multihop_path is None:
-            # No RPC available, or discovery failed to find any route via
-            # factory probing above. Before giving up, verify a pool
-            # actually exists at one of the standard fee tiers (rather than
-            # blindly emitting calldata against a tier with no liquidity).
-            if rpc_url:
-                try:
-                    from web3 import Web3
-
-                    w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": 3}))
-                    for candidate_fee in _FEE_TIER_PROBE_ORDER:
-                        pool = _get_pool(
-                            w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token,
-                            candidate_fee,
-                        )
-                        if pool is not None:
-                            fee = candidate_fee
-                            break
-                except Exception:
-                    pass
-            if fee is None:
-                # Absolute last resort: static table / default fee tier.
-                fee = _fee_for_pair(input_token, output_token)
+        fee, multihop_path = _discover_route(rpc_url, input_token, output_token)
 
         approve_calldata = _encode_approve(SWAP_ROUTER02_BASE, input_amount)
 
-        if multihop_path is not None:
-            # exactInput (multihop) always takes the 5-field struct with a
-            # deadline param, on both V1 and V2 (SwapRouter02) routers.
-            # Only exactInputSingle differs between V1/V2 — V2 drops the
-            # deadline field there, but exactInput keeps it on every chain.
-            deadline_param = int(time.time()) + 300
-            swap_calldata = _encode_exact_input_v1(
-                path=multihop_path,
-                recipient=APP_CONTRACT_ADDRESS,
-                deadline=deadline_param,
-                amount_in=input_amount,
-                amount_out_minimum=amount_out_minimum,
-            )
-        elif chain_id in SWAP_ROUTER_V2_CHAINS:
-            swap_calldata = _encode_exact_input_single_v2(
-                token_in=input_token,
-                token_out=output_token,
-                fee=fee,
-                recipient=APP_CONTRACT_ADDRESS,
-                amount_in=input_amount,
-                amount_out_minimum=amount_out_minimum,
-                sqrt_price_limit_x96=0,
-            )
-        else:
-            # Fallback: V1 encoding with deadline (not expected on Base, but
-            # keeps the strategy safe if chain routing ever changes).
-            from minotaur_subnet.sdk.selectors import EXACT_INPUT_SINGLE_SELECTOR_V1
-
-            deadline_param = int(time.time()) + 300
-            encoded_params = encode(
-                ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
-                [(input_token, output_token, fee, APP_CONTRACT_ADDRESS,
-                  deadline_param, input_amount, amount_out_minimum, 0)],
-            )
-            swap_calldata = "0x" + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex()
+        swap_calldata = _build_swap_calldata(
+            chain_id,
+            input_token,
+            output_token,
+            fee,
+            multihop_path,
+            input_amount,
+            amount_out_minimum,
+        )
 
         interactions = [
             Interaction(

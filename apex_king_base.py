@@ -24,8 +24,13 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.127.0")
+def _solver_identity():
+    return (os.environ.get("MINOTAUR_SOLVER_NAME", "top-miner-router"),
+            os.environ.get("MINOTAUR_SOLVER_VERSION", "0.127.0"),
+            os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight"))
+
+
+SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _solver_identity()
 # v0.127.0 (2026-07-06, "c52aedec-quality-override"): FIRST real output-edge dethrone
 # (meta shifted from parity/flake-timing to output competition — autopsy r29722318
 # showed rivals +40-294bps via quality overrides we lacked). Opus edge-hunter cracked
@@ -145,45 +150,57 @@ import king_base as _kb
 _BOTZ = "0xca179f3978137f5745e6d731591aaef985ee9d6d"
 _USDC_ = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 _NO_HOOK = "0x0000000000000000000000000000000000000000"
-try:
-    # Pool selection (StateView getLiquidity over all 20 Initialize pools):
-    # the sane-fee pools (100/10000) are UNFUNDED spam; liquidity lives in the
-    # creator-coin-style high-fee pools. Best delivery for USDC→Botz at $2 =
-    # the direct fee=250000 (25%) ts=5000 pool, liq≈7.0e14 (pool 0xa01cd9de…).
-    # min_output=1 on every seeder order → 75% of $2 in Botz ≫ 1 = clean win.
-    _kb._STATIC_EXOTIC_ROUTES[(_USDC_, _BOTZ)] = ("uniswap_v4_ur", {
-        "pool": (_USDC_, _BOTZ, 250000, 5000, _NO_HOOK),
-        "settle": _USDC_,
-        "zero_for_one": True,
-    })
-    # ── v0.110 blind-spot covers (r639 draw carried 6 champ-None rows; dead-row
-    # taxonomy: 284f min-bound −0.8%, 400beb min-bound −3.9%, 448152 USDbC
-    # non-dealable, 4feb TBD → 2 live targets below, both min_output=1) ──
-    _WETH_ = "0x4200000000000000000000000000000000000006"
-    _ZERO_ADDR_ = "0x0000000000000000000000000000000000000000"
-    # T182 0x182fa643 (ord_224946…; in BOTH the r395 and r639 draws = recurring):
-    # zero V3/V2/aero liquidity; funded HOOKLESS native-ETH V4 pool fee=10000
-    # ts=200 (liq 8.6e16, StateView-verified). AUCTION pattern: unwrap WETH →
-    # SETTLE native → SWAP (native c0 → token, zfo=True) → TAKE.
-    _T182 = "0x182fa643e5f29d5eca75e7b9cf9336a3fe4620b2"
-    _kb._STATIC_EXOTIC_ROUTES[(_WETH_, _T182)] = ("uniswap_v4_ur", {
-        "unwrap_weth": True,
-        "pool": (_ZERO_ADDR_, _T182, 10000, 200, _NO_HOOK),
-        "settle": _ZERO_ADDR_,
-        "zero_for_one": True,
-        # thin pool (L=8.6e16) partial-fills a 1.5e15 swap → leftover native
-        # delta ⇒ CurrencyNotSettled (fork-observed). sweep_settle TAKEs the
-        # remainder back and balances the delta; delivered = partial fill ≥ 1.
-        "sweep_settle": True,
-    })
-    # T0DCA 0x0dca08cf (ord_38fad4…, USDC $2): only funded venue = ZORA-paired
-    # HOOKED V4 pool fee=30000 ts=200 hook=0xd3d13346…9040 (liq 3.6e21,
-    # StateView; a second 3% pool w/ hook 0x5bf219b3… exists unfunded). Route:
-    # v3 USDC→WETH(500)→ZORA(3000) prefix, then V4 ZORA→token (token=c0 →
-    # zfo=False), settle=ZORA. Win-or-skip: a hook revert = plan fails = None
-    # = status quo; fork preflight decides if it ships.
-except Exception:  # table renamed upstream → skip cleanly, champ behavior intact
-    logging.getLogger(__name__).exception("[botz-v4] static-exotic patch failed")
+def _install_static_exotic_routes():
+    global _WETH_, _ZERO_ADDR_, _T182
+
+    def _register_botz_v4_route():
+        # Pool selection (StateView getLiquidity over all 20 Initialize pools):
+        # the sane-fee pools (100/10000) are UNFUNDED spam; liquidity lives in the
+        # creator-coin-style high-fee pools. Best delivery for USDC→Botz at $2 =
+        # the direct fee=250000 (25%) ts=5000 pool, liq≈7.0e14 (pool 0xa01cd9de…).
+        # min_output=1 on every seeder order → 75% of $2 in Botz ≫ 1 = clean win.
+        _kb._STATIC_EXOTIC_ROUTES[(_USDC_, _BOTZ)] = ("uniswap_v4_ur", {
+            "pool": (_USDC_, _BOTZ, 250000, 5000, _NO_HOOK),
+            "settle": _USDC_,
+            "zero_for_one": True,
+        })
+
+    def _register_t182_v4_route(weth, zero_addr, t182):
+        _kb._STATIC_EXOTIC_ROUTES[(weth, t182)] = ("uniswap_v4_ur", {
+            "unwrap_weth": True,
+            "pool": (zero_addr, t182, 10000, 200, _NO_HOOK),
+            "settle": zero_addr,
+            "zero_for_one": True,
+            # thin pool (L=8.6e16) partial-fills a 1.5e15 swap → leftover native
+            # delta ⇒ CurrencyNotSettled (fork-observed). sweep_settle TAKEs the
+            # remainder back and balances the delta; delivered = partial fill ≥ 1.
+            "sweep_settle": True,
+        })
+
+    try:
+        _register_botz_v4_route()
+        # ── v0.110 blind-spot covers (r639 draw carried 6 champ-None rows; dead-row
+        # taxonomy: 284f min-bound −0.8%, 400beb min-bound −3.9%, 448152 USDbC
+        # non-dealable, 4feb TBD → 2 live targets below, both min_output=1) ──
+        _WETH_ = "0x4200000000000000000000000000000000000006"
+        _ZERO_ADDR_ = "0x0000000000000000000000000000000000000000"
+        # T182 0x182fa643 (ord_224946…; in BOTH the r395 and r639 draws = recurring):
+        # zero V3/V2/aero liquidity; funded HOOKLESS native-ETH V4 pool fee=10000
+        # ts=200 (liq 8.6e16, StateView-verified). AUCTION pattern: unwrap WETH →
+        # SETTLE native → SWAP (native c0 → token, zfo=True) → TAKE.
+        _T182 = "0x182fa643e5f29d5eca75e7b9cf9336a3fe4620b2"
+        _register_t182_v4_route(_WETH_, _ZERO_ADDR_, _T182)
+        # T0DCA 0x0dca08cf (ord_38fad4…, USDC $2): only funded venue = ZORA-paired
+        # HOOKED V4 pool fee=30000 ts=200 hook=0xd3d13346…9040 (liq 3.6e21,
+        # StateView; a second 3% pool w/ hook 0x5bf219b3… exists unfunded). Route:
+        # v3 USDC→WETH(500)→ZORA(3000) prefix, then V4 ZORA→token (token=c0 →
+        # zfo=False), settle=ZORA. Win-or-skip: a hook revert = plan fails = None
+        # = status quo; fork preflight decides if it ships.
+    except Exception:  # table renamed upstream → skip cleanly, champ behavior intact
+        logging.getLogger(__name__).exception("[botz-v4] static-exotic patch failed")
+
+
+_install_static_exotic_routes()
 # v0.106.0 (2026-07-04, "dust-major"): + apex_routes.json cbETH:USDC univ3_path
 # [cbETH,WETH,USDC] 500/500 — r29719395 evidence: hist:ord_97b65cc0c5944e3d
 # (0.000476 cbETH dust) is delivered None by the ENTIRE field incl. the champ
@@ -193,17 +210,25 @@ except Exception:  # table renamed upstream → skip cleanly, champ behavior int
 # anti-flake insurance: fill-only-empty can only lift a champ 0 to a fill.
 # L1-address orders (e.g. ord_35373ba: mainnet WETH/USDC on Base) verified
 # code_len=0 on Base → permanently unroutable by anyone; correctly skipped.
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "joeknight")
+# (SOLVER_AUTHOR is set with the rest of the identity in _solver_identity above.)
 
-_BASE = 8453
-_ETH = 1
-_WETH = "0x4200000000000000000000000000000000000006"
-_ETH_WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-_ETH_USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-_ETH_WBTC = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
-_MAVERICK_ROUTER = "0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527"   # MaverickV2Router
-_UNIV2_ROUTER = "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24"      # Uniswap V2 Router02
-_VIRTUAL = "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b"          # VIRTUAL hub
+def _apex_chain_constants():
+    """Chain ids + pinned token/router addresses, in unpack order below."""
+    return (
+        8453,  # _BASE
+        1,     # _ETH
+        "0x4200000000000000000000000000000000000006",  # _WETH
+        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",  # _ETH_WETH
+        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",  # _ETH_USDC
+        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",  # _ETH_WBTC
+        "0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527",  # MaverickV2Router
+        "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24",  # Uniswap V2 Router02
+        "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",  # VIRTUAL hub
+    )
+
+
+(_BASE, _ETH, _WETH, _ETH_WETH, _ETH_USDC, _ETH_WBTC,
+ _MAVERICK_ROUTER, _UNIV2_ROUTER, _VIRTUAL) = _apex_chain_constants()
 
 # ── HYDX cover: BUILT, VALIDATED ON A BASE FORK, then REJECTED (2026-07-03) ─────
 # HYDX (Hydrex/Algebra) is the token the crown flips on (rounds 271, 450). I built an
@@ -221,34 +246,44 @@ _VIRTUAL = "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b"          # VIRTUAL hub
 # AlienBase V2 — venues king lacks. We quote them live and override the champion
 # ONLY when the extra venue's quote strictly beats king's reachable best by a safe
 # margin AND clears min_out (quote-gated => never regresses on the quote side).
-_FRONTIER_ON = os.environ.get("APEX_FRONTIER", "1") == "1"       # kill switch (ON: validated reachable==0 => win-or-skip)
-_FRONTIER_MARGIN = 1.02                                          # +2% over reachable (covers king split/2hop edge)
-_SUSHI_V3_QUOTER = "0xb1E835Dc2785b52265711e17fCCb0fd018226a6e"  # Sushi V3 QuoterV2
-_SUSHI_V3_ROUTER = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f"  # Sushi V3 SwapRouter (deadline 0x414bf389)
-_SUSHI_V2_ROUTER = "0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891"  # SushiSwap V2 router
-_ALIEN_V2_ROUTER = "0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7"  # AlienBase V2 router
-# King's OTHER generic venues — quoted as 'reachable' so we never fire on a token
-# king can already route (fire only when EVERY reachable venue returns 0).
-_PANCAKE_V2_ROUTER = "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb"
-_AERO_V2_ROUTER = "0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43"
-_AERO_V2_FACTORY = "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"
-# QuickSwap V4 (Algebra Integral) — where corpus blind-spots like RYFT live and where
-# ms-lab dethroned king. King hardcodes some (skipped by _apex_champ_hardcodes); we win
-# the FRESH ones via pool-existence (no quoter needed; safe under reachable==0).
-_QS_ALGEBRA_ROUTER = "0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04"   # SwapRouter (sel 0x1679c792, deployer=0)
-_QS_ALGEBRA_FACTORY = "0xc5396866754799b9720125b104ae01d935ab9c7b"  # poolByPair(a,b)
-_ZERO_ADDR = "0x0000000000000000000000000000000000000000"
-# Deep majors king dominates — skip the sweep (cost + never a win there).
-_FRONTIER_MAJORS = {
-    "0x4200000000000000000000000000000000000006",  # WETH
-    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",  # USDC
-    "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca",  # USDbC
-    "0x50c5725949a6f0c72e6c4a641f24049a917db0cb",  # DAI
-    "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",  # cbBTC
-    "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22",  # cbETH
-    "0x940181a94a35a4569e4529a3cdfb74e38fd98631",  # AERO
-    "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",  # VIRTUAL
-}
+def _frontier_constants():
+    """Frontier kill switch, margin, venue addresses + skip-list, in unpack order."""
+    return (
+        os.environ.get("APEX_FRONTIER", "1") == "1",  # kill switch (ON: validated reachable==0 => win-or-skip)
+        1.02,                                          # +2% over reachable (covers king split/2hop edge)
+        "0xb1E835Dc2785b52265711e17fCCb0fd018226a6e",  # Sushi V3 QuoterV2
+        "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f",  # Sushi V3 SwapRouter (deadline 0x414bf389)
+        "0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891",  # SushiSwap V2 router
+        "0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7",  # AlienBase V2 router
+        # King's OTHER generic venues — quoted as 'reachable' so we never fire on a token
+        # king can already route (fire only when EVERY reachable venue returns 0).
+        "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb",  # Pancake V2 router
+        "0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43",  # Aerodrome V2 router
+        "0x420DD381b31aEf6683db6B902084cB0FFECe40Da",  # Aerodrome V2 factory
+        # QuickSwap V4 (Algebra Integral) — where corpus blind-spots like RYFT live and where
+        # ms-lab dethroned king. King hardcodes some (skipped by _apex_champ_hardcodes); we win
+        # the FRESH ones via pool-existence (no quoter needed; safe under reachable==0).
+        "0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04",  # QS SwapRouter (sel 0x1679c792, deployer=0)
+        "0xc5396866754799b9720125b104ae01d935ab9c7b",  # QS factory poolByPair(a,b)
+        "0x0000000000000000000000000000000000000000",
+        # Deep majors king dominates — skip the sweep (cost + never a win there).
+        {
+            "0x4200000000000000000000000000000000000006",  # WETH
+            "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",  # USDC
+            "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca",  # USDbC
+            "0x50c5725949a6f0c72e6c4a641f24049a917db0cb",  # DAI
+            "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",  # cbBTC
+            "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22",  # cbETH
+            "0x940181a94a35a4569e4529a3cdfb74e38fd98631",  # AERO
+            "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",  # VIRTUAL
+        },
+    )
+
+
+(_FRONTIER_ON, _FRONTIER_MARGIN, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER,
+ _SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER, _PANCAKE_V2_ROUTER, _AERO_V2_ROUTER,
+ _AERO_V2_FACTORY, _QS_ALGEBRA_ROUTER, _QS_ALGEBRA_FACTORY, _ZERO_ADDR,
+ _FRONTIER_MAJORS) = _frontier_constants()
 
 # Tokens the current champion delivers 0 on (venues its enum + hardcode can't reach:
 # Maverick-general, Uni V2, the VIRTUAL hub). ONLY put a token here if king_base
@@ -257,15 +292,18 @@ _FRONTIER_MAJORS = {
 #   ("uni_mav", (maverick_pool, tokenAIn))   = Uni V3 tin->WETH + Maverick WETH->token
 #   ("uni_v2_via", (mid_hub, v2_router))     = Uni V3 tin->mid + V2 router mid->token
 #   ("v2", v2_router)                        = V2 router tin->WETH->token (FoT)
-_APEX_HOLE_ROUTES = {
-    # GPUS — only on Maverick V2 (king's enum has no general Maverick).
-    "0x8189910840771050bf9ed268abfc9c0882137029":
-        ("uni_mav", ("0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f", True)),
-    # WAGMI — only via the VIRTUAL hub then Uni V2 (champion lacks Uni V2).
-    # (MANEKI removed — the champion has since absorbed it -> now matched, not a win.)
-    "0x2ce1340f1d402ae75afeb55003d7491645db1857":
-        ("uni_v2_via", (_VIRTUAL, _UNIV2_ROUTER)),
-}
+def _build_apex_hole_routes():
+    routes = {
+        # GPUS — only on Maverick V2 (king's enum has no general Maverick).
+        "0x8189910840771050bf9ed268abfc9c0882137029":
+            ("uni_mav", ("0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f", True)),
+        # WAGMI — only via the VIRTUAL hub then Uni V2 (champion lacks Uni V2).
+        # (MANEKI removed — the champion has since absorbed it -> now matched, not a win.)
+        "0x2ce1340f1d402ae75afeb55003d7491645db1857":
+            ("uni_v2_via", (_VIRTUAL, _UNIV2_ROUTER)),
+    }
+    routes.update(_load_dynamic_holes())
+    return routes
 
 
 def _load_dynamic_holes():
@@ -290,7 +328,7 @@ def _load_dynamic_holes():
     return out
 
 
-_APEX_HOLE_ROUTES.update(_load_dynamic_holes())
+_APEX_HOLE_ROUTES = _build_apex_hole_routes()
 
 
 # ── CHAMPION-ROUTE TABLE (the parity layer) ────────────────────────────────────
@@ -330,7 +368,8 @@ def _load_route_table():
 _APEX_ROUTES = _load_route_table()
 
 
-_APEX_QUALITY_ROUTES = {
+def _build_apex_quality_routes():
+    return {
     # round-e29719350-n1 rival quality wins. These are exact-amount gated because
     # they override non-empty base plans instead of only filling drops.
     ("0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
@@ -415,7 +454,10 @@ _APEX_QUALITY_ROUTES = {
         ],
         "fees": [100, 10000],
     },
-}
+    }
+
+
+_APEX_QUALITY_ROUTES = _build_apex_quality_routes()
 
 
 class MinerSolver(_Base):
@@ -485,20 +527,6 @@ class MinerSolver(_Base):
                 logger.exception("[apex] route-table fill failed; using base plan")
         return plan
 
-    def _apex_app_da6_firstshot(self, intent, state, snapshot):
-        app_id = str(getattr(intent, "app_id", "") or "")
-        if app_id != "app_da6c96b84c60":
-            return None
-        if int(getattr(state, "chain_id", 0) or (snapshot.chain_id if snapshot else 0) or 0) != _BASE:
-            return None
-        strat = getattr(self, "_agent_strategies", {}).get(app_id)
-        if strat is None:
-            return None
-        alt = strat.generate_plan(intent, state, snapshot)
-        if alt is not None and getattr(alt, "interactions", None):
-            return alt
-        return None
-
     def _apex_eth_synthetic_plan(self, intent, state, snapshot):
         """RPC-free plans for the validator's Ethereum Stage-3 synthetic fixtures."""
         app_id = str(getattr(intent, "app_id", "") or "")
@@ -548,7 +576,6 @@ class MinerSolver(_Base):
             if spec.get("nogate"):
                 return 1  # v0.113 determinism: pinned route, no liveness RPC (see builder note)
             kind = spec.get("kind")
-            def pad(a): return a.lower().replace("0x", "").rjust(64, "0")
             if kind == "hydrex_algebra":
                 return 1  # exact route is /score-preflighted; avoid RPC quote flakes
             if kind == "univ3_single":
@@ -579,6 +606,101 @@ class MinerSolver(_Base):
             return 0
         return 0
 
+    def _apex_route_univ3_single_call(self, w3, spec, tin, tout, amount_in,
+                                      recipient, deadline, chain_id):
+        """(call, target, tag) for a harvested univ3_single spec; None => defer to base."""
+        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+        from eth_utils import to_checksum_address as _ck
+        router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+        if not router:
+            return None
+        # Quote ALL fee tiers (not only the harvested one) and use the DEEPEST pool.
+        # A thin harvested tier otherwise caps us at a fraction of the champion's
+        # delivery (the deep-cut 'worse' orders). Picks the max, so always >= the
+        # harvested fee; defers (None) only if every tier is dead.
+        use_fee = int(spec.get("fee", 3000))
+        # nogate (v0.113): build RPC-FREE at the pinned fee. The 4-tier quote
+        # loop is 4 RPC calls that can ALL flake under bench load -> row drops.
+        # r963 PROOF: we lost the crown when OUR champ bench flaked None on
+        # 0x00000e7e -- the exact row our r432 crown won when the THEN-champ
+        # flaked it. Deterministic build: dead pool => sim revert => None
+        # (status quo); live pool => delivery. Zero regression surface.
+        if w3 is not None and not spec.get("nogate"):
+            def _pad(a): return a.lower().replace("0x", "").rjust(64, "0")
+            _Q = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"
+            best_out = 0
+            for fee in (100, 500, 3000, 10000):
+                try:
+                    dd = ("0xc6a5026a" + _pad(tin) + _pad(tout)
+                          + hex(int(amount_in))[2:].rjust(64, "0")
+                          + hex(fee)[2:].rjust(64, "0") + "0" * 64)
+                    rr = w3.eth.call({"to": _ck(_Q), "data": dd})
+                    out = int(rr[:32].hex(), 16) if rr else 0
+                except Exception:
+                    out = 0
+                if out > best_out:
+                    best_out, use_fee = out, fee
+            if best_out <= 0:
+                return None
+        call = encode_exact_input_single(token_in=tin, token_out=tout, fee=use_fee,
+            recipient=recipient, deadline=deadline, amount_in=amount_in,
+            amount_out_minimum=0, chain_id=chain_id)
+        return call, router, "apex-route-univ3"
+
+    def _apex_route_univ3_path_call(self, spec, amount_in, recipient, chain_id):
+        """(call, target, tag) for a harvested univ3_path spec; None => defer to base."""
+        from eth_abi import encode as _enc
+        from eth_utils import to_checksum_address as _ck
+        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+        from strategies.dex_aggregator.v3_codec import encode_swap_path
+        router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+        toks = list(spec.get("tokens") or [])
+        fees = [int(f) for f in (spec.get("fees") or [])]
+        if not router or len(toks) < 2 or len(fees) != len(toks) - 1:
+            return None
+        path = encode_swap_path(toks, fees)
+        # SwapRouter02 exactInput((bytes,address,uint256,uint256)) — NO deadline field
+        # (Base). The deadline-style encode_exact_input (0xc04b8d59) reverts on
+        # SwapRouter02; the champion's own plans use this 0xb858183f form.
+        call = "0xb858183f" + _enc(["(bytes,address,uint256,uint256)"],
+            [(path, _ck(recipient), int(amount_in), 0)]).hex()
+        return call, router, "apex-route-univ3-path"
+
+    def _apex_route_aero_v2_call(self, spec, amount_in, recipient, deadline):
+        """(call, target, tag) for a harvested aero_v2 spec; None => defer to base."""
+        from eth_abi import encode as _enc
+        from eth_utils import to_checksum_address as _ck
+        routes = spec.get("routes") or []
+        tuples = [(_ck(r[0]), _ck(r[1]), bool(r[2]), _ck(r[3])) for r in routes]
+        if not tuples:
+            return None
+        # swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)
+        call = "0xcac88ea9" + _enc(
+            ["uint256", "uint256", "(address,address,bool,address)[]", "address", "uint256"],
+            [int(amount_in), 0, tuples, _ck(recipient), int(deadline)]).hex()
+        return call, _AERO_V2_ROUTER, "apex-route-aero-v2"
+
+    def _apex_route_hydrex_call(self, spec, tin, tout, amount_in, recipient, deadline):
+        """(call, target, tag) for a harvested hydrex_algebra spec."""
+        from eth_abi import encode as _enc
+        from eth_utils import to_checksum_address as _ck
+        target = _ck(spec.get("router", "0x6f4bE24d7dC93b6ffcBAb3Fd0747c5817Cea3F9e"))
+        call = "0x1679c792" + _enc(
+            ["(address,address,address,address,uint256,uint256,uint256,uint160)"],
+            [(_ck(tin), _ck(tout), _ck("0x0000000000000000000000000000000000000000"),
+              _ck(recipient), int(deadline), int(amount_in), 0, 0)]).hex()
+        return call, target, "apex-route-hydrex-algebra"
+
+    def _apex_route_web3(self, chain_id):
+        """web3 for the liveness gate; None (screening / synthetic) skips the gate."""
+        w3 = None
+        try:
+            w3 = self._get_web3(int(chain_id))
+        except Exception:
+            w3 = None
+        return w3
+
     def _apex_route_plan(self, intent, state, snapshot, params, spec):
         """Build the champion's harvested route RPC-FREE (min_out=0, hardcoded venue/fee),
         gated by ONE liveness quote so a drained pool defers to the base (never a
@@ -595,98 +717,26 @@ class MinerSolver(_Base):
                 return None
             # Liveness gate: if we have a web3, require the route to quote > 0 (fresh pool).
             # Without a web3 (screening / synthetic), skip the gate and build RPC-free.
-            w3 = None
-            try:
-                w3 = self._get_web3(int(chain_id))
-            except Exception:
-                w3 = None
+            w3 = self._apex_route_web3(chain_id)
             if w3 is not None and self._apex_route_quote(w3, spec, tin, tout, amount_in) <= 0:
                 return None
             recipient = self._apex_recipient(state, params)
             deadline = self._apex_deadline(snapshot)
             kind = spec.get("kind")
             if kind == "univ3_single":
-                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-                from eth_utils import to_checksum_address as _ck
-                router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-                if not router:
-                    return None
-                # Quote ALL fee tiers (not only the harvested one) and use the DEEPEST pool.
-                # A thin harvested tier otherwise caps us at a fraction of the champion's
-                # delivery (the deep-cut 'worse' orders). Picks the max, so always >= the
-                # harvested fee; defers (None) only if every tier is dead.
-                use_fee = int(spec.get("fee", 3000))
-                # nogate (v0.113): build RPC-FREE at the pinned fee. The 4-tier quote
-                # loop is 4 RPC calls that can ALL flake under bench load -> row drops.
-                # r963 PROOF: we lost the crown when OUR champ bench flaked None on
-                # 0x00000e7e -- the exact row our r432 crown won when the THEN-champ
-                # flaked it. Deterministic build: dead pool => sim revert => None
-                # (status quo); live pool => delivery. Zero regression surface.
-                if w3 is not None and not spec.get("nogate"):
-                    def _pad(a): return a.lower().replace("0x", "").rjust(64, "0")
-                    _Q = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"
-                    best_out = 0
-                    for fee in (100, 500, 3000, 10000):
-                        try:
-                            dd = ("0xc6a5026a" + _pad(tin) + _pad(tout)
-                                  + hex(int(amount_in))[2:].rjust(64, "0")
-                                  + hex(fee)[2:].rjust(64, "0") + "0" * 64)
-                            rr = w3.eth.call({"to": _ck(_Q), "data": dd})
-                            out = int(rr[:32].hex(), 16) if rr else 0
-                        except Exception:
-                            out = 0
-                        if out > best_out:
-                            best_out, use_fee = out, fee
-                    if best_out <= 0:
-                        return None
-                call = encode_exact_input_single(token_in=tin, token_out=tout, fee=use_fee,
-                    recipient=recipient, deadline=deadline, amount_in=amount_in,
-                    amount_out_minimum=0, chain_id=chain_id)
-                target = router
-                tag = "apex-route-univ3"
+                built = self._apex_route_univ3_single_call(
+                    w3, spec, tin, tout, amount_in, recipient, deadline, chain_id)
             elif kind == "univ3_path":
-                from eth_abi import encode as _enc
-                from eth_utils import to_checksum_address as _ck
-                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                from strategies.dex_aggregator.v3_codec import encode_swap_path
-                router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-                toks = list(spec.get("tokens") or [])
-                fees = [int(f) for f in (spec.get("fees") or [])]
-                if not router or len(toks) < 2 or len(fees) != len(toks) - 1:
-                    return None
-                path = encode_swap_path(toks, fees)
-                # SwapRouter02 exactInput((bytes,address,uint256,uint256)) — NO deadline field
-                # (Base). The deadline-style encode_exact_input (0xc04b8d59) reverts on
-                # SwapRouter02; the champion's own plans use this 0xb858183f form.
-                call = "0xb858183f" + _enc(["(bytes,address,uint256,uint256)"],
-                    [(path, _ck(recipient), int(amount_in), 0)]).hex()
-                target = router
-                tag = "apex-route-univ3-path"
+                built = self._apex_route_univ3_path_call(spec, amount_in, recipient, chain_id)
             elif kind == "aero_v2":
-                from eth_abi import encode as _enc
-                from eth_utils import to_checksum_address as _ck
-                routes = spec.get("routes") or []
-                tuples = [(_ck(r[0]), _ck(r[1]), bool(r[2]), _ck(r[3])) for r in routes]
-                if not tuples:
-                    return None
-                # swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)
-                call = "0xcac88ea9" + _enc(
-                    ["uint256", "uint256", "(address,address,bool,address)[]", "address", "uint256"],
-                    [int(amount_in), 0, tuples, _ck(recipient), int(deadline)]).hex()
-                target = _AERO_V2_ROUTER
-                tag = "apex-route-aero-v2"
+                built = self._apex_route_aero_v2_call(spec, amount_in, recipient, deadline)
             elif kind == "hydrex_algebra":
-                from eth_abi import encode as _enc
-                from eth_utils import to_checksum_address as _ck
-                target = _ck(spec.get("router", "0x6f4bE24d7dC93b6ffcBAb3Fd0747c5817Cea3F9e"))
-                call = "0x1679c792" + _enc(
-                    ["(address,address,address,address,uint256,uint256,uint256,uint160)"],
-                    [(_ck(tin), _ck(tout), _ck("0x0000000000000000000000000000000000000000"),
-                      _ck(recipient), int(deadline), int(amount_in), 0, 0)]).hex()
-                tag = "apex-route-hydrex-algebra"
+                built = self._apex_route_hydrex_call(spec, tin, tout, amount_in, recipient, deadline)
             else:
                 return None
+            if built is None:
+                return None
+            call, target, tag = built
             ix = [Interaction(target=tin, value="0", call_data=encode_approve(target, amount_in), chain_id=chain_id),
                   Interaction(target=target, value="0", call_data=call, chain_id=chain_id)]
             return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline,
@@ -958,13 +1008,90 @@ class MinerSolver(_Base):
             return ("qs_weth", None)
         return None
 
+    def _apex_frontier_weth_leg(self, w3, tin, amount_in, via_weth):
+        # phase 1: best tin->WETH (feeds both reachable-2hop and extra-2hop)
+        from concurrent.futures import ThreadPoolExecutor
+        weth_fee, weth_out = 500, 0
+        if via_weth:
+            with ThreadPoolExecutor(max_workers=6) as ex:
+                fs = {ex.submit(self._q1, w3, "uniswap_v3", f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+                for fut, f in fs.items():
+                    o = fut.result()
+                    if o > weth_out:
+                        weth_out, weth_fee = o, f
+        return weth_fee, weth_out
+
+    def _apex_frontier_direct_tasks(self, w3, tin, tout, amount_in):
+        # phase 2: flat concurrent task list — tag R (reachable) / E (extra, with spec)
+        tasks = []  # (tag, spec, callable)
+        for f in (100, 500, 3000, 10000):
+            tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, tin, tout, amount_in)))
+            tasks.append(("R", None, lambda f=f: self._q1(w3, "pancake_v3", f, tin, tout, amount_in)))
+            tasks.append(("E", ("sushi_v3_direct", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
+        for t in (1, 50, 100, 200, 2000):
+            tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, tin, tout, amount_in)))
+        for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):          # king's generic V2 venues (reachable)
+            tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+        tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
+        for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+            tasks.append(("E", ("v2fot_direct", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+        return tasks
+
+    def _apex_frontier_weth_tasks(self, w3, tout, wi):
+        # phase 2b: 2-hop (via WETH) tasks — only when the WETH leg quoted > 0
+        tasks = []
+        for f in (100, 500, 3000, 10000):
+            tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, _WETH, tout, wi)))
+            tasks.append(("E", ("sushi_v3_weth", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, _WETH, tout, f, wi)))
+        for t in (1, 50, 100, 200):
+            tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, _WETH, tout, wi)))
+        for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):      # king's generic V2 venues via WETH (reachable)
+            tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+        tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
+        for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+            tasks.append(("E", ("v2fot_weth", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+        return tasks
+
+    def _apex_frontier_collect(self, tasks):
+        # run every task concurrently; best reachable (king) quote vs best extra venue
+        from concurrent.futures import ThreadPoolExecutor
+        reachable, extra = 0, (0, None)
+        with ThreadPoolExecutor(max_workers=16) as ex:
+            futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
+            for tag, spec, fut in futs:
+                try:
+                    out = int(fut.result(timeout=6))
+                except Exception:
+                    out = 0
+                if tag == "R":
+                    reachable = max(reachable, out)
+                elif out > extra[0]:
+                    extra = (out, spec)
+        return reachable, extra
+
+    def _apex_frontier_decide(self, intent, state, snapshot, params, w3,
+                              tin, tout, amount_in, wi, chain_id, min_out,
+                              reachable, extra):
+        # Fire ONLY when every reachable (king) venue returns 0 => king delivers 0 => we are
+        # strictly win-or-skip (a revert == king's 0 == skip, never a regression).
+        if reachable > 0:
+            return None
+        out, spec = extra                     # best QUOTED extra (Sushi/AlienBase)
+        if out > 0 and spec is not None and (min_out <= 0 or out >= min_out):
+            return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec)
+        # Sushi didn't cover it -> QuickSwap V4 (Algebra) by pool existence (this is where
+        # RYFT-class corpus blind-spots live; win-or-skip so safe even without a quote).
+        qs = self._apex_qs_candidate(w3, tin, tout, wi)
+        if qs is not None:
+            return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, qs)
+        return None
+
     def _apex_frontier_sweep(self, intent, state, snapshot, params):
         """Quote Sushi V3 / SushiV2 / AlienBase (venues king lacks) vs king's reachable
         best; override king ONLY when an extra venue beats reachable*margin AND clears
         min_out. Quote-gated => never regresses on the quote side. Bounded + concurrent."""
         if not _FRONTIER_ON:
             return None
-        from concurrent.futures import ThreadPoolExecutor
         tin = str(params.get("input_token", "") or "")
         tout = str(params.get("output_token", "") or "")
         if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or tin.lower() == tout.lower():
@@ -990,65 +1117,15 @@ class MinerSolver(_Base):
             return None
         wethL = _WETH.lower()
         via_weth = tin.lower() != wethL and tout.lower() != wethL
-        # phase 1: best tin->WETH (feeds both reachable-2hop and extra-2hop)
-        weth_fee, weth_out = 500, 0
-        if via_weth:
-            with ThreadPoolExecutor(max_workers=6) as ex:
-                fs = {ex.submit(self._q1, w3, "uniswap_v3", f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
-                for fut, f in fs.items():
-                    o = fut.result()
-                    if o > weth_out:
-                        weth_out, weth_fee = o, f
+        weth_fee, weth_out = self._apex_frontier_weth_leg(w3, tin, amount_in, via_weth)
         wi = weth_out * 995 // 1000 if weth_out > 0 else 0
-        # phase 2: flat concurrent task list — tag R (reachable) / E (extra, with spec)
-        tasks = []  # (tag, spec, callable)
-        for f in (100, 500, 3000, 10000):
-            tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, tin, tout, amount_in)))
-            tasks.append(("R", None, lambda f=f: self._q1(w3, "pancake_v3", f, tin, tout, amount_in)))
-            tasks.append(("E", ("sushi_v3_direct", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
-        for t in (1, 50, 100, 200, 2000):
-            tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, tin, tout, amount_in)))
-        for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):          # king's generic V2 venues (reachable)
-            tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
-        tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
-        for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-            tasks.append(("E", ("v2fot_direct", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+        tasks = self._apex_frontier_direct_tasks(w3, tin, tout, amount_in)
         if wi > 0:
-            for f in (100, 500, 3000, 10000):
-                tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, _WETH, tout, wi)))
-                tasks.append(("E", ("sushi_v3_weth", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, _WETH, tout, f, wi)))
-            for t in (1, 50, 100, 200):
-                tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, _WETH, tout, wi)))
-            for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):      # king's generic V2 venues via WETH (reachable)
-                tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
-            tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
-            for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-                tasks.append(("E", ("v2fot_weth", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
-        reachable, extra = 0, (0, None)
-        with ThreadPoolExecutor(max_workers=16) as ex:
-            futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
-            for tag, spec, fut in futs:
-                try:
-                    out = int(fut.result(timeout=6))
-                except Exception:
-                    out = 0
-                if tag == "R":
-                    reachable = max(reachable, out)
-                elif out > extra[0]:
-                    extra = (out, spec)
-        # Fire ONLY when every reachable (king) venue returns 0 => king delivers 0 => we are
-        # strictly win-or-skip (a revert == king's 0 == skip, never a regression).
-        if reachable > 0:
-            return None
-        out, spec = extra                     # best QUOTED extra (Sushi/AlienBase)
-        if out > 0 and spec is not None and (min_out <= 0 or out >= min_out):
-            return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec)
-        # Sushi didn't cover it -> QuickSwap V4 (Algebra) by pool existence (this is where
-        # RYFT-class corpus blind-spots live; win-or-skip so safe even without a quote).
-        qs = self._apex_qs_candidate(w3, tin, tout, wi)
-        if qs is not None:
-            return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, qs)
-        return None
+            tasks.extend(self._apex_frontier_weth_tasks(w3, tout, wi))
+        reachable, extra = self._apex_frontier_collect(tasks)
+        return self._apex_frontier_decide(intent, state, snapshot, params, w3,
+                                          tin, tout, amount_in, wi, chain_id,
+                                          min_out, reachable, extra)
 
     def _apex_build_frontier(self, intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec):
         from common.abi_utils import encode_approve
@@ -1150,29 +1227,41 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
 
     _putty_log = _putty_logging.getLogger("putty_shim")
 
-    _PUTTY_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # 6-dec, Base
-    _PUTTY_WETH = "0x4200000000000000000000000000000000000006"
-    _PUTTY_BASE_CHAIN = 8453
-    _PUTTY_DEADLINE = 9999999999  # constant far-future deadline (drifted-anvil safe)
-    _PUTTY_APPROVE_SEL = bytes.fromhex("095ea7b3")  # approve(address,uint256)
-    _PUTTY_EXACT_IN_SINGLE_SEL = bytes.fromhex("a026383e")  # slipstream exactInputSingle(int24 tickSpacing)
-    # --- epsilon-edge additions (all selectors precomputed, keccak-free) ---
-    _PUTTY_TRANSFER_SEL = bytes.fromhex("a9059cbb")      # transfer(address,uint256)
-    _PUTTY_PAIR_SWAP_SEL = bytes.fromhex("022c0d9f")     # swap(uint256,uint256,address,bytes)
-    _PUTTY_DEPOSIT_SEL = bytes.fromhex("6e553f65")       # ERC4626 deposit(uint256,address)
-    _PUTTY_GET_AMOUNT_OUT_SEL = bytes.fromhex("f140a35a")  # aeroV2 pair getAmountOut(uint256,address)
-    _PUTTY_QUOTE_SINGLE_SEL = bytes.fromhex("c6a5026a")  # QuoterV2 quoteExactInputSingle(tuple)
-    _PUTTY_R02_SINGLE_SEL = bytes.fromhex("04e45aaf")    # SwapRouter02 exactInputSingle (no deadline)
-    _PUTTY_R02_PATH_SEL = bytes.fromhex("b858183f")      # SwapRouter02 exactInput((bytes,addr,u256,u256))
-    _PUTTY_UNI_R02 = "0x2626664c2603336E57B271c5C0b26F421741e481"
-    _PUTTY_UNI_QUOTER = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"  # QuoterV2
-    _PUTTY_MSG_SENDER = "0x0000000000000000000000000000000000000001"  # R02 recipient sentinel = proxy
-    # --- 2026-07-04 fat-class additions (superOETHb + ZRO) ---
-    _PUTTY_OLD_SINGLE_SEL = bytes.fromhex("414bf389")    # V1-style exactInputSingle (with deadline)
-    _PUTTY_CURVE_XCHG_SEL = bytes.fromhex("ddc1f59d")    # curve NG exchange(int128,int128,u256,u256,address)
-    _PUTTY_SUSHI_V3_ROUTER = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f"  # Sushi V3 SwapRouter (deadline-style)
-    _PUTTY_SUSHI_V3_QUOTER = "0xb1E835Dc2785b52265711e17fCCb0fd018226a6e"  # Sushi V3 QuoterV2 (uni ABI)
-    _PUTTY_CURVE_SUPEROETHB = "0x302a94e3c28c290eaf2a4605fc52e11eb915f378"  # Curve NG superOETHb/WETH (coins: 0=WETH, 1=superOETHb)
+    def _putty_constants():
+        """The shim's pinned addresses/selectors, in unpack order below."""
+        return (
+            "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",  # USDC (6-dec, Base)
+            "0x4200000000000000000000000000000000000006",  # WETH
+            8453,  # Base chain id
+            9999999999,  # constant far-future deadline (drifted-anvil safe)
+            bytes.fromhex("095ea7b3"),  # approve(address,uint256)
+            bytes.fromhex("a026383e"),  # slipstream exactInputSingle(int24 tickSpacing)
+            # --- epsilon-edge additions (all selectors precomputed, keccak-free) ---
+            bytes.fromhex("a9059cbb"),  # transfer(address,uint256)
+            bytes.fromhex("022c0d9f"),  # swap(uint256,uint256,address,bytes)
+            bytes.fromhex("6e553f65"),  # ERC4626 deposit(uint256,address)
+            bytes.fromhex("f140a35a"),  # aeroV2 pair getAmountOut(uint256,address)
+            bytes.fromhex("c6a5026a"),  # QuoterV2 quoteExactInputSingle(tuple)
+            bytes.fromhex("04e45aaf"),  # SwapRouter02 exactInputSingle (no deadline)
+            bytes.fromhex("b858183f"),  # SwapRouter02 exactInput((bytes,addr,u256,u256))
+            "0x2626664c2603336E57B271c5C0b26F421741e481",  # Uni SwapRouter02
+            "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a",  # QuoterV2
+            "0x0000000000000000000000000000000000000001",  # R02 recipient sentinel = proxy
+            # --- 2026-07-04 fat-class additions (superOETHb + ZRO) ---
+            bytes.fromhex("414bf389"),  # V1-style exactInputSingle (with deadline)
+            bytes.fromhex("ddc1f59d"),  # curve NG exchange(int128,int128,u256,u256,address)
+            "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f",  # Sushi V3 SwapRouter (deadline-style)
+            "0xb1E835Dc2785b52265711e17fCCb0fd018226a6e",  # Sushi V3 QuoterV2 (uni ABI)
+            "0x302a94e3c28c290eaf2a4605fc52e11eb915f378",  # Curve NG superOETHb/WETH (coins: 0=WETH, 1=superOETHb)
+        )
+
+    (_PUTTY_USDC, _PUTTY_WETH, _PUTTY_BASE_CHAIN, _PUTTY_DEADLINE,
+     _PUTTY_APPROVE_SEL, _PUTTY_EXACT_IN_SINGLE_SEL, _PUTTY_TRANSFER_SEL,
+     _PUTTY_PAIR_SWAP_SEL, _PUTTY_DEPOSIT_SEL, _PUTTY_GET_AMOUNT_OUT_SEL,
+     _PUTTY_QUOTE_SINGLE_SEL, _PUTTY_R02_SINGLE_SEL, _PUTTY_R02_PATH_SEL,
+     _PUTTY_UNI_R02, _PUTTY_UNI_QUOTER, _PUTTY_MSG_SENDER,
+     _PUTTY_OLD_SINGLE_SEL, _PUTTY_CURVE_XCHG_SEL, _PUTTY_SUSHI_V3_ROUTER,
+     _PUTTY_SUSHI_V3_QUOTER, _PUTTY_CURVE_SUPEROETHB) = _putty_constants()
 
     # output_token (lowercased) -> (alt SwapRouter, tickSpacing). All 5 are
     # fork-proven exclusive: input == USDC, venue == aerodrome slipstream-fork
@@ -1224,7 +1313,8 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
     #                   pays app; amounts via pair.getAmountOut at plan
     #                   time (RPC; exact on the pinned benchmark fork)
     # aero_pd hops: (token_in, pair, in_is_token0)
-    _PUTTY_SUBS = {
+    def _build_putty_subs():
+        return {
         # NOTE waBasWETH 0xe298b938 (ERC4626 vault) was DROPPED 2026-07-03:
         # re-hunt vs champion viking-mino-solver 92.0.0 (origin/main 3a5e391,
         # Base fork @48147358, real scoreIntent) shows the champion NOW FILLS it
@@ -1312,14 +1402,17 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
             "kind": "uni_sushi",
             "sushi_fee": 500,
             "lo": 1000000, "hi": 4000000},
-    }
+        }
+
+    _PUTTY_SUBS = _build_putty_subs()
 
     # ------------------------------------------------------------------
     # WETH-INPUT substitution table (input == WETH). Same aero_pd builder;
     # the first-hop transfer sends hops[0][0] (= WETH here). Fork-proven vs
     # champion viking-mino-solver 92.0.0 (origin/main 3a5e391, Base fork
     # @48147358, exact corpus params) under real scoreIntent.
-    _PUTTY_SUBS_WETH = {
+    def _build_putty_subs_weth():
+        return {
         # WETH->01facc — 1-hop aeroV2 pool-direct (the SAME WETH<->01facc pair
         # that is hop2 of the USDC->01facc entry). 2026-07-03: champion routes
         # this via a costlier path (473,976 vs OUR route; champ delivered
@@ -1358,7 +1451,9 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
             "hops": (("0x4200000000000000000000000000000000000006",
                       "0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515", True),),
             "lo": 100000000000000, "hi": 10000000000000000},
-    }
+        }
+
+    _PUTTY_SUBS_WETH = _build_putty_subs_weth()
 
     # rpc url captured from initialize(); plan-time quotes need it
     _PUTTY_RPC = {"url": None}
@@ -1531,7 +1626,8 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
     def _putty_sub_interactions(spec, token_out, amount_in, recipient, chain_id):
         """Build the substituted interaction list for one table entry."""
         kind = spec["kind"]
-        if kind == "univ3_single":
+
+        def _univ3_single_ixs():
             return [
                 _putty_ix(_PUTTY_USDC,
                           _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id),
@@ -1539,7 +1635,8 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                           _putty_r02_single(token_out, spec["fee"], recipient,
                                             amount_in), chain_id),
             ]
-        if kind == "univ3_path":
+
+        def _univ3_path_ixs():
             return [
                 _putty_ix(_PUTTY_USDC,
                           _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id),
@@ -1547,7 +1644,8 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                           _putty_r02_path(spec["mids"], token_out, spec["fees"],
                                           recipient, amount_in), chain_id),
             ]
-        if kind == "erc4626":
+
+        def _erc4626_ixs():
             quoted = _putty_quote_usdc_weth(spec["fee"], amount_in)
             return [
                 _putty_ix(_PUTTY_USDC,
@@ -1562,7 +1660,8 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                         ["uint256", "address"],
                         [int(quoted), _putty_ck(recipient)])).hex(), chain_id),
             ]
-        if kind == "curve_full":
+
+        def _curve_full_ixs():
             # uni-v3 best-fee USDC->WETH (recipient = MSG_SENDER sentinel =
             # proxy) + approve + Curve NG pool.exchange(i, j, FULL exact
             # quote, 0, app). QuoterV2 is bit-exact vs execution on the
@@ -1584,7 +1683,8 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                         [int(spec["i"]), int(spec["j"]), int(weth_out), 0,
                          _putty_ck(recipient)])).hex(), chain_id),
             ]
-        if kind == "uni_sushi":
+
+        def _uni_sushi_ixs():
             # uni-v3 best-fee USDC->WETH (sentinel -> proxy) chained into
             # Sushi V3 exactInputSingle (V1-style, deadline) WETH->token_out,
             # dx = the exact WETH quote. Sanity: sushi quote must be > 0 or
@@ -1610,7 +1710,8 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                           chain_id),
                 _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id),
             ]
-        if kind == "aero_pd":
+
+        def _aero_pd_ixs():
             hops = spec["hops"]
             # transfer the ACTUAL input token (= hops[0][0]) to the first pair.
             # For every USDC-input entry hops[0][0] IS USDC, so this is byte-
@@ -1629,6 +1730,19 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                         [a0, a1, _putty_ck(to), b""])).hex(), chain_id))
                 cur = out
             return ixs
+
+        if kind == "univ3_single":
+            return _univ3_single_ixs()
+        if kind == "univ3_path":
+            return _univ3_path_ixs()
+        if kind == "erc4626":
+            return _erc4626_ixs()
+        if kind == "curve_full":
+            return _curve_full_ixs()
+        if kind == "uni_sushi":
+            return _uni_sushi_ixs()
+        if kind == "aero_pd":
+            return _aero_pd_ixs()
         raise RuntimeError(f"putty: unknown sub kind {kind}")
 
     def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
@@ -1683,39 +1797,54 @@ try:  # ---- guarded: if anything here is unavailable, the shim disables itself
                     tin = str(get("input_token") or "").strip()
                     tout = str(get("output_token") or "").strip()
                     amount_in = int(get("input_amount") or 0)
-                    route = _PUTTY_ROUTES.get(tout.lower())
-                    if (route is not None
-                            and tin.lower() == _PUTTY_USDC.lower()
-                            and amount_in > 0):
-                        router, tick_spacing = route
-                        plan = _putty_build_alt_plan(
-                            intent, state, tout, amount_in, router, tick_spacing)
-                        if plan is not None and plan.interactions:
-                            _putty_log.info(
-                                "[putty] alt-CL substitution for %s router=%s tick=%s",
-                                tout, router, tick_spacing)
-                            return plan
-                    spec = _PUTTY_SUBS.get(tout.lower())
-                    if (spec is not None
-                            and tin.lower() == _PUTTY_USDC.lower()
-                            and spec["lo"] <= amount_in <= spec["hi"]):
-                        plan = _putty_build_sub_plan(
-                            intent, state, spec, tout, amount_in)
-                        if plan is not None and plan.interactions:
-                            _putty_log.info(
-                                "[putty] eps substitution %s for %s amt=%s",
-                                spec["kind"], tout, amount_in)
-                            return plan
-                    spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
-                    if (spec_w is not None
-                            and tin.lower() == _PUTTY_WETH.lower()
-                            and spec_w["lo"] <= amount_in <= spec_w["hi"]):
-                        plan = _putty_build_sub_plan(
-                            intent, state, spec_w, tout, amount_in)
-                        if plan is not None and plan.interactions:
-                            _putty_log.info(
-                                "[putty] eps WETH substitution %s for %s amt=%s",
-                                spec_w["kind"], tout, amount_in)
+
+                    def _alt_cl_plan():
+                        route = _PUTTY_ROUTES.get(tout.lower())
+                        if (route is not None
+                                and tin.lower() == _PUTTY_USDC.lower()
+                                and amount_in > 0):
+                            router, tick_spacing = route
+                            plan = _putty_build_alt_plan(
+                                intent, state, tout, amount_in, router, tick_spacing)
+                            if plan is not None and plan.interactions:
+                                _putty_log.info(
+                                    "[putty] alt-CL substitution for %s router=%s tick=%s",
+                                    tout, router, tick_spacing)
+                                return plan
+                        return None
+
+                    def _usdc_sub_plan():
+                        spec = _PUTTY_SUBS.get(tout.lower())
+                        if (spec is not None
+                                and tin.lower() == _PUTTY_USDC.lower()
+                                and spec["lo"] <= amount_in <= spec["hi"]):
+                            plan = _putty_build_sub_plan(
+                                intent, state, spec, tout, amount_in)
+                            if plan is not None and plan.interactions:
+                                _putty_log.info(
+                                    "[putty] eps substitution %s for %s amt=%s",
+                                    spec["kind"], tout, amount_in)
+                                return plan
+                        return None
+
+                    def _weth_sub_plan():
+                        spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
+                        if (spec_w is not None
+                                and tin.lower() == _PUTTY_WETH.lower()
+                                and spec_w["lo"] <= amount_in <= spec_w["hi"]):
+                            plan = _putty_build_sub_plan(
+                                intent, state, spec_w, tout, amount_in)
+                            if plan is not None and plan.interactions:
+                                _putty_log.info(
+                                    "[putty] eps WETH substitution %s for %s amt=%s",
+                                    spec_w["kind"], tout, amount_in)
+                                return plan
+                        return None
+
+                    for _build_edge_plan in (_alt_cl_plan, _usdc_sub_plan,
+                                             _weth_sub_plan):
+                        plan = _build_edge_plan()
+                        if plan is not None:
                             return plan
             except Exception:
                 _putty_log.exception("[putty] edge failed; deferring to champion plan")

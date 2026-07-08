@@ -316,11 +316,10 @@ class JamesSolver(KingSolver):
               c0.lower() == tin.lower(), amt, b"")]))
         return int.from_bytes(r[:32], "big") if r else 0
 
-    def _james_v4_edge(self, intent, state, snapshot=None):
-        """Probe generic V4 pools for exotic pairs the king's table lacks;
-        override via table injection only when strictly better by margin."""
-        if self._behind_pace():
-            return None  # probing costs seconds; protect the run budget
+    def _james_edge_context(self, intent, state):
+        """Eligibility gate for the V4 edge: extract normalized swap params
+        and return (table, tin, tout, amt, min_out), or None if this order
+        is out of scope (wrong chain/pair, canonical token, already tabled)."""
         import king_solver as _km
         table = getattr(_km, "_STATIC_EXOTIC_ROUTES", None)
         if table is None:
@@ -342,8 +341,11 @@ class JamesSolver(KingSolver):
                 or tin not in (self._JUSDC.lower(), self._JWETH.lower())
                 or (tin, tout) in table):
             return None
+        return table, tin, tout, amt, min_out
 
-        w3 = self._james_w3()
+    def _james_probe_v4_candidates(self, w3, tin, tout, amt):
+        """Quote candidate V4 launchpad pools; returns (weth_leg, best_out,
+        best_spec) where best_spec is None if no pool answered."""
         # V4 candidate quotes: input leg is WETH (via deep 500 v3 leg for
         # USDC orders) or direct-USDC-paired pools.
         weth_leg = amt if tin == self._JWETH.lower() else \
@@ -363,9 +365,9 @@ class JamesSolver(KingSolver):
                         spec["v3_tokens"] = (self._JUSDC, self._JWETH)
                         spec["v3_fees"] = (500,)
                     best_out, best_spec = out, spec
-        if not best_spec:
-            return None
+        return weth_leg, best_out, best_spec
 
+    def _james_dynamic_engine_proxy(self, w3, tin, tout, amt, weth_leg):
         # Proxy for the best the king's DYNAMIC engine can reach (his static
         # table was excluded above): every V2/V3/vAMM route family he sweeps.
         proxy = 0
@@ -380,6 +382,25 @@ class JamesSolver(KingSolver):
         proxy = max(proxy, self._jq_aero(w3, [(tin, tout)], amt))
         if tin != self._JWETH.lower():
             proxy = max(proxy, self._jq_aero(w3, [(tin, self._JWETH), (self._JWETH, tout)], amt))
+        return proxy
+
+    def _james_v4_edge(self, intent, state, snapshot=None):
+        """Probe generic V4 pools for exotic pairs the king's table lacks;
+        override via table injection only when strictly better by margin."""
+        if self._behind_pace():
+            return None  # probing costs seconds; protect the run budget
+        ctx = self._james_edge_context(intent, state)
+        if ctx is None:
+            return None
+        table, tin, tout, amt, min_out = ctx
+
+        w3 = self._james_w3()
+        weth_leg, best_out, best_spec = self._james_probe_v4_candidates(
+            w3, tin, tout, amt)
+        if not best_spec:
+            return None
+
+        proxy = self._james_dynamic_engine_proxy(w3, tin, tout, amt, weth_leg)
 
         if best_out <= max(proxy, min_out, 1) * self._JAMES_MARGIN:
             return None

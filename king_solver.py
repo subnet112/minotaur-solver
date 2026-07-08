@@ -389,13 +389,76 @@ class MinerSolver(_Base):
             return ("qs_weth", None)
         return None
 
+    def _apex_frontier_weth_out(self, w3, tin, amount_in):
+        """Frontier phase 1: best tin->WETH quote across Uni V3 fee tiers
+        (feeds both reachable-2hop and extra-2hop)."""
+        from concurrent.futures import ThreadPoolExecutor
+        weth_fee, weth_out = 500, 0
+        with ThreadPoolExecutor(max_workers=6) as ex:
+            fs = {ex.submit(self._q1, w3, "uniswap_v3", f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+            for fut, f in fs.items():
+                o = fut.result()
+                if o > weth_out:
+                    weth_out, weth_fee = o, f
+        return weth_out
+
+    def _apex_frontier_direct_tasks(self, w3, tin, tout, amount_in):
+        """Frontier phase 2a: direct tin->tout quote tasks, tagged R (reachable by
+        king) / E (extra venue, with build spec)."""
+        tasks = []  # (tag, spec, callable)
+        for f in (100, 500, 3000, 10000):
+            tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, tin, tout, amount_in)))
+            tasks.append(("R", None, lambda f=f: self._q1(w3, "pancake_v3", f, tin, tout, amount_in)))
+            tasks.append(("E", ("sushi_v3_direct", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
+        for t in (1, 50, 100, 200, 2000):
+            tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, tin, tout, amount_in)))
+        for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):          # king's generic V2 venues (reachable)
+            tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+        tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
+        for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+            tasks.append(("E", ("v2fot_direct", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+        return tasks
+
+    def _apex_frontier_weth_tasks(self, w3, tout, wi):
+        """Frontier phase 2b: second-leg WETH->tout quote tasks (only when the
+        tin->WETH pre-quote produced a positive wi)."""
+        tasks = []  # (tag, spec, callable)
+        for f in (100, 500, 3000, 10000):
+            tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, _WETH, tout, wi)))
+            tasks.append(("E", ("sushi_v3_weth", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, _WETH, tout, f, wi)))
+        for t in (1, 50, 100, 200):
+            tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, _WETH, tout, wi)))
+        for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):      # king's generic V2 venues via WETH (reachable)
+            tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+        tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
+        for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+            tasks.append(("E", ("v2fot_weth", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+        return tasks
+
+    def _apex_frontier_run_tasks(self, tasks):
+        """Frontier phase 3: run the tagged task list concurrently; fold into the
+        best reachable (king) quote and the best extra (venue-we-add) quote."""
+        from concurrent.futures import ThreadPoolExecutor
+        reachable, extra = 0, (0, None)
+        with ThreadPoolExecutor(max_workers=16) as ex:
+            futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
+            for tag, spec, fut in futs:
+                try:
+                    out = int(fut.result(timeout=6))
+                except Exception:
+                    out = 0
+                if tag == "R":
+                    reachable = max(reachable, out)
+                elif out > extra[0]:
+                    extra = (out, spec)
+        return reachable, extra
+
     def _apex_frontier_sweep(self, intent, state, snapshot, params):
         """Quote Sushi V3 / SushiV2 / AlienBase (venues king lacks) vs king's reachable
         best; override king ONLY when an extra venue beats reachable*margin AND clears
         min_out. Quote-gated => never regresses on the quote side. Bounded + concurrent."""
         if not _FRONTIER_ON:
             return None
-        from concurrent.futures import ThreadPoolExecutor
         tin = str(params.get("input_token", "") or "")
         tout = str(params.get("output_token", "") or "")
         if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or tin.lower() == tout.lower():
@@ -422,51 +485,19 @@ class MinerSolver(_Base):
         wethL = _WETH.lower()
         via_weth = tin.lower() != wethL and tout.lower() != wethL
         # phase 1: best tin->WETH (feeds both reachable-2hop and extra-2hop)
-        weth_fee, weth_out = 500, 0
-        if via_weth:
-            with ThreadPoolExecutor(max_workers=6) as ex:
-                fs = {ex.submit(self._q1, w3, "uniswap_v3", f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
-                for fut, f in fs.items():
-                    o = fut.result()
-                    if o > weth_out:
-                        weth_out, weth_fee = o, f
+        weth_out = self._apex_frontier_weth_out(w3, tin, amount_in) if via_weth else 0
         wi = weth_out * 995 // 1000 if weth_out > 0 else 0
         # phase 2: flat concurrent task list — tag R (reachable) / E (extra, with spec)
-        tasks = []  # (tag, spec, callable)
-        for f in (100, 500, 3000, 10000):
-            tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, tin, tout, amount_in)))
-            tasks.append(("R", None, lambda f=f: self._q1(w3, "pancake_v3", f, tin, tout, amount_in)))
-            tasks.append(("E", ("sushi_v3_direct", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
-        for t in (1, 50, 100, 200, 2000):
-            tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, tin, tout, amount_in)))
-        for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):          # king's generic V2 venues (reachable)
-            tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
-        tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
-        for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-            tasks.append(("E", ("v2fot_direct", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+        tasks = self._apex_frontier_direct_tasks(w3, tin, tout, amount_in)
         if wi > 0:
-            for f in (100, 500, 3000, 10000):
-                tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, _WETH, tout, wi)))
-                tasks.append(("E", ("sushi_v3_weth", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, _WETH, tout, f, wi)))
-            for t in (1, 50, 100, 200):
-                tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, _WETH, tout, wi)))
-            for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):      # king's generic V2 venues via WETH (reachable)
-                tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
-            tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
-            for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-                tasks.append(("E", ("v2fot_weth", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
-        reachable, extra = 0, (0, None)
-        with ThreadPoolExecutor(max_workers=16) as ex:
-            futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
-            for tag, spec, fut in futs:
-                try:
-                    out = int(fut.result(timeout=6))
-                except Exception:
-                    out = 0
-                if tag == "R":
-                    reachable = max(reachable, out)
-                elif out > extra[0]:
-                    extra = (out, spec)
+            tasks += self._apex_frontier_weth_tasks(w3, tout, wi)
+        reachable, extra = self._apex_frontier_run_tasks(tasks)
+        return self._apex_frontier_choose(intent, state, snapshot, params, w3, tin, tout,
+                                          amount_in, wi, chain_id, min_out, reachable, extra)
+
+    def _apex_frontier_choose(self, intent, state, snapshot, params, w3, tin, tout,
+                              amount_in, wi, chain_id, min_out, reachable, extra):
+        """Frontier phase 4: pick the winning extra venue (or QuickSwap fallback)."""
         # Fire ONLY when every reachable (king) venue returns 0 => king delivers 0 => we are
         # strictly win-or-skip (a revert == king's 0 == skip, never a regression).
         if reachable > 0:
