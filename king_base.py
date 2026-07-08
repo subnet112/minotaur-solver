@@ -946,6 +946,154 @@ class MinerSolver(BaselineSwapSolver):
             logger.exception("[solver] hole plan build failed")
             return None
 
+    def _sep_dispatch(self, intent, state, snapshot, kind, param,
+                      tin, tout, amount_in, min_out, chain_id):
+        """Venue dispatch for _static_exotic_plan (extracted verbatim; the
+        chain + shared trailing build return every path, so extraction is
+        behavior-identical by construction)."""
+        if kind == "uniswap_v3":
+            cand = {"venue": "uniswap_v3", "param": int(param),
+                    "out": max(min_out, 1), "gas_est": 120000,
+                    "gas_model": _OFFSET_UNI + 120000}
+        elif kind == "aerodrome_slipstream_multihop":
+            tokens, ticks = param
+            cand = {"venue": "aerodrome_slipstream_multihop",
+                    "tokens": tuple(tokens), "tick_spacings": tuple(int(t) for t in ticks),
+                    "param": tuple(int(t) for t in ticks), "out": max(min_out, 1),
+                    "gas_est": 220000, "gas_model": _GAS_MULTIHOP + 220000}
+        elif kind == "uniswap_v2":
+            cand = {"venue": "uniswap_v2", "param": tuple(param),
+                    "tokens": tuple(param), "out": max(min_out, 1),
+                    "gas_est": 150000 * max(1, len(param) - 1),
+                    "gas_model": 350000 + 150000 * max(1, len(param) - 1)}
+        elif kind == "pancake_v2":
+            cand = {"venue": "pancake_v2", "param": tuple(param),
+                    "tokens": tuple(param), "out": max(min_out, 1),
+                    "gas_est": 150000 * max(1, len(param) - 1),
+                    "gas_model": 350000 + 150000 * max(1, len(param) - 1)}
+        elif kind == "uniswap_v4_ur":
+            cand = {"venue": "uniswap_v4_ur", "spec": dict(param),
+                    "param": "v3+v4", "out": max(min_out, 1),
+                    "gas_est": 650000, "gas_model": 350000 + 650000}
+        elif kind == "vu_quoted":
+            spec_d = self._vu_route_spec(chain_id, amount_in, str(param or tout).lower())
+            cand = {"venue": "uniswap_v4_ur", "spec": spec_d,
+                    "param": "vu", "out": max(min_out, 1),
+                    "gas_est": 450000, "gas_model": 350000 + 450000}
+        elif kind == "aerodrome_slipstream_alt":
+            # king v53 (putty parity): Slipstream-fork pool on a
+            # NON-DEFAULT CL factory, executed via its factory-paired
+            # SwapRouter (bytecode-identical, factory immutable differs).
+            alt_router, tick_spacing = param
+            cand = {"venue": "aerodrome_slipstream_alt",
+                    "router": str(alt_router), "param": int(tick_spacing),
+                    "out": max(min_out, 1), "gas_est": 160000,
+                    "gas_model": _OFFSET_UNI + 160000}
+        elif kind == "v2_router":
+            # king v56: generic UniV2-fork router (BaseSwap etc.) for
+            # pair-keyed covers — mirrors _hole_plan's v2_router branch.
+            # param = (router, verified_input[, hub]); Cookie routes here.
+            router_addr, verified_input = param[0], param[1]
+            if tin.lower() != verified_input.lower():
+                return None
+            tokens = ((tin, param[2], tout) if len(param) > 2
+                      else (tin, tout))
+            cand = {"venue": "v2_fork", "router": router_addr,
+                    "tokens": tokens, "param": router_addr,
+                    "out": max(min_out, 1),
+                    "gas_est": 150000 * (len(tokens) - 1),
+                    "gas_model": 350000 + 150000 * (len(tokens) - 1)}
+        elif kind == "aero_v2":
+            # king v57: pair-keyed Aerodrome V2 cover — mirrors _hole_plan's
+            # aero_v2 branch (hub 2-leg supported) for USDC-direction seals
+            # of tokens whose _HOLE_ROUTES entry is WETH-only (COOKIE/Kendu).
+            hub = None
+            leg1_stable = False
+            if len(param) == 4:
+                factory_addr, verified_input, hub, leg1_stable = param
+            elif len(param) == 3:
+                factory_addr, verified_input, hub = param
+            else:
+                factory_addr, verified_input = param
+            if tin.lower() != verified_input.lower():
+                return None
+            if hub is not None:
+                routes = ((tin, hub, bool(leg1_stable), factory_addr),
+                          (hub, tout, False, factory_addr))
+            else:
+                routes = ((tin, tout, False, factory_addr),)
+            cand = {"venue": "aerodrome_v2",
+                    "routes": routes,
+                    "param": factory_addr, "out": max(min_out, 1),
+                    "gas_est": 170000 * len(routes),
+                    "gas_model": 350000 + 170000 * len(routes)}
+        elif kind == "alien_v3_path":
+            # king v57: Alien Base V3 multi-hop exactInput (bytes path) —
+            # INT's only real pool is AlienBase WETH/INT fee-10000; USDC
+            # reaches it via the fee-750 USDC/WETH hub pool on the same
+            # deployment. param = (tokens, fees).
+            tokens, fees = param
+            if tin.lower() != str(tokens[0]).lower():
+                return None
+            cand = {"venue": "alien_v3_path", "tokens": tuple(tokens),
+                    "fees": tuple(int(f) for f in fees),
+                    "param": tuple(int(f) for f in fees),
+                    "out": max(min_out, 1), "gas_est": 260000,
+                    "gas_model": 350000 + 260000}
+        elif kind == "uni_v3_path":
+            # king v64: Uniswap V3 multi-hop exactInput (bytes path) on
+            # SwapRouter02 — same encoding as alien_v3_path, canonical Uni
+            # router. For tokens whose best route is 2-hop via WETH that
+            # score-aware single-hop selection would otherwise mask (BTRST).
+            tokens, fees = param
+            if tin.lower() != str(tokens[0]).lower():
+                return None
+            cand = {"venue": "uni_v3_path", "tokens": tuple(tokens),
+                    "fees": tuple(int(f) for f in fees),
+                    "param": tuple(int(f) for f in fees),
+                    "out": max(min_out, 1), "gas_est": 260000,
+                    "gas_model": 350000 + 260000}
+        elif kind == "uni_mav":
+            # king v58 (apex parity): Uni V3 tin->WETH leg + Maverick V2
+            # pool swap — 4-interaction plan, built by a dedicated builder.
+            pool_addr, token_a_in = param
+            return self._uni_mav_plan(intent, state, snapshot, str(pool_addr),
+                                      bool(token_a_in), tin, tout, amount_in,
+                                      chain_id, min_out)
+        elif kind == "mav_direct":
+            # king v62: DIRECT Maverick pool swap, input == pool tokenA/B —
+            # fully static pre-pay: transfer amount_in to the pool, then
+            # pool.swap consumes the pre-paid balance. Zero RPC.
+            pool_addr, token_a_in = param
+            return self._mav_direct_plan(intent, state, snapshot, str(pool_addr),
+                                         bool(token_a_in), tin, tout,
+                                         amount_in, chain_id)
+        elif kind == "erc4626_wrap":
+            # king v61: output token is an ERC4626 vault over WETH — no
+            # pool needed. v3 tin->WETH leg, then wrapper.deposit(). Blind-
+            # safe: a failed deposit scores 0 == the champion's None.
+            return self._erc4626_wrap_plan(intent, state, snapshot, tin,
+                                           tout, amount_in, chain_id)
+        elif kind == "sky_psm":
+            # king v94: Sky PSM3 swapExactIn — a venue NO AMM engine reaches
+            # (USDS/sUSDS on Base trade only through the PSM). Deterministic
+            # oracle rate, zero slippage, encode-only (no RPC). Blind-safe:
+            # champion delivers 0 here, a failed swap scores 0 == its 0.
+            return self._sky_psm_plan(intent, state, tin, tout, amount_in,
+                                      chain_id)
+        elif kind == "curve_ng_weth":
+            # king v95: Curve stable-NG pool paired with WETH — v3 tin->WETH
+            # leg then pool.exchange(i,j,dx,0,receiver). Blind-safe (v92's
+            # own plan REVERTS on these; a failed exchange == its 0).
+            pool, i, j = param
+            return self._curve_ng_weth_plan(intent, state, snapshot, tin,
+                                            tout, amount_in, chain_id,
+                                            str(pool), int(i), int(j))
+        else:
+            return None
+        return self._build_singlehop_plan(
+            intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+
     def _static_exotic_plan(self, intent, state, snapshot, params):
         """RPC-free (or minimally quoted) plan for allowlisted cover pairs.
 
@@ -970,148 +1118,8 @@ class MinerSolver(BaselineSwapSolver):
                 return None
 
             kind, param = spec
-            if kind == "uniswap_v3":
-                cand = {"venue": "uniswap_v3", "param": int(param),
-                        "out": max(min_out, 1), "gas_est": 120000,
-                        "gas_model": _OFFSET_UNI + 120000}
-            elif kind == "aerodrome_slipstream_multihop":
-                tokens, ticks = param
-                cand = {"venue": "aerodrome_slipstream_multihop",
-                        "tokens": tuple(tokens), "tick_spacings": tuple(int(t) for t in ticks),
-                        "param": tuple(int(t) for t in ticks), "out": max(min_out, 1),
-                        "gas_est": 220000, "gas_model": _GAS_MULTIHOP + 220000}
-            elif kind == "uniswap_v2":
-                cand = {"venue": "uniswap_v2", "param": tuple(param),
-                        "tokens": tuple(param), "out": max(min_out, 1),
-                        "gas_est": 150000 * max(1, len(param) - 1),
-                        "gas_model": 350000 + 150000 * max(1, len(param) - 1)}
-            elif kind == "pancake_v2":
-                cand = {"venue": "pancake_v2", "param": tuple(param),
-                        "tokens": tuple(param), "out": max(min_out, 1),
-                        "gas_est": 150000 * max(1, len(param) - 1),
-                        "gas_model": 350000 + 150000 * max(1, len(param) - 1)}
-            elif kind == "uniswap_v4_ur":
-                cand = {"venue": "uniswap_v4_ur", "spec": dict(param),
-                        "param": "v3+v4", "out": max(min_out, 1),
-                        "gas_est": 650000, "gas_model": 350000 + 650000}
-            elif kind == "vu_quoted":
-                spec_d = self._vu_route_spec(chain_id, amount_in, str(param or tout).lower())
-                cand = {"venue": "uniswap_v4_ur", "spec": spec_d,
-                        "param": "vu", "out": max(min_out, 1),
-                        "gas_est": 450000, "gas_model": 350000 + 450000}
-            elif kind == "aerodrome_slipstream_alt":
-                # king v53 (putty parity): Slipstream-fork pool on a
-                # NON-DEFAULT CL factory, executed via its factory-paired
-                # SwapRouter (bytecode-identical, factory immutable differs).
-                alt_router, tick_spacing = param
-                cand = {"venue": "aerodrome_slipstream_alt",
-                        "router": str(alt_router), "param": int(tick_spacing),
-                        "out": max(min_out, 1), "gas_est": 160000,
-                        "gas_model": _OFFSET_UNI + 160000}
-            elif kind == "v2_router":
-                # king v56: generic UniV2-fork router (BaseSwap etc.) for
-                # pair-keyed covers — mirrors _hole_plan's v2_router branch.
-                # param = (router, verified_input[, hub]); Cookie routes here.
-                router_addr, verified_input = param[0], param[1]
-                if tin.lower() != verified_input.lower():
-                    return None
-                tokens = ((tin, param[2], tout) if len(param) > 2
-                          else (tin, tout))
-                cand = {"venue": "v2_fork", "router": router_addr,
-                        "tokens": tokens, "param": router_addr,
-                        "out": max(min_out, 1),
-                        "gas_est": 150000 * (len(tokens) - 1),
-                        "gas_model": 350000 + 150000 * (len(tokens) - 1)}
-            elif kind == "aero_v2":
-                # king v57: pair-keyed Aerodrome V2 cover — mirrors _hole_plan's
-                # aero_v2 branch (hub 2-leg supported) for USDC-direction seals
-                # of tokens whose _HOLE_ROUTES entry is WETH-only (COOKIE/Kendu).
-                hub = None
-                leg1_stable = False
-                if len(param) == 4:
-                    factory_addr, verified_input, hub, leg1_stable = param
-                elif len(param) == 3:
-                    factory_addr, verified_input, hub = param
-                else:
-                    factory_addr, verified_input = param
-                if tin.lower() != verified_input.lower():
-                    return None
-                if hub is not None:
-                    routes = ((tin, hub, bool(leg1_stable), factory_addr),
-                              (hub, tout, False, factory_addr))
-                else:
-                    routes = ((tin, tout, False, factory_addr),)
-                cand = {"venue": "aerodrome_v2",
-                        "routes": routes,
-                        "param": factory_addr, "out": max(min_out, 1),
-                        "gas_est": 170000 * len(routes),
-                        "gas_model": 350000 + 170000 * len(routes)}
-            elif kind == "alien_v3_path":
-                # king v57: Alien Base V3 multi-hop exactInput (bytes path) —
-                # INT's only real pool is AlienBase WETH/INT fee-10000; USDC
-                # reaches it via the fee-750 USDC/WETH hub pool on the same
-                # deployment. param = (tokens, fees).
-                tokens, fees = param
-                if tin.lower() != str(tokens[0]).lower():
-                    return None
-                cand = {"venue": "alien_v3_path", "tokens": tuple(tokens),
-                        "fees": tuple(int(f) for f in fees),
-                        "param": tuple(int(f) for f in fees),
-                        "out": max(min_out, 1), "gas_est": 260000,
-                        "gas_model": 350000 + 260000}
-            elif kind == "uni_v3_path":
-                # king v64: Uniswap V3 multi-hop exactInput (bytes path) on
-                # SwapRouter02 — same encoding as alien_v3_path, canonical Uni
-                # router. For tokens whose best route is 2-hop via WETH that
-                # score-aware single-hop selection would otherwise mask (BTRST).
-                tokens, fees = param
-                if tin.lower() != str(tokens[0]).lower():
-                    return None
-                cand = {"venue": "uni_v3_path", "tokens": tuple(tokens),
-                        "fees": tuple(int(f) for f in fees),
-                        "param": tuple(int(f) for f in fees),
-                        "out": max(min_out, 1), "gas_est": 260000,
-                        "gas_model": 350000 + 260000}
-            elif kind == "uni_mav":
-                # king v58 (apex parity): Uni V3 tin->WETH leg + Maverick V2
-                # pool swap — 4-interaction plan, built by a dedicated builder.
-                pool_addr, token_a_in = param
-                return self._uni_mav_plan(intent, state, snapshot, str(pool_addr),
-                                          bool(token_a_in), tin, tout, amount_in,
-                                          chain_id, min_out)
-            elif kind == "mav_direct":
-                # king v62: DIRECT Maverick pool swap, input == pool tokenA/B —
-                # fully static pre-pay: transfer amount_in to the pool, then
-                # pool.swap consumes the pre-paid balance. Zero RPC.
-                pool_addr, token_a_in = param
-                return self._mav_direct_plan(intent, state, snapshot, str(pool_addr),
-                                             bool(token_a_in), tin, tout,
-                                             amount_in, chain_id)
-            elif kind == "erc4626_wrap":
-                # king v61: output token is an ERC4626 vault over WETH — no
-                # pool needed. v3 tin->WETH leg, then wrapper.deposit(). Blind-
-                # safe: a failed deposit scores 0 == the champion's None.
-                return self._erc4626_wrap_plan(intent, state, snapshot, tin,
-                                               tout, amount_in, chain_id)
-            elif kind == "sky_psm":
-                # king v94: Sky PSM3 swapExactIn — a venue NO AMM engine reaches
-                # (USDS/sUSDS on Base trade only through the PSM). Deterministic
-                # oracle rate, zero slippage, encode-only (no RPC). Blind-safe:
-                # champion delivers 0 here, a failed swap scores 0 == its 0.
-                return self._sky_psm_plan(intent, state, tin, tout, amount_in,
-                                          chain_id)
-            elif kind == "curve_ng_weth":
-                # king v95: Curve stable-NG pool paired with WETH — v3 tin->WETH
-                # leg then pool.exchange(i,j,dx,0,receiver). Blind-safe (v92's
-                # own plan REVERTS on these; a failed exchange == its 0).
-                pool, i, j = param
-                return self._curve_ng_weth_plan(intent, state, snapshot, tin,
-                                                tout, amount_in, chain_id,
-                                                str(pool), int(i), int(j))
-            else:
-                return None
-            return self._build_singlehop_plan(
-                intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+            return self._sep_dispatch(intent, state, snapshot, kind, param,
+                                      tin, tout, amount_in, min_out, chain_id)
         except Exception:
             logger.exception("[solver] static exotic plan build failed")
             return None
@@ -2303,6 +2311,23 @@ class MinerSolver(BaselineSwapSolver):
             logger.exception("[sweep] multicall path failed; threaded fallback")
             return self._sweep_quotes_slow(w3, tin, tout, amount_in)
 
+    def _sqm_v2_jobs(self, jobs, enc_v2, tin, tout, amount_in):
+        """V2-router quote-job builders (extracted verbatim from
+        _sweep_quotes_mc; appends to jobs in place, no other effects)."""
+        for name, router in _SWEEP_V2_ROUTERS:
+            jobs.append((router, enc_v2([tin, tout], amount_in), "v2",
+                         f"{name}-direct", ("v2", router, [tin, tout])))
+            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                jobs.append((router, enc_v2([tin, _SWEEP_WETH, tout], amount_in), "v2",
+                             f"{name}-viaWETH", ("v2", router, [tin, _SWEEP_WETH, tout])))
+        uni_v2 = _SWEEP_V2_ROUTERS[0][1]
+        if _SWEEP_VIRTUAL not in (tin, tout):
+            jobs.append((uni_v2, enc_v2([tin, _SWEEP_VIRTUAL, tout], amount_in), "v2",
+                         "uniV2-viaVIRTUAL", ("v2", uni_v2, [tin, _SWEEP_VIRTUAL, tout])))
+            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                jobs.append((uni_v2, enc_v2([tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout], amount_in), "v2",
+                             "uniV2-WETH-VIRTUAL", ("v2", uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout])))
+
     def _sweep_quotes_mc(self, w3, tin, tout, amount_in):
         from eth_abi import encode as _enc, decode as _dec
         from eth_utils import keccak as _kk, to_checksum_address as _ck
@@ -2349,19 +2374,7 @@ class MinerSolver(BaselineSwapSolver):
                          av2 + _enc(["uint256", "(address,address,bool,address)[]"],
                                     [int(amount_in), [(_ck(tin), _ck(tout), stf, _ck(zero))]]),
                          "v2", "reach", None))
-        for name, router in _SWEEP_V2_ROUTERS:
-            jobs.append((router, enc_v2([tin, tout], amount_in), "v2",
-                         f"{name}-direct", ("v2", router, [tin, tout])))
-            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
-                jobs.append((router, enc_v2([tin, _SWEEP_WETH, tout], amount_in), "v2",
-                             f"{name}-viaWETH", ("v2", router, [tin, _SWEEP_WETH, tout])))
-        uni_v2 = _SWEEP_V2_ROUTERS[0][1]
-        if _SWEEP_VIRTUAL not in (tin, tout):
-            jobs.append((uni_v2, enc_v2([tin, _SWEEP_VIRTUAL, tout], amount_in), "v2",
-                         "uniV2-viaVIRTUAL", ("v2", uni_v2, [tin, _SWEEP_VIRTUAL, tout])))
-            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
-                jobs.append((uni_v2, enc_v2([tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout], amount_in), "v2",
-                             "uniV2-WETH-VIRTUAL", ("v2", uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout])))
+        self._sqm_v2_jobs(jobs, enc_v2, tin, tout, amount_in)
         for f in (100, 500, 3000, 10000):
             jobs.append((_SWEEP_SUSHI_Q, enc_v3(tin, tout, amount_in, f), "v3",
                          f"sushiV3-{f}", ("sushi_v3", f, [tin, tout])))
@@ -2648,6 +2661,42 @@ class MinerSolver(BaselineSwapSolver):
                              nonce=state.nonce,
                              metadata={"solver": "sweep-maverick", "chain_id": chain_id})
 
+    def _sas_fast_direct(self, intent, state, snapshot, base_plan,
+                         chain_id, tin, tout, amount_in, min_out):
+        """FAST DIRECT-POOL path for _FAST_DIRECT_INPUTS (extracted verbatim
+        from _score_aware_singlehop; every path returns, so extraction is
+        behavior-identical by construction)."""
+        try:
+            fast = self._enumerate_direct_singlehop(chain_id, tin, tout, amount_in)
+            fusable = [c for c in fast if min_out <= 0 or c["out"] >= min_out]
+            if fusable:
+                fbest = max(fusable, key=lambda c: (c["out"], -c["gas_est"]))
+                fp = self._build_singlehop_plan(
+                    intent, state, snapshot, fbest, tin, tout, amount_in, chain_id)
+                if fp is not None:
+                    return fp
+            # NO-QUOTE deterministic fallback: if every quote timed out
+            # (cold pool) or none cleared min, still SHIP a direct plan on
+            # the deepest venue. USDbC->USDC is a ~0.9998x stable pair, so
+            # a uni fee-100 exactInputSingle (amountOutMinimum=0, so no
+            # slippage revert) delivers >= the ~1%-below-par min. The
+            # harness enforces the order min at the intent level: if the
+            # pool is somehow thin the swap yields < min and the order
+            # scores 0 == the incumbent's None (a skip, NEVER a
+            # regression). Only fires for _FAST_DIRECT_INPUTS.
+            for _hv, _hp in (("uniswap_v3", 100), ("uniswap_v3", 500)):
+                hard = {"venue": _hv, "param": _hp, "out": max(min_out, 1),
+                        "gas_est": 120000, "gas_model": _OFFSET_UNI + 120000}
+                hp = self._build_singlehop_plan(
+                    intent, state, snapshot, hard, tin, tout, amount_in, chain_id)
+                if hp is not None:
+                    return hp
+        except Exception:
+            logger.exception("[solver] fast direct-single-hop failed")
+        # USDbC: never run the FULL enumeration — it blows the budget on
+        # these pairs and returns None (the incumbent's blind spot).
+        return base_plan
+
     def _score_aware_singlehop(self, intent, state, snapshot, base_plan):
         """Pick the finalScore-optimal single-hop route across Uniswap +
         Aerodrome and build its plan. Falls back to base_plan on anything."""
@@ -2676,36 +2725,8 @@ class MinerSolver(BaselineSwapSolver):
             # _FAST_DIRECT_INPUTS; never regresses (we only serve where a serving
             # plan clears min, and the incumbent delivers 0/None here anyway).
             if tin.lower() in _FAST_DIRECT_INPUTS:
-                try:
-                    fast = self._enumerate_direct_singlehop(chain_id, tin, tout, amount_in)
-                    fusable = [c for c in fast if min_out <= 0 or c["out"] >= min_out]
-                    if fusable:
-                        fbest = max(fusable, key=lambda c: (c["out"], -c["gas_est"]))
-                        fp = self._build_singlehop_plan(
-                            intent, state, snapshot, fbest, tin, tout, amount_in, chain_id)
-                        if fp is not None:
-                            return fp
-                    # NO-QUOTE deterministic fallback: if every quote timed out
-                    # (cold pool) or none cleared min, still SHIP a direct plan on
-                    # the deepest venue. USDbC->USDC is a ~0.9998x stable pair, so
-                    # a uni fee-100 exactInputSingle (amountOutMinimum=0, so no
-                    # slippage revert) delivers >= the ~1%-below-par min. The
-                    # harness enforces the order min at the intent level: if the
-                    # pool is somehow thin the swap yields < min and the order
-                    # scores 0 == the incumbent's None (a skip, NEVER a
-                    # regression). Only fires for _FAST_DIRECT_INPUTS.
-                    for _hv, _hp in (("uniswap_v3", 100), ("uniswap_v3", 500)):
-                        hard = {"venue": _hv, "param": _hp, "out": max(min_out, 1),
-                                "gas_est": 120000, "gas_model": _OFFSET_UNI + 120000}
-                        hp = self._build_singlehop_plan(
-                            intent, state, snapshot, hard, tin, tout, amount_in, chain_id)
-                        if hp is not None:
-                            return hp
-                except Exception:
-                    logger.exception("[solver] fast direct-single-hop failed")
-                # USDbC: never run the FULL enumeration — it blows the budget on
-                # these pairs and returns None (the incumbent's blind spot).
-                return base_plan
+                return self._sas_fast_direct(intent, state, snapshot, base_plan,
+                                             chain_id, tin, tout, amount_in, min_out)
 
             bp_hint = 0
             if base_plan is not None:
