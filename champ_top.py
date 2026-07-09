@@ -166,12 +166,16 @@ try:
     _PUTTY_OLD_SINGLE_SEL = bytes.fromhex('414bf389')
     _PUTTY_CURVE_XCHG_SEL = bytes.fromhex('ddc1f59d')
     _PUTTY_SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
-    _PUTTY_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
-    _PUTTY_CURVE_SUPEROETHB = '0x302a94e3c28c290eaf2a4605fc52e11eb915f378'
-    _PUTTY_ROUTES = {}
-    _PUTTY_SUBS = {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
-    _PUTTY_SUBS_WETH = {'0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True),), 'lo': 100000000000000, 'hi': 10000000000000000}}
-    _PUTTY_RPC = {'url': None}
+
+    def _dr3():
+        _PUTTY_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
+        _PUTTY_CURVE_SUPEROETHB = '0x302a94e3c28c290eaf2a4605fc52e11eb915f378'
+        _PUTTY_ROUTES = {}
+        _PUTTY_SUBS = {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
+        _PUTTY_SUBS_WETH = {'0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True),), 'lo': 100000000000000, 'hi': 10000000000000000}}
+        _PUTTY_RPC = {'url': None}
+        return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER)
+    _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr3()
 
     def _putty_eth_call(to, data_hex):
         import json as _pj
@@ -284,11 +288,17 @@ try:
         kind = spec['kind']
         if kind == 'univ3_single':
             return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
-        if kind == 'univ3_path':
-            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
-        if kind == 'erc4626':
-            quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
-            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
+
+        def _dr4():
+            if kind == 'univ3_path':
+                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
+            if kind == 'erc4626':
+                quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
+                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
+            return _DR_UNSET
+        _dr5 = _dr4()
+        if _dr5 is not _DR_UNSET:
+            return _dr5
         if kind == 'curve_full':
             weth_out, fee = _putty_best_usdc_weth(amount_in)
             pool = spec['pool']
