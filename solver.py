@@ -33,8 +33,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "viking-mino-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "162.1.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-clean-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "5.07092226-4")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "martindev0207")
 
 _VIKING_REPLAY_CACHE = None
