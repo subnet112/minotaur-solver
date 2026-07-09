@@ -946,11 +946,9 @@ class MinerSolver(BaselineSwapSolver):
             logger.exception("[solver] hole plan build failed")
             return None
 
-    def _sep_dispatch(self, intent, state, snapshot, kind, param,
-                      tin, tout, amount_in, min_out, chain_id):
-        """Venue dispatch for _static_exotic_plan (extracted verbatim; the
-        chain + shared trailing build return every path, so extraction is
-        behavior-identical by construction)."""
+    def _sep_kind_cand(self, intent, state, snapshot, kind, param, tin, tout, amount_in, min_out, chain_id):
+        """Per-kind exotic route dispatch: returns an ExecutionPlan (direct
+        builders), a cand dict (single-hop shapes), or None."""
         if kind == "uniswap_v3":
             cand = {"venue": "uniswap_v3", "param": int(param),
                     "out": max(min_out, 1), "gas_est": 120000,
@@ -1091,8 +1089,7 @@ class MinerSolver(BaselineSwapSolver):
                                             str(pool), int(i), int(j))
         else:
             return None
-        return self._build_singlehop_plan(
-            intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+        return cand
 
     def _static_exotic_plan(self, intent, state, snapshot, params):
         """RPC-free (or minimally quoted) plan for allowlisted cover pairs.
@@ -1118,8 +1115,11 @@ class MinerSolver(BaselineSwapSolver):
                 return None
 
             kind, param = spec
-            return self._sep_dispatch(intent, state, snapshot, kind, param,
-                                      tin, tout, amount_in, min_out, chain_id)
+            r = self._sep_kind_cand(intent, state, snapshot, kind, param, tin, tout, amount_in, min_out, chain_id)
+            if isinstance(r, dict):
+                return self._build_singlehop_plan(
+                    intent, state, snapshot, r, tin, tout, amount_in, chain_id)
+            return r
         except Exception:
             logger.exception("[solver] static exotic plan build failed")
             return None
@@ -2311,22 +2311,59 @@ class MinerSolver(BaselineSwapSolver):
             logger.exception("[sweep] multicall path failed; threaded fallback")
             return self._sweep_quotes_slow(w3, tin, tout, amount_in)
 
-    def _sqm_v2_jobs(self, jobs, enc_v2, tin, tout, amount_in):
-        """V2-router quote-job builders (extracted verbatim from
-        _sweep_quotes_mc; appends to jobs in place, no other effects)."""
-        for name, router in _SWEEP_V2_ROUTERS:
-            jobs.append((router, enc_v2([tin, tout], amount_in), "v2",
-                         f"{name}-direct", ("v2", router, [tin, tout])))
-            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
-                jobs.append((router, enc_v2([tin, _SWEEP_WETH, tout], amount_in), "v2",
-                             f"{name}-viaWETH", ("v2", router, [tin, _SWEEP_WETH, tout])))
-        uni_v2 = _SWEEP_V2_ROUTERS[0][1]
-        if _SWEEP_VIRTUAL not in (tin, tout):
-            jobs.append((uni_v2, enc_v2([tin, _SWEEP_VIRTUAL, tout], amount_in), "v2",
-                         "uniV2-viaVIRTUAL", ("v2", uni_v2, [tin, _SWEEP_VIRTUAL, tout])))
-            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
-                jobs.append((uni_v2, enc_v2([tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout], amount_in), "v2",
-                             "uniV2-WETH-VIRTUAL", ("v2", uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout])))
+    def _swq_parse(self, jobs, results, _dec):
+        reach_best = 0
+        extra_best, extra_tag, extra_route = 0, "", None
+        _extras = []
+        mav_pools = []
+        for (tgt, cd, kind, tag, route), (ok, ret) in zip(jobs, results):
+            if not ok or not ret:
+                continue
+            out = 0
+            try:
+                if kind == "v3":
+                    out = int(_dec(["uint256", "uint160", "uint32", "uint256"], ret)[0])
+                elif kind == "path":
+                    out = int(_dec(["uint256", "uint160[]", "uint32[]", "uint256"], ret)[0])
+                elif kind == "v2":
+                    out = int(_dec(["uint256[]"], ret)[0][-1])
+                elif kind == "mavlk":
+                    mav_pools = list(_dec(["address[]"], ret)[0])[:3]
+                    continue
+            except Exception:
+                continue
+            if tag == "reach":
+                reach_best = max(reach_best, out)
+            else:
+                if route is not None and out > 0:
+                    _extras.append((out, tag, route))
+                if out > extra_best:
+                    extra_best, extra_tag, extra_route = out, tag, route
+        return reach_best, extra_best, extra_tag, extra_route, _extras, mav_pools
+
+    def _swq_mav(self, mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, mc, _extras, extra_best, extra_tag, extra_route):
+        if mav_pools:
+            token_a_in = tin.lower() == lo.lower()
+            tick = 2147483647 if token_a_in else -2147483648
+            mjobs = [(_SWEEP_MAV_Q,
+                      calc + _enc(["address", "uint128", "bool", "bool", "int32"],
+                                  [_ck(pool), int(amount_in), token_a_in, False, tick]),
+                      "mav", "maverick-direct", ("maverick", (pool, token_a_in), [tin, tout]))
+                     for pool in mav_pools]
+            try:
+                for (tgt, cd, kind, tag, route), (ok, ret) in zip(mjobs, mc(mjobs)):
+                    if not ok or not ret:
+                        continue
+                    try:
+                        out = int(_dec(["uint256", "uint256", "uint256"], ret)[1])
+                    except Exception:
+                        continue
+                    _extras.append((out, tag, route))
+                    if out > extra_best:
+                        extra_best, extra_tag, extra_route = out, tag, route
+            except Exception:
+                pass
+        return extra_best, extra_tag, extra_route
 
     def _sweep_quotes_mc(self, w3, tin, tout, amount_in):
         from eth_abi import encode as _enc, decode as _dec
@@ -2374,7 +2411,19 @@ class MinerSolver(BaselineSwapSolver):
                          av2 + _enc(["uint256", "(address,address,bool,address)[]"],
                                     [int(amount_in), [(_ck(tin), _ck(tout), stf, _ck(zero))]]),
                          "v2", "reach", None))
-        self._sqm_v2_jobs(jobs, enc_v2, tin, tout, amount_in)
+        for name, router in _SWEEP_V2_ROUTERS:
+            jobs.append((router, enc_v2([tin, tout], amount_in), "v2",
+                         f"{name}-direct", ("v2", router, [tin, tout])))
+            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                jobs.append((router, enc_v2([tin, _SWEEP_WETH, tout], amount_in), "v2",
+                             f"{name}-viaWETH", ("v2", router, [tin, _SWEEP_WETH, tout])))
+        uni_v2 = _SWEEP_V2_ROUTERS[0][1]
+        if _SWEEP_VIRTUAL not in (tin, tout):
+            jobs.append((uni_v2, enc_v2([tin, _SWEEP_VIRTUAL, tout], amount_in), "v2",
+                         "uniV2-viaVIRTUAL", ("v2", uni_v2, [tin, _SWEEP_VIRTUAL, tout])))
+            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                jobs.append((uni_v2, enc_v2([tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout], amount_in), "v2",
+                             "uniV2-WETH-VIRTUAL", ("v2", uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout])))
         for f in (100, 500, 3000, 10000):
             jobs.append((_SWEEP_SUSHI_Q, enc_v3(tin, tout, amount_in, f), "v3",
                          f"sushiV3-{f}", ("sushi_v3", f, [tin, tout])))
@@ -2392,55 +2441,8 @@ class MinerSolver(BaselineSwapSolver):
             return _dec(["(bool,bytes)[]"], raw)[0]
 
         results = mc(jobs)
-        reach_best = 0
-        extra_best, extra_tag, extra_route = 0, "", None
-        _extras = []
-        mav_pools = []
-        for (tgt, cd, kind, tag, route), (ok, ret) in zip(jobs, results):
-            if not ok or not ret:
-                continue
-            out = 0
-            try:
-                if kind == "v3":
-                    out = int(_dec(["uint256", "uint160", "uint32", "uint256"], ret)[0])
-                elif kind == "path":
-                    out = int(_dec(["uint256", "uint160[]", "uint32[]", "uint256"], ret)[0])
-                elif kind == "v2":
-                    out = int(_dec(["uint256[]"], ret)[0][-1])
-                elif kind == "mavlk":
-                    mav_pools = list(_dec(["address[]"], ret)[0])[:3]
-                    continue
-            except Exception:
-                continue
-            if tag == "reach":
-                reach_best = max(reach_best, out)
-            else:
-                if route is not None and out > 0:
-                    _extras.append((out, tag, route))
-                if out > extra_best:
-                    extra_best, extra_tag, extra_route = out, tag, route
-
-        if mav_pools:
-            token_a_in = tin.lower() == lo.lower()
-            tick = 2147483647 if token_a_in else -2147483648
-            mjobs = [(_SWEEP_MAV_Q,
-                      calc + _enc(["address", "uint128", "bool", "bool", "int32"],
-                                  [_ck(pool), int(amount_in), token_a_in, False, tick]),
-                      "mav", "maverick-direct", ("maverick", (pool, token_a_in), [tin, tout]))
-                     for pool in mav_pools]
-            try:
-                for (tgt, cd, kind, tag, route), (ok, ret) in zip(mjobs, mc(mjobs)):
-                    if not ok or not ret:
-                        continue
-                    try:
-                        out = int(_dec(["uint256", "uint256", "uint256"], ret)[1])
-                    except Exception:
-                        continue
-                    _extras.append((out, tag, route))
-                    if out > extra_best:
-                        extra_best, extra_tag, extra_route = out, tag, route
-            except Exception:
-                pass
+        reach_best, extra_best, extra_tag, extra_route, _extras, mav_pools = self._swq_parse(jobs, results, _dec)
+        extra_best, extra_tag, extra_route = self._swq_mav(mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, mc, _extras, extra_best, extra_tag, extra_route)
         _extras.sort(key=lambda x: -x[0])
         self._sweep_topk = _extras[:3]
         return reach_best, (extra_best, extra_tag, extra_route)
@@ -2661,41 +2663,76 @@ class MinerSolver(BaselineSwapSolver):
                              nonce=state.nonce,
                              metadata={"solver": "sweep-maverick", "chain_id": chain_id})
 
-    def _sas_fast_direct(self, intent, state, snapshot, base_plan,
-                         chain_id, tin, tout, amount_in, min_out):
-        """FAST DIRECT-POOL path for _FAST_DIRECT_INPUTS (extracted verbatim
-        from _score_aware_singlehop; every path returns, so extraction is
-        behavior-identical by construction)."""
+    def _sas_fast_direct(self, intent, state, snapshot, base_plan, tin, tout, amount_in, min_out, chain_id):
+            try:
+                fast = self._enumerate_direct_singlehop(chain_id, tin, tout, amount_in)
+                fusable = [c for c in fast if min_out <= 0 or c["out"] >= min_out]
+                if fusable:
+                    fbest = max(fusable, key=lambda c: (c["out"], -c["gas_est"]))
+                    fp = self._build_singlehop_plan(
+                        intent, state, snapshot, fbest, tin, tout, amount_in, chain_id)
+                    if fp is not None:
+                        return fp
+                # NO-QUOTE deterministic fallback: if every quote timed out
+                # (cold pool) or none cleared min, still SHIP a direct plan on
+                # the deepest venue. USDbC->USDC is a ~0.9998x stable pair, so
+                # a uni fee-100 exactInputSingle (amountOutMinimum=0, so no
+                # slippage revert) delivers >= the ~1%-below-par min. The
+                # harness enforces the order min at the intent level: if the
+                # pool is somehow thin the swap yields < min and the order
+                # scores 0 == the incumbent's None (a skip, NEVER a
+                # regression). Only fires for _FAST_DIRECT_INPUTS.
+                for _hv, _hp in (("uniswap_v3", 100), ("uniswap_v3", 500)):
+                    hard = {"venue": _hv, "param": _hp, "out": max(min_out, 1),
+                            "gas_est": 120000, "gas_model": _OFFSET_UNI + 120000}
+                    hp = self._build_singlehop_plan(
+                        intent, state, snapshot, hard, tin, tout, amount_in, chain_id)
+                    if hp is not None:
+                        return hp
+            except Exception:
+                logger.exception("[solver] fast direct-single-hop failed")
+            # USDbC: never run the FULL enumeration — it blows the budget on
+            # these pairs and returns None (the incumbent's blind spot).
+            return base_plan
+
+    def _sas_crossvenue_waves(self, cands, chain_id, tin, tout, amount_in, _stage_t0):
         try:
-            fast = self._enumerate_direct_singlehop(chain_id, tin, tout, amount_in)
-            fusable = [c for c in fast if min_out <= 0 or c["out"] >= min_out]
-            if fusable:
-                fbest = max(fusable, key=lambda c: (c["out"], -c["gas_est"]))
-                fp = self._build_singlehop_plan(
-                    intent, state, snapshot, fbest, tin, tout, amount_in, chain_id)
-                if fp is not None:
-                    return fp
-            # NO-QUOTE deterministic fallback: if every quote timed out
-            # (cold pool) or none cleared min, still SHIP a direct plan on
-            # the deepest venue. USDbC->USDC is a ~0.9998x stable pair, so
-            # a uni fee-100 exactInputSingle (amountOutMinimum=0, so no
-            # slippage revert) delivers >= the ~1%-below-par min. The
-            # harness enforces the order min at the intent level: if the
-            # pool is somehow thin the swap yields < min and the order
-            # scores 0 == the incumbent's None (a skip, NEVER a
-            # regression). Only fires for _FAST_DIRECT_INPUTS.
-            for _hv, _hp in (("uniswap_v3", 100), ("uniswap_v3", 500)):
-                hard = {"venue": _hv, "param": _hp, "out": max(min_out, 1),
-                        "gas_est": 120000, "gas_model": _OFFSET_UNI + 120000}
-                hp = self._build_singlehop_plan(
-                    intent, state, snapshot, hard, tin, tout, amount_in, chain_id)
-                if hp is not None:
-                    return hp
+            _bb = max((c["out"] for c in cands), default=0)
+            if time.monotonic() - _stage_t0 < _SELECT_BUDGET_S - (_QUOTER_TIMEOUT_S + 1.0):
+                _xc = self._enumerate_crossvenue_2hop(chain_id, tin, tout, amount_in)
+                cands = cands + [c for c in _xc if c["out"] > _bb * 1.0005]
+            if time.monotonic() - _stage_t0 < _SELECT_BUDGET_S - (_QUOTER_TIMEOUT_S + 1.0):
+                _xp = self._enumerate_crossvenue_2hop_proxy(chain_id, tin, tout, amount_in)
+                cands = cands + [c for c in _xp if c["out"] > _bb * 1.0005]
         except Exception:
-            logger.exception("[solver] fast direct-single-hop failed")
-        # USDbC: never run the FULL enumeration — it blows the budget on
-        # these pairs and returns None (the incumbent's blind spot).
-        return base_plan
+            logger.exception("[solver] crossvenue 2hop enumerate failed; skipping")
+        return cands
+
+    def _sas_honor_baseline(self, base_plan, best, bp_out, min_out, raw_output_pair, tin, tout, score):
+        raw_output_win = (
+            raw_output_pair
+            and bp_out > 0
+            and best["out"] * 10000 > bp_out * (10000 + _RAW_OUTPUT_EDGE_BPS)
+        )
+        if (
+            base_plan is not None
+            and bp_out > 0
+            and (min_out <= 0 or bp_out >= min_out)
+            and not raw_output_win
+        ):
+            m = (base_plan.metadata or {})
+            route = str(m.get("route") or "").lower()
+            is_multihop = (("multi" in route) or ("hop" in route)
+                           or int(m.get("hops", 1) or 1) > 1)
+            if is_multihop and tin.lower() == _WETH and tout.lower() == _DAI:
+                if bp_out >= best["out"]:
+                    return base_plan
+            if not is_multihop:
+                bp_gas = (_OFFSET_AERO + 110000 if "aero" in route
+                          else _OFFSET_UNI + 100000)
+                if score(bp_out, bp_gas) >= score(best["out"], best["gas_model"]):
+                    return base_plan
+        return None
 
     def _score_aware_singlehop(self, intent, state, snapshot, base_plan):
         """Pick the finalScore-optimal single-hop route across Uniswap +
@@ -2725,8 +2762,7 @@ class MinerSolver(BaselineSwapSolver):
             # _FAST_DIRECT_INPUTS; never regresses (we only serve where a serving
             # plan clears min, and the incumbent delivers 0/None here anyway).
             if tin.lower() in _FAST_DIRECT_INPUTS:
-                return self._sas_fast_direct(intent, state, snapshot, base_plan,
-                                             chain_id, tin, tout, amount_in, min_out)
+                return self._sas_fast_direct(intent, state, snapshot, base_plan, tin, tout, amount_in, min_out, chain_id)
 
             bp_hint = 0
             if base_plan is not None:
@@ -2752,16 +2788,7 @@ class MinerSolver(BaselineSwapSolver):
             # king v61: OPTIONAL waves are start-gated on stage-elapsed time so
             # a cold fork degrades to "no extra candidates" instead of the
             # bounded-call kill throwing away the collected single-hop quotes.
-            try:
-                _bb = max((c["out"] for c in cands), default=0)
-                if time.monotonic() - _stage_t0 < _SELECT_BUDGET_S - (_QUOTER_TIMEOUT_S + 1.0):
-                    _xc = self._enumerate_crossvenue_2hop(chain_id, tin, tout, amount_in)
-                    cands = cands + [c for c in _xc if c["out"] > _bb * 1.0005]
-                if time.monotonic() - _stage_t0 < _SELECT_BUDGET_S - (_QUOTER_TIMEOUT_S + 1.0):
-                    _xp = self._enumerate_crossvenue_2hop_proxy(chain_id, tin, tout, amount_in)
-                    cands = cands + [c for c in _xp if c["out"] > _bb * 1.0005]
-            except Exception:
-                logger.exception("[solver] crossvenue 2hop enumerate failed; skipping")
+            cands = self._sas_crossvenue_waves(cands, chain_id, tin, tout, amount_in, _stage_t0)
 
             best_out = max(c["out"] for c in cands)
             bp_out = 0
@@ -2808,29 +2835,9 @@ class MinerSolver(BaselineSwapSolver):
             # Don't regress a baseline route that scores higher — BUT only honor
             # a SINGLE-HOP baseline here. A multi-hop baseline's expected_output
             # is sometimes a phantom route that reverts at execution time.
-            raw_output_win = (
-                raw_output_pair
-                and bp_out > 0
-                and best["out"] * 10000 > bp_out * (10000 + _RAW_OUTPUT_EDGE_BPS)
-            )
-            if (
-                base_plan is not None
-                and bp_out > 0
-                and (min_out <= 0 or bp_out >= min_out)
-                and not raw_output_win
-            ):
-                m = (base_plan.metadata or {})
-                route = str(m.get("route") or "").lower()
-                is_multihop = (("multi" in route) or ("hop" in route)
-                               or int(m.get("hops", 1) or 1) > 1)
-                if is_multihop and tin.lower() == _WETH and tout.lower() == _DAI:
-                    if bp_out >= best["out"]:
-                        return base_plan
-                if not is_multihop:
-                    bp_gas = (_OFFSET_AERO + 110000 if "aero" in route
-                              else _OFFSET_UNI + 100000)
-                    if score(bp_out, bp_gas) >= score(best["out"], best["gas_model"]):
-                        return base_plan
+            _hb = self._sas_honor_baseline(base_plan, best, bp_out, min_out, raw_output_pair, tin, tout, score)
+            if _hb is not None:
+                return _hb
 
             # If a cross-venue 2-hop is the best route, build it (CONTRACT_BALANCE
             # chaining). Checked before split — it's a distinct plan shape.

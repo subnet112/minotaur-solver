@@ -958,6 +958,32 @@ class MinerSolver(_Base):
             return ("qs_weth", None)
         return None
 
+    def _afs_build_tasks(self, w3, tin, tout, amount_in, wi):
+        tasks = []  # (tag, spec, callable)
+        for f in (100, 500, 3000, 10000):
+            tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, tin, tout, amount_in)))
+            tasks.append(("R", None, lambda f=f: self._q1(w3, "pancake_v3", f, tin, tout, amount_in)))
+            tasks.append(("E", ("sushi_v3_direct", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
+        for t in (1, 50, 100, 200, 2000):
+            tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, tin, tout, amount_in)))
+        for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):          # king's generic V2 venues (reachable)
+            tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+        tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
+        for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+            tasks.append(("E", ("v2fot_direct", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+        if wi > 0:
+            for f in (100, 500, 3000, 10000):
+                tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, _WETH, tout, wi)))
+                tasks.append(("E", ("sushi_v3_weth", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, _WETH, tout, f, wi)))
+            for t in (1, 50, 100, 200):
+                tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, _WETH, tout, wi)))
+            for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):      # king's generic V2 venues via WETH (reachable)
+                tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+            tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
+            for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+                tasks.append(("E", ("v2fot_weth", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+        return tasks
+
     def _apex_frontier_sweep(self, intent, state, snapshot, params):
         """Quote Sushi V3 / SushiV2 / AlienBase (venues king lacks) vs king's reachable
         best; override king ONLY when an extra venue beats reachable*margin AND clears
@@ -1001,29 +1027,7 @@ class MinerSolver(_Base):
                         weth_out, weth_fee = o, f
         wi = weth_out * 995 // 1000 if weth_out > 0 else 0
         # phase 2: flat concurrent task list — tag R (reachable) / E (extra, with spec)
-        tasks = []  # (tag, spec, callable)
-        for f in (100, 500, 3000, 10000):
-            tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, tin, tout, amount_in)))
-            tasks.append(("R", None, lambda f=f: self._q1(w3, "pancake_v3", f, tin, tout, amount_in)))
-            tasks.append(("E", ("sushi_v3_direct", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
-        for t in (1, 50, 100, 200, 2000):
-            tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, tin, tout, amount_in)))
-        for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):          # king's generic V2 venues (reachable)
-            tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
-        tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
-        for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-            tasks.append(("E", ("v2fot_direct", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
-        if wi > 0:
-            for f in (100, 500, 3000, 10000):
-                tasks.append(("R", None, lambda f=f: self._q1(w3, "uniswap_v3", f, _WETH, tout, wi)))
-                tasks.append(("E", ("sushi_v3_weth", f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, _WETH, tout, f, wi)))
-            for t in (1, 50, 100, 200):
-                tasks.append(("R", None, lambda t=t: self._q1(w3, "aerodrome_slipstream", t, _WETH, tout, wi)))
-            for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):      # king's generic V2 venues via WETH (reachable)
-                tasks.append(("R", None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
-            tasks.append(("R", None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
-            for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-                tasks.append(("E", ("v2fot_weth", rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+        tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
         reachable, extra = 0, (0, None)
         with ThreadPoolExecutor(max_workers=16) as ex:
             futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
