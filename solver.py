@@ -23,23 +23,18 @@ covers are added ONLY from fresh scorecards against THIS champion, one proven
 row at a time.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 import logging
 import os
-
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
-
 logger = logging.getLogger(__name__)
-
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "viking-mino-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "162.1.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "martindev0207")
-
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07092226-0')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
-
 
 def _viking_override() -> set:
     """Lazy viking_override.json — exact keys where THIS champion tree is
@@ -49,20 +44,15 @@ def _viking_override() -> set:
     global _VIKING_OVERRIDE_CACHE
     if _VIKING_OVERRIDE_CACHE is None:
         import json as _json
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            "viking_override.json")
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_override.json')
         try:
             data = _json.load(open(path))
-            _VIKING_OVERRIDE_CACHE = ({str(k).lower() for k in data}
-                                      if isinstance(data, list) else set())
+            _VIKING_OVERRIDE_CACHE = {str(k).lower() for k in data} if isinstance(data, list) else set()
         except Exception:
             _VIKING_OVERRIDE_CACHE = set()
     return _VIKING_OVERRIDE_CACHE
-
-
 _VIKING_CACHED_BARS = None
 _VIKING_FROZEN_INDEX = None
-
 
 def _viking_cached_bar(key):
     """Lazy champ_cached.json — key -> the champion's CERT-CACHED delivery for
@@ -71,12 +61,11 @@ def _viking_cached_bar(key):
     global _VIKING_CACHED_BARS
     if _VIKING_CACHED_BARS is None:
         import json as _json
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            "champ_cached.json")
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_cached.json')
         bars: dict = {}
         try:
             data = _json.load(open(path)) or {}
-            for k, v in (data.items() if isinstance(data, dict) else []):
+            for k, v in data.items() if isinstance(data, dict) else []:
                 try:
                     iv = int(v)
                 except (TypeError, ValueError):
@@ -88,7 +77,6 @@ def _viking_cached_bar(key):
         _VIKING_CACHED_BARS = bars
     return _VIKING_CACHED_BARS.get(key) if key else None
 
-
 def _viking_frozen_index() -> dict:
     """Lazy byte-index of the lineage's frozen replay rows (the tables the BASE
     stack can serve verbatim): key -> [frozenset of (target, data) pairs per
@@ -99,20 +87,18 @@ def _viking_frozen_index() -> dict:
         import json as _json
         idx: dict = {}
         here = os.path.dirname(os.path.abspath(__file__))
-        for fname in ("hydra_replay.json", "king_replay.json", "override_replay.json"):
+        for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
             try:
                 data = _json.load(open(os.path.join(here, fname))) or {}
             except Exception:
                 continue
-            for k, spec in (data.items() if isinstance(data, dict) else []):
-                rows = (spec or {}).get("interactions") or []
-                sig = frozenset((str(r.get("target", "")).lower(),
-                                 str(r.get("data", "")).lower()) for r in rows)
+            for k, spec in data.items() if isinstance(data, dict) else []:
+                rows = (spec or {}).get('interactions') or []
+                sig = frozenset(((str(r.get('target', '')).lower(), str(r.get('data', '')).lower()) for r in rows))
                 if sig:
                     idx.setdefault(str(k).lower(), []).append(sig)
         _VIKING_FROZEN_INDEX = idx
     return _VIKING_FROZEN_INDEX
-
 
 def _viking_replay() -> dict:
     """Lazy, memoized viking_replay.json — key -> {"ix": [raw interaction
@@ -124,52 +110,39 @@ def _viking_replay() -> dict:
         import json as _json
         import calendar as _cal
         import time as _time
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            "viking_replay.json")
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_replay.json')
         out: dict = {}
         try:
             data = _json.load(open(path)) or {}
-            for key, spec in (data.items() if isinstance(data, dict) else []):
-                # raw dicts, not Interaction objects — chain_id/nonce are
-                # per-request, so construction happens at plan time (same
-                # pattern as the champion lineage's replay loader)
-                rows = [i for i in (spec or {}).get("interactions", [])
-                        if i.get("target") and i.get("data")]
+            for key, spec in data.items() if isinstance(data, dict) else []:
+                rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
                 if not rows:
                     continue
                 try:
-                    at = _cal.timegm(_time.strptime(
-                        str((spec or {}).get("built_at", "")), "%Y-%m-%dT%H:%M:%SZ"))
+                    at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
                 except Exception:
                     at = 0
                 try:
-                    bout = int((spec or {}).get("built_out", 0) or 0)
+                    bout = int((spec or {}).get('built_out', 0) or 0)
                 except (TypeError, ValueError):
                     bout = 0
-                out[str(key).lower()] = {"ix": rows, "out": bout, "at": at}
+                out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
         except Exception:
             out = {}
         _VIKING_REPLAY_CACHE = out
     return _VIKING_REPLAY_CACHE
 
-
 class VikingSolver(_HydraBase):
     """Champion stack + viking delta (override-precedence, then fill-only-empty)."""
 
-    def metadata(self):  # type: ignore[override]
+    def metadata(self):
         base = super().metadata()
-        return SolverMetadata(
-            name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR,
-            description=("verbatim re-fork of the certified champion stack "
-                         "(hydra discovery + full lineage) with proven-only "
-                         "viking delta covers on top"),
-            supported_chains=getattr(base, "supported_chains", None) or [8453],
-        )
+        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
 
     @staticmethod
     def _v_is_empty(plan) -> bool:
         try:
-            return plan is None or not getattr(plan, "interactions", None)
+            return plan is None or not getattr(plan, 'interactions', None)
         except Exception:
             return True
 
@@ -179,20 +152,20 @@ class VikingSolver(_HydraBase):
         (v141's attribute-read variant returned None on real harness state =>
         overrides never fired; ord_085d8b91 fell through to the stale base.)"""
         try:
-            norm = getattr(self, "_normalized_swap_params", None)
+            norm = getattr(self, '_normalized_swap_params', None)
             try:
                 p = norm(intent, state) if callable(norm) else {}
             except Exception:
                 p = {}
             if not p:
-                p = dict(getattr(state, "raw_params", None) or {})
+                p = dict(getattr(state, 'raw_params', None) or {})
             if not p and isinstance(state, dict):
                 p = state
-            tin = str(p.get("input_token", "") or "").lower()
-            tout = str(p.get("output_token", "") or "").lower()
-            amt = str(int(p.get("input_amount", 0) or 0))
-            if tin and tout and amt != "0":
-                return tin + "|" + tout + "|" + amt
+            tin = str(p.get('input_token', '') or '').lower()
+            tout = str(p.get('output_token', '') or '').lower()
+            amt = str(int(p.get('input_amount', 0) or 0))
+            if tin and tout and (amt != '0'):
+                return tin + '|' + tout + '|' + amt
         except Exception:
             pass
         return None
@@ -203,165 +176,111 @@ class VikingSolver(_HydraBase):
         carries intent_id + nonce)."""
         try:
             row = _viking_replay().get(key) if key else None
-            rows = (row or {}).get("ix")
+            rows = (row or {}).get('ix')
             if not rows:
                 return None
-            chain_id = int(getattr(state, "chain_id", 0)
-                           or (getattr(snapshot, "chain_id", 0) if snapshot else 0) or 0)
-            ix = [Interaction(target=r["target"], value=str(r.get("value", "0")),
-                              call_data=r["data"], chain_id=chain_id) for r in rows]
-            rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix,
-                               deadline=9999999999, nonce=state.nonce,
-                               metadata={"solver": "viking-replay", "chain_id": chain_id})
+            chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+            ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
+            rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
             return None if self._v_is_empty(rp) else rp
         except Exception:
-            logger.exception("[viking] replay build failed")
+            logger.exception('[viking] replay build failed')
             return None
-
-    # Dynamic pair-level fallbacks for synthetic orders the champion stack
-    # structurally DROPS (champ=None on scorecards). Synthetic amounts vary per
-    # round, so frozen replay can't cover them — the route is ENCODED AT RUN
-    # TIME from the order's amount on a fixed deep pool via the inherited
-    # engine builder. Fires ONLY when the champion stack returns empty (we
-    # inherit its non-drops verbatim), so worst case = the skip we already had.
-    # cbBTC->WETH: e29725385 rival cards show champ=None while the pair trades
-    # (slipstream ts=100 pool 0x70acdf2a…, 5.3e17 liq, factory-resolved).
-    # WBTC/WETH pairs: e29725520 cert card shows the incumbent engine flaking
-    # to champ=None on WBTC_to_USDC / WBTC_to_WETH / WETH_to_USDC synthetics —
-    # pairs present in EVERY pack, so a deep-pool single-hop converts each
-    # flake round into a cover (build-fail/revert = the skip we already had).
-    _VIKING_DYN_FALLBACKS = {
-        ("0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
-         "0x4200000000000000000000000000000000000006"): ("aerodrome_slipstream", 100),
-        ("0x0555e30da8f98308edb960aa94c0db47230d2b9c",
-         "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"): ("uniswap_v3", 3000),
-        ("0x0555e30da8f98308edb960aa94c0db47230d2b9c",
-         "0x4200000000000000000000000000000000000006"): ("uniswap_v3", 500),
-        ("0x4200000000000000000000000000000000000006",
-         "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"): ("uniswap_v3", 500),
-    }
+    _VIKING_DYN_FALLBACKS = {('0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x4200000000000000000000000000000000000006'): ('aerodrome_slipstream', 100), ('0x0555e30da8f98308edb960aa94c0db47230d2b9c', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'): ('uniswap_v3', 3000), ('0x0555e30da8f98308edb960aa94c0db47230d2b9c', '0x4200000000000000000000000000000000000006'): ('uniswap_v3', 500), ('0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'): ('uniswap_v3', 500)}
 
     def _v_dynamic_fallback(self, intent, state, snapshot):
         try:
-            norm = getattr(self, "_normalized_swap_params", None)
+            norm = getattr(self, '_normalized_swap_params', None)
             try:
                 p = norm(intent, state) if callable(norm) else {}
             except Exception:
                 p = {}
             if not p:
-                p = dict(getattr(state, "raw_params", None) or {})
-            tin = str(p.get("input_token", "") or "").lower()
-            tout = str(p.get("output_token", "") or "").lower()
+                p = dict(getattr(state, 'raw_params', None) or {})
+            tin = str(p.get('input_token', '') or '').lower()
+            tout = str(p.get('output_token', '') or '').lower()
             spec = self._VIKING_DYN_FALLBACKS.get((tin, tout))
             if not spec:
                 return None
-            amount_in = int(p.get("input_amount", 0) or 0)
+            amount_in = int(p.get('input_amount', 0) or 0)
             if amount_in <= 0:
                 return None
-            min_out = int(p.get("min_output_amount", 0) or 0)
-            chain_id = int(getattr(state, "chain_id", 0)
-                           or (getattr(snapshot, "chain_id", 0) if snapshot else 0) or 0)
+            min_out = int(p.get('min_output_amount', 0) or 0)
+            chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
             venue, param = spec
-            cand = {"venue": venue, "param": int(param), "out": max(min_out, 1),
-                    "gas_est": 150000, "gas_model": 450000}
-            plan = self._build_singlehop_plan(
-                intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+            cand = {'venue': venue, 'param': int(param), 'out': max(min_out, 1), 'gas_est': 150000, 'gas_model': 450000}
+            plan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
             if plan is not None:
-                logger.info("[viking] dynamic fallback %s->%s amt=%s via %s/%s",
-                            tin[:8], tout[:8], amount_in, venue, param)
+                logger.info('[viking] dynamic fallback %s->%s amt=%s via %s/%s', tin[:8], tout[:8], amount_in, venue, param)
             return plan
         except Exception:
-            logger.exception("[viking] dynamic fallback failed")
+            logger.exception('[viking] dynamic fallback failed')
             return None
-
-    # Bank rows are frozen kyber calldata and ROT: twice now a reign died on
-    # rows that reverted <1 day after their build (hydra's ▲2 at e29725976
-    # were blind-spot covers on OUR rotted rows, champ=None). The gate makes
-    # the bank self-healing: past _V_ROW_FRESH_S the live engine's route —
-    # quoted on THIS round's pinned fork, so delivery is deterministic — is
-    # preferred over a stale row whose real state is unknowable in-round.
     _V_ROW_FRESH_S = 6 * 3600.0
-    _V_GATE_MIN_BUDGET_S = 8.0  # sweep-verify doctrine: never sweep on heavy packs
+    _V_GATE_MIN_BUDGET_S = 8.0
 
     def _v_engine_fresh(self, intent, state, snapshot):
         """Live-engine route for this order on the round's own fork, or None.
         _score_aware_singlehop(base_plan=None) returns None unless a candidate
         clears the order min, so a non-None result is a deliverable plan."""
         try:
-            if float(getattr(self, "_dyn_order_budget", None) or 99.0) < self._V_GATE_MIN_BUDGET_S:
+            if float(getattr(self, '_dyn_order_budget', None) or 99.0) < self._V_GATE_MIN_BUDGET_S:
                 return None
             fresh = self._score_aware_singlehop(intent, state, snapshot, None)
-            if fresh is None or not getattr(fresh, "interactions", None):
+            if fresh is None or not getattr(fresh, 'interactions', None):
                 return None
             return fresh
         except Exception:
-            logger.exception("[viking] engine-fresh probe failed")
+            logger.exception('[viking] engine-fresh probe failed')
             return None
 
-    def generate_plan(self, intent, state, snapshot=None):  # type: ignore[override]
+    def generate_plan(self, intent, state, snapshot=None):
         key = self._v_swap_key(intent, state)
         row = _viking_replay().get(key) if key else None
-        # override precedence: keys where the reigning tree's own route is
-        # scorecard-proven stale/absent and our fresh route clears it by a
-        # fork-drift-safe margin
         if key and key in _viking_override():
             plan = self._v_replay_plan(key, intent, state, snapshot)
             if plan is not None:
-                logger.info("[viking] override serve %s", key[:64])
+                logger.info('[viking] override serve %s', key[:64])
                 return plan
         plan = super().generate_plan(intent, state, snapshot)
         if not self._v_is_empty(plan):
-            # v162 CACHED-BAR RULE (supersedes v159's blanket return): scoring
-            # compares every delivery to the champion's CERT-CACHED per-order
-            # value — wei-identical across rounds e29727034/e29727095 even
-            # after the underlying lineage row rotted — so that cached value IS
-            # the same-fork bound the v159 law demanded. A fresh bank row whose
-            # stamp clears the bar is served over an engine-built base plan
-            # (the base engine's venue subset missed 3.878e8 and saw 2.59e8 =
-            # certain regression at e29727095); a base serve that is byte-equal
-            # to a frozen lineage row is never touched (it wei-ties the
-            # champion by construction). v159's disaster case stays excluded
-            # by the bar itself: a stale stamp below the bar never fires.
             bar = _viking_cached_bar(key)
-            if bar and row:
-                import time as _time
-                fresh_row = (_time.time() - float(row.get("at") or 0)) <= self._V_ROW_FRESH_S
-                if fresh_row and int(row.get("out") or 0) >= bar:
-                    sig = None
-                    try:
-                        sig = frozenset((str(getattr(i, "target", "")).lower(),
-                                         str(getattr(i, "call_data", "")).lower())
-                                        for i in plan.interactions)
-                    except Exception:
-                        pass
-                    if sig is None or sig not in _viking_frozen_index().get(key, []):
-                        rp = self._v_replay_plan(key, intent, state, snapshot)
-                        if rp is not None:
-                            logger.info("[viking] cached-bar serve %s (stamp %s >= bar %s)",
-                                        key[:64], row.get("out"), bar)
-                            return rp
+
+            def _dr1():
+                nonlocal _time, rp
+                if bar and row:
+                    import time as _time
+                    fresh_row = _time.time() - float(row.get('at') or 0) <= self._V_ROW_FRESH_S
+                    if fresh_row and int(row.get('out') or 0) >= bar:
+                        sig = None
+                        try:
+                            sig = frozenset(((str(getattr(i, 'target', '')).lower(), str(getattr(i, 'call_data', '')).lower()) for i in plan.interactions))
+                        except Exception:
+                            pass
+                        if sig is None or sig not in _viking_frozen_index().get(key, []):
+                            rp = self._v_replay_plan(key, intent, state, snapshot)
+                            if rp is not None:
+                                logger.info('[viking] cached-bar serve %s (stamp %s >= bar %s)', key[:64], row.get('out'), bar)
+                                return rp
+                return _DR_UNSET
+            _dr2 = _dr1()
+            if _dr2 is not _DR_UNSET:
+                return _dr2
             return plan
-        # fill-only-empty: champion stack returned nothing — try the delta.
-        # Age-gated self-healing: a fresh row serves at full kyber value; a
-        # stale row (> _V_ROW_FRESH_S) yields to the engine's fork-exact route
-        # when one clears the min — a guaranteed delivery beats a maybe-revert
-        # (the champ=None class means a revert only forfeits the win row).
         if row:
             import time as _time
-            age = _time.time() - float(row.get("at") or 0)
+            age = _time.time() - float(row.get('at') or 0)
             if age > self._V_ROW_FRESH_S:
                 fresh = self._v_engine_fresh(intent, state, snapshot)
                 if fresh is not None:
-                    logger.info("[viking] stale-row engine serve %s (age %.0fs)", key[:64], age)
+                    logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
                     return fresh
         rp = self._v_replay_plan(key, intent, state, snapshot)
         if rp is not None:
-            logger.info("[viking] fill-empty serve %s", key[:64])
+            logger.info('[viking] fill-empty serve %s', key[:64])
             return rp
         dyn = self._v_dynamic_fallback(intent, state, snapshot)
         if dyn is not None:
             return dyn
         return plan
-
-
 SOLVER_CLASS = VikingSolver
