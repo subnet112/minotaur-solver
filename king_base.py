@@ -377,6 +377,7 @@ class _MinerSolverDR10(BaselineSwapSolver):
                 return _dr12
             _stage_t0 = time.monotonic()
             cands = self._enumerate_singlehop_quotes(chain_id, tin, tout, amount_in)
+            cands = cands + _major_hub_cands(self, chain_id, tin, tout, amount_in)
             if not cands:
                 return base_plan
             cands = self._sas_crossvenue_waves(cands, chain_id, tin, tout, amount_in, _stage_t0)
@@ -595,6 +596,57 @@ class _MinerSolverDR10(BaselineSwapSolver):
         call = '0x' + ('414bf389' + enc.hex())
         route_tag = 'pancake_v3'
         return (router, call, route_tag)
+
+# Measured major-pair hub fastpath rows (live Base 2026-07-09, quoter-verified):
+# WBTC->USDC direct uni3/3000 3398.97 vs WBTC->cbBTC(100)->USDC(500) 3434.68
+# (+105.1 bps, kyber-7bps); WBTC->WETH via cbBTC(100)->WETH(500) +82.8 bps.
+# Only rows that WIN on-chain ship here. E2E fork-proven (cold-fork sim):
+# with the crossvenue wave dead the fastpath alone selects the same hub plan.
+_MAJOR_HUB_PATHS = {
+    ("0x0555e30da8f98308edb960aa94c0db47230d2b9c",
+     "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"):
+        (("0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf", 100, 500),
+         ("0x4200000000000000000000000000000000000006", 3000, 500)),
+    ("0x0555e30da8f98308edb960aa94c0db47230d2b9c",
+     "0x4200000000000000000000000000000000000006"):
+        (("0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf", 100, 500),),
+}
+
+
+def _major_hub_cands(self, chain_id, tin, tout, amount_in):
+    """Budget-immune 2hop probe over the measured major-pair hub table. The
+    general crossvenue wave (5 hubs x ~17 quotes each) is start-gated on
+    stage-elapsed time and its fan dies on cold forks - exactly when the
+    +100bps hub alternative to a thin direct pool goes missing and a rival
+    split-router takes the row. Fixed <=4 socket-bounded quotes; candidates
+    feed the normal selection gates + the existing _build_2hop_plan."""
+    out = []
+    try:
+        paths = _MAJOR_HUB_PATHS.get((str(tin).lower(), str(tout).lower()))
+        if not paths:
+            return out
+        w3 = self._get_quoter_web3(int(chain_id))
+        if w3 is None:
+            return out
+        for hub, f1, f2 in paths:
+            m = self._quote_one(w3, "uniswap_v3", f1, tin, hub, int(amount_in))
+            if m <= 0:
+                continue
+            o = self._quote_one(w3, "uniswap_v3", f2, hub, tout, int(m))
+            if o <= 0:
+                continue
+            out.append({
+                "venue": "crossvenue_2hop",
+                "param": ("uniswap_v3", f1, "uniswap_v3", f2),
+                "out": int(o), "hub": hub,
+                "leg1": {"venue": "uniswap_v3", "param": f1, "out": int(m)},
+                "leg2": {"venue": "uniswap_v3", "param": f2, "out": int(o)},
+                "gas_est": 240000, "gas_model": _GAS_MULTIHOP + 120000,
+            })
+    except Exception:
+        logger.exception("[solver] major-hub probe failed")
+    return out
+
 
 class MinerSolver(_MinerSolverDR10):
     """Baseline routing + score-aware multi-venue single-hop selection."""
