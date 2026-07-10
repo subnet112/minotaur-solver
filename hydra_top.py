@@ -628,34 +628,40 @@ class MinerSolver(_ChampBase):
             return None
         WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
         FEE = {frozenset((WETH, '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')): 500, frozenset((WETH, '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599')): 500}
-        ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
-        recip = str(p.get('receiver', '') or '0x0000000000000000000000000000000000000001')
-        approve = _IX(target=_ck(tin), value='0', call_data='0x095ea7b3' + _enc(['address', 'uint256'], [_ck(ROUTER), amt]).hex(), chain_id=1)
 
-        def _dr16():
+        def _dr31():
+            ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+            recip = str(p.get('receiver', '') or '0x0000000000000000000000000000000000000001')
+            approve = _IX(target=_ck(tin), value='0', call_data='0x095ea7b3' + _enc(['address', 'uint256'], [_ck(ROUTER), amt]).hex(), chain_id=1)
 
-            def path_bytes(tokens, fees):
-                b = b''
-                for i, t in enumerate(tokens):
-                    b += bytes.fromhex(t[2:])
-                    if i < len(fees):
-                        b += fees[i].to_bytes(3, 'big')
-                return b
-            if frozenset((tin, tout)) in FEE:
-                tokens, fees = ([tin, tout], [FEE[frozenset((tin, tout))]])
-            elif WETH not in (tin, tout):
-                f1 = FEE.get(frozenset((tin, WETH)), 3000)
-                f2 = FEE.get(frozenset((WETH, tout)), 3000)
-                tokens, fees = ([tin, WETH, tout], [f1, f2])
-            else:
-                tokens, fees = ([tin, tout], [3000])
-            swap_data = '0xc04b8d59' + _enc(['(bytes,address,uint256,uint256,uint256)'], [(path_bytes(tokens, fees), _ck(recip), 9999999999, amt, 0)]).hex()
-            return (fees, swap_data)
-        fees, swap_data = _dr16()
-        swap = _IX(target=_ck(ROUTER), value='0', call_data=swap_data, chain_id=1)
-        logger.info('[hydra] eth fastpath %s->%s amt=%s hops=%d', tin[:8], tout[:8], amt, len(fees))
-        self._bm_done = getattr(self, '_bm_done', 0) + 1
-        return _EP(intent_id=intent.app_id, interactions=[approve, swap], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-eth-fastpath', 'chain_id': 1})
+            def _dr16():
+
+                def path_bytes(tokens, fees):
+                    b = b''
+                    for i, t in enumerate(tokens):
+                        b += bytes.fromhex(t[2:])
+                        if i < len(fees):
+                            b += fees[i].to_bytes(3, 'big')
+                    return b
+                if frozenset((tin, tout)) in FEE:
+                    tokens, fees = ([tin, tout], [FEE[frozenset((tin, tout))]])
+                elif WETH not in (tin, tout):
+                    f1 = FEE.get(frozenset((tin, WETH)), 3000)
+                    f2 = FEE.get(frozenset((WETH, tout)), 3000)
+                    tokens, fees = ([tin, WETH, tout], [f1, f2])
+                else:
+                    tokens, fees = ([tin, tout], [3000])
+                swap_data = '0xc04b8d59' + _enc(['(bytes,address,uint256,uint256,uint256)'], [(path_bytes(tokens, fees), _ck(recip), 9999999999, amt, 0)]).hex()
+                return (fees, swap_data)
+            fees, swap_data = _dr16()
+            swap = _IX(target=_ck(ROUTER), value='0', call_data=swap_data, chain_id=1)
+            logger.info('[hydra] eth fastpath %s->%s amt=%s hops=%d', tin[:8], tout[:8], amt, len(fees))
+            self._bm_done = getattr(self, '_bm_done', 0) + 1
+            return _EP(intent_id=intent.app_id, interactions=[approve, swap], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-eth-fastpath', 'chain_id': 1})
+            return _DR_UNSET
+        _dr32 = _dr31()
+        if _dr32 is not _DR_UNSET:
+            return _dr32
 
     def _hydra_census_plan(self, intent, state, snapshot, hooked_only):
         p = self._normalized_swap_params(intent, state)
