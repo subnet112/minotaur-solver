@@ -397,7 +397,11 @@ class MinerSolver(_Base):
         via_weth = _dr15()
         if via_weth:
             with ThreadPoolExecutor(max_workers=6) as ex:
-                fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+
+                def _dr16():
+                    fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+                    return fs
+                fs = _dr16()
                 for fut, f in fs.items():
                     o = fut.result()
                     if o > weth_out:

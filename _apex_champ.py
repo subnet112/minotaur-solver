@@ -265,12 +265,16 @@ class JamesSolver(KingSolver):
         table = getattr(_km, '_STATIC_EXOTIC_ROUTES', None)
         if table is None:
             return None
-        try:
-            p = self._normalized_swap_params(intent, state)
-        except Exception:
-            p = dict(getattr(state, 'raw_params', {}) or {})
-        tin = str(p.get('input_token', '') or '').lower()
-        tout = str(p.get('output_token', '') or '').lower()
+
+        def _dr10():
+            try:
+                p = self._normalized_swap_params(intent, state)
+            except Exception:
+                p = dict(getattr(state, 'raw_params', {}) or {})
+            tin = str(p.get('input_token', '') or '').lower()
+            tout = str(p.get('output_token', '') or '').lower()
+            return (p, tin, tout)
+        p, tin, tout = _dr10()
         try:
             amt = int(p.get('input_amount', 0) or 0)
             min_out = int(p.get('min_output_amount', 0) or 0)
