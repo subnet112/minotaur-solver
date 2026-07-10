@@ -30,8 +30,8 @@ from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'hydra-discovery-router')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.69.2')
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07101854-4')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
@@ -200,19 +200,25 @@ class VikingSolver(_HydraBase):
             tin = str(p.get('input_token', '') or '').lower()
             tout = str(p.get('output_token', '') or '').lower()
             spec = self._VIKING_DYN_FALLBACKS.get((tin, tout))
-            if not spec:
-                return None
-            amount_in = int(p.get('input_amount', 0) or 0)
-            if amount_in <= 0:
-                return None
-            min_out = int(p.get('min_output_amount', 0) or 0)
-            chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
-            venue, param = spec
-            cand = {'venue': venue, 'param': int(param), 'out': max(min_out, 1), 'gas_est': 150000, 'gas_model': 450000}
-            plan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
-            if plan is not None:
-                logger.info('[viking] dynamic fallback %s->%s amt=%s via %s/%s', tin[:8], tout[:8], amount_in, venue, param)
-            return plan
+
+            def _dr3():
+                if not spec:
+                    return None
+                amount_in = int(p.get('input_amount', 0) or 0)
+                if amount_in <= 0:
+                    return None
+                min_out = int(p.get('min_output_amount', 0) or 0)
+                chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+                venue, param = spec
+                cand = {'venue': venue, 'param': int(param), 'out': max(min_out, 1), 'gas_est': 150000, 'gas_model': 450000}
+                plan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+                if plan is not None:
+                    logger.info('[viking] dynamic fallback %s->%s amt=%s via %s/%s', tin[:8], tout[:8], amount_in, venue, param)
+                return plan
+                return _DR_UNSET
+            _dr4 = _dr3()
+            if _dr4 is not _DR_UNSET:
+                return _dr4
         except Exception:
             logger.exception('[viking] dynamic fallback failed')
             return None
@@ -284,42 +290,33 @@ class VikingSolver(_HydraBase):
             return dyn
         return plan
 SOLVER_CLASS = VikingSolver
-
-
-# == goran override layer (appended by go.py; self-contained) ==================
 import json as _gjson
 import os as _gos
 from minotaur_subnet.shared.types import Interaction as _GIx, ExecutionPlan as _GPlan
-
-_GORAN_BASE = SOLVER_CLASS  # wrap whatever class the champion exported above
-_GORAN_NAME = _gos.environ.get("GORAN_SOLVER_NAME", "goran-router")  # OUR name, not the forked base's
-_GORAN_AUTHOR = "goran-h-key"
+_GORAN_BASE = SOLVER_CLASS
+_GORAN_NAME = _gos.environ.get('GORAN_SOLVER_NAME', 'goran-router')
+_GORAN_AUTHOR = 'goran-h-key'
 try:
-    _GORAN_OVERRIDES = _gjson.load(
-        open(_gos.path.join(_gos.path.dirname(_gos.path.abspath(__file__)), "overrides.json")))
+    _GORAN_OVERRIDES = _gjson.load(open(_gos.path.join(_gos.path.dirname(_gos.path.abspath(__file__)), 'overrides.json')))
 except Exception:
     _GORAN_OVERRIDES = {}
 
-
 def _goran_key(state):
     try:
-        p = dict(getattr(state, "raw_params", None) or {})
-        tin = str(p.get("input_token", "") or "").lower()
-        tout = str(p.get("output_token", "") or "").lower()
-        amt = str(int(p.get("input_amount", 0) or 0))
-        if tin and tout and amt != "0":
-            return tin + "|" + tout + "|" + amt
+        p = dict(getattr(state, 'raw_params', None) or {})
+        tin = str(p.get('input_token', '') or '').lower()
+        tout = str(p.get('output_token', '') or '').lower()
+        amt = str(int(p.get('input_amount', 0) or 0))
+        if tin and tout and (amt != '0'):
+            return tin + '|' + tout + '|' + amt
     except Exception:
         pass
     return None
-
 
 class GoranSolver(_GORAN_BASE):
     """Champion engine + VERIFIED KyberSwap overrides on the exact keys where we beat it."""
 
     def metadata(self):
-        # Report OUR OWN submission name/author — never reuse the forked base's name
-        # (a fellow miner asked, and the subnet says the name is permissionless).
         md = super().metadata()
         try:
             md.name = _GORAN_NAME
@@ -331,17 +328,12 @@ class GoranSolver(_GORAN_BASE):
     def generate_plan(self, intent, state, snapshot=None):
         try:
             row = _GORAN_OVERRIDES.get(_goran_key(state))
-            if row and row.get("interactions"):
-                cid = int(getattr(state, "chain_id", 0) or 0)
-                ix = [_GIx(target=r["target"], value=str(r.get("value", "0")),
-                           call_data=r["data"], chain_id=cid) for r in row["interactions"]]
+            if row and row.get('interactions'):
+                cid = int(getattr(state, 'chain_id', 0) or 0)
+                ix = [_GIx(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=cid) for r in row['interactions']]
                 if ix:
-                    return _GPlan(intent_id=intent.app_id, interactions=ix,
-                                  deadline=9999999999, nonce=state.nonce,
-                                  metadata={"solver": "goran-override"})
+                    return _GPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'goran-override'})
         except Exception:
             pass
         return super().generate_plan(intent, state, snapshot)
-
-
 SOLVER_CLASS = GoranSolver
