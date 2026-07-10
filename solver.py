@@ -30,8 +30,8 @@ from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'hydra-discovery-router')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.69.2')
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07101811-0')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
@@ -200,19 +200,25 @@ class VikingSolver(_HydraBase):
             tin = str(p.get('input_token', '') or '').lower()
             tout = str(p.get('output_token', '') or '').lower()
             spec = self._VIKING_DYN_FALLBACKS.get((tin, tout))
-            if not spec:
-                return None
-            amount_in = int(p.get('input_amount', 0) or 0)
-            if amount_in <= 0:
-                return None
-            min_out = int(p.get('min_output_amount', 0) or 0)
-            chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
-            venue, param = spec
-            cand = {'venue': venue, 'param': int(param), 'out': max(min_out, 1), 'gas_est': 150000, 'gas_model': 450000}
-            plan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
-            if plan is not None:
-                logger.info('[viking] dynamic fallback %s->%s amt=%s via %s/%s', tin[:8], tout[:8], amount_in, venue, param)
-            return plan
+
+            def _dr3():
+                if not spec:
+                    return None
+                amount_in = int(p.get('input_amount', 0) or 0)
+                if amount_in <= 0:
+                    return None
+                min_out = int(p.get('min_output_amount', 0) or 0)
+                chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+                venue, param = spec
+                cand = {'venue': venue, 'param': int(param), 'out': max(min_out, 1), 'gas_est': 150000, 'gas_model': 450000}
+                plan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+                if plan is not None:
+                    logger.info('[viking] dynamic fallback %s->%s amt=%s via %s/%s', tin[:8], tout[:8], amount_in, venue, param)
+                return plan
+                return _DR_UNSET
+            _dr4 = _dr3()
+            if _dr4 is not _DR_UNSET:
+                return _dr4
         except Exception:
             logger.exception('[viking] dynamic fallback failed')
             return None
@@ -269,12 +275,18 @@ class VikingSolver(_HydraBase):
             return plan
         if row:
             import time as _time
-            age = _time.time() - float(row.get('at') or 0)
-            if age > self._V_ROW_FRESH_S:
-                fresh = self._v_engine_fresh(intent, state, snapshot)
-                if fresh is not None:
-                    logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
-                    return fresh
+
+            def _dr5():
+                age = _time.time() - float(row.get('at') or 0)
+                if age > self._V_ROW_FRESH_S:
+                    fresh = self._v_engine_fresh(intent, state, snapshot)
+                    if fresh is not None:
+                        logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
+                        return fresh
+                return _DR_UNSET
+            _dr6 = _dr5()
+            if _dr6 is not _DR_UNSET:
+                return _dr6
         rp = self._v_replay_plan(key, intent, state, snapshot)
         if rp is not None:
             logger.info('[viking] fill-empty serve %s', key[:64])
