@@ -65,12 +65,16 @@ def _dr20():
         from minotaur_subnet.shared.types import Interaction as _IX
         c0, c1, hooks, pool_mgr, fee, params_hex = spec['pool']
         pool_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee), bytes.fromhex(params_hex[2:] if params_hex.startswith('0x') else params_hex))
-        settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), 1 << 255, False])
-        swap = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(pool_key, bool(spec['zero_for_one']), 0, 0, b'')])
-        take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
-        sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
-        plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
-        exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
+
+        def _dr27():
+            settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), 1 << 255, False])
+            swap = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(pool_key, bool(spec['zero_for_one']), 0, 0, b'')])
+            take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
+            sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
+            plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
+            exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
+            return exec_call
+        exec_call = _dr27()
         transfer_call = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [_ck(_PCS_INFINITY_UR), int(amount_in)])).hex()
         return [_IX(target=tin, value='0', call_data=transfer_call, chain_id=chain_id), _IX(target=_PCS_INFINITY_UR, value='0', call_data=exec_call, chain_id=chain_id)]
     _UNIV4_UR = '0x6fF5693b99212Da76ad316178A184AB56D299b43'
@@ -87,14 +91,18 @@ def _dr20():
             from eth_utils import keccak as _keccak, to_checksum_address as _ck
             c0, c1, hooks, pool_mgr, fee, params_hex = spec['inf_pool']
             inf_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee), bytes.fromhex(params_hex[2:] if params_hex.startswith('0x') else params_hex))
-            settle1 = _abi_encode(['address', 'uint256', 'bool'], [_ck(tin), 1 << 255, False])
-            swap1 = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(inf_key, bool(spec['inf_zfo']), 0, 0, b'')])
-            take1 = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['mid']), _ck(_UNIV4_UR), 0])
-            sweep1 = _abi_encode(['address', 'address', 'uint256'], [_ck(tin), _ck(recipient), 0])
-            plan1 = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle1, swap1, take1, sweep1]])
-            exec1 = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan1], 9999999999])).hex()
+
+            def _dr30():
+                settle1 = _abi_encode(['address', 'uint256', 'bool'], [_ck(tin), 1 << 255, False])
+                swap1 = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(inf_key, bool(spec['inf_zfo']), 0, 0, b'')])
+                take1 = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['mid']), _ck(_UNIV4_UR), 0])
+                sweep1 = _abi_encode(['address', 'address', 'uint256'], [_ck(tin), _ck(recipient), 0])
+                plan1 = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle1, swap1, take1, sweep1]])
+                exec1 = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan1], 9999999999])).hex()
+                return exec1
+            exec1 = _dr30()
             transfer1 = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [_ck(_PCS_INFINITY_UR), int(amount_in)])).hex()
-            return transfer1, exec1
+            return (transfer1, exec1)
 
         def _leg2():
             from eth_abi import encode as _abi_encode
@@ -108,10 +116,7 @@ def _dr20():
             return '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan2], 9999999999])).hex()
         transfer1, exec1 = _leg1()
         exec2 = _leg2()
-        return [_IX(target=tin, value='0', call_data=transfer1, chain_id=chain_id),
-                _IX(target=_PCS_INFINITY_UR, value='0', call_data=exec1, chain_id=chain_id),
-                _IX(target=_UNIV4_UR, value='0', call_data=exec2, chain_id=chain_id)]
-
+        return [_IX(target=tin, value='0', call_data=transfer1, chain_id=chain_id), _IX(target=_PCS_INFINITY_UR, value='0', call_data=exec1, chain_id=chain_id), _IX(target=_UNIV4_UR, value='0', call_data=exec2, chain_id=chain_id)]
     _UNI_ROUTER02 = '0x2626664c2603336E57B271c5C0b26F421741e481'
     _PANCAKE_SMART_ROUTER = '0x1b81D678ffb9C0263b24A97847620C99d213eB14'
 
@@ -287,19 +292,25 @@ def _load_census():
             baked.update((t.lower() for t in _re.findall('0x[0-9a-fA-F]{40}', src)))
         except Exception:
             continue
-    head = int(raw.pop('_head', 0) or 0)
-    out, pre = ({}, set())
-    for tok, spec in raw.items():
-        try:
-            if tok.lower() in baked:
+
+    def _dr28():
+        head = int(raw.pop('_head', 0) or 0)
+        out, pre = ({}, set())
+        for tok, spec in raw.items():
+            try:
+                if tok.lower() in baked:
+                    continue
+                c0, c1, fee, tick, hooks = spec['pool']
+                out[tok.lower()] = (c0.lower(), c1.lower(), int(fee), int(tick), hooks.lower())
+                if hooks.lower() != '0x0000000000000000000000000000000000000000' and (head == 0 or head - int(spec.get('block', 0)) < 4 * 43200):
+                    pre.add(tok.lower())
+            except Exception:
                 continue
-            c0, c1, fee, tick, hooks = spec['pool']
-            out[tok.lower()] = (c0.lower(), c1.lower(), int(fee), int(tick), hooks.lower())
-            if hooks.lower() != '0x0000000000000000000000000000000000000000' and (head == 0 or head - int(spec.get('block', 0)) < 4 * 43200):
-                pre.add(tok.lower())
-        except Exception:
-            continue
-    return (out, pre)
+        return (out, pre)
+        return _DR_UNSET
+    _dr29 = _dr28()
+    if _dr29 is not _DR_UNSET:
+        return _dr29
 _HYDRA_CENSUS_CACHE = None
 
 def _hydra_census():
@@ -375,49 +386,56 @@ class MinerSolver(_ChampBase):
 
     def _hydra_serve_quality(self, intent, state, snapshot, p, qkey, qcand, chain_id):
 
-        def _dr2():
-            nonlocal _EP, ix
-            if qcand.get('venue') == 'two_leg':
-                ix = []
-                for leg in qcand['legs']:
-                    lp = self._build_singlehop_plan(intent, state, snapshot, leg['cand'], leg['tin'], leg['tout'], leg['amt'], chain_id)
-                    if lp is None or not getattr(lp, 'interactions', None):
-                        ix = []
-                        break
-                    ix.extend(lp.interactions)
-                if ix:
-                    from minotaur_subnet.shared.types import ExecutionPlan as _EP
-                    logger.info('[hydra] QUALITY two-leg %s->%s amt=%s', qkey[0][:8], qkey[1][:8], qkey[2])
-                    return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-two-leg', 'chain_id': chain_id})
-                return None
-            return _DR_UNSET
-        _dr3 = _dr2()
-        if _dr3 is not _DR_UNSET:
-            return _dr3
-        if qcand.get('venue') in ('maverick_push', 'v2_push', 'univ4_push'):
-            recipient = state.contract_address or p.get('receiver') or state.owner
+        def _dr23():
+            nonlocal recipient
 
-            def _dr1():
-                nonlocal _EP, ix, spec
-                if qcand['venue'] == 'univ4_push':
-                    ix = _build_univ4_push_ix(qcand['spec'], qkey[0], qkey[1], qkey[2], recipient, chain_id)
-                else:
-                    builder = _build_maverick_push_ix if qcand['venue'] == 'maverick_push' else _build_v2_push_ix
-                    spec = qcand['spec']
-                    if spec.get('size_pct'):
-                        try:
-                            q = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
-                            if q:
-                                spec = dict(spec)
-                                spec['swap_amount'] = q * int(spec['size_pct']) // 1000
-                                logger.info('[hydra] dynamic push size %s (leg1 %s)', spec['swap_amount'], q)
-                        except Exception:
-                            logger.exception('[hydra] leg1 quote failed; frozen size')
-                    ix = builder(spec, qkey[0], qkey[2], recipient, chain_id)
-                from minotaur_subnet.shared.types import ExecutionPlan as _EP
-            _dr1()
-            logger.info('[hydra] QUALITY %s %s->%s amt=%s', qcand['venue'], qkey[0][:8], qkey[1][:8], qkey[2])
-            return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-push', 'chain_id': chain_id})
+            def _dr2():
+                nonlocal _EP, ix
+                if qcand.get('venue') == 'two_leg':
+                    ix = []
+                    for leg in qcand['legs']:
+                        lp = self._build_singlehop_plan(intent, state, snapshot, leg['cand'], leg['tin'], leg['tout'], leg['amt'], chain_id)
+                        if lp is None or not getattr(lp, 'interactions', None):
+                            ix = []
+                            break
+                        ix.extend(lp.interactions)
+                    if ix:
+                        from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                        logger.info('[hydra] QUALITY two-leg %s->%s amt=%s', qkey[0][:8], qkey[1][:8], qkey[2])
+                        return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-two-leg', 'chain_id': chain_id})
+                    return None
+                return _DR_UNSET
+            _dr3 = _dr2()
+            if _dr3 is not _DR_UNSET:
+                return _dr3
+            if qcand.get('venue') in ('maverick_push', 'v2_push', 'univ4_push'):
+                recipient = state.contract_address or p.get('receiver') or state.owner
+
+                def _dr1():
+                    nonlocal _EP, ix, spec
+                    if qcand['venue'] == 'univ4_push':
+                        ix = _build_univ4_push_ix(qcand['spec'], qkey[0], qkey[1], qkey[2], recipient, chain_id)
+                    else:
+                        builder = _build_maverick_push_ix if qcand['venue'] == 'maverick_push' else _build_v2_push_ix
+                        spec = qcand['spec']
+                        if spec.get('size_pct'):
+                            try:
+                                q = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
+                                if q:
+                                    spec = dict(spec)
+                                    spec['swap_amount'] = q * int(spec['size_pct']) // 1000
+                                    logger.info('[hydra] dynamic push size %s (leg1 %s)', spec['swap_amount'], q)
+                            except Exception:
+                                logger.exception('[hydra] leg1 quote failed; frozen size')
+                        ix = builder(spec, qkey[0], qkey[2], recipient, chain_id)
+                    from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                _dr1()
+                logger.info('[hydra] QUALITY %s %s->%s amt=%s', qcand['venue'], qkey[0][:8], qkey[1][:8], qkey[2])
+                return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-push', 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr24 = _dr23()
+        if _dr24 is not _DR_UNSET:
+            return _dr24
         if qcand.get('venue') == 'v3_slip_chain':
             spec = qcand['spec']
             mid_amount = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
@@ -560,18 +578,25 @@ class MinerSolver(_ChampBase):
                         return splan
         except Exception:
             logger.exception('[hydra] static cover failed')
-        try:
-            p, rkey = self._hydra_qkey(intent, state)
-            ix = _hydra_replay().get(rkey)
-            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-            if ix and chain_id == 8453 and _hydra_frozen_ok(state):
-                from minotaur_subnet.shared.types import ExecutionPlan as _EP
-                from minotaur_subnet.shared.types import Interaction as _IX
-                rplan = _EP(intent_id=intent.app_id, interactions=[_IX(target=i['target'], value=str(i.get('value', '0') or '0'), call_data=i['data'], chain_id=8453) for i in ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-replay', 'chain_id': 8453})
-                logger.info('[hydra] replay serve %s->%s amt=%s (%d ix)', rkey[0][:8], rkey[1][:8], rkey[2], len(ix))
-                return rplan
-        except Exception:
-            logger.exception('[hydra] replay serve failed')
+
+        def _dr21():
+            nonlocal chain_id, p
+            try:
+                p, rkey = self._hydra_qkey(intent, state)
+                ix = _hydra_replay().get(rkey)
+                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                if ix and chain_id == 8453 and _hydra_frozen_ok(state):
+                    from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                    from minotaur_subnet.shared.types import Interaction as _IX
+                    rplan = _EP(intent_id=intent.app_id, interactions=[_IX(target=i['target'], value=str(i.get('value', '0') or '0'), call_data=i['data'], chain_id=8453) for i in ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-replay', 'chain_id': 8453})
+                    logger.info('[hydra] replay serve %s->%s amt=%s (%d ix)', rkey[0][:8], rkey[1][:8], rkey[2], len(ix))
+                    return rplan
+            except Exception:
+                logger.exception('[hydra] replay serve failed')
+            return _DR_UNSET
+        _dr22 = _dr21()
+        if _dr22 is not _DR_UNSET:
+            return _dr22
         try:
             cplan = self._hydra_census_plan(intent, state, snapshot, hooked_only=False)
             if cplan is not None:
@@ -645,12 +670,19 @@ class MinerSolver(_ChampBase):
         if hooked_only and tout not in _hydra_census()[1]:
             return None
         spec = None
-        if tin in (c0, c1):
-            spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': tin, 'zero_for_one': c0 == tin}
-        elif _WETH in (c0, c1) and tin == _USDC:
-            spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': _WETH, 'zero_for_one': c0 == _WETH, 'v3_tokens': (_USDC, _WETH), 'v3_fees': (500,)}
-        if spec is None:
-            return None
+
+        def _dr25():
+            nonlocal spec
+            if tin in (c0, c1):
+                spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': tin, 'zero_for_one': c0 == tin}
+            elif _WETH in (c0, c1) and tin == _USDC:
+                spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': _WETH, 'zero_for_one': c0 == _WETH, 'v3_tokens': (_USDC, _WETH), 'v3_fees': (500,)}
+            if spec is None:
+                return None
+            return _DR_UNSET
+        _dr26 = _dr25()
+        if _dr26 is not _DR_UNSET:
+            return _dr26
         cand = {'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-census', 'out': 1, 'gas_est': 650000, 'gas_model': 1000000}
         cplan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amt, chain_id)
         if cplan is not None and getattr(cplan, 'interactions', None):

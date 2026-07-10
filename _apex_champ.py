@@ -130,18 +130,24 @@ class JamesSolver(KingSolver):
             return True
 
     def generate_plan(self, intent, state, snapshot=None):
-        self._bm_done = getattr(self, '_bm_done', 0) + 1
-        self._dyn_order_budget = None
-        if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
-            import time as _t
-            remaining_time = self._RUN_BUDGET_S - (_t.monotonic() - self._bm_t0)
-            remaining_orders = max(1, self._bm_total - self._bm_done + 1)
-            self._dyn_order_budget = max(4.0, remaining_time / remaining_orders)
-        if self._behind_pace():
-            fast = self._fast_plan(intent, state, snapshot)
-            if not self._is_empty(fast):
-                logger.info('[james] governor fast-path plan (order %d/%d)', self._bm_done, self._bm_total)
-                return fast
+
+        def _dr8():
+            self._bm_done = getattr(self, '_bm_done', 0) + 1
+            self._dyn_order_budget = None
+            if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
+                import time as _t
+                remaining_time = self._RUN_BUDGET_S - (_t.monotonic() - self._bm_t0)
+                remaining_orders = max(1, self._bm_total - self._bm_done + 1)
+                self._dyn_order_budget = max(4.0, remaining_time / remaining_orders)
+            if self._behind_pace():
+                fast = self._fast_plan(intent, state, snapshot)
+                if not self._is_empty(fast):
+                    logger.info('[james] governor fast-path plan (order %d/%d)', self._bm_done, self._bm_total)
+                    return fast
+            return _DR_UNSET
+        _dr9 = _dr8()
+        if _dr9 is not _DR_UNSET:
+            return _dr9
         try:
             plan = super().generate_plan(intent, state, snapshot)
         except Exception:
@@ -270,9 +276,15 @@ class JamesSolver(KingSolver):
             min_out = int(p.get('min_output_amount', 0) or 0)
         except (TypeError, ValueError):
             return None
-        chain_id = int(getattr(state, 'chain_id', 0) or 0)
-        if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())) or ((tin, tout) in table):
-            return None
+
+        def _dr6():
+            chain_id = int(getattr(state, 'chain_id', 0) or 0)
+            if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())) or ((tin, tout) in table):
+                return None
+            return _DR_UNSET
+        _dr7 = _dr6()
+        if _dr7 is not _DR_UNSET:
+            return _dr7
         w3 = self._james_w3()
         weth_leg = amt if tin == self._JWETH.lower() else self._jq_v3(w3, self._JUSDC, self._JWETH, amt, 500)
         best_out, best_spec = (0, None)
