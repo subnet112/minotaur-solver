@@ -105,18 +105,24 @@ class MinerSolver(_Base):
             if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
                 return None
             kind, param = _APEX_HOLE_ROUTES[tout.lower()]
-            if kind == 'uni_mav':
-                pool, token_a_in = param
-                return self._apex_uni_mav(intent, state, snapshot, pool, bool(token_a_in), tin, tout, amount_in, chain_id)
-            if kind == 'uni_v3':
-                return self._apex_uni_v3(intent, state, snapshot, tin, tout, amount_in, chain_id)
-            if kind == 'uni_v2_via':
-                mid, v2_router = param
-                return self._apex_uni_v2_via(intent, state, snapshot, mid, v2_router, tin, tout, amount_in, chain_id)
-            if kind == 'v2':
-                mid = _WETH
-                path = [tin, tout] if mid in (tin.lower(), tout.lower()) else [tin, mid, tout]
-                return self._apex_v2(intent, state, snapshot, param, path, amount_in, chain_id)
+
+            def _dr13():
+                if kind == 'uni_mav':
+                    pool, token_a_in = param
+                    return self._apex_uni_mav(intent, state, snapshot, pool, bool(token_a_in), tin, tout, amount_in, chain_id)
+                if kind == 'uni_v3':
+                    return self._apex_uni_v3(intent, state, snapshot, tin, tout, amount_in, chain_id)
+                if kind == 'uni_v2_via':
+                    mid, v2_router = param
+                    return self._apex_uni_v2_via(intent, state, snapshot, mid, v2_router, tin, tout, amount_in, chain_id)
+                if kind == 'v2':
+                    mid = _WETH
+                    path = [tin, tout] if mid in (tin.lower(), tout.lower()) else [tin, mid, tout]
+                    return self._apex_v2(intent, state, snapshot, param, path, amount_in, chain_id)
+                return _DR_UNSET
+            _dr14 = _dr13()
+            if _dr14 is not _DR_UNSET:
+                return _dr14
         except Exception:
             logger.exception('[apex] hole plan build failed')
         return None
@@ -188,10 +194,16 @@ class MinerSolver(_Base):
         params = self._normalized_swap_params(intent, state)
         recipient = self._apex_recipient(state, params)
         deadline = self._apex_deadline(snapshot)
-        leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-        mav = '0x' + ('a3b105ca' + _enc(['address', 'address', 'bool', 'uint256', 'uint256'], [_ck(recipient), _ck(pool), bool(token_a_in), int(mav_in), 0]).hex())
-        ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=_WETH, value='0', call_data=encode_approve(_MAVERICK_ROUTER, mav_in), chain_id=chain_id), Interaction(target=_MAVERICK_ROUTER, value='0', call_data=mav, chain_id=chain_id)]
-        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-mav', 'chain_id': chain_id})
+
+        def _dr11():
+            leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+            mav = '0x' + ('a3b105ca' + _enc(['address', 'address', 'bool', 'uint256', 'uint256'], [_ck(recipient), _ck(pool), bool(token_a_in), int(mav_in), 0]).hex())
+            ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=_WETH, value='0', call_data=encode_approve(_MAVERICK_ROUTER, mav_in), chain_id=chain_id), Interaction(target=_MAVERICK_ROUTER, value='0', call_data=mav, chain_id=chain_id)]
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-mav', 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr12 = _dr11()
+        if _dr12 is not _DR_UNSET:
+            return _dr12
 
     def _apex_uni_v2_via(self, intent, state, snapshot, mid, v2_router, tin, tout, amount_in, chain_id):
         from common.abi_utils import encode_approve
@@ -215,11 +227,15 @@ class MinerSolver(_Base):
             return None
         v2_in = mid_out * 995 // 1000
         params = self._normalized_swap_params(intent, state)
-        recipient = self._apex_recipient(state, params)
-        deadline = self._apex_deadline(snapshot)
-        leg1 = encode_exact_input_single(token_in=tin, token_out=mid, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-        leg2 = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(v2_in), 0, [_ck(mid), _ck(tout)], _ck(recipient), int(deadline)]).hex()
-        ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=mid, value='0', call_data=encode_approve(v2_router, v2_in), chain_id=chain_id), Interaction(target=v2_router, value='0', call_data=leg2, chain_id=chain_id)]
+
+        def _dr10():
+            recipient = self._apex_recipient(state, params)
+            deadline = self._apex_deadline(snapshot)
+            leg1 = encode_exact_input_single(token_in=tin, token_out=mid, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+            leg2 = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(v2_in), 0, [_ck(mid), _ck(tout)], _ck(recipient), int(deadline)]).hex()
+            ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=mid, value='0', call_data=encode_approve(v2_router, v2_in), chain_id=chain_id), Interaction(target=v2_router, value='0', call_data=leg2, chain_id=chain_id)]
+            return (deadline, ix)
+        deadline, ix = _dr10()
         return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v2-via', 'chain_id': chain_id})
 
     def _apex_champ_hardcodes(self, tin, tout):
@@ -303,22 +319,27 @@ class MinerSolver(_Base):
         return None
 
     def _afs_build_tasks(self, w3, tin, tout, amount_in, wi):
-        tasks = []
-        for f in (100, 500, 3000, 10000):
-            tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, tin, tout, amount_in)))
-            tasks.append(('R', None, lambda f=f: self._q1(w3, 'pancake_v3', f, tin, tout, amount_in)))
-            tasks.append(('E', ('sushi_v3_direct', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
 
-        def _dr3():
-            nonlocal rtr, t
-            for t in (1, 50, 100, 200, 2000):
-                tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, tin, tout, amount_in)))
-            for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
-                tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
-            tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
-            for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-                tasks.append(('E', ('v2fot_direct', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
-        _dr3()
+        def _dr9():
+            nonlocal f
+            tasks = []
+            for f in (100, 500, 3000, 10000):
+                tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, tin, tout, amount_in)))
+                tasks.append(('R', None, lambda f=f: self._q1(w3, 'pancake_v3', f, tin, tout, amount_in)))
+                tasks.append(('E', ('sushi_v3_direct', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
+
+            def _dr3():
+                nonlocal rtr, t
+                for t in (1, 50, 100, 200, 2000):
+                    tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, tin, tout, amount_in)))
+                for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
+                    tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+                tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
+                for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+                    tasks.append(('E', ('v2fot_direct', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+            _dr3()
+            return tasks
+        tasks = _dr9()
         if wi > 0:
             for f in (100, 500, 3000, 10000):
                 tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, _WETH, tout, wi)))
@@ -366,9 +387,14 @@ class MinerSolver(_Base):
         w3 = self._get_web3(chain_id)
         if w3 is None:
             return None
-        wethL = _WETH.lower()
-        via_weth = tin.lower() != wethL and tout.lower() != wethL
-        weth_fee, weth_out = (500, 0)
+
+        def _dr15():
+            nonlocal weth_fee, weth_out
+            wethL = _WETH.lower()
+            via_weth = tin.lower() != wethL and tout.lower() != wethL
+            weth_fee, weth_out = (500, 0)
+            return via_weth
+        via_weth = _dr15()
         if via_weth:
             with ThreadPoolExecutor(max_workers=6) as ex:
                 fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
@@ -380,32 +406,38 @@ class MinerSolver(_Base):
         tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
         reachable, extra = (0, (0, None))
 
-        def _dr1():
-            nonlocal ex, extra, fut, reachable
-            with ThreadPoolExecutor(max_workers=16) as ex:
-                futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
-                for tag, spec, fut in futs:
-                    try:
-                        out = int(fut.result(timeout=6))
-                    except Exception:
-                        out = 0
-                    if tag == 'R':
-                        reachable = max(reachable, out)
-                    elif out > extra[0]:
-                        extra = (out, spec)
-            if reachable > 0:
-                return None
-            out, spec = extra
-            if out > 0 and spec is not None and (min_out <= 0 or out >= min_out):
-                return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec)
+        def _dr7():
+
+            def _dr1():
+                nonlocal ex, extra, fut, reachable
+                with ThreadPoolExecutor(max_workers=16) as ex:
+                    futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
+                    for tag, spec, fut in futs:
+                        try:
+                            out = int(fut.result(timeout=6))
+                        except Exception:
+                            out = 0
+                        if tag == 'R':
+                            reachable = max(reachable, out)
+                        elif out > extra[0]:
+                            extra = (out, spec)
+                if reachable > 0:
+                    return None
+                out, spec = extra
+                if out > 0 and spec is not None and (min_out <= 0 or out >= min_out):
+                    return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec)
+                return _DR_UNSET
+            _dr2 = _dr1()
+            if _dr2 is not _DR_UNSET:
+                return _dr2
+            qs = self._apex_qs_candidate(w3, tin, tout, wi)
+            if qs is not None:
+                return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, qs)
+            return None
             return _DR_UNSET
-        _dr2 = _dr1()
-        if _dr2 is not _DR_UNSET:
-            return _dr2
-        qs = self._apex_qs_candidate(w3, tin, tout, wi)
-        if qs is not None:
-            return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, qs)
-        return None
+        _dr8 = _dr7()
+        if _dr8 is not _DR_UNSET:
+            return _dr8
 
     def _apex_build_frontier(self, intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec):
         from common.abi_utils import encode_approve
