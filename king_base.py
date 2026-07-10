@@ -83,42 +83,46 @@ def _dr21():
     _AERO_KG_TWOHOP_TICKS = ((1, 1), (100, 1), (1, 100), (100, 100), (200, 100), (100, 200), (200, 1), (1, 200))
     return (_AERO_KG_TWOHOP_TICKS, _AERO_TICK_SPACINGS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES, _UNI_TWOHOP_FEES)
 _AERO_KG_TWOHOP_TICKS, _AERO_TICK_SPACINGS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES, _UNI_TWOHOP_FEES = _dr21()
-_UNI_QUOTER_BY_CHAIN = {_ETH: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e'}
-_ETH_HUBS = (_ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_DAI, _ETH_WBTC)
-_ETH_UNI_FEES = (100, 500, 3000, 10000)
-_ETH_UNI_FEES_TWOHOP = ((500, 500), (500, 3000), (3000, 500), (3000, 3000), (100, 500), (500, 100), (100, 3000), (3000, 100))
 
-def _dr50():
-    _ETH_3POOL_IDX = {_ETH_DAI: 0, _ETH_USDC: 1, _ETH_USDT: 2}
-    _OFFSET_UNI = int(os.environ.get('SOLVER_OFFSET_UNI', '285000'))
-    _OFFSET_AERO = int(os.environ.get('SOLVER_OFFSET_AERO', '318000'))
-    _GAS_MULTIHOP = int(os.environ.get('SOLVER_GAS_MULTIHOP', '490000'))
-    _RPC_TIMEOUT_S = float(os.environ.get('SOLVER_RPC_TIMEOUT_S', '2.0'))
-    _FAST_DIRECT_TIMEOUT_S = float(os.environ.get('SOLVER_FAST_DIRECT_TIMEOUT_S', '8.0'))
-    _QUOTE_BUDGET_S = float(os.environ.get('SOLVER_QUOTE_BUDGET_S', '14.0'))
-    _BASELINE_BUDGET_S = float(os.environ.get('SOLVER_BASELINE_BUDGET_S', '14.0'))
-    _SELECT_BUDGET_S = float(os.environ.get('SOLVER_SELECT_BUDGET_S', '12.0'))
-    _QUOTER_MAX_WORKERS = int(os.environ.get('SOLVER_QUOTER_MAX_WORKERS', '48'))
-    _QUOTER_TIMEOUT_S = float(os.environ.get('SOLVER_QUOTER_TIMEOUT_S', '5.0'))
-    _SWEEP_KG = frozenset({'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'})
-    return (_BASELINE_BUDGET_S, _ETH_3POOL_IDX, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG)
-_BASELINE_BUDGET_S, _ETH_3POOL_IDX, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG = _dr50()
-_SWEEP_V2_ROUTERS = (('uniV2', '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24'), ('pancakeV2', '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'), ('sushiV2', '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891'), ('baseswapV2', '0x327Df1E6de05895d2ab08513aaDD9313Fe505d86'), ('alienV2', '0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7'))
-_SWEEP_VERIFY_MIN_S = float(os.environ.get('SOLVER_SWEEP_VERIFY_MIN_S', '8.0'))
-_SWEEP_MIN_BUDGET_S = float(os.environ.get('SOLVER_SWEEP_MIN_BUDGET_S', '8.0'))
-_DISCOVERY_MIN_BUDGET_S = float(os.environ.get('SOLVER_DISCOVERY_MIN_BUDGET_S', '8.0'))
+def _dr82():
+    _UNI_QUOTER_BY_CHAIN = {_ETH: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e'}
+    _ETH_HUBS = (_ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_DAI, _ETH_WBTC)
+    _ETH_UNI_FEES = (100, 500, 3000, 10000)
+    _ETH_UNI_FEES_TWOHOP = ((500, 500), (500, 3000), (3000, 500), (3000, 3000), (100, 500), (500, 100), (100, 3000), (3000, 100))
 
-def _sweep_known_tokens():
-    """Every 0x-address literal in THIS file: if a token is mentioned anywhere,
+    def _dr50():
+        _ETH_3POOL_IDX = {_ETH_DAI: 0, _ETH_USDC: 1, _ETH_USDT: 2}
+        _OFFSET_UNI = int(os.environ.get('SOLVER_OFFSET_UNI', '285000'))
+        _OFFSET_AERO = int(os.environ.get('SOLVER_OFFSET_AERO', '318000'))
+        _GAS_MULTIHOP = int(os.environ.get('SOLVER_GAS_MULTIHOP', '490000'))
+        _RPC_TIMEOUT_S = float(os.environ.get('SOLVER_RPC_TIMEOUT_S', '2.0'))
+        _FAST_DIRECT_TIMEOUT_S = float(os.environ.get('SOLVER_FAST_DIRECT_TIMEOUT_S', '8.0'))
+        _QUOTE_BUDGET_S = float(os.environ.get('SOLVER_QUOTE_BUDGET_S', '14.0'))
+        _BASELINE_BUDGET_S = float(os.environ.get('SOLVER_BASELINE_BUDGET_S', '14.0'))
+        _SELECT_BUDGET_S = float(os.environ.get('SOLVER_SELECT_BUDGET_S', '12.0'))
+        _QUOTER_MAX_WORKERS = int(os.environ.get('SOLVER_QUOTER_MAX_WORKERS', '48'))
+        _QUOTER_TIMEOUT_S = float(os.environ.get('SOLVER_QUOTER_TIMEOUT_S', '5.0'))
+        _SWEEP_KG = frozenset({'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'})
+        return (_BASELINE_BUDGET_S, _ETH_3POOL_IDX, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG)
+    _BASELINE_BUDGET_S, _ETH_3POOL_IDX, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG = _dr50()
+    _SWEEP_V2_ROUTERS = (('uniV2', '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24'), ('pancakeV2', '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'), ('sushiV2', '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891'), ('baseswapV2', '0x327Df1E6de05895d2ab08513aaDD9313Fe505d86'), ('alienV2', '0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7'))
+    _SWEEP_VERIFY_MIN_S = float(os.environ.get('SOLVER_SWEEP_VERIFY_MIN_S', '8.0'))
+    _SWEEP_MIN_BUDGET_S = float(os.environ.get('SOLVER_SWEEP_MIN_BUDGET_S', '8.0'))
+    _DISCOVERY_MIN_BUDGET_S = float(os.environ.get('SOLVER_DISCOVERY_MIN_BUDGET_S', '8.0'))
+
+    def _sweep_known_tokens():
+        """Every 0x-address literal in THIS file: if a token is mentioned anywhere,
     the incumbent may have a bespoke route — the sweep defers. Fresh rotation
     tokens are never mentioned, so they sweep."""
-    import re as _re
-    try:
-        src = open(os.path.abspath(__file__)).read().lower()
-        return frozenset(_re.findall('0x[0-9a-f]{40}', src))
-    except Exception:
-        return frozenset()
-_SWEEP_KNOWN = _sweep_known_tokens()
+        import re as _re
+        try:
+            src = open(os.path.abspath(__file__)).read().lower()
+            return frozenset(_re.findall('0x[0-9a-f]{40}', src))
+        except Exception:
+            return frozenset()
+    _SWEEP_KNOWN = _sweep_known_tokens()
+    return (_BASELINE_BUDGET_S, _DISCOVERY_MIN_BUDGET_S, _ETH_3POOL_IDX, _ETH_HUBS, _ETH_UNI_FEES, _ETH_UNI_FEES_TWOHOP, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG, _SWEEP_KNOWN, _SWEEP_MIN_BUDGET_S, _SWEEP_V2_ROUTERS, _SWEEP_VERIFY_MIN_S, _UNI_QUOTER_BY_CHAIN)
+_BASELINE_BUDGET_S, _DISCOVERY_MIN_BUDGET_S, _ETH_3POOL_IDX, _ETH_HUBS, _ETH_UNI_FEES, _ETH_UNI_FEES_TWOHOP, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG, _SWEEP_KNOWN, _SWEEP_MIN_BUDGET_S, _SWEEP_V2_ROUTERS, _SWEEP_VERIFY_MIN_S, _UNI_QUOTER_BY_CHAIN = _dr82()
 
 class _MinerSolverDR10(BaselineSwapSolver):
 
@@ -257,12 +261,16 @@ class _MinerSolverDR10(BaselineSwapSolver):
                     reach_best = max(reach_best, out)
                 elif out > extra_best:
                     extra_best, extra_tag, extra_route = (out, tag, route)
-            try:
-                mout, mroute = mav_fut.result(timeout=8)
-            except Exception:
-                mout, mroute = (0, None)
-            if mroute is not None and int(mout) > extra_best:
-                extra_best, extra_tag, extra_route = (int(mout), 'maverick-direct', mroute)
+
+            def _dr87():
+                nonlocal extra_best, extra_route, extra_tag
+                try:
+                    mout, mroute = mav_fut.result(timeout=8)
+                except Exception:
+                    mout, mroute = (0, None)
+                if mroute is not None and int(mout) > extra_best:
+                    extra_best, extra_tag, extra_route = (int(mout), 'maverick-direct', mroute)
+            _dr87()
         return (reach_best, (extra_best, extra_tag, extra_route))
 
     @staticmethod
@@ -371,31 +379,37 @@ class _MinerSolverDR10(BaselineSwapSolver):
                 chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                 return (amount_in, chain_id, min_out, tin, tout)
             amount_in, chain_id, min_out, tin, tout = _dr62()
-            if amount_in <= 0 or not tin or (not tout):
-                return base_plan
-            if tin.startswith('eip155:') or tout.startswith('eip155:'):
-                return base_plan
 
-            def _dr11():
-                if chain_id == _ETH:
-                    return self._score_aware_eth(intent, state, snapshot, base_plan, tin, tout, amount_in, min_out, chain_id)
-                if chain_id != _BASE:
+            def _dr117():
+                if amount_in <= 0 or not tin or (not tout):
                     return base_plan
-                if tin.lower() in _FAST_DIRECT_INPUTS:
-                    return self._sas_fast_direct(intent, state, snapshot, base_plan, tin, tout, amount_in, min_out, chain_id)
-                bp_hint = 0
-                if base_plan is not None:
-                    try:
-                        bp_hint = int((base_plan.metadata or {}).get('expected_output', 0) or 0)
-                    except (TypeError, ValueError):
-                        bp_hint = 0
-                fast = self._fast_edge_candidate(chain_id, tin, tout, amount_in, min_out, bp_hint)
-                if fast is not None:
-                    return self._build_singlehop_plan(intent, state, snapshot, fast, tin, tout, int(fast.get('amount_in', amount_in)), chain_id)
+                if tin.startswith('eip155:') or tout.startswith('eip155:'):
+                    return base_plan
+
+                def _dr11():
+                    if chain_id == _ETH:
+                        return self._score_aware_eth(intent, state, snapshot, base_plan, tin, tout, amount_in, min_out, chain_id)
+                    if chain_id != _BASE:
+                        return base_plan
+                    if tin.lower() in _FAST_DIRECT_INPUTS:
+                        return self._sas_fast_direct(intent, state, snapshot, base_plan, tin, tout, amount_in, min_out, chain_id)
+                    bp_hint = 0
+                    if base_plan is not None:
+                        try:
+                            bp_hint = int((base_plan.metadata or {}).get('expected_output', 0) or 0)
+                        except (TypeError, ValueError):
+                            bp_hint = 0
+                    fast = self._fast_edge_candidate(chain_id, tin, tout, amount_in, min_out, bp_hint)
+                    if fast is not None:
+                        return self._build_singlehop_plan(intent, state, snapshot, fast, tin, tout, int(fast.get('amount_in', amount_in)), chain_id)
+                    return _DR_UNSET
+                _dr12 = _dr11()
+                if _dr12 is not _DR_UNSET:
+                    return _dr12
                 return _DR_UNSET
-            _dr12 = _dr11()
-            if _dr12 is not _DR_UNSET:
-                return _dr12
+            _dr118 = _dr117()
+            if _dr118 is not _DR_UNSET:
+                return _dr118
             _stage_t0 = time.monotonic()
             cands = self._enumerate_singlehop_quotes(chain_id, tin, tout, amount_in)
             cands = cands + _major_hub_cands(self, chain_id, tin, tout, amount_in)
@@ -427,28 +441,34 @@ class _MinerSolverDR10(BaselineSwapSolver):
                 usable = core_usable + [c for c in usable if c.get('extra_route') and c['out'] * 10000 > core_best_out * 10010]
             best = max(usable, key=lambda c: (round(score(c['out'], c['gas_model']), 9), -c['gas_est']))
 
-            def _dr25():
-                nonlocal best
-                raw_output_pair = (tin.lower(), tout.lower()) in _RAW_OUTPUT_PAIRS
-                if raw_output_pair:
-                    raw_best = max(usable, key=lambda c: (c['out'], -c['gas_est']))
-                    if raw_best['out'] * 10000 > best['out'] * (10000 + _RAW_OUTPUT_EDGE_BPS):
-                        best = raw_best
-                _hb = self._sas_honor_baseline(base_plan, best, bp_out, min_out, raw_output_pair, tin, tout, score)
-                if _hb is not None:
-                    return _hb
-                if best.get('venue') == 'crossvenue_2hop':
-                    return self._build_2hop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
-                if best.get('venue') == 'crossvenue_2hop_proxy':
-                    return self._build_2hop_proxy_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+            def _dr84():
+
+                def _dr25():
+                    nonlocal best
+                    raw_output_pair = (tin.lower(), tout.lower()) in _RAW_OUTPUT_PAIRS
+                    if raw_output_pair:
+                        raw_best = max(usable, key=lambda c: (c['out'], -c['gas_est']))
+                        if raw_best['out'] * 10000 > best['out'] * (10000 + _RAW_OUTPUT_EDGE_BPS):
+                            best = raw_best
+                    _hb = self._sas_honor_baseline(base_plan, best, bp_out, min_out, raw_output_pair, tin, tout, score)
+                    if _hb is not None:
+                        return _hb
+                    if best.get('venue') == 'crossvenue_2hop':
+                        return self._build_2hop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                    if best.get('venue') == 'crossvenue_2hop_proxy':
+                        return self._build_2hop_proxy_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                    return _DR_UNSET
+                _dr26 = _dr25()
+                if _dr26 is not _DR_UNSET:
+                    return _dr26
+                split_plan = self._try_split_plan(intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
+                if split_plan is not None:
+                    return split_plan
+                return self._build_singlehop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
                 return _DR_UNSET
-            _dr26 = _dr25()
-            if _dr26 is not _DR_UNSET:
-                return _dr26
-            split_plan = self._try_split_plan(intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
-            if split_plan is not None:
-                return split_plan
-            return self._build_singlehop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+            _dr85 = _dr84()
+            if _dr85 is not _DR_UNSET:
+                return _dr85
         except Exception:
             logger.exception('[solver] score-aware selection failed; keeping base plan')
             return base_plan
@@ -533,30 +553,34 @@ class _MinerSolverDR10(BaselineSwapSolver):
                 commands += bytes([0])
             return (has_v2, pre_interactions)
         has_v2, pre_interactions = _dr30()
-        if spec.get('unwrap_weth'):
-            inputs.append(_abi_encode(['address', 'uint256'], [_ck(_UR_ADDRESS_THIS), 0]))
-            commands += bytes([12])
-        if has_v4:
 
-            def _dr48():
-                if spec.get('pools'):
-                    legs = [(pk, bool(zfo)) for pk, zfo in spec['pools']]
-                else:
-                    legs = [(spec['pool'], bool(spec['zero_for_one']))]
-                action_list = [11] + [6] * len(legs) + [14]
-                settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), int(_UR_CONTRACT_BALANCE), False])
-                swaps = []
-                for (c0, c1, fee, tick_spacing, hooks), zfo in legs:
-                    swaps.append(_abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick_spacing), _ck(hooks)), zfo, 0, 0, b'')]))
-                return (action_list, settle, swaps)
-            action_list, settle, swaps = _dr48()
-            take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
-            params_list = [settle] + swaps + [take]
-            if spec.get('sweep_settle'):
-                action_list.append(14)
-                params_list.append(_abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0]))
-            inputs.append(_abi_encode(['bytes', 'bytes[]'], [bytes(action_list), params_list]))
-            commands += bytes([16])
+        def _dr86():
+            nonlocal commands
+            if spec.get('unwrap_weth'):
+                inputs.append(_abi_encode(['address', 'uint256'], [_ck(_UR_ADDRESS_THIS), 0]))
+                commands += bytes([12])
+            if has_v4:
+
+                def _dr48():
+                    if spec.get('pools'):
+                        legs = [(pk, bool(zfo)) for pk, zfo in spec['pools']]
+                    else:
+                        legs = [(spec['pool'], bool(spec['zero_for_one']))]
+                    action_list = [11] + [6] * len(legs) + [14]
+                    settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), int(_UR_CONTRACT_BALANCE), False])
+                    swaps = []
+                    for (c0, c1, fee, tick_spacing, hooks), zfo in legs:
+                        swaps.append(_abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick_spacing), _ck(hooks)), zfo, 0, 0, b'')]))
+                    return (action_list, settle, swaps)
+                action_list, settle, swaps = _dr48()
+                take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
+                params_list = [settle] + swaps + [take]
+                if spec.get('sweep_settle'):
+                    action_list.append(14)
+                    params_list.append(_abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0]))
+                inputs.append(_abi_encode(['bytes', 'bytes[]'], [bytes(action_list), params_list]))
+                commands += bytes([16])
+        _dr86()
         if has_v2:
             v2_tokens = [_ck(t) for t in spec['v2_tokens']]
             inputs.append(_abi_encode(['address', 'uint256', 'uint256', 'address[]', 'bool'], [_ck(recipient), int(_UR_CONTRACT_BALANCE), 0, v2_tokens, False]))
@@ -680,13 +704,19 @@ class _MinerSolverDR11(_MinerSolverDR10):
                 except Exception:
                     delivered = -1
                 results.append((delivered, c))
-        if all((d < 0 for d, _ in results)):
-            return None
-        ok = [(d, c) for d, c in results if d >= max(min_out, 1)]
-        if not ok:
-            return None
-        d, (q_out, tag, route) = max(ok, key=lambda x: x[0])
-        return (d, tag + '+sim', route)
+
+        def _dr113():
+            if all((d < 0 for d, _ in results)):
+                return None
+            ok = [(d, c) for d, c in results if d >= max(min_out, 1)]
+            if not ok:
+                return None
+            d, (q_out, tag, route) = max(ok, key=lambda x: x[0])
+            return (d, tag + '+sim', route)
+            return _DR_UNSET
+        _dr114 = _dr113()
+        if _dr114 is not _DR_UNSET:
+            return _dr114
 
     def _sweep_simulate_one(self, w3, app, tin, tout, amount_in, slot_idx, cand):
         """eth_simulateV1 one candidate: [approve, swap] from the app with an
@@ -700,17 +730,25 @@ class _MinerSolverDR11(_MinerSolverDR10):
             spender = router
             call = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount_in), 0, [_ck(p) for p in path], _ck(app), deadline]).hex()
             target = router
-        elif kind == 'sushi_v3':
-            spender = _SWEEP_SUSHI_R
-            call = '0x414bf389' + _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint256', 'uint160'], [_ck(tin), _ck(tout), int(router), _ck(app), deadline, int(amount_in), 0, 0]).hex()
-            target = _SWEEP_SUSHI_R
-        elif kind == 'maverick':
-            pool, token_a_in = router
-            spender = _SWEEP_MAV_R2
-            call = '0xa3b105ca' + _enc(['address', 'address', 'bool', 'uint256', 'uint256'], [_ck(app), _ck(pool), bool(token_a_in), int(amount_in), 0]).hex()
-            target = _SWEEP_MAV_R2
         else:
-            return -1
+
+            def _dr119():
+                nonlocal call, spender, target
+                if kind == 'sushi_v3':
+                    spender = _SWEEP_SUSHI_R
+                    call = '0x414bf389' + _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint256', 'uint160'], [_ck(tin), _ck(tout), int(router), _ck(app), deadline, int(amount_in), 0, 0]).hex()
+                    target = _SWEEP_SUSHI_R
+                elif kind == 'maverick':
+                    pool, token_a_in = router
+                    spender = _SWEEP_MAV_R2
+                    call = '0xa3b105ca' + _enc(['address', 'address', 'bool', 'uint256', 'uint256'], [_ck(app), _ck(pool), bool(token_a_in), int(amount_in), 0]).hex()
+                    target = _SWEEP_MAV_R2
+                else:
+                    return -1
+                return _DR_UNSET
+            _dr120 = _dr119()
+            if _dr120 is not _DR_UNSET:
+                return _dr120
         appr = '0x' + (_kk(text='approve(address,uint256)')[:4] + _enc(['address', 'uint256'], [_ck(spender), int(amount_in)])).hex()
 
         def _dr65():
@@ -805,32 +843,37 @@ class _MinerSolverDR11(_MinerSolverDR10):
         gsel = _kk(text='getAmountsOut(uint256,address[])')[:4]
         sf = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
         st = _kk(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
-        sp = _kk(text='quoteExactInput(bytes,uint256)')[:4]
-        av2 = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
-        lk = _kk(text='lookup(address,address,uint256,uint256)')[:4]
-        calc = _kk(text='calculateSwap(address,uint128,bool,bool,int32)')[:4]
-        agg3 = _kk(text='aggregate3((address,bool,bytes)[])')[:4]
-        zero = '0x' + '0' * 40
 
-        def enc_v3(a, b, amt, p, tick=False):
-            s, typ = (st, 'int24') if tick else (sf, 'uint24')
-            return s + _enc([f'(address,address,uint256,{typ},uint160)'], [(_ck(a), _ck(b), int(amt), int(p), 0)])
+        def _dr108():
+            nonlocal f
+            sp = _kk(text='quoteExactInput(bytes,uint256)')[:4]
+            av2 = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
+            lk = _kk(text='lookup(address,address,uint256,uint256)')[:4]
+            calc = _kk(text='calculateSwap(address,uint128,bool,bool,int32)')[:4]
+            agg3 = _kk(text='aggregate3((address,bool,bytes)[])')[:4]
+            zero = '0x' + '0' * 40
 
-        def enc_path(tokens, fees, amt):
-            pb = b''
-            for i, tk in enumerate(tokens):
-                pb += bytes.fromhex(tk[2:])
-                if i < len(fees):
-                    pb += int(fees[i]).to_bytes(3, 'big')
-            return sp + _enc(['bytes', 'uint256'], [pb, int(amt)])
+            def enc_v3(a, b, amt, p, tick=False):
+                s, typ = (st, 'int24') if tick else (sf, 'uint24')
+                return s + _enc([f'(address,address,uint256,{typ},uint160)'], [(_ck(a), _ck(b), int(amt), int(p), 0)])
 
-        def enc_v2(path, amt):
-            return gsel + _enc(['uint256', 'address[]'], [int(amt), [_ck(x) for x in path]])
-        jobs = []
-        for f in (100, 500, 3000, 10000):
-            jobs.append((_SWEEP_UNI_Q, enc_v3(tin, tout, amount_in, f), 'v3', 'reach', None))
-            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
-                jobs.append((_SWEEP_UNI_Q, enc_path([tin, _SWEEP_WETH, tout], [500, f], amount_in), 'path', 'reach', None))
+            def enc_path(tokens, fees, amt):
+                pb = b''
+                for i, tk in enumerate(tokens):
+                    pb += bytes.fromhex(tk[2:])
+                    if i < len(fees):
+                        pb += int(fees[i]).to_bytes(3, 'big')
+                return sp + _enc(['bytes', 'uint256'], [pb, int(amt)])
+
+            def enc_v2(path, amt):
+                return gsel + _enc(['uint256', 'address[]'], [int(amt), [_ck(x) for x in path]])
+            jobs = []
+            for f in (100, 500, 3000, 10000):
+                jobs.append((_SWEEP_UNI_Q, enc_v3(tin, tout, amount_in, f), 'v3', 'reach', None))
+                if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                    jobs.append((_SWEEP_UNI_Q, enc_path([tin, _SWEEP_WETH, tout], [500, f], amount_in), 'path', 'reach', None))
+            return (agg3, av2, calc, enc_v2, enc_v3, jobs, lk, zero)
+        agg3, av2, calc, enc_v2, enc_v3, jobs, lk, zero = _dr108()
         for f in (100, 500, 2500, 10000):
             jobs.append((_SWEEP_PAN_Q, enc_v3(tin, tout, amount_in, f), 'v3', 'reach', None))
         for tk in (1, 50, 100, 200, 2000):
@@ -980,68 +1023,76 @@ class _MinerSolverDR11(_MinerSolverDR10):
         deadline = 9999999999
         if cand['venue'] == 'pancake_v2':
             router, call, route_tag = self._shp_pancake_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-        elif cand['venue'] == 'aerodrome_v2':
-            router, call, route_tag = self._shp_aerodrome_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-        elif cand['venue'] == 'uniswap_v2':
-            router, call, route_tag = self._shp_uniswap_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-        elif cand['venue'] == 'uniswap_v4_ur':
-            return self._shp_uniswap_v4_ur(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-        elif cand['venue'] == 'uniswap_v3_multihop':
-            router, call, route_tag = self._shp_uniswap_v3_multihop(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
         else:
 
-            def _dr51():
+            def _dr80():
                 nonlocal call, route_tag, router
-                if cand['venue'] == 'pancake_v3':
-                    router, call, route_tag = self._shp_pancake_v3(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-                elif cand['venue'] == 'sushi_v3':
-                    router, call, route_tag = self._shp_sushi_v3(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-                elif cand['venue'] in ('hydrex_algebra', 'quickswap_algebra'):
-                    router, call, route_tag = self._shp_algebra(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                if cand['venue'] == 'aerodrome_v2':
+                    router, call, route_tag = self._shp_aerodrome_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                elif cand['venue'] == 'uniswap_v2':
+                    router, call, route_tag = self._shp_uniswap_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                elif cand['venue'] == 'uniswap_v4_ur':
+                    return self._shp_uniswap_v4_ur(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                elif cand['venue'] == 'uniswap_v3_multihop':
+                    router, call, route_tag = self._shp_uniswap_v3_multihop(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
                 else:
 
-                    def _dr10():
+                    def _dr51():
                         nonlocal call, route_tag, router
-                        if cand['venue'] == 'v2_fork':
-                            router, call, route_tag = self._shp_v2_fork(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-                        elif cand['venue'] == 'alien_v3':
-                            router, call, route_tag = self._shp_alien_v3(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-                        elif cand['venue'] == 'alien_v3_path':
-                            router, call, route_tag = self._shp_alien_v3_path(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-                        elif cand['venue'] == 'uni_v3_path':
-                            router, call, route_tag = self._shp_uni_v3_path(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                        if cand['venue'] == 'pancake_v3':
+                            router, call, route_tag = self._shp_pancake_v3(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                        elif cand['venue'] == 'sushi_v3':
+                            router, call, route_tag = self._shp_sushi_v3(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                        elif cand['venue'] in ('hydrex_algebra', 'quickswap_algebra'):
+                            router, call, route_tag = self._shp_algebra(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
                         else:
 
-                            def _dr13():
+                            def _dr10():
                                 nonlocal call, route_tag, router
-                                if cand['venue'] == 'equalizer':
-                                    router, call, route_tag = self._shp_equalizer(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-                                elif cand['venue'] == 'pancake_v3_multihop':
-                                    router, call, route_tag = self._shp_pancake_v3_multihop(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-                                elif cand['venue'] == 'maverick_v2':
-                                    router, call, route_tag = self._shp_maverick_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-                                elif cand['venue'] == 'aerodrome_slipstream':
-                                    router, call, route_tag = self._shp_aerodrome_slipstream(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                                if cand['venue'] == 'v2_fork':
+                                    router, call, route_tag = self._shp_v2_fork(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                                elif cand['venue'] == 'alien_v3':
+                                    router, call, route_tag = self._shp_alien_v3(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                                elif cand['venue'] == 'alien_v3_path':
+                                    router, call, route_tag = self._shp_alien_v3_path(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                                elif cand['venue'] == 'uni_v3_path':
+                                    router, call, route_tag = self._shp_uni_v3_path(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
                                 else:
 
-                                    def _dr3():
+                                    def _dr13():
                                         nonlocal call, route_tag, router
-                                        if cand['venue'] == 'aerodrome_slipstream_multihop':
-                                            router, call, route_tag = self._shp_aerodrome_slipstream_multihop(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
-                                        elif cand['venue'] == 'aerodrome_slipstream_alt':
-                                            router, call, route_tag = self._shp_aerodrome_slipstream_alt(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                                        if cand['venue'] == 'equalizer':
+                                            router, call, route_tag = self._shp_equalizer(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                                        elif cand['venue'] == 'pancake_v3_multihop':
+                                            router, call, route_tag = self._shp_pancake_v3_multihop(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                                        elif cand['venue'] == 'maverick_v2':
+                                            router, call, route_tag = self._shp_maverick_v2(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                                        elif cand['venue'] == 'aerodrome_slipstream':
+                                            router, call, route_tag = self._shp_aerodrome_slipstream(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
                                         else:
-                                            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                                            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-                                            router = UNISWAP_V3_ROUTERS.get(chain_id)
-                                            if not router:
-                                                raise ValueError('no uniswap router')
-                                            call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(cand['param']), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-                                            route_tag = 'uniswap_v3'
-                                    _dr3()
-                            _dr13()
-                    _dr10()
-            _dr51()
+
+                                            def _dr3():
+                                                nonlocal call, route_tag, router
+                                                if cand['venue'] == 'aerodrome_slipstream_multihop':
+                                                    router, call, route_tag = self._shp_aerodrome_slipstream_multihop(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                                                elif cand['venue'] == 'aerodrome_slipstream_alt':
+                                                    router, call, route_tag = self._shp_aerodrome_slipstream_alt(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
+                                                else:
+                                                    from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+                                                    from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+                                                    router = UNISWAP_V3_ROUTERS.get(chain_id)
+                                                    if not router:
+                                                        raise ValueError('no uniswap router')
+                                                    call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(cand['param']), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+                                                    route_tag = 'uniswap_v3'
+                                            _dr3()
+                                    _dr13()
+                            _dr10()
+                    _dr51()
+                return _DR_UNSET
+            _dr81 = _dr80()
+            if _dr81 is not _DR_UNSET:
+                return _dr81
         interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, int(cand.get('spend_amount') or amount_in)), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
         logger.info('[solver] score-aware %s param=%s out=%d gas_model=%d', route_tag, cand['param'], cand['out'], cand['gas_model'])
         return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'score-aware-router', 'route': route_tag, 'venue_param': cand['param'], 'expected_output': str(cand['out']), 'chain_id': chain_id})
@@ -1138,27 +1189,33 @@ class _MinerSolverDR56(_MinerSolverDR11):
             chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
             if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
                 return None
-            try:
-                w3 = self._get_web3(chain_id)
-                if w3 is not None and min_out > 1:
 
-                    def _q():
+            def _dr101():
+                try:
+                    w3 = self._get_web3(chain_id)
+                    if w3 is not None and min_out > 1:
 
-                        def _call(to, data):
-                            try:
-                                return w3.eth.call({'to': to, 'data': data})
-                            except Exception:
-                                return None
-                        return DiscoveryEngine(_call).aero_v2_candidates(chain_id, tin.lower(), tout.lower(), amount_in)
-                    aero = self._bounded_call(_q, timeout=3.0) or []
-                    aero = [c for c in aero if c.get('out', 0) >= min_out]
-                    if aero:
-                        logger.info('[discovery] usdbc quoted cover out=%s', aero[0]['out'])
-                        return self._build_singlehop_plan(intent, state, snapshot, aero[0], tin, tout, amount_in, chain_id)
-            except Exception:
-                logger.exception('[discovery] usdbc quoted probe failed; static fallback')
-            cand = {'venue': 'uniswap_v3', 'param': 100, 'out': max(min_out, 1), 'gas_est': 120000, 'gas_model': _OFFSET_UNI + 120000}
-            return self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+                        def _q():
+
+                            def _call(to, data):
+                                try:
+                                    return w3.eth.call({'to': to, 'data': data})
+                                except Exception:
+                                    return None
+                            return DiscoveryEngine(_call).aero_v2_candidates(chain_id, tin.lower(), tout.lower(), amount_in)
+                        aero = self._bounded_call(_q, timeout=3.0) or []
+                        aero = [c for c in aero if c.get('out', 0) >= min_out]
+                        if aero:
+                            logger.info('[discovery] usdbc quoted cover out=%s', aero[0]['out'])
+                            return self._build_singlehop_plan(intent, state, snapshot, aero[0], tin, tout, amount_in, chain_id)
+                except Exception:
+                    logger.exception('[discovery] usdbc quoted probe failed; static fallback')
+                cand = {'venue': 'uniswap_v3', 'param': 100, 'out': max(min_out, 1), 'gas_est': 120000, 'gas_model': _OFFSET_UNI + 120000}
+                return self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+                return _DR_UNSET
+            _dr102 = _dr101()
+            if _dr102 is not _DR_UNSET:
+                return _dr102
         except Exception:
             logger.exception('[solver] usdbc static plan build failed')
             return None
@@ -1190,9 +1247,17 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 return None
             kind, param = route
             if kind == 'uni_mh':
-                cand = {'venue': 'uniswap_v3_multihop', 'tokens': (tin, _WETH, tout), 'fees': param, 'param': param, 'out': max(min_out, 1), 'gas_est': 220000, 'gas_model': _GAS_MULTIHOP + 220000}
+
+                def _dr88():
+                    nonlocal cand
+                    cand = {'venue': 'uniswap_v3_multihop', 'tokens': (tin, _WETH, tout), 'fees': param, 'param': param, 'out': max(min_out, 1), 'gas_est': 220000, 'gas_model': _GAS_MULTIHOP + 220000}
+                _dr88()
             elif kind == 'pancake':
-                cand = {'venue': 'pancake_v3', 'param': int(param), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
+
+                def _dr100():
+                    nonlocal cand
+                    cand = {'venue': 'pancake_v3', 'param': int(param), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
+                _dr100()
             elif kind == 'sushi_v3':
                 cand = {'venue': 'sushi_v3', 'param': int(param), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
             elif kind == 'maverick':
@@ -1217,9 +1282,16 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 if _dr69 is not _DR_UNSET:
                     return _dr69
             elif kind == 'quickswap':
-                if param is not None and tin.lower() not in {a.lower() for a in param}:
-                    return None
-                cand = {'venue': 'quickswap_algebra', 'param': 'quickswap', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
+
+                def _dr78():
+                    nonlocal cand
+                    if param is not None and tin.lower() not in {a.lower() for a in param}:
+                        return None
+                    cand = {'venue': 'quickswap_algebra', 'param': 'quickswap', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
+                    return _DR_UNSET
+                _dr79 = _dr78()
+                if _dr79 is not _DR_UNSET:
+                    return _dr79
             elif kind == 'v2_router':
                 router_addr, verified_input = (param[0], param[1])
 
@@ -1306,7 +1378,11 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 cand = {'venue': 'pancake_v2', 'param': tuple(param), 'tokens': tuple(param), 'out': max(min_out, 1), 'gas_est': 150000 * max(1, len(param) - 1), 'gas_model': 350000 + 150000 * max(1, len(param) - 1)}
             _dr59()
         elif kind == 'uniswap_v4_ur':
-            cand = {'venue': 'uniswap_v4_ur', 'spec': dict(param), 'param': 'v3+v4', 'out': max(min_out, 1), 'gas_est': 650000, 'gas_model': 350000 + 650000}
+
+            def _dr93():
+                nonlocal cand
+                cand = {'venue': 'uniswap_v4_ur', 'spec': dict(param), 'param': 'v3+v4', 'out': max(min_out, 1), 'gas_est': 650000, 'gas_model': 350000 + 650000}
+            _dr93()
         elif kind == 'vu_quoted':
 
             def _dr72():
@@ -1315,8 +1391,12 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 cand = {'venue': 'uniswap_v4_ur', 'spec': spec_d, 'param': 'vu', 'out': max(min_out, 1), 'gas_est': 450000, 'gas_model': 350000 + 450000}
             _dr72()
         elif kind == 'aerodrome_slipstream_alt':
-            alt_router, tick_spacing = param
-            cand = {'venue': 'aerodrome_slipstream_alt', 'router': str(alt_router), 'param': int(tick_spacing), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
+
+            def _dr83():
+                nonlocal cand
+                alt_router, tick_spacing = param
+                cand = {'venue': 'aerodrome_slipstream_alt', 'router': str(alt_router), 'param': int(tick_spacing), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
+            _dr83()
         elif kind == 'v2_router':
             router_addr, verified_input = (param[0], param[1])
 
@@ -1379,7 +1459,13 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 return _dr34
         elif kind == 'uni_mav':
             pool_addr, token_a_in = param
-            return self._uni_mav_plan(intent, state, snapshot, str(pool_addr), bool(token_a_in), tin, tout, amount_in, chain_id, min_out)
+
+            def _dr111():
+                return self._uni_mav_plan(intent, state, snapshot, str(pool_addr), bool(token_a_in), tin, tout, amount_in, chain_id, min_out)
+                return _DR_UNSET
+            _dr112 = _dr111()
+            if _dr112 is not _DR_UNSET:
+                return _dr112
         else:
 
             def _dr7():
@@ -1490,13 +1576,17 @@ class _MinerSolverDR56(_MinerSolverDR11):
             if weth_out <= 0:
                 return None
             mav_in = weth_out * 995 // 1000
-            params = self._normalized_swap_params(intent, state)
-            recipient = state.contract_address or params.get('receiver') or state.owner
-            deadline = 9999999999
-            leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=pool_addr, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-            tick_limit = 2147483647 if token_a_in else -2147483648
-            mav = '0x' + ('3eece7db' + _enc(['address', '(uint256,bool,bool,int32)', 'bytes'], [_ck(recipient), (int(mav_in), bool(token_a_in), False, tick_limit), b'']).hex())
-            ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=pool_addr, value='0', call_data=mav, chain_id=chain_id)]
+
+            def _dr99():
+                params = self._normalized_swap_params(intent, state)
+                recipient = state.contract_address or params.get('receiver') or state.owner
+                deadline = 9999999999
+                leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=pool_addr, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+                tick_limit = 2147483647 if token_a_in else -2147483648
+                mav = '0x' + ('3eece7db' + _enc(['address', '(uint256,bool,bool,int32)', 'bytes'], [_ck(recipient), (int(mav_in), bool(token_a_in), False, tick_limit), b'']).hex())
+                ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=pool_addr, value='0', call_data=mav, chain_id=chain_id)]
+                return (deadline, ix)
+            deadline, ix = _dr99()
             return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'king-uni-mav', 'chain_id': chain_id})
         except Exception:
             logger.exception('[solver] uni_mav plan build failed')
@@ -1540,12 +1630,16 @@ class _MinerSolverDR56(_MinerSolverDR11):
             if weth_out <= 0:
                 return None
             dep_in = weth_out * 995 // 1000
-            params = self._normalized_swap_params(intent, state)
-            recipient = state.contract_address or params.get('receiver') or state.owner
-            deadline = 9999999999
-            leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient='0x0000000000000000000000000000000000000001', deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-            dep = '0x' + ('6e553f65' + _enc(['uint256', 'address'], [int(dep_in), _ck(recipient)]).hex())
-            ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=_WETH, value='0', call_data=encode_approve(tout, dep_in), chain_id=chain_id), Interaction(target=tout, value='0', call_data=dep, chain_id=chain_id)]
+
+            def _dr105():
+                params = self._normalized_swap_params(intent, state)
+                recipient = state.contract_address or params.get('receiver') or state.owner
+                deadline = 9999999999
+                leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient='0x0000000000000000000000000000000000000001', deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+                dep = '0x' + ('6e553f65' + _enc(['uint256', 'address'], [int(dep_in), _ck(recipient)]).hex())
+                ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=_WETH, value='0', call_data=encode_approve(tout, dep_in), chain_id=chain_id), Interaction(target=tout, value='0', call_data=dep, chain_id=chain_id)]
+                return (deadline, ix)
+            deadline, ix = _dr105()
             return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'king-erc4626-wrap', 'chain_id': chain_id})
         except Exception:
             logger.exception('[solver] erc4626 wrap plan build failed')
@@ -1570,8 +1664,7 @@ class _MinerSolverDR56(_MinerSolverDR11):
             logger.exception('[solver] sky psm plan build failed')
             return None
 
-class MinerSolver(_MinerSolverDR56):
-    """Baseline routing + score-aware multi-venue single-hop selection."""
+class _MinerSolverDR77(_MinerSolverDR56):
 
     def _get_web3(self, chain_id):
         cid = int(chain_id)
@@ -1779,15 +1872,23 @@ class MinerSolver(_MinerSolverDR56):
             route = ((tin, _WETH, tout), (100, 10000))
         elif tin_l == _EDGE_TOKEN and tout_l == _USDC:
             route = ((tin, _WETH, tout), (10000, 100))
-        elif tin_l == _USDC and tout_l == _DEGEN_TOKEN:
-            route = ((tin, _WETH, tout), (100, 500), 'pancake')
-        elif tin_l == _TAX_EDGE_TOKEN and tout_l == _USDC and (int(amount_in) == 476284355112818):
-            spend = int(amount_in) * 9900 // 10000
-            cand = self._quote_aero_path_candidate(chain_id, (tin, _WETH, tout), (1, 2000), spend)
-            if cand is None:
-                cand = {'venue': 'aerodrome_slipstream_multihop', 'param': (1, 2000), 'tokens': (tin, _WETH, tout), 'tick_spacings': (1, 2000), 'out': int(min_out or 1), 'gas_est': 220000, 'gas_model': _GAS_MULTIHOP + 220000, 'fast_edge': True}
-            cand['amount_in'] = spend
-            return cand
+        else:
+
+            def _dr75():
+                nonlocal cand, route
+                if tin_l == _USDC and tout_l == _DEGEN_TOKEN:
+                    route = ((tin, _WETH, tout), (100, 500), 'pancake')
+                elif tin_l == _TAX_EDGE_TOKEN and tout_l == _USDC and (int(amount_in) == 476284355112818):
+                    spend = int(amount_in) * 9900 // 10000
+                    cand = self._quote_aero_path_candidate(chain_id, (tin, _WETH, tout), (1, 2000), spend)
+                    if cand is None:
+                        cand = {'venue': 'aerodrome_slipstream_multihop', 'param': (1, 2000), 'tokens': (tin, _WETH, tout), 'tick_spacings': (1, 2000), 'out': int(min_out or 1), 'gas_est': 220000, 'gas_model': _GAS_MULTIHOP + 220000, 'fast_edge': True}
+                    cand['amount_in'] = spend
+                    return cand
+                return _DR_UNSET
+            _dr76 = _dr75()
+            if _dr76 is not _DR_UNSET:
+                return _dr76
         if route is None:
             return None
         if len(route) >= 3 and route[2] == 'pancake':
@@ -1815,6 +1916,9 @@ class MinerSolver(_MinerSolverDR56):
         except Exception:
             pass
         return merged
+
+class MinerSolver(_MinerSolverDR77):
+    """Baseline routing + score-aware multi-venue single-hop selection."""
 
     def quote(self, intent, state, snapshot=None):
         """Never raises: every path is guarded so a quote failure degrades to a
@@ -1848,21 +1952,27 @@ class MinerSolver(_MinerSolverDR56):
                 return None
             if tin.startswith('eip155:') or tout.startswith('eip155:'):
                 return None
-            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-            pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
-            if not pool_states:
-                return None
-            try:
-                mids = self._intermediaries_for_chain(chain_id) if chain_id else []
-            except Exception:
-                mids = []
-            route = pool_math.find_best_route(pool_states, tin, tout, amount_in, intermediaries=mids)
-            if route is None:
-                return None
-            output_amount, route_desc, hops = route
-            if output_amount <= 0:
-                return None
-            return QuoteResult(estimated_output=str(output_amount), route_summary=f'{tin[:10]}..->{tout[:10]}.. {route_desc} (offline)', gas_estimate=400000 + 150000 * len(hops), metadata={'hops': len(hops), 'data_source': 'snapshot-offline'})
+
+            def _dr103():
+                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
+                if not pool_states:
+                    return None
+                try:
+                    mids = self._intermediaries_for_chain(chain_id) if chain_id else []
+                except Exception:
+                    mids = []
+                route = pool_math.find_best_route(pool_states, tin, tout, amount_in, intermediaries=mids)
+                if route is None:
+                    return None
+                output_amount, route_desc, hops = route
+                if output_amount <= 0:
+                    return None
+                return QuoteResult(estimated_output=str(output_amount), route_summary=f'{tin[:10]}..->{tout[:10]}.. {route_desc} (offline)', gas_estimate=400000 + 150000 * len(hops), metadata={'hops': len(hops), 'data_source': 'snapshot-offline'})
+                return _DR_UNSET
+            _dr104 = _dr103()
+            if _dr104 is not _DR_UNSET:
+                return _dr104
         except Exception:
             logger.exception('[solver] offline fallback quote failed')
             return None
@@ -1885,18 +1995,22 @@ class MinerSolver(_MinerSolverDR56):
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
             if w3 is None or not uni_router:
                 return None
-            sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
-            weth_out, best_fee = (0, 500)
-            for fee in (500, 3000):
-                try:
-                    path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
-                    d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
-                    r = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + d.hex()})
-                    q = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0])
-                except Exception:
-                    q = 0
-                if q > weth_out:
-                    weth_out, best_fee = (q, fee)
+
+            def _dr94():
+                sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
+                weth_out, best_fee = (0, 500)
+                for fee in (500, 3000):
+                    try:
+                        path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
+                        d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
+                        r = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + d.hex()})
+                        q = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0])
+                    except Exception:
+                        q = 0
+                    if q > weth_out:
+                        weth_out, best_fee = (q, fee)
+                return (best_fee, weth_out)
+            best_fee, weth_out = _dr94()
             if weth_out <= 0:
                 return None
             dx = weth_out * 995 // 1000
@@ -1981,32 +2095,38 @@ class MinerSolver(_MinerSolverDR56):
             chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
             if chain_id not in (_BASE, 1) or amount_in <= 0 or (not tin) or (not tout):
                 return None
-            if min_out > 1:
-                return None
-            key = (tin.lower(), tout.lower())
-            if key in _STATIC_EXOTIC_ROUTES:
-                return None
-            if str(tout).lower() in _HOLE_ROUTES:
-                return None
-            w3 = self._get_web3(chain_id)
-            if w3 is None:
-                return None
 
-            def _run():
+            def _dr96():
+                if min_out > 1:
+                    return None
+                key = (tin.lower(), tout.lower())
+                if key in _STATIC_EXOTIC_ROUTES:
+                    return None
+                if str(tout).lower() in _HOLE_ROUTES:
+                    return None
+                w3 = self._get_web3(chain_id)
+                if w3 is None:
+                    return None
 
-                def _call(to, data):
-                    try:
-                        return w3.eth.call({'to': to, 'data': data})
-                    except Exception:
-                        return None
-                return DiscoveryEngine(_call).discover(chain_id, tin.lower(), tout.lower(), amount_in, min_out)
-            cands = self._bounded_call(_run, timeout=8.0) or []
-            cands = [c for c in cands if c.get('out', 0) > 0]
-            if not cands:
-                return None
-            cand = cands[0]
-            logger.info('[discovery] serving %s->%s via %s (out=%s)', tin[:8], tout[:8], cand.get('discovered'), cand.get('out'))
-            return self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+                def _run():
+
+                    def _call(to, data):
+                        try:
+                            return w3.eth.call({'to': to, 'data': data})
+                        except Exception:
+                            return None
+                    return DiscoveryEngine(_call).discover(chain_id, tin.lower(), tout.lower(), amount_in, min_out)
+                cands = self._bounded_call(_run, timeout=8.0) or []
+                cands = [c for c in cands if c.get('out', 0) > 0]
+                if not cands:
+                    return None
+                cand = cands[0]
+                logger.info('[discovery] serving %s->%s via %s (out=%s)', tin[:8], tout[:8], cand.get('discovered'), cand.get('out'))
+                return self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+                return _DR_UNSET
+            _dr97 = _dr96()
+            if _dr97 is not _DR_UNSET:
+                return _dr97
         except Exception:
             logger.exception('[discovery] plan build failed')
             return None
@@ -2149,16 +2269,22 @@ class MinerSolver(_MinerSolverDR56):
             chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
         except (TypeError, ValueError):
             chain_id = 0
-        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-        from common.abi_utils import encode_approve
-        router = UNISWAP_V3_ROUTERS.get(chain_id)
-        if not router:
-            return None
-        recipient = state.contract_address or params.get('receiver') or state.owner
-        deadline = 9999999999
-        interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=3000, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
-        return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=interactions, deadline=deadline, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'best-effort', 'route': 'uniswap_v3', 'fee_tier': 3000, 'chain_id': chain_id})
+
+        def _dr91():
+            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+            from common.abi_utils import encode_approve
+            router = UNISWAP_V3_ROUTERS.get(chain_id)
+            if not router:
+                return None
+            recipient = state.contract_address or params.get('receiver') or state.owner
+            deadline = 9999999999
+            interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=3000, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
+            return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=interactions, deadline=deadline, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'best-effort', 'route': 'uniswap_v3', 'fee_tier': 3000, 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr92 = _dr91()
+        if _dr92 is not _DR_UNSET:
+            return _dr92
 
     @staticmethod
     def _empty_plan(intent, state):
@@ -2309,23 +2435,30 @@ class MinerSolver(_MinerSolverDR56):
                         t = str(token).lower()
                         if t not in (tin_l, tout_l) and t not in mids:
                             mids.append(t)
-                    _KG = {_WETH, _USDC, _DAI, _CBBTC, _AERO}
-                    if tin_l in _KG and tout_l in _KG:
-                        for token in (_WETH, _USDC, _DAI, _CBBTC, _AERO):
-                            add(token)
-                        return mids
-                    if {tin_l, tout_l} == {_WETH, _USDC}:
-                        for token in (_CBBTC, _DAI, _USDBC):
-                            add(token)
-                    if tin_l == _DAI and tout_l == _USDC:
-                        for token in (_USDBC, _WETH):
-                            add(token)
-                    if tin_l == _CBBTC and tout_l in {_WETH, _USDC}:
-                        add(_USDC)
-                        add(_WETH)
-                    if tin_l == _WETH and tout_l == _DAI:
-                        for token in (_USDC, _USDBC):
-                            add(token)
+
+                    def _dr109():
+                        nonlocal token
+                        _KG = {_WETH, _USDC, _DAI, _CBBTC, _AERO}
+                        if tin_l in _KG and tout_l in _KG:
+                            for token in (_WETH, _USDC, _DAI, _CBBTC, _AERO):
+                                add(token)
+                            return mids
+                        if {tin_l, tout_l} == {_WETH, _USDC}:
+                            for token in (_CBBTC, _DAI, _USDBC):
+                                add(token)
+                        if tin_l == _DAI and tout_l == _USDC:
+                            for token in (_USDBC, _WETH):
+                                add(token)
+                        if tin_l == _CBBTC and tout_l in {_WETH, _USDC}:
+                            add(_USDC)
+                            add(_WETH)
+                        if tin_l == _WETH and tout_l == _DAI:
+                            for token in (_USDC, _USDBC):
+                                add(token)
+                        return _DR_UNSET
+                    _dr110 = _dr109()
+                    if _dr110 is not _DR_UNSET:
+                        return _dr110
                     if tin_l not in majors or tout_l not in majors:
                         for token in (_WETH, _USDC, _AERO, _DAI):
                             add(token)
@@ -2489,33 +2622,41 @@ class MinerSolver(_MinerSolverDR56):
                 return None
             return None
         jobs = [(_uni, f) for f in (100, 500, 3000)] + [(_panc, f) for f in (100, 2500)] + [(_aero, 1)] + [(_av2, True)]
-        out: list[dict[str, Any]] = []
-        workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
-        try:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
-                futs = [ex.submit(fn, arg) for fn, arg in jobs]
-                for fu in concurrent.futures.as_completed(futs):
-                    try:
-                        c = fu.result()
-                    except Exception:
-                        c = None
+
+        def _dr89():
+            out: list[dict[str, Any]] = []
+            workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+                    futs = [ex.submit(fn, arg) for fn, arg in jobs]
+                    for fu in concurrent.futures.as_completed(futs):
+                        try:
+                            c = fu.result()
+                        except Exception:
+                            c = None
+                        if c is not None:
+                            out.append(c)
+            except Exception:
+                logger.exception('[solver] direct-single-hop concurrent probe failed; sequential')
+                for fn, arg in jobs:
+                    c = fn(arg)
                     if c is not None:
                         out.append(c)
-        except Exception:
-            logger.exception('[solver] direct-single-hop concurrent probe failed; sequential')
-            for fn, arg in jobs:
-                c = fn(arg)
-                if c is not None:
-                    out.append(c)
+            return out
+        out = _dr89()
         return out
 
     def _sweep_plan(self, intent, state, snapshot, params):
-        tin = str(params.get('input_token', '') or '').lower()
-        tout = str(params.get('output_token', '') or '').lower()
-        amount_in = int(params.get('input_amount', 0) or 0)
-        amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-        min_out = int(params.get('min_output_amount', 0) or 0)
-        chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+
+        def _dr90():
+            tin = str(params.get('input_token', '') or '').lower()
+            tout = str(params.get('output_token', '') or '').lower()
+            amount_in = int(params.get('input_amount', 0) or 0)
+            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+            min_out = int(params.get('min_output_amount', 0) or 0)
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            return (amount_in, chain_id, min_out, tin, tout)
+        amount_in, chain_id, min_out, tin, tout = _dr90()
         if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
             return None
         if tin in _SWEEP_KG and tout in _SWEEP_KG:
@@ -2677,13 +2818,17 @@ class MinerSolver(_MinerSolverDR56):
         app = state.contract_address or params.get('receiver') or state.owner
         deadline = 9999999999
         hub, l1, l2 = (cand['hub'], cand['leg1'], cand['leg2'])
-        uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-        if not uni_router:
-            raise ValueError('no uniswap router')
-        r1, c1 = self._encode_v3_leg(l1['venue'], l1['param'], tin, hub, amount_in, uni_router, deadline, chain_id)
-        leg2_params = _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint160'], [_ck(hub), _ck(tout), int(l2['param']), _ck(app), 0, 0, 0])
-        c2 = '0x04e45aaf' + leg2_params.hex()
-        interactions = [Interaction(target=tin, value='0', call_data=encode_approve(r1, amount_in), chain_id=chain_id), Interaction(target=r1, value='0', call_data=c1, chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=c2, chain_id=chain_id)]
+
+        def _dr95():
+            uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+            if not uni_router:
+                raise ValueError('no uniswap router')
+            r1, c1 = self._encode_v3_leg(l1['venue'], l1['param'], tin, hub, amount_in, uni_router, deadline, chain_id)
+            leg2_params = _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint160'], [_ck(hub), _ck(tout), int(l2['param']), _ck(app), 0, 0, 0])
+            c2 = '0x04e45aaf' + leg2_params.hex()
+            interactions = [Interaction(target=tin, value='0', call_data=encode_approve(r1, amount_in), chain_id=chain_id), Interaction(target=r1, value='0', call_data=c1, chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=c2, chain_id=chain_id)]
+            return interactions
+        interactions = _dr95()
         logger.info('[solver] XHOP %s->%s->%s out=%d via %s+uni(CB)', str(tin)[:8], str(hub)[:8], str(tout)[:8], cand['out'], l1['venue'])
         return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'crossvenue-2hop', 'route': 'crossvenue_2hop', 'hub': hub, 'expected_output': str(cand['out']), 'chain_id': chain_id, 'hops': 2})
     _XHOP_STABLES = frozenset({_USDC, _USDBC, _DAI})
@@ -2717,10 +2862,14 @@ class MinerSolver(_MinerSolverDR56):
         app = state.contract_address or params.get('receiver') or state.owner
         deadline = 9999999999
         hub, l1, l2 = (cand['hub'], cand['leg1'], cand['leg2'])
-        amount_in2 = int(l1['out']) * (10000 - self._XHOP_PROXY_BUFFER_BPS) // 10000
-        r1, c1 = self._encode_v3_leg(l1['venue'], l1['param'], tin, hub, amount_in, app, deadline, chain_id)
-        r2, c2 = self._encode_v3_leg(l2['venue'], l2['param'], hub, tout, amount_in2, app, deadline, chain_id)
-        interactions = [Interaction(target=tin, value='0', call_data=encode_approve(r1, amount_in), chain_id=chain_id), Interaction(target=r1, value='0', call_data=c1, chain_id=chain_id), Interaction(target=hub, value='0', call_data=encode_approve(r2, amount_in2), chain_id=chain_id), Interaction(target=r2, value='0', call_data=c2, chain_id=chain_id)]
+
+        def _dr98():
+            amount_in2 = int(l1['out']) * (10000 - self._XHOP_PROXY_BUFFER_BPS) // 10000
+            r1, c1 = self._encode_v3_leg(l1['venue'], l1['param'], tin, hub, amount_in, app, deadline, chain_id)
+            r2, c2 = self._encode_v3_leg(l2['venue'], l2['param'], hub, tout, amount_in2, app, deadline, chain_id)
+            interactions = [Interaction(target=tin, value='0', call_data=encode_approve(r1, amount_in), chain_id=chain_id), Interaction(target=r1, value='0', call_data=c1, chain_id=chain_id), Interaction(target=hub, value='0', call_data=encode_approve(r2, amount_in2), chain_id=chain_id), Interaction(target=r2, value='0', call_data=c2, chain_id=chain_id)]
+            return interactions
+        interactions = _dr98()
         logger.info('[solver] XHOP-PROXY %s->%s->%s out~%d via %s+%s', str(tin)[:8], str(hub)[:8], str(tout)[:8], cand['out'], l1['venue'], l2['venue'])
         return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'crossvenue-2hop-proxy', 'route': 'crossvenue_2hop_proxy', 'hub': hub, 'expected_output': str(cand['out']), 'chain_id': chain_id, 'hops': 2})
 
@@ -2752,37 +2901,43 @@ class MinerSolver(_MinerSolverDR56):
             w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
-            import concurrent.futures
-            fr = [amount_in // 3, amount_in // 2, 2 * amount_in // 3]
-            jobs = [(v, a) for v in (v1, v2) for a in fr]
-            quotes: dict[tuple, int] = {}
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(jobs)) as ex:
-                futs = {ex.submit(self._quote_one, w3, v['venue'], v['param'], tin, tout, a): (v['venue'], a) for v, a in jobs}
-                for f in concurrent.futures.as_completed(futs):
-                    quotes[futs[f]] = f.result()
 
-            def _dr46():
+            def _dr56():
+                import concurrent.futures
+                fr = [amount_in // 3, amount_in // 2, 2 * amount_in // 3]
+                jobs = [(v, a) for v in (v1, v2) for a in fr]
+                quotes: dict[tuple, int] = {}
+                with concurrent.futures.ThreadPoolExecutor(max_workers=len(jobs)) as ex:
+                    futs = {ex.submit(self._quote_one, w3, v['venue'], v['param'], tin, tout, a): (v['venue'], a) for v, a in jobs}
+                    for f in concurrent.futures.as_completed(futs):
+                        quotes[futs[f]] = f.result()
 
-                def q(v, a):
-                    if a >= amount_in:
-                        return int(v['out'])
-                    return int(quotes.get((v['venue'], a), 0))
-                best_total, best_a1 = (ref_out, None)
-                for a1 in fr:
-                    a2 = amount_in - a1
-                    o1, o2 = (q(v1, a1), q(v2, a2))
-                    if o1 <= 0 or o2 <= 0:
-                        continue
-                    if o1 + o2 > best_total:
-                        best_total, best_a1 = (o1 + o2, a1)
-                if best_a1 is None or best_total < ref_out * _SPLIT_MIN_GAIN:
-                    return None
-                legs = [(v1['venue'], v1['param'], best_a1), (v2['venue'], v2['param'], amount_in - best_a1)]
-                return self._build_split_plan(intent, state, snapshot, legs, tin, tout, amount_in, chain_id, best_total, ref_out)
+                def _dr46():
+
+                    def q(v, a):
+                        if a >= amount_in:
+                            return int(v['out'])
+                        return int(quotes.get((v['venue'], a), 0))
+                    best_total, best_a1 = (ref_out, None)
+                    for a1 in fr:
+                        a2 = amount_in - a1
+                        o1, o2 = (q(v1, a1), q(v2, a2))
+                        if o1 <= 0 or o2 <= 0:
+                            continue
+                        if o1 + o2 > best_total:
+                            best_total, best_a1 = (o1 + o2, a1)
+                    if best_a1 is None or best_total < ref_out * _SPLIT_MIN_GAIN:
+                        return None
+                    legs = [(v1['venue'], v1['param'], best_a1), (v2['venue'], v2['param'], amount_in - best_a1)]
+                    return self._build_split_plan(intent, state, snapshot, legs, tin, tout, amount_in, chain_id, best_total, ref_out)
+                    return _DR_UNSET
+                _dr47 = _dr46()
+                if _dr47 is not _DR_UNSET:
+                    return _dr47
                 return _DR_UNSET
-            _dr47 = _dr46()
-            if _dr47 is not _DR_UNSET:
-                return _dr47
+            _dr73 = _dr56()
+            if _dr73 is not _DR_UNSET:
+                return _dr73
         except Exception:
             logger.exception('[solver] split probe failed; keeping single route')
             return None
@@ -2881,27 +3036,31 @@ class MinerSolver(_MinerSolverDR56):
         eth_mids = [h for h in _ETH_HUBS if h not in (tin_l, tout_l)]
         uni_routes = [((tin, mid, tout), fees) for mid in eth_mids[:3] for fees in _ETH_UNI_FEES_TWOHOP]
         jobs = [(_quote_eth_uni, f) for f in _ETH_UNI_FEES] + [(_quote_eth_pancake, f) for f in _ETH_UNI_FEES] + [(_quote_eth_uni_multihop, r) for r in uni_routes]
-        cands: list[dict[str, Any]] = []
-        try:
-            workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
-            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
-                futs = [ex.submit(fn, arg) for fn, arg in jobs]
-                for fu in concurrent.futures.as_completed(futs):
-                    try:
-                        c = fu.result()
-                        if c is not None:
-                            cands.append(c)
-                    except Exception:
-                        pass
-        except Exception:
-            logger.exception('[solver] eth enumerate concurrent failed; sequential fallback')
-            for fn, arg in jobs:
-                c = fn(arg)
-                if c is not None:
-                    cands.append(c)
-        curve_cand = _quote_eth_curve()
-        if curve_cand is not None:
-            cands.append(curve_cand)
+
+        def _dr74():
+            cands: list[dict[str, Any]] = []
+            try:
+                workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
+                with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+                    futs = [ex.submit(fn, arg) for fn, arg in jobs]
+                    for fu in concurrent.futures.as_completed(futs):
+                        try:
+                            c = fu.result()
+                            if c is not None:
+                                cands.append(c)
+                        except Exception:
+                            pass
+            except Exception:
+                logger.exception('[solver] eth enumerate concurrent failed; sequential fallback')
+                for fn, arg in jobs:
+                    c = fn(arg)
+                    if c is not None:
+                        cands.append(c)
+            curve_cand = _quote_eth_curve()
+            if curve_cand is not None:
+                cands.append(curve_cand)
+            return cands
+        cands = _dr74()
         return cands
 
     def _score_aware_eth(self, intent, state, snapshot, base_plan, tin, tout, amount_in, min_out, chain_id):
@@ -2922,15 +3081,21 @@ class MinerSolver(_MinerSolverDR56):
             def score(out, gas_model):
                 return 0.4 * (out / ref) - _GAS_WEIGHT * (gas_model / 1000000.0)
             usable = [c for c in cands if min_out <= 0 or c['out'] >= min_out]
-            if not usable:
-                return base_plan
-            best = max(usable, key=lambda c: (round(score(c['out'], c['gas_model']), 9), -c['gas_est']))
-            if base_plan is not None and bp_out > 0 and (min_out <= 0 or bp_out >= min_out):
-                if score(bp_out, _OFFSET_UNI + 100000) >= score(best['out'], best['gas_model']):
+
+            def _dr115():
+                if not usable:
                     return base_plan
-            if best['venue'] == 'curve_ng':
-                return self._build_curve_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
-            return self._build_singlehop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                best = max(usable, key=lambda c: (round(score(c['out'], c['gas_model']), 9), -c['gas_est']))
+                if base_plan is not None and bp_out > 0 and (min_out <= 0 or bp_out >= min_out):
+                    if score(bp_out, _OFFSET_UNI + 100000) >= score(best['out'], best['gas_model']):
+                        return base_plan
+                if best['venue'] == 'curve_ng':
+                    return self._build_curve_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                return self._build_singlehop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                return _DR_UNSET
+            _dr116 = _dr115()
+            if _dr116 is not _DR_UNSET:
+                return _dr116
         except Exception:
             logger.exception('[solver] score_aware_eth failed; keeping base plan')
             return base_plan
@@ -2968,36 +3133,42 @@ class MinerSolver(_MinerSolverDR56):
             if not tin or not tout or amount_in <= 0 or tin.startswith('eip155:') or tout.startswith('eip155:'):
                 return None
             chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-            router = UNISWAP_V3_ROUTERS.get(chain_id)
-            if not router:
-                return None
 
-            def _dr55():
-                pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
-                a, b = (tin.lower(), tout.lower())
-                best = None
-                for p in pool_states.values():
-                    if {str(p.get('token0', '')).lower(), str(p.get('token1', '')).lower()} != {a, b}:
-                        continue
-                    dex = str(p.get('dex') or '').lower()
-                    if dex and 'uniswap' not in dex:
-                        continue
-                    liq = int(p.get('liquidity', '0') or 0)
-                    if liq <= 0:
-                        continue
-                    if best is None or liq > best[0]:
-                        best = (liq, int(p.get('fee', 3000) or 3000))
-                return best
-            best = _dr55()
-            if best is None:
-                return None
-            recipient = state.contract_address or params.get('receiver') or state.owner
-            deadline = 9999999999
-            from common.abi_utils import encode_approve
-            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-            interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=best[1], recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
-            return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'offline-fallback', 'route': 'uniswap_v3', 'fee_tier': best[1]})
+            def _dr106():
+                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+                router = UNISWAP_V3_ROUTERS.get(chain_id)
+                if not router:
+                    return None
+
+                def _dr55():
+                    pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
+                    a, b = (tin.lower(), tout.lower())
+                    best = None
+                    for p in pool_states.values():
+                        if {str(p.get('token0', '')).lower(), str(p.get('token1', '')).lower()} != {a, b}:
+                            continue
+                        dex = str(p.get('dex') or '').lower()
+                        if dex and 'uniswap' not in dex:
+                            continue
+                        liq = int(p.get('liquidity', '0') or 0)
+                        if liq <= 0:
+                            continue
+                        if best is None or liq > best[0]:
+                            best = (liq, int(p.get('fee', 3000) or 3000))
+                    return best
+                best = _dr55()
+                if best is None:
+                    return None
+                recipient = state.contract_address or params.get('receiver') or state.owner
+                deadline = 9999999999
+                from common.abi_utils import encode_approve
+                from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+                interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=best[1], recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
+                return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'offline-fallback', 'route': 'uniswap_v3', 'fee_tier': best[1]})
+                return _DR_UNSET
+            _dr107 = _dr106()
+            if _dr107 is not _DR_UNSET:
+                return _dr107
         except Exception:
             logger.exception('[solver] offline fallback plan failed')
             return None
