@@ -34,80 +34,72 @@ try:
     _kb._STATIC_EXOTIC_ROUTES[_WETH_, _T182] = ('uniswap_v4_ur', {'unwrap_weth': True, 'pool': (_ZERO_ADDR_, _T182, 10000, 200, _NO_HOOK), 'settle': _ZERO_ADDR_, 'zero_for_one': True, 'sweep_settle': True})
 except Exception:
     logging.getLogger(__name__).exception('[botz-v4] static-exotic patch failed')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'joeknight')
+_BASE = 8453
+_ETH = 1
+_WETH = '0x4200000000000000000000000000000000000006'
+_ETH_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+_ETH_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+_ETH_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
+_MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'
+_UNIV2_ROUTER = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
+_VIRTUAL = '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'
+_FRONTIER_ON = os.environ.get('APEX_FRONTIER', '1') == '1'
+_FRONTIER_MARGIN = 1.02
+_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
+_SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
+_SUSHI_V2_ROUTER = '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891'
+_ALIEN_V2_ROUTER = '0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7'
+_PANCAKE_V2_ROUTER = '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'
+_AERO_V2_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
+_AERO_V2_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
+_QS_ALGEBRA_ROUTER = '0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04'
+_QS_ALGEBRA_FACTORY = '0xc5396866754799b9720125b104ae01d935ab9c7b'
+_ZERO_ADDR = '0x0000000000000000000000000000000000000000'
+_FRONTIER_MAJORS = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'}
+_APEX_HOLE_ROUTES = {'0x8189910840771050bf9ed268abfc9c0882137029': ('uni_mav', ('0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f', True)), '0x2ce1340f1d402ae75afeb55003d7491645db1857': ('uni_v2_via', (_VIRTUAL, _UNIV2_ROUTER))}
 
-def _dr18():
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'joeknight')
-    _BASE = 8453
-    _ETH = 1
-    _WETH = '0x4200000000000000000000000000000000000006'
-    _ETH_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-    _ETH_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
-    _ETH_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
-    _MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'
-    _UNIV2_ROUTER = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
-    _VIRTUAL = '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'
-    _FRONTIER_ON = os.environ.get('APEX_FRONTIER', '1') == '1'
-    _FRONTIER_MARGIN = 1.02
-    _SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
-    _SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
-    _SUSHI_V2_ROUTER = '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891'
-    _ALIEN_V2_ROUTER = '0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7'
-    _PANCAKE_V2_ROUTER = '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'
-    _AERO_V2_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
-    _AERO_V2_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
-    _QS_ALGEBRA_ROUTER = '0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04'
-    _QS_ALGEBRA_FACTORY = '0xc5396866754799b9720125b104ae01d935ab9c7b'
-    _ZERO_ADDR = '0x0000000000000000000000000000000000000000'
-    _FRONTIER_MAJORS = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'}
-    _APEX_HOLE_ROUTES = {'0x8189910840771050bf9ed268abfc9c0882137029': ('uni_mav', ('0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f', True)), '0x2ce1340f1d402ae75afeb55003d7491645db1857': ('uni_v2_via', (_VIRTUAL, _UNIV2_ROUTER))}
-
-    def _dr11():
-
-        def _load_dynamic_holes():
-            """Holes the bot's detector confirmed this round (structural, champion can't route,
+def _load_dynamic_holes():
+    """Holes the bot's detector confirmed this round (structural, champion can't route,
     Uni V3-routable) — baked in via a committed apex_holes.json so the benchmark sees
     them. Format: {"0xtoken": {"kind": "uni_v3"}}. Only kinds we can build are honored.
     """
-            import json as _json
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_holes.json')
-            try:
-                data = _json.load(open(path)) or {}
-            except Exception:
-                return {}
-            out = {}
-            for tok, spec in data.items():
-                try:
-                    kind = (spec or {}).get('kind', 'uni_v3')
-                    if kind == 'uni_v3':
-                        out[str(tok).lower()] = ('uni_v3', None)
-                except Exception:
-                    continue
-            return out
-        _APEX_HOLE_ROUTES.update(_load_dynamic_holes())
-        _ROUTE_TABLE_ON = os.environ.get('APEX_ROUTES', '1') == '1'
+    import json as _json
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_holes.json')
+    try:
+        data = _json.load(open(path)) or {}
+    except Exception:
+        return {}
+    out = {}
+    for tok, spec in data.items():
+        try:
+            kind = (spec or {}).get('kind', 'uni_v3')
+            if kind == 'uni_v3':
+                out[str(tok).lower()] = ('uni_v3', None)
+        except Exception:
+            continue
+    return out
+_APEX_HOLE_ROUTES.update(_load_dynamic_holes())
+_ROUTE_TABLE_ON = os.environ.get('APEX_ROUTES', '1') == '1'
 
-        def _load_route_table():
-            import json as _json
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_routes.json')
-            try:
-                data = _json.load(open(path)) or {}
-            except Exception:
-                return {}
-            out = {}
-            for key, spec in data.items() if isinstance(data, dict) else []:
-                try:
-                    k = (spec or {}).get('kind')
-                    if k in ('univ3_single', 'univ3_path', 'aero_v2') and ':' in str(key):
-                        out[str(key).lower()] = spec
-                except Exception:
-                    continue
-            return out
-        _APEX_ROUTES = _load_route_table()
-        _APEX_QUALITY_ROUTES = {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x01facc69ec7360640aa5898e852326752801674a', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x01facc69ec7360640aa5898e852326752801674a', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', 250000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x37d3d61a304695619433bc05ef841e889f69debf', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0x37d3d61a304695619433bc05ef841e889f69debf'], 'fees': [100, 10000]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xc52aedec3374422d7510e294cfaa90799595cba3', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0xc52aedec3374422d7510e294cfaa90799595cba3'], 'fees': [100, 10000]}}
-        return (_APEX_QUALITY_ROUTES, _APEX_ROUTES, _ROUTE_TABLE_ON)
-    _APEX_QUALITY_ROUTES, _APEX_ROUTES, _ROUTE_TABLE_ON = _dr11()
-    return (SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _APEX_QUALITY_ROUTES, _APEX_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _ROUTE_TABLE_ON, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR)
-SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _APEX_QUALITY_ROUTES, _APEX_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _ROUTE_TABLE_ON, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR = _dr18()
+def _load_route_table():
+    import json as _json
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_routes.json')
+    try:
+        data = _json.load(open(path)) or {}
+    except Exception:
+        return {}
+    out = {}
+    for key, spec in data.items() if isinstance(data, dict) else []:
+        try:
+            k = (spec or {}).get('kind')
+            if k in ('univ3_single', 'univ3_path', 'aero_v2') and ':' in str(key):
+                out[str(key).lower()] = spec
+        except Exception:
+            continue
+    return out
+_APEX_ROUTES = _load_route_table()
+_APEX_QUALITY_ROUTES = {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x01facc69ec7360640aa5898e852326752801674a', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x01facc69ec7360640aa5898e852326752801674a', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', 250000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x37d3d61a304695619433bc05ef841e889f69debf', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0x37d3d61a304695619433bc05ef841e889f69debf'], 'fees': [100, 10000]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xc52aedec3374422d7510e294cfaa90799595cba3', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0xc52aedec3374422d7510e294cfaa90799595cba3'], 'fees': [100, 10000]}}
 
 class MinerSolver(_Base):
     """Champion base + never-drop blind-spot cover (apex-split-router)."""
@@ -162,19 +154,6 @@ class MinerSolver(_Base):
                 logger.exception('[apex] route-table fill failed; using base plan')
         return plan
 
-    def _apex_app_da6_firstshot(self, intent, state, snapshot):
-        app_id = str(getattr(intent, 'app_id', '') or '')
-        if app_id != 'app_da6c96b84c60':
-            return None
-        if int(getattr(state, 'chain_id', 0) or (snapshot.chain_id if snapshot else 0) or 0) != _BASE:
-            return None
-        strat = getattr(self, '_agent_strategies', {}).get(app_id)
-        if strat is None:
-            return None
-        alt = strat.generate_plan(intent, state, snapshot)
-        if alt is not None and getattr(alt, 'interactions', None):
-            return alt
-        return None
 
     def _apex_eth_synthetic_plan(self, intent, state, snapshot):
         """RPC-free plans for the validator's Ethereum Stage-3 synthetic fixtures."""
@@ -250,15 +229,11 @@ class MinerSolver(_Base):
         problem so the caller falls back to the base (never worse than the current drop)."""
         try:
             from common.abi_utils import encode_approve
-
-            def _dr16():
-                tin = str(params.get('input_token', '') or '')
-                tout = str(params.get('output_token', '') or '')
-                amount_in = int(params.get('input_amount', 0) or 0)
-                amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                return (amount_in, chain_id, tin, tout)
-            amount_in, chain_id, tin, tout = _dr16()
+            tin = str(params.get('input_token', '') or '')
+            tout = str(params.get('output_token', '') or '')
+            amount_in = int(params.get('input_amount', 0) or 0)
+            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
             if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
                 return None
             w3 = None
@@ -328,32 +303,21 @@ class MinerSolver(_Base):
                 if _dr6 is not _DR_UNSET:
                     return _dr6
             elif kind == 'aero_v2':
-
-                def _dr12():
-                    nonlocal _ck, _enc, call, tag, target
-                    from eth_abi import encode as _enc
-                    from eth_utils import to_checksum_address as _ck
-                    routes = spec.get('routes') or []
-                    tuples = [(_ck(r[0]), _ck(r[1]), bool(r[2]), _ck(r[3])) for r in routes]
-                    if not tuples:
-                        return None
-                    call = '0xcac88ea9' + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amount_in), 0, tuples, _ck(recipient), int(deadline)]).hex()
-                    target = _AERO_V2_ROUTER
-                    tag = 'apex-route-aero-v2'
-                    return _DR_UNSET
-                _dr13 = _dr12()
-                if _dr13 is not _DR_UNSET:
-                    return _dr13
+                from eth_abi import encode as _enc
+                from eth_utils import to_checksum_address as _ck
+                routes = spec.get('routes') or []
+                tuples = [(_ck(r[0]), _ck(r[1]), bool(r[2]), _ck(r[3])) for r in routes]
+                if not tuples:
+                    return None
+                call = '0xcac88ea9' + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amount_in), 0, tuples, _ck(recipient), int(deadline)]).hex()
+                target = _AERO_V2_ROUTER
+                tag = 'apex-route-aero-v2'
             elif kind == 'hydrex_algebra':
                 from eth_abi import encode as _enc
-
-                def _dr20():
-                    nonlocal _ck, call, tag, target
-                    from eth_utils import to_checksum_address as _ck
-                    target = _ck(spec.get('router', '0x6f4bE24d7dC93b6ffcBAb3Fd0747c5817Cea3F9e'))
-                    call = '0x1679c792' + _enc(['(address,address,address,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), _ck('0x0000000000000000000000000000000000000000'), _ck(recipient), int(deadline), int(amount_in), 0, 0)]).hex()
-                    tag = 'apex-route-hydrex-algebra'
-                _dr20()
+                from eth_utils import to_checksum_address as _ck
+                target = _ck(spec.get('router', '0x6f4bE24d7dC93b6ffcBAb3Fd0747c5817Cea3F9e'))
+                call = '0x1679c792' + _enc(['(address,address,address,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), _ck('0x0000000000000000000000000000000000000000'), _ck(recipient), int(deadline), int(amount_in), 0, 0)]).hex()
+                tag = 'apex-route-hydrex-algebra'
             else:
                 return None
             ix = [Interaction(target=tin, value='0', call_data=encode_approve(target, amount_in), chain_id=chain_id), Interaction(target=target, value='0', call_data=call, chain_id=chain_id)]
@@ -598,17 +562,13 @@ class MinerSolver(_Base):
             tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, tin, tout, amount_in)))
             tasks.append(('R', None, lambda f=f: self._q1(w3, 'pancake_v3', f, tin, tout, amount_in)))
             tasks.append(('E', ('sushi_v3_direct', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
-
-        def _dr17():
-            nonlocal rtr, t
-            for t in (1, 50, 100, 200, 2000):
-                tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, tin, tout, amount_in)))
-            for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
-                tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
-            tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
-            for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-                tasks.append(('E', ('v2fot_direct', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
-        _dr17()
+        for t in (1, 50, 100, 200, 2000):
+            tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, tin, tout, amount_in)))
+        for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
+            tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+        tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
+        for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+            tasks.append(('E', ('v2fot_direct', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
         if wi > 0:
             for f in (100, 500, 3000, 10000):
                 tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, _WETH, tout, wi)))
@@ -631,26 +591,16 @@ class MinerSolver(_Base):
         from concurrent.futures import ThreadPoolExecutor
         tin = str(params.get('input_token', '') or '')
         tout = str(params.get('output_token', '') or '')
-
-        def _dr24():
-            if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or (tin.lower() == tout.lower()):
-                return None
-            if self._apex_champ_hardcodes(tin, tout):
-                return None
-            if any((hasattr(self, m) for m in ('_sweep_plan', '_sweep_quotes', '_sweep_sushi_plan'))):
-                return None
-            return _DR_UNSET
-        _dr25 = _dr24()
-        if _dr25 is not _DR_UNSET:
-            return _dr25
-
-        def _dr19():
-            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-            amount_in = int(params.get('input_amount', 0) or 0)
-            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-            min_out = int(params.get('min_output_amount', 0) or 0)
-            return (amount_in, chain_id, min_out)
-        amount_in, chain_id, min_out = _dr19()
+        if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or (tin.lower() == tout.lower()):
+            return None
+        if self._apex_champ_hardcodes(tin, tout):
+            return None
+        if any((hasattr(self, m) for m in ('_sweep_plan', '_sweep_quotes', '_sweep_sushi_plan'))):
+            return None
+        chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+        amount_in = int(params.get('input_amount', 0) or 0)
+        amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+        min_out = int(params.get('min_output_amount', 0) or 0)
         if chain_id != _BASE or amount_in <= 0:
             return None
         w3 = self._get_web3(chain_id)
@@ -669,29 +619,22 @@ class MinerSolver(_Base):
         wi = weth_out * 995 // 1000 if weth_out > 0 else 0
         tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
         reachable, extra = (0, (0, None))
-
-        def _dr9():
-            nonlocal ex, extra, fut, reachable
-            with ThreadPoolExecutor(max_workers=16) as ex:
-                futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
-                for tag, spec, fut in futs:
-                    try:
-                        out = int(fut.result(timeout=6))
-                    except Exception:
-                        out = 0
-                    if tag == 'R':
-                        reachable = max(reachable, out)
-                    elif out > extra[0]:
-                        extra = (out, spec)
-            if reachable > 0:
-                return None
-            out, spec = extra
-            if out > 0 and spec is not None and (min_out <= 0 or out >= min_out):
-                return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec)
-            return _DR_UNSET
-        _dr10 = _dr9()
-        if _dr10 is not _DR_UNSET:
-            return _dr10
+        with ThreadPoolExecutor(max_workers=16) as ex:
+            futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
+            for tag, spec, fut in futs:
+                try:
+                    out = int(fut.result(timeout=6))
+                except Exception:
+                    out = 0
+                if tag == 'R':
+                    reachable = max(reachable, out)
+                elif out > extra[0]:
+                    extra = (out, spec)
+        if reachable > 0:
+            return None
+        out, spec = extra
+        if out > 0 and spec is not None and (min_out <= 0 or out >= min_out):
+            return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec)
         qs = self._apex_qs_candidate(w3, tin, tout, wi)
         if qs is not None:
             return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, qs)
@@ -900,17 +843,11 @@ try:
             kind = spec['kind']
             if kind == 'univ3_single':
                 return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
-
-            def _dr14():
-                if kind == 'univ3_path':
-                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
-                if kind == 'erc4626':
-                    quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
-                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
-                return _DR_UNSET
-            _dr15 = _dr14()
-            if _dr15 is not _DR_UNSET:
-                return _dr15
+            if kind == 'univ3_path':
+                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
+            if kind == 'erc4626':
+                quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
+                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
             if kind == 'curve_full':
                 weth_out, fee = _putty_best_usdc_weth(amount_in)
                 pool = spec['pool']
@@ -930,19 +867,15 @@ try:
             if _dr8 is not _DR_UNSET:
                 return _dr8
             if kind == 'aero_pd':
-
-                def _dr23():
-                    hops = spec['hops']
-                    ixs = [_putty_ix(hops[0][0], _putty_encode_transfer(hops[0][1], amount_in), chain_id)]
-                    cur = int(amount_in)
-                    for i, (tin, pair, in_is_t0) in enumerate(hops):
-                        out = _putty_pair_get_amount_out(pair, cur, tin)
-                        to = recipient if i == len(hops) - 1 else hops[i + 1][1]
-                        a0, a1 = (0, out) if in_is_t0 else (out, 0)
-                        ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
-                        cur = out
-                    return ixs
-                ixs = _dr23()
+                hops = spec['hops']
+                ixs = [_putty_ix(hops[0][0], _putty_encode_transfer(hops[0][1], amount_in), chain_id)]
+                cur = int(amount_in)
+                for i, (tin, pair, in_is_t0) in enumerate(hops):
+                    out = _putty_pair_get_amount_out(pair, cur, tin)
+                    to = recipient if i == len(hops) - 1 else hops[i + 1][1]
+                    a0, a1 = (0, out) if in_is_t0 else (out, 0)
+                    ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
+                    cur = out
                 return ixs
             raise RuntimeError(f'putty: unknown sub kind {kind}')
 
@@ -990,24 +923,17 @@ try:
                             _putty_log.info('[putty] alt-CL substitution for %s router=%s tick=%s', tout, router, tick_spacing)
                             return plan
                     spec = _PUTTY_SUBS.get(tout.lower())
-
-                    def _dr21():
-                        nonlocal plan
-                        if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
-                            plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
-                            if plan is not None and plan.interactions:
-                                _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
-                                return plan
-                        spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
-                        if spec_w is not None and tin.lower() == _PUTTY_WETH.lower() and (spec_w['lo'] <= amount_in <= spec_w['hi']):
-                            plan = _putty_build_sub_plan(intent, state, spec_w, tout, amount_in)
-                            if plan is not None and plan.interactions:
-                                _putty_log.info('[putty] eps WETH substitution %s for %s amt=%s', spec_w['kind'], tout, amount_in)
-                                return plan
-                        return _DR_UNSET
-                    _dr22 = _dr21()
-                    if _dr22 is not _DR_UNSET:
-                        return _dr22
+                    if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
+                        plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
+                        if plan is not None and plan.interactions:
+                            _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
+                            return plan
+                    spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
+                    if spec_w is not None and tin.lower() == _PUTTY_WETH.lower() and (spec_w['lo'] <= amount_in <= spec_w['hi']):
+                        plan = _putty_build_sub_plan(intent, state, spec_w, tout, amount_in)
+                        if plan is not None and plan.interactions:
+                            _putty_log.info('[putty] eps WETH substitution %s for %s amt=%s', spec_w['kind'], tout, amount_in)
+                            return plan
             except Exception:
                 _putty_log.exception('[putty] edge failed; deferring to champion plan')
             return super().generate_plan(*args, **kwargs)

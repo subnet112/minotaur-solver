@@ -16,29 +16,6 @@ from typing import Any
 Q96 = 1 << 96
 
 
-def price_to_sqrt_price_x96(
-    token0_per_token1: float,
-    token0_decimals: int,
-    token1_decimals: int,
-) -> int:
-    """Convert a human-readable price to Uniswap V3 sqrtPriceX96.
-
-    Args:
-        token0_per_token1: How many token0 per one token1 in human units.
-            E.g. for USDC/WETH pool at $1850/ETH: 1850.0
-        token0_decimals: Decimals of token0 (e.g. 6 for USDC).
-        token1_decimals: Decimals of token1 (e.g. 18 for WETH).
-
-    Returns:
-        sqrtPriceX96 as integer.
-    """
-    # Uniswap V3 price = token1_raw / token0_raw
-    # token0_per_token1 in human units → raw: token1_raw_per_token0_raw
-    # 1 token1 = token0_per_token1 * token0
-    # In raw: 10^token1_decimals token1_wei = token0_per_token1 * 10^token0_decimals token0_raw
-    # price_raw = 10^token1_decimals / (token0_per_token1 * 10^token0_decimals)
-    price_raw = 10**token1_decimals / (token0_per_token1 * 10**token0_decimals)
-    return int(math.sqrt(price_raw) * Q96)
 
 
 def compute_v3_output(
@@ -175,17 +152,6 @@ def find_best_pool(
     return best
 
 
-def price_to_tick(token0_per_token1: float, token0_decimals: int, token1_decimals: int) -> int:
-    """Convert a human-readable price to the nearest Uniswap V3 tick.
-
-    Uses the same price convention as ``price_to_sqrt_price_x96``.
-    """
-    if token0_per_token1 <= 0:
-        return 0
-    price_raw = 10**token1_decimals / (token0_per_token1 * 10**token0_decimals)
-    if price_raw <= 0:
-        return 0
-    return int(math.log(price_raw) / math.log(1.0001))
 
 
 def find_best_route(
