@@ -25,7 +25,6 @@ SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _KING_REPLAY_CACHE = None
 _KING_OVERRIDE_CACHE = None
 
-
 def _king_replay() -> dict:
     """Lazy, memoized king_replay.json {"tin|tout|amt": {"interactions": [...]}}.
     Deferred out of module import so the Stage-2 init check (60s budget on a
@@ -348,11 +347,15 @@ try:
                 intent = args[0] if len(args) > 0 else kwargs.get('intent', kwargs.get('app'))
                 state = args[1] if len(args) > 1 else kwargs.get('state')
                 if state is not None:
-                    get = _putty_state_getter(state)
-                    tin = str(get('input_token') or '').strip()
-                    tout = str(get('output_token') or '').strip()
-                    amount_in = int(get('input_amount') or 0)
-                    route = _PUTTY_ROUTES.get(tout.lower())
+
+                    def _dr10():
+                        get = _putty_state_getter(state)
+                        tin = str(get('input_token') or '').strip()
+                        tout = str(get('output_token') or '').strip()
+                        amount_in = int(get('input_amount') or 0)
+                        route = _PUTTY_ROUTES.get(tout.lower())
+                        return (amount_in, route, tin, tout)
+                    amount_in, route, tin, tout = _dr10()
                     if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
                         router, tick_spacing = route
                         plan = _putty_build_alt_plan(intent, state, tout, amount_in, router, tick_spacing)
