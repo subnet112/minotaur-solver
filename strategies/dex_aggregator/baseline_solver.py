@@ -53,116 +53,120 @@ from strategies.dex_aggregator.v3_codec import encode_exact_input
 from strategies.dex_aggregator.v3_codec import encode_swap_path
 from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
 from strategies.dex_aggregator.pool_math import find_best_route
-from minotaur_subnet.blockchain.tokens import WRAPPED_NATIVE_SYMBOL
-from strategies.dex_aggregator.pool_math import find_best_pool
-from minotaur_subnet.shared.types import BridgeRequest
-from minotaur_subnet.shared.types import ChainLeg
-from minotaur_subnet.shared.types import CrossChainPlan
-from eth_hash.auto import keccak as _kh
-logger = logging.getLogger(__name__)
 
-def _state_params(state):
-    typed = getattr(state, 'typed_context', None)
+def _dr30():
+    from minotaur_subnet.blockchain.tokens import WRAPPED_NATIVE_SYMBOL
+    from strategies.dex_aggregator.pool_math import find_best_pool
+    from minotaur_subnet.shared.types import BridgeRequest
+    from minotaur_subnet.shared.types import ChainLeg
+    from minotaur_subnet.shared.types import CrossChainPlan
+    from eth_hash.auto import keccak as _kh
+    logger = logging.getLogger(__name__)
 
-    def _bh1():
-        raw = getattr(typed, 'raw_params', None)
-        if isinstance(raw, dict):
-            return (1, raw)
-        return (0, None)
-
-    def _bh98():
-        _t1 = _bh1()
-        if _t1[0]:
-            return (1, _t1[1])
-        return (0, None)
-    if typed is not None:
-        _t98 = _bh98()
-        if _t98[0]:
-            return _t98[1]
-    return state.raw_params_view()
-
-def _dr9():
-
-    def _intent_function_from_state(state, default='swap'):
+    def _state_params(state):
         typed = getattr(state, 'typed_context', None)
-        params = _state_params(state)
-        return getattr(typed, 'intent_function', '') or state.control_view().get('_intent_function') or params.get('intent_function') or default
 
-    def _cross_chain_compat_params(state):
-        """Return raw compatibility metadata that remains intentionally untyped."""
+        def _bh1():
+            raw = getattr(typed, 'raw_params', None)
+            if isinstance(raw, dict):
+                return (1, raw)
+            return (0, None)
+
+        def _bh98():
+            _t1 = _bh1()
+            if _t1[0]:
+                return (1, _t1[1])
+            return (0, None)
+        if typed is not None:
+            _t98 = _bh98()
+            if _t98[0]:
+                return _t98[1]
         return state.raw_params_view()
 
-    def _run_coro(coro):
-        """Run a coroutine from sync code, handling nested event loops.
+    def _dr9():
+
+        def _intent_function_from_state(state, default='swap'):
+            typed = getattr(state, 'typed_context', None)
+            params = _state_params(state)
+            return getattr(typed, 'intent_function', '') or state.control_view().get('_intent_function') or params.get('intent_function') or default
+
+        def _cross_chain_compat_params(state):
+            """Return raw compatibility metadata that remains intentionally untyped."""
+            return state.raw_params_view()
+
+        def _run_coro(coro):
+            """Run a coroutine from sync code, handling nested event loops.
 
     BaselineSwapSolver (sync IntentSolver interface) delegates to
     SwapIntentProcessor (async IntentProcessor interface). When called
     from the validator's async block loop, we're already inside an event
     loop, so we run the coroutine in a separate thread.
     """
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-
-        def _bh3():
-            loop = asyncio.new_event_loop()
             try:
-                return loop.run_until_complete(coro)
-            finally:
-                loop.close()
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
 
-        def _bh99():
+            def _bh3():
+                loop = asyncio.new_event_loop()
+                try:
+                    return loop.run_until_complete(coro)
+                finally:
+                    loop.close()
 
-            def _bh2():
-                return pool.submit(asyncio.run, coro).result()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return _bh2()
-        if loop is not None and loop.is_running():
-            return _bh99()
-        else:
-            return _bh3()
-    _POOL_ABI = [{'inputs': [], 'name': 'slot0', 'outputs': [{'internalType': 'uint160', 'name': 'sqrtPriceX96', 'type': 'uint160'}, {'internalType': 'int24', 'name': 'tick', 'type': 'int24'}, {'internalType': 'uint16', 'name': 'observationIndex', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinality', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinalityNext', 'type': 'uint16'}, {'internalType': 'uint8', 'name': 'feeProtocol', 'type': 'uint8'}, {'internalType': 'bool', 'name': 'unlocked', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'liquidity', 'outputs': [{'internalType': 'uint128', 'name': '', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'fee', 'outputs': [{'internalType': 'uint24', 'name': '', 'type': 'uint24'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token0', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token1', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
-    return (_POOL_ABI, _cross_chain_compat_params, _intent_function_from_state, _run_coro)
-_POOL_ABI, _cross_chain_compat_params, _intent_function_from_state, _run_coro = _dr9()
-_FACTORY_ABI = [{'inputs': [{'internalType': 'address', 'name': 'tokenA', 'type': 'address'}, {'internalType': 'address', 'name': 'tokenB', 'type': 'address'}, {'internalType': 'uint24', 'name': 'fee', 'type': 'uint24'}], 'name': 'getPool', 'outputs': [{'internalType': 'address', 'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
-_FACTORY_ADDRESSES = {1: '0x1F98431c8aD98523631AE4a59f267346ea31F984', 8453: '0x33128a8fC17869897dcE68Ed026d694621f6FDfD', 964: '0x20d0CdF9004bF56bCA52A25C9288AAD0eBB97D59'}
+            def _bh99():
 
-def _dr1():
+                def _bh2():
+                    return pool.submit(asyncio.run, coro).result()
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                    return _bh2()
+            if loop is not None and loop.is_running():
+                return _bh99()
+            else:
+                return _bh3()
+        _POOL_ABI = [{'inputs': [], 'name': 'slot0', 'outputs': [{'internalType': 'uint160', 'name': 'sqrtPriceX96', 'type': 'uint160'}, {'internalType': 'int24', 'name': 'tick', 'type': 'int24'}, {'internalType': 'uint16', 'name': 'observationIndex', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinality', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinalityNext', 'type': 'uint16'}, {'internalType': 'uint8', 'name': 'feeProtocol', 'type': 'uint8'}, {'internalType': 'bool', 'name': 'unlocked', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'liquidity', 'outputs': [{'internalType': 'uint128', 'name': '', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'fee', 'outputs': [{'internalType': 'uint24', 'name': '', 'type': 'uint24'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token0', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token1', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
+        return (_POOL_ABI, _cross_chain_compat_params, _intent_function_from_state, _run_coro)
+    _POOL_ABI, _cross_chain_compat_params, _intent_function_from_state, _run_coro = _dr9()
+    _FACTORY_ABI = [{'inputs': [{'internalType': 'address', 'name': 'tokenA', 'type': 'address'}, {'internalType': 'address', 'name': 'tokenB', 'type': 'address'}, {'internalType': 'uint24', 'name': 'fee', 'type': 'uint24'}], 'name': 'getPool', 'outputs': [{'internalType': 'address', 'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
+    _FACTORY_ADDRESSES = {1: '0x1F98431c8aD98523631AE4a59f267346ea31F984', 8453: '0x33128a8fC17869897dcE68Ed026d694621f6FDfD', 964: '0x20d0CdF9004bF56bCA52A25C9288AAD0eBB97D59'}
 
-    def _bh4():
-        _FACTORY_ADDRESSES[31337] = _FACTORY_ADDRESSES[1]
-        _FEE_TIERS = [100, 500, 3000, 10000]
-        _ZERO_ADDRESS = '0x' + '0' * 40
-        _KNOWN_POOLS = {1: ['0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8', '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640', '0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36', '0xCBCdF9626bC03E24f779434178A73a0B4bad62eD', '0x6c6Bc977E13Df9b0de53b251522280BB72383700', '0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8'], 8453: ['0xd0b53D9277642d899DF5C87A3966A349A798F224'], 964: ['0x6647dcbeb030dc8E227D8B1A2Cb6A49F3C887E3c']}
-        _KNOWN_POOLS[31337] = list(_KNOWN_POOLS[1])
-        return (_FEE_TIERS, _KNOWN_POOLS, _ZERO_ADDRESS)
-    _FEE_TIERS, _KNOWN_POOLS, _ZERO_ADDRESS = _bh4()
+    def _dr1():
 
-    def _bh5():
-        _DISCOVERY_SEED_TOKENS = {8453: ['0x4200000000000000000000000000000000000006', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb', '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', '0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22', '0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452', '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA', '0x78a087d713Be963Bf307b18F2Ff8122EF9A63ae9', '0x0578d8A44db98B23BF096A382e016e29a5Ce0ffe', '0x532f27101965dd16442E59d40670FaF5eBB142E4', '0x940181a94A35A4569E4529A3CDfB74e38FD98631', '0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c', '0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A', '0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b', '0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b', '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44', '0xdC46C1E93B71fF9209A0F8076a9951569DC35855'], 1: ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0xdAC17F958D2ee523a2206206994597C13D831ec7', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', '0x6B175474E89094C44Da98b954EedeAC495271d0F', '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44'], 964: ['0x9Dc08C6e2BF0F1eeD1E00670f80Df39145529F81', '0xB833E8137FEDf80de7E908dc6fea43a029142F20']}
-        _DISCOVERY_SEED_TOKENS[31337] = list(_DISCOVERY_SEED_TOKENS.get(1, []))
-        _TOKEN_SYMBOLS = {'0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': 'WETH', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': 'USDC', '0xdac17f958d2ee523a2206206994597c13d831ec7': 'USDT', '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599': 'WBTC', '0x6b175474e89094c44da98b954eedeac495271d0f': 'DAI', '0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44': 'wTAO', '0x9dc08c6e2bf0f1eed1e00670f80df39145529f81': 'WTAO', '0xb833e8137fedf80de7e908dc6fea43a029142f20': 'USDC'}
-        return (_DISCOVERY_SEED_TOKENS, _TOKEN_SYMBOLS)
-    _DISCOVERY_SEED_TOKENS, _TOKEN_SYMBOLS = _bh5()
-    return (_DISCOVERY_SEED_TOKENS, _FEE_TIERS, _KNOWN_POOLS, _TOKEN_SYMBOLS, _ZERO_ADDRESS)
-_DISCOVERY_SEED_TOKENS, _FEE_TIERS, _KNOWN_POOLS, _TOKEN_SYMBOLS, _ZERO_ADDRESS = _dr1()
-_GAS_BASE_OVERHEAD = 400000
-_GAS_PER_HOP = 150000
-_FALLBACK_GAS_PRICE_WEI = {1: 25000000000, 8453: 20000000, 42161: 10000000, 10: 10000000, 964: 25000000000, 31337: 1000000000}
-_GENERIC_FALLBACK_GAS_PRICE_WEI = 1000000000
-_PLATFORM_FEE_MARGIN_BPS = 2000
+        def _bh4():
+            _FACTORY_ADDRESSES[31337] = _FACTORY_ADDRESSES[1]
+            _FEE_TIERS = [100, 500, 3000, 10000]
+            _ZERO_ADDRESS = '0x' + '0' * 40
+            _KNOWN_POOLS = {1: ['0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8', '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640', '0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36', '0xCBCdF9626bC03E24f779434178A73a0B4bad62eD', '0x6c6Bc977E13Df9b0de53b251522280BB72383700', '0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8'], 8453: ['0xd0b53D9277642d899DF5C87A3966A349A798F224'], 964: ['0x6647dcbeb030dc8E227D8B1A2Cb6A49F3C887E3c']}
+            _KNOWN_POOLS[31337] = list(_KNOWN_POOLS[1])
+            return (_FEE_TIERS, _KNOWN_POOLS, _ZERO_ADDRESS)
+        _FEE_TIERS, _KNOWN_POOLS, _ZERO_ADDRESS = _bh4()
 
-def _compute_platform_fee_wei(gas_units, gas_price_wei):
-    """Estimate platform fee in native token wei (ETH/TAO).
+        def _bh5():
+            _DISCOVERY_SEED_TOKENS = {8453: ['0x4200000000000000000000000000000000000006', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb', '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', '0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22', '0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452', '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA', '0x78a087d713Be963Bf307b18F2Ff8122EF9A63ae9', '0x0578d8A44db98B23BF096A382e016e29a5Ce0ffe', '0x532f27101965dd16442E59d40670FaF5eBB142E4', '0x940181a94A35A4569E4529A3CDfB74e38FD98631', '0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c', '0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A', '0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b', '0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b', '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44', '0xdC46C1E93B71fF9209A0F8076a9951569DC35855'], 1: ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0xdAC17F958D2ee523a2206206994597C13D831ec7', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', '0x6B175474E89094C44Da98b954EedeAC495271d0F', '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44'], 964: ['0x9Dc08C6e2BF0F1eeD1E00670f80Df39145529F81', '0xB833E8137FEDf80de7E908dc6fea43a029142F20']}
+            _DISCOVERY_SEED_TOKENS[31337] = list(_DISCOVERY_SEED_TOKENS.get(1, []))
+            _TOKEN_SYMBOLS = {'0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': 'WETH', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': 'USDC', '0xdac17f958d2ee523a2206206994597c13d831ec7': 'USDT', '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599': 'WBTC', '0x6b175474e89094c44da98b954eedeac495271d0f': 'DAI', '0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44': 'wTAO', '0x9dc08c6e2bf0f1eed1e00670f80df39145529f81': 'WTAO', '0xb833e8137fedf80de7e908dc6fea43a029142f20': 'USDC'}
+            return (_DISCOVERY_SEED_TOKENS, _TOKEN_SYMBOLS)
+        _DISCOVERY_SEED_TOKENS, _TOKEN_SYMBOLS = _bh5()
+        return (_DISCOVERY_SEED_TOKENS, _FEE_TIERS, _KNOWN_POOLS, _TOKEN_SYMBOLS, _ZERO_ADDRESS)
+    _DISCOVERY_SEED_TOKENS, _FEE_TIERS, _KNOWN_POOLS, _TOKEN_SYMBOLS, _ZERO_ADDRESS = _dr1()
+    _GAS_BASE_OVERHEAD = 400000
+    _GAS_PER_HOP = 150000
+    _FALLBACK_GAS_PRICE_WEI = {1: 25000000000, 8453: 20000000, 42161: 10000000, 10: 10000000, 964: 25000000000, 31337: 1000000000}
+    _GENERIC_FALLBACK_GAS_PRICE_WEI = 1000000000
+    _PLATFORM_FEE_MARGIN_BPS = 2000
+
+    def _compute_platform_fee_wei(gas_units, gas_price_wei):
+        """Estimate platform fee in native token wei (ETH/TAO).
 
     Fee = gas_units * gas_price_wei * (1 + margin).
     The caller is responsible for supplying a live or chain-appropriate
     gas_price_wei — see ``BaselineSwapSolver._get_gas_price_wei``.
     """
-    gas_cost_wei = gas_units * int(gas_price_wei)
-    margin = gas_cost_wei * _PLATFORM_FEE_MARGIN_BPS // 10000
-    return gas_cost_wei + margin
+        gas_cost_wei = gas_units * int(gas_price_wei)
+        margin = gas_cost_wei * _PLATFORM_FEE_MARGIN_BPS // 10000
+        return gas_cost_wei + margin
+    return (BridgeRequest, ChainLeg, CrossChainPlan, WRAPPED_NATIVE_SYMBOL, _DISCOVERY_SEED_TOKENS, _FACTORY_ABI, _FACTORY_ADDRESSES, _FALLBACK_GAS_PRICE_WEI, _FEE_TIERS, _GAS_BASE_OVERHEAD, _GAS_PER_HOP, _GENERIC_FALLBACK_GAS_PRICE_WEI, _KNOWN_POOLS, _POOL_ABI, _TOKEN_SYMBOLS, _ZERO_ADDRESS, _compute_platform_fee_wei, _cross_chain_compat_params, _intent_function_from_state, _kh, _run_coro, _state_params, find_best_pool, logger)
+BridgeRequest, ChainLeg, CrossChainPlan, WRAPPED_NATIVE_SYMBOL, _DISCOVERY_SEED_TOKENS, _FACTORY_ABI, _FACTORY_ADDRESSES, _FALLBACK_GAS_PRICE_WEI, _FEE_TIERS, _GAS_BASE_OVERHEAD, _GAS_PER_HOP, _GENERIC_FALLBACK_GAS_PRICE_WEI, _KNOWN_POOLS, _POOL_ABI, _TOKEN_SYMBOLS, _ZERO_ADDRESS, _compute_platform_fee_wei, _cross_chain_compat_params, _intent_function_from_state, _kh, _run_coro, _state_params, find_best_pool, logger = _dr30()
 
 class _BaselineSwapSolverDR1(IntentSolver):
 
@@ -1508,9 +1512,13 @@ class BaselineSwapSolver(_BaselineSwapSolverDR31):
                 return _t141[1]
         bridge_amount, bridge_requests, bridge_sel, chain_legs, needs_source_swap, recipient, swap_sel = _dr10()
         if needs_source_swap:
-            source_interactions = self._build_source_swap_interactions(intent, state, snapshot, src_chain, input_token, output_token, input_amount, cross_chain_params)
-            chain_legs.append(ChainLeg(chain_id=src_chain, interactions=source_interactions, intent_selector=swap_sel, metadata={'type': 'source_swap'}))
-            bridgeable_token = self._find_bridgeable_token(src_chain, dst_chain, input_token)
+
+            def _dr33():
+                source_interactions = self._build_source_swap_interactions(intent, state, snapshot, src_chain, input_token, output_token, input_amount, cross_chain_params)
+                chain_legs.append(ChainLeg(chain_id=src_chain, interactions=source_interactions, intent_selector=swap_sel, metadata={'type': 'source_swap'}))
+                bridgeable_token = self._find_bridgeable_token(src_chain, dst_chain, input_token)
+                return bridgeable_token
+            bridgeable_token = _dr33()
             if bridgeable_token:
                 bridge_token = bridgeable_token
             bridge_requests.append(BridgeRequest(token=bridge_token, amount=bridge_amount, src_chain_id=src_chain, dst_chain_id=dst_chain, recipient=recipient, purpose=f'bridge {bridge_token[:10]}.. for dest action'))
@@ -1657,25 +1665,31 @@ class BaselineSwapSolver(_BaselineSwapSolverDR31):
         if bridge_quote_a:
             bridged_amount = bridge_quote_a.estimated_output
             bridge_token_out = bridge_quote_a.token_out
-            bridge_fee = bridge_quote_a.fee
-            dst_pool_states = self._get_pool_states(dst_chain, snapshot)
-            self._ensure_pools_for_route(dst_chain, dst_pool_states, bridge_token_out, output_token)
 
-            def _dr5():
-                nonlocal hops, route, route_desc
+            def _dr31():
+                bridge_fee = bridge_quote_a.fee
+                dst_pool_states = self._get_pool_states(dst_chain, snapshot)
+                self._ensure_pools_for_route(dst_chain, dst_pool_states, bridge_token_out, output_token)
 
-                def _bh94():
-                    return QuoteResult(estimated_output=str(bridged_amount), route_summary=f'Cross-chain: bridge {src_chain}→{dst_chain} (direct)', gas_estimate=_GAS_BASE_OVERHEAD * 2, metadata={'cross_chain': True, 'direction': 'bridge_only', 'src_chain': src_chain, 'dst_chain': dst_chain, 'bridge_fee': bridge_fee, 'protocol': 'Hyperlane'}, computed_params={'min_output_amount': str(bridged_amount)})
-                if bridge_token_out.lower() == output_token.lower():
-                    return _bh94()
-                route = find_best_route(dst_pool_states, bridge_token_out, output_token, bridged_amount)
-                if route:
-                    output_amount, route_desc, hops = route
-                    return QuoteResult(estimated_output=str(output_amount), route_summary=f'Cross-chain: bridge {src_chain}→{dst_chain} + {route_desc}', gas_estimate=_GAS_BASE_OVERHEAD * 2 + _GAS_PER_HOP * len(hops), metadata={'cross_chain': True, 'direction': 'bridge_then_swap', 'src_chain': src_chain, 'dst_chain': dst_chain, 'bridge_fee': bridge_fee, 'bridged_amount': bridged_amount, 'hops': len(hops), 'protocol': 'UniswapV3 + Hyperlane'}, computed_params={'min_output_amount': str(output_amount * 99 // 100)})
+                def _dr5():
+                    nonlocal hops, route, route_desc
+
+                    def _bh94():
+                        return QuoteResult(estimated_output=str(bridged_amount), route_summary=f'Cross-chain: bridge {src_chain}→{dst_chain} (direct)', gas_estimate=_GAS_BASE_OVERHEAD * 2, metadata={'cross_chain': True, 'direction': 'bridge_only', 'src_chain': src_chain, 'dst_chain': dst_chain, 'bridge_fee': bridge_fee, 'protocol': 'Hyperlane'}, computed_params={'min_output_amount': str(bridged_amount)})
+                    if bridge_token_out.lower() == output_token.lower():
+                        return _bh94()
+                    route = find_best_route(dst_pool_states, bridge_token_out, output_token, bridged_amount)
+                    if route:
+                        output_amount, route_desc, hops = route
+                        return QuoteResult(estimated_output=str(output_amount), route_summary=f'Cross-chain: bridge {src_chain}→{dst_chain} + {route_desc}', gas_estimate=_GAS_BASE_OVERHEAD * 2 + _GAS_PER_HOP * len(hops), metadata={'cross_chain': True, 'direction': 'bridge_then_swap', 'src_chain': src_chain, 'dst_chain': dst_chain, 'bridge_fee': bridge_fee, 'bridged_amount': bridged_amount, 'hops': len(hops), 'protocol': 'UniswapV3 + Hyperlane'}, computed_params={'min_output_amount': str(output_amount * 99 // 100)})
+                    return _DR_UNSET
+                _dr6 = _dr5()
+                if _dr6 is not _DR_UNSET:
+                    return _dr6
                 return _DR_UNSET
-            _dr6 = _dr5()
-            if _dr6 is not _DR_UNSET:
-                return _dr6
+            _dr32 = _dr31()
+            if _dr32 is not _DR_UNSET:
+                return _dr32
 
         def _dr16():
             nonlocal bridge_quote_b, route

@@ -138,8 +138,12 @@ def find_best_route(pool_states, token_in, token_out, amount_in, intermediaries=
             continue
         _, state2, final_output = hop2
         if final_output > best_output:
-            fee1 = int(state1.get('fee', 3000))
-            fee2 = int(state2.get('fee', 3000))
+
+            def _dr3():
+                fee1 = int(state1.get('fee', 3000))
+                fee2 = int(state2.get('fee', 3000))
+                return (fee1, fee2)
+            fee1, fee2 = _dr3()
             best_output = final_output
             best_description = f'2-hop via {fee1 / 1000000:.2%} + {fee2 / 1000000:.2%} pools'
             best_hops = [{'pool_addr': hop1[0], 'pool_state': state1, 'fee': fee1}, {'pool_addr': hop2[0], 'pool_state': state2, 'fee': fee2}]
