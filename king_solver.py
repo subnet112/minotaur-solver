@@ -31,57 +31,61 @@ from concurrent.futures import ThreadPoolExecutor
 logger = logging.getLogger(__name__)
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'viking-mino-solver')
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '96.0.0')
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
-_BASE = 8453
-_WETH = '0x4200000000000000000000000000000000000006'
-_MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'
-_UNIV2_ROUTER = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
-_VIRTUAL = '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'
-_FRONTIER_ON = os.environ.get('APEX_FRONTIER', '1') == '1'
-_FRONTIER_MARGIN = 1.02
-_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
-_SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
-_SUSHI_V2_ROUTER = '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891'
-_ALIEN_V2_ROUTER = '0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7'
-_PANCAKE_V2_ROUTER = '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'
-_AERO_V2_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
-_AERO_V2_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
-_QS_ALGEBRA_ROUTER = '0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04'
-_QS_ALGEBRA_FACTORY = '0xc5396866754799b9720125b104ae01d935ab9c7b'
-_ZERO_ADDR = '0x0000000000000000000000000000000000000000'
-_FRONTIER_MAJORS = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'}
-_APEX_HOLE_ROUTES = {'0x8189910840771050bf9ed268abfc9c0882137029': ('uni_mav', ('0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f', True)), '0x2ce1340f1d402ae75afeb55003d7491645db1857': ('uni_v2_via', (_VIRTUAL, _UNIV2_ROUTER))}
 
-def _load_dynamic_holes():
-    """Holes the bot's detector confirmed this round (structural, champion can't route,
+def _dr17():
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
+    _BASE = 8453
+    _WETH = '0x4200000000000000000000000000000000000006'
+    _MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'
+    _UNIV2_ROUTER = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
+    _VIRTUAL = '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'
+    _FRONTIER_ON = os.environ.get('APEX_FRONTIER', '1') == '1'
+    _FRONTIER_MARGIN = 1.02
+    _SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
+    _SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
+    _SUSHI_V2_ROUTER = '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891'
+    _ALIEN_V2_ROUTER = '0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7'
+    _PANCAKE_V2_ROUTER = '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'
+    _AERO_V2_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
+    _AERO_V2_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
+    _QS_ALGEBRA_ROUTER = '0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04'
+    _QS_ALGEBRA_FACTORY = '0xc5396866754799b9720125b104ae01d935ab9c7b'
+    _ZERO_ADDR = '0x0000000000000000000000000000000000000000'
+    _FRONTIER_MAJORS = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'}
+    _APEX_HOLE_ROUTES = {'0x8189910840771050bf9ed268abfc9c0882137029': ('uni_mav', ('0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f', True)), '0x2ce1340f1d402ae75afeb55003d7491645db1857': ('uni_v2_via', (_VIRTUAL, _UNIV2_ROUTER))}
+
+    def _load_dynamic_holes():
+        """Holes the bot's detector confirmed this round (structural, champion can't route,
     Uni V3-routable) — baked in via a committed apex_holes.json so the benchmark sees
     them. Format: {"0xtoken": {"kind": "uni_v3"}}. Only kinds we can build are honored.
     """
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_holes.json')
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_holes.json')
 
-    def _bh1():
-        data = _json.load(open(path)) or {}
-        return data
+        def _bh1():
+            data = _json.load(open(path)) or {}
+            return data
 
-    def _bh2():
-        try:
-            data = _bh1()
-        except Exception:
-            return (1, {})
-        out = {}
-        for tok, spec in data.items():
+        def _bh2():
             try:
-                kind = (spec or {}).get('kind', 'uni_v3')
-                if kind == 'uni_v3':
-                    out[str(tok).lower()] = ('uni_v3', None)
+                data = _bh1()
             except Exception:
-                continue
-        return (1, out)
-        return (0, None)
-    _t2 = _bh2()
-    if _t2[0]:
-        return _t2[1]
-_APEX_HOLE_ROUTES.update(_load_dynamic_holes())
+                return (1, {})
+            out = {}
+            for tok, spec in data.items():
+                try:
+                    kind = (spec or {}).get('kind', 'uni_v3')
+                    if kind == 'uni_v3':
+                        out[str(tok).lower()] = ('uni_v3', None)
+                except Exception:
+                    continue
+            return (1, out)
+            return (0, None)
+        _t2 = _bh2()
+        if _t2[0]:
+            return _t2[1]
+    _APEX_HOLE_ROUTES.update(_load_dynamic_holes())
+    return (SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _BASE, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR)
+SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _BASE, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR = _dr17()
 
 class _MX_MinerSolver_0:
 
@@ -708,7 +712,11 @@ class _MX_MinerSolver_1:
         via_weth = _dr15()
         if via_weth:
             with ThreadPoolExecutor(max_workers=6) as ex:
-                fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+
+                def _dr16():
+                    fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+                    return fs
+                fs = _dr16()
                 for fut, f in fs.items():
                     o = fut.result()
                     if o > weth_out:

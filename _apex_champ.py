@@ -340,17 +340,21 @@ class JamesSolver(_MX_JamesSolver_0, KingSolver):
         table = getattr(_km, '_STATIC_EXOTIC_ROUTES', None)
         if table is None:
             return None
-        try:
-            p = self._normalized_swap_params(intent, state)
-        except Exception:
-            p = dict(getattr(state, 'raw_params', {}) or {})
-        tin = str(p.get('input_token', '') or '').lower()
-        tout = str(p.get('output_token', '') or '').lower()
 
-        def _bh18():
-            amt = int(p.get('input_amount', 0) or 0)
-            min_out = int(p.get('min_output_amount', 0) or 0)
-            return (amt, min_out)
+        def _dr10():
+            try:
+                p = self._normalized_swap_params(intent, state)
+            except Exception:
+                p = dict(getattr(state, 'raw_params', {}) or {})
+            tin = str(p.get('input_token', '') or '').lower()
+            tout = str(p.get('output_token', '') or '').lower()
+
+            def _bh18():
+                amt = int(p.get('input_amount', 0) or 0)
+                min_out = int(p.get('min_output_amount', 0) or 0)
+                return (amt, min_out)
+            return (_bh18, tin, tout)
+        _bh18, tin, tout = _dr10()
         try:
             amt, min_out = _bh18()
         except (TypeError, ValueError):
@@ -364,8 +368,12 @@ class JamesSolver(_MX_JamesSolver_0, KingSolver):
         _dr7 = _dr6()
         if _dr7 is not _DR_UNSET:
             return _dr7
-        w3 = self._james_w3()
-        weth_leg = amt if tin == self._JWETH.lower() else self._jq_v3(w3, self._JUSDC, self._JWETH, amt, 500)
+
+        def _dr11():
+            w3 = self._james_w3()
+            weth_leg = amt if tin == self._JWETH.lower() else self._jq_v3(w3, self._JUSDC, self._JWETH, amt, 500)
+            return (w3, weth_leg)
+        w3, weth_leg = _dr11()
         best_out, best_spec = (0, None)
 
         def _dr2():
