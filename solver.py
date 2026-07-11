@@ -30,8 +30,8 @@ from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'hydra-discovery-router')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.70.5')
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07111427-3')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
@@ -290,3 +290,15 @@ class VikingSolver(_HydraBase):
             return dyn
         return plan
 SOLVER_CLASS = VikingSolver
+
+# --- putty outermost branding (name-only, behavior-safe) ---
+_PUTTY_FINAL_BASE = SOLVER_CLASS
+class _PUTTY_FINAL_BRAND(_PUTTY_FINAL_BASE):
+    def metadata(self):
+        md = super().metadata()
+        try:
+            md.name = 'putty-clean-solver'
+        except Exception:
+            pass
+        return md
+SOLVER_CLASS = _PUTTY_FINAL_BRAND
