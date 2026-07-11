@@ -7,6 +7,7 @@ Works with pool_states dicts (from RPC queries or MarketSnapshot) where
 each pool has: token0, token1, fee, sqrtPriceX96, liquidity.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import math
 from typing import Any
 Q96 = 1 << 96
@@ -36,27 +37,35 @@ def compute_v3_output(sqrt_price_x96: int, liquidity: int, amount_in: int, zero_
     if amount_after_fee <= 0:
         return 0
     MAX_SQRT_PRICE_IMPACT = sqrt_price_x96 // 100
-    if zero_for_one:
-        numerator = amount_after_fee * sqrt_price_x96
-        denominator = liquidity * Q96 + amount_after_fee * sqrt_price_x96
-        if denominator <= 0:
-            return 0
-        delta_sqrt_price = numerator * sqrt_price_x96 // denominator
-        if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
-            return 0
-        output = liquidity * delta_sqrt_price // Q96
-    else:
-        delta_sqrt_price = amount_after_fee * Q96 // liquidity
-        if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
-            return 0
-        new_sqrt_price = sqrt_price_x96 + delta_sqrt_price
-        if new_sqrt_price <= 0:
-            return 0
-        output = liquidity * Q96 * delta_sqrt_price // (sqrt_price_x96 * new_sqrt_price)
-    return max(0, output)
 
-def find_best_pool(pool_states: dict[str, dict[str, Any]], token_in: str, token_out: str, amount_in: int) -> tuple[str, dict[str, Any], int] | None:
-    """Find the pool giving the best output for a token pair swap.
+    def _dr4():
+        if zero_for_one:
+            numerator = amount_after_fee * sqrt_price_x96
+            denominator = liquidity * Q96 + amount_after_fee * sqrt_price_x96
+            if denominator <= 0:
+                return 0
+            delta_sqrt_price = numerator * sqrt_price_x96 // denominator
+            if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
+                return 0
+            output = liquidity * delta_sqrt_price // Q96
+        else:
+            delta_sqrt_price = amount_after_fee * Q96 // liquidity
+            if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
+                return 0
+            new_sqrt_price = sqrt_price_x96 + delta_sqrt_price
+            if new_sqrt_price <= 0:
+                return 0
+            output = liquidity * Q96 * delta_sqrt_price // (sqrt_price_x96 * new_sqrt_price)
+        return max(0, output)
+        return _DR_UNSET
+    _dr5 = _dr4()
+    if _dr5 is not _DR_UNSET:
+        return _dr5
+
+def _dr7():
+
+    def find_best_pool(pool_states: dict[str, dict[str, Any]], token_in: str, token_out: str, amount_in: int) -> tuple[str, dict[str, Any], int] | None:
+        """Find the pool giving the best output for a token pair swap.
 
     Scans pool_states for pools matching the token pair (checking both
     token0/token1 orderings), computes output for each, returns the best.
@@ -72,77 +81,92 @@ def find_best_pool(pool_states: dict[str, dict[str, Any]], token_in: str, token_
         (pool_addr, pool_state, output_amount) for the best pool,
         or None if no matching pool found.
     """
-    token_in_lower = token_in.lower()
-    token_out_lower = token_out.lower()
-    best: tuple[str, dict[str, Any], int] | None = None
-
-    def _dr2():
-        nonlocal liquidity, pool, pool_addr, zero_for_one
-        candidates: list[tuple[str, dict[str, Any], int, bool, int]] = []
-        max_liquidity = 0
-        for pool_addr, pool in pool_states.items():
-            t0 = pool.get('token0', '').lower()
-            t1 = pool.get('token1', '').lower()
-            if t0 == token_in_lower and t1 == token_out_lower:
-                zero_for_one = True
-            elif t0 == token_out_lower and t1 == token_in_lower:
-                zero_for_one = False
-            else:
-                continue
-            liquidity = int(pool.get('liquidity', 0))
-            max_liquidity = max(max_liquidity, liquidity)
-            candidates.append((pool_addr, pool, liquidity, zero_for_one, int(pool.get('fee', 3000))))
-        min_liquidity = max_liquidity // 20
-        return (candidates, min_liquidity)
-    candidates, min_liquidity = _dr2()
-    for pool_addr, pool, liquidity, zero_for_one, fee in candidates:
-        if liquidity < min_liquidity:
-            continue
-        sqrt_price = int(pool.get('sqrtPriceX96', 0))
-        output = compute_v3_output(sqrt_price, liquidity, amount_in, zero_for_one, fee)
-        if output > 0 and (best is None or output > best[2]):
-            best = (pool_addr, pool, output)
-    return best
-
-def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token_out: str, amount_in: int, intermediaries: list[str] | None=None) -> tuple[int, str, list[dict[str, Any]]] | None:
-
-    def _dr1():
-        nonlocal best_description, best_hops, best_output, intermediaries
-        "Find the best route for a swap, including multi-hop paths.\n\n    Tries direct pools first, then two-hop routes through common\n    intermediary tokens (WETH, USDC by default).\n\n    Args:\n        pool_states: Pool states keyed by pool address (from RPC queries\n            or MarketSnapshot).\n        token_in: Input token address.\n        token_out: Output token address.\n        amount_in: Input amount in smallest unit.\n        intermediaries: Addresses to try as intermediate hops. These MUST be\n            chain-appropriate (e.g. the chain's WETH/USDC) — the caller is\n            responsible for resolving them per chain. When omitted, only\n            direct pools are considered (no multi-hop). A mainnet default here\n            would silently break multi-hop on every other chain.\n\n    Returns:\n        (output_amount, route_description, hops) or None.\n        Each hop is a dict with pool_addr, pool_state, fee, zero_for_one.\n    "
-        if intermediaries is None:
-            intermediaries = []
         token_in_lower = token_in.lower()
         token_out_lower = token_out.lower()
-        best_output = 0
-        best_description = ''
-        best_hops = []
-        direct = find_best_pool(pool_states, token_in, token_out, amount_in)
-        if direct is not None:
-            addr, state, output = direct
-            fee = int(state.get('fee', 3000))
-            best_output = output
-            best_description = f'direct via {fee / 1000000:.2%} pool'
-            best_hops = [{'pool_addr': addr, 'pool_state': state, 'fee': fee}]
-        return (token_in_lower, token_out_lower)
-    token_in_lower, token_out_lower = _dr1()
-    for mid in intermediaries:
-        mid_lower = mid.lower()
-        if mid_lower == token_in_lower or mid_lower == token_out_lower:
-            continue
-        hop1 = find_best_pool(pool_states, token_in, mid, amount_in)
-        if hop1 is None:
-            continue
-        _, state1, mid_amount = hop1
-        hop2 = find_best_pool(pool_states, mid, token_out, mid_amount)
-        if hop2 is None:
-            continue
-        _, state2, final_output = hop2
-        if final_output > best_output:
-            fee1 = int(state1.get('fee', 3000))
-            fee2 = int(state2.get('fee', 3000))
-            best_output = final_output
-            best_description = f'2-hop via {fee1 / 1000000:.2%} + {fee2 / 1000000:.2%} pools'
-            best_hops = [{'pool_addr': hop1[0], 'pool_state': state1, 'fee': fee1}, {'pool_addr': hop2[0], 'pool_state': state2, 'fee': fee2}]
-    if best_output <= 0:
-        return None
-    return (best_output, best_description, best_hops)
+        best: tuple[str, dict[str, Any], int] | None = None
+
+        def _dr2():
+            nonlocal liquidity, pool, pool_addr, zero_for_one
+            candidates: list[tuple[str, dict[str, Any], int, bool, int]] = []
+            max_liquidity = 0
+            for pool_addr, pool in pool_states.items():
+                t0 = pool.get('token0', '').lower()
+                t1 = pool.get('token1', '').lower()
+                if t0 == token_in_lower and t1 == token_out_lower:
+                    zero_for_one = True
+                elif t0 == token_out_lower and t1 == token_in_lower:
+                    zero_for_one = False
+                else:
+                    continue
+                liquidity = int(pool.get('liquidity', 0))
+
+                def _dr6():
+                    nonlocal max_liquidity
+                    max_liquidity = max(max_liquidity, liquidity)
+                    candidates.append((pool_addr, pool, liquidity, zero_for_one, int(pool.get('fee', 3000))))
+                _dr6()
+            min_liquidity = max_liquidity // 20
+            return (candidates, min_liquidity)
+        candidates, min_liquidity = _dr2()
+        for pool_addr, pool, liquidity, zero_for_one, fee in candidates:
+            if liquidity < min_liquidity:
+                continue
+            sqrt_price = int(pool.get('sqrtPriceX96', 0))
+            output = compute_v3_output(sqrt_price, liquidity, amount_in, zero_for_one, fee)
+            if output > 0 and (best is None or output > best[2]):
+                best = (pool_addr, pool, output)
+        return best
+
+    def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token_out: str, amount_in: int, intermediaries: list[str] | None=None) -> tuple[int, str, list[dict[str, Any]]] | None:
+        best_output, best_description, best_hops = (0, '', [])
+
+        def _dr1():
+            nonlocal best_description, best_hops, best_output, intermediaries
+            "Find the best route for a swap, including multi-hop paths.\n\n    Tries direct pools first, then two-hop routes through common\n    intermediary tokens (WETH, USDC by default).\n\n    Args:\n        pool_states: Pool states keyed by pool address (from RPC queries\n            or MarketSnapshot).\n        token_in: Input token address.\n        token_out: Output token address.\n        amount_in: Input amount in smallest unit.\n        intermediaries: Addresses to try as intermediate hops. These MUST be\n            chain-appropriate (e.g. the chain's WETH/USDC) — the caller is\n            responsible for resolving them per chain. When omitted, only\n            direct pools are considered (no multi-hop). A mainnet default here\n            would silently break multi-hop on every other chain.\n\n    Returns:\n        (output_amount, route_description, hops) or None.\n        Each hop is a dict with pool_addr, pool_state, fee, zero_for_one.\n    "
+            if intermediaries is None:
+                intermediaries = []
+            token_in_lower = token_in.lower()
+            token_out_lower = token_out.lower()
+            best_output = 0
+            best_description = ''
+            best_hops = []
+            direct = find_best_pool(pool_states, token_in, token_out, amount_in)
+            if direct is not None:
+                addr, state, output = direct
+                fee = int(state.get('fee', 3000))
+                best_output = output
+                best_description = f'direct via {fee / 1000000:.2%} pool'
+                best_hops = [{'pool_addr': addr, 'pool_state': state, 'fee': fee}]
+            return (token_in_lower, token_out_lower)
+        token_in_lower, token_out_lower = _dr1()
+
+        def _fbr_iter(mid):
+            nonlocal best_description, best_hops, best_output
+            mid_lower = mid.lower()
+            if mid_lower == token_in_lower or mid_lower == token_out_lower:
+                return
+            hop1 = find_best_pool(pool_states, token_in, mid, amount_in)
+            if hop1 is None:
+                return
+            _, state1, mid_amount = hop1
+            hop2 = find_best_pool(pool_states, mid, token_out, mid_amount)
+            if hop2 is None:
+                return
+            _, state2, final_output = hop2
+            if final_output > best_output:
+
+                def _dr3():
+                    fee1 = int(state1.get('fee', 3000))
+                    fee2 = int(state2.get('fee', 3000))
+                    return (fee1, fee2)
+                fee1, fee2 = _dr3()
+                best_output = final_output
+                best_description = f'2-hop via {fee1 / 1000000:.2%} + {fee2 / 1000000:.2%} pools'
+                best_hops = [{'pool_addr': hop1[0], 'pool_state': state1, 'fee': fee1}, {'pool_addr': hop2[0], 'pool_state': state2, 'fee': fee2}]
+        for mid in intermediaries:
+            _fbr_iter(mid)
+        if best_output <= 0:
+            return None
+        return (best_output, best_description, best_hops)
+    return (find_best_pool, find_best_route)
+find_best_pool, find_best_route = _dr7()
