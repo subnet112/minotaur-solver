@@ -31,6 +31,21 @@ import logging
 import os
 from champ_top import SOLVER_CLASS as _ChampBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
+import ast as _hw_ast
+from eth_abi import encode as _abi_encode
+from eth_utils import keccak as _keccak
+from eth_utils import to_checksum_address as _ck
+from minotaur_subnet.shared.types import Interaction as _IX
+from common.abi_utils import encode_approve
+from strategies.dex_aggregator import aerodrome as _aero
+import json as _json
+import re as _re
+from eth_abi import decode as _dec
+from eth_abi import encode as _enc
+from king_consts import _PANCAKE_QUOTER
+from king_consts import _UNI_QUOTER
+import json as _pj
+import urllib.request as _pu
 logger = logging.getLogger(__name__)
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '4.0.0-c13')
@@ -42,7 +57,6 @@ def _dr20():
     _WETH = '0x4200000000000000000000000000000000000006'
     _DAI = '0x50c5725949a6f0c72e6c4a641f24049a917db0cb'
     _T00000E = '0x00000e7efa313f4e11bfff432471ed9423ac6b30'
-    import ast as _hw_ast
     _HW_DATA = _hw_ast.literal_eval(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hydra_wrap_data.txt')).read())
     _HYDRA_STATIC_COVERS = _HW_DATA['static_covers']
     _HYDRA_QUALITY_OVERRIDES = _HW_DATA['quality_overrides']
@@ -60,9 +74,6 @@ def _dr20():
     (currency0, currency1, hooks, poolManager, fee, bytes32 parameters).
     Fork-verified 07-07 block 48308270: +93.3% over engine, 175k gas; PoolKey
     field order hash-verified against the Kyber-reported poolId."""
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from minotaur_subnet.shared.types import Interaction as _IX
         c0, c1, hooks, pool_mgr, fee, params_hex = spec['pool']
         pool_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee), bytes.fromhex(params_hex[2:] if params_hex.startswith('0x') else params_hex))
 
@@ -98,11 +109,8 @@ def _dr20():
         the Uniswap Universal Router, then a V4 exact-in leg2 (mid -> tout -> app)
         settled with CONTRACT_BALANCE — both legs open-delta, so no frozen
         intermediate amount (drift-safe push-chaining across two routers)."""
-        from minotaur_subnet.shared.types import Interaction as _IX
 
         def _leg1():
-            from eth_abi import encode as _abi_encode
-            from eth_utils import keccak as _keccak, to_checksum_address as _ck
             c0, c1, hooks, pool_mgr, fee, params_hex = spec['inf_pool']
             inf_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee), bytes.fromhex(params_hex[2:] if params_hex.startswith('0x') else params_hex))
 
@@ -135,8 +143,6 @@ def _dr20():
                 return _t6[1]
 
         def _leg2():
-            from eth_abi import encode as _abi_encode
-            from eth_utils import keccak as _keccak, to_checksum_address as _ck
             v0, v1, vfee, vts, vhooks = spec['v4_pool']
             v4_key = (_ck(v0), _ck(v1), int(vfee), int(vts), _ck(vhooks))
             settle2 = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['mid']), 1 << 255, False])
@@ -158,9 +164,6 @@ def _dr20():
         """Exact-in V3-style swap of the order input, output landing AT the next
     leg's pool/pair (push-chaining — funds must never rest at the app
     mid-plan; the executor can't spend from there)."""
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from minotaur_subnet.shared.types import Interaction as _IX
         mid = spec['mid']
         fee = int(spec['leg1_fee'])
 
@@ -177,15 +180,11 @@ def _dr20():
             call, router = _bh8()
         else:
             call, router = _bh9()
-        from common.abi_utils import encode_approve
         return [_IX(target=tin, value='0', call_data=encode_approve(router, int(amount_in)), chain_id=chain_id), _IX(target=router, value='0', call_data=call, chain_id=chain_id)]
 
     def _build_maverick_push_ix(spec, tin, amount_in, recipient, chain_id):
         """leg1 lands mid AT the Maverick pool, then pool.swap in push mode
     (data=b'' -> pool pays itself from its balance delta) -> app."""
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from minotaur_subnet.shared.types import Interaction as _IX
         ix = _leg1_swap_ix(spec, tin, amount_in, spec['pool'], chain_id)
 
         def _bh10():
@@ -199,9 +198,6 @@ def _dr20():
     execute: SETTLE(mid, CONTRACT_BALANCE, payerIsUser=False) -> swap ->
     TAKE(tout -> app) -> TAKE(mid sweep). Mirrors the engine's aero->UR
     chaining; avoids the UR V3-prefix Permit2/STF path entirely."""
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from minotaur_subnet.shared.types import Interaction as _IX
         ur = '0x6fF5693b99212Da76ad316178A184AB56D299b43'
         ix = _leg1_swap_ix(spec, tin, amount_in, ur, chain_id)
         c0, c1, fee, tick, hooks = spec['pool']
@@ -231,9 +227,6 @@ def _dr20():
     def _build_v2_push_ix(spec, tin, amount_in, recipient, chain_id):
         """leg1 lands mid AT the V2 pair, then pair.swap(fixed out, to=app) —
     push-native; the haircut vs quote absorbs reserve drift."""
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from minotaur_subnet.shared.types import Interaction as _IX
         ix = _leg1_swap_ix(spec, tin, amount_in, spec['pair'], chain_id)
         a0, a1 = (0, int(spec['fixed_out'])) if int(spec['out_index']) == 1 else (int(spec['fixed_out']), 0)
 
@@ -252,10 +245,6 @@ def _dr20():
     encodes the V1 5-field struct (0xc04b8d59), which SwapRouter02 rejects,
     so path routes are built wrapper-locally. Hops chain router-side; only
     the final output lands at the app (EXECUTOR/APP law)."""
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from minotaur_subnet.shared.types import Interaction as _IX
-        from common.abi_utils import encode_approve
         tokens = list(spec['tokens'])
         fees = list(spec['fees'])
         path = b''
@@ -281,9 +270,6 @@ def _dr20():
     from the router's own reserves formula at the plan block, so delivery is
     wei-identical to swapExactTokensForTokens — minus the router-dispatch gas
     (armed GAS_MARGIN_BPS defense)."""
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from minotaur_subnet.shared.types import Interaction as _IX
         transfer = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [_ck(spec['pair']), int(amount_in)])).hex()
         a0, a1 = (0, int(amount_out)) if int(spec['out_index']) == 1 else (int(amount_out), 0)
 
@@ -301,11 +287,6 @@ def _dr20():
     the executor, which CAN spend them — unlike the app), then a canonical
     Slipstream leg2 (mid->tout) sized to exactly the same-block leg1 quote,
     output -> the app."""
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from minotaur_subnet.shared.types import Interaction as _IX
-        from common.abi_utils import encode_approve
-        from strategies.dex_aggregator import aerodrome as _aero
         leg1 = '0x' + (_keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4] + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['leg1_fee']), '0x0000000000000000000000000000000000000001', int(amount_in), 0, 0)])).hex()
         slip_router = _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
         leg2 = _aero.encode_exact_input_single(token_in=spec['mid'], token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=recipient, deadline=9999999999, amount_in=int(mid_amount), amount_out_minimum=0)
@@ -338,7 +319,6 @@ def _load_replay():
     93-order corpus, e29718949/55) by making the whole KNOWN corpus free.
     Regenerated in the lab after every absorption; loader is inert when the
     JSON is absent."""
-    import json as _json
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hydra_replay.json')
 
     def _bh20():
@@ -377,7 +357,6 @@ def _load_census():
     not in any champion table). Token-keyed POST-engine fallback — fires only
     when the champion-identical stack returns nothing, so it is win-or-skip on
     future plant orders by construction."""
-    import json as _json
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hydra_census.json')
 
     def _bh22():
@@ -387,7 +366,6 @@ def _load_census():
         raw = _bh22()
     except Exception:
         return {}
-    import re as _re
     baked = set()
     here = os.path.dirname(os.path.abspath(__file__))
     for fn in ('james_base.py', 'king_solver.py', 'king_base.py', '_apex_champ.py', 'apex_routes.json'):
@@ -525,7 +503,6 @@ class MinerSolver(_ChampBase):
             chain_id, ix = _bh29()
             if ix and chain_id == 8453:
                 from minotaur_subnet.shared.types import ExecutionPlan as _EP
-                from minotaur_subnet.shared.types import Interaction as _IX
                 logger.info('[hydra] flake pre-empt %s->%s amt=%s (%d ix)', qkey[0][:8], qkey[1][:8], qkey[2], len(ix))
                 return _EP(intent_id=intent.app_id, interactions=[_IX(target=i['target'], value=str(i.get('value', '0') or '0'), call_data=i['data'], chain_id=8453) for i in ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-flake-preempt', 'chain_id': 8453})
         return None
@@ -689,10 +666,6 @@ class MinerSolver(_ChampBase):
         """Same-block QuoterV2 quote of a push route's leg1 (uni/pancake V3
         exact-in). Deterministic vs execution at the same block — the quoter
         simulates the identical swap the router performs."""
-        from eth_abi import decode as _dec
-        from eth_abi import encode as _enc
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from king_consts import _PANCAKE_QUOTER, _UNI_QUOTER
         w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return None
@@ -729,8 +702,6 @@ class MinerSolver(_ChampBase):
         """Same-block pair.getReserves -> the V2 router's own amountOut
         formula (fee_num/fee_den): wei-identical to what
         swapExactTokensForTokens would deliver at this block."""
-        from eth_abi import decode as _dec
-        from eth_utils import to_checksum_address as _ck
         w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return None
@@ -795,7 +766,6 @@ class MinerSolver(_ChampBase):
                 chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                 if ix and chain_id == 8453 and _hydra_frozen_ok(state):
                     from minotaur_subnet.shared.types import ExecutionPlan as _EP
-                    from minotaur_subnet.shared.types import Interaction as _IX
                     rplan = _EP(intent_id=intent.app_id, interactions=[_IX(target=i['target'], value=str(i.get('value', '0') or '0'), call_data=i['data'], chain_id=8453) for i in ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-replay', 'chain_id': 8453})
                     logger.info('[hydra] replay serve %s->%s amt=%s (%d ix)', rkey[0][:8], rkey[1][:8], rkey[2], len(ix))
                     return rplan
@@ -849,9 +819,7 @@ class MinerSolver(_ChampBase):
         """Zero-RPC Ethereum-mainnet plan: approve + Uniswap V3 exactInput
         single-hop (or 2-hop via WETH) on the deepest fee tiers. Covers the
         fixed screening scenarios (swap + limit_order shapes) instantly."""
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
-        from minotaur_subnet.shared.types import ExecutionPlan as _EP, Interaction as _IX
+        from minotaur_subnet.shared.types import ExecutionPlan as _EP
         p = self._normalized_swap_params(intent, state)
         tin = str(p.get('input_token', '') or '').lower()
         tout = str(p.get('output_token', '') or '').lower()
@@ -1032,8 +1000,6 @@ try:
         _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr6()
 
         def _putty_eth_call(to, data_hex):
-            import json as _pj
-            import urllib.request as _pu
             url = _PUTTY_RPC.get('url')
             if not url:
                 raise RuntimeError('putty: no rpc url captured')

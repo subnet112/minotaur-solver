@@ -15,6 +15,14 @@ import importlib.util
 import logging
 from pathlib import Path
 from king_solver import MinerSolver as KingSolver
+import time as _t
+import king_solver as _km
+import os
+from web3 import Web3
+from eth_abi import encode as _enc
+from eth_utils import keccak as _kk
+from eth_utils import to_checksum_address as _ck
+from eth_abi import decode as _dec
 try:
     from king_solver import SOLVER_VERSION as KING_VERSION
 except Exception:
@@ -66,14 +74,12 @@ class _MX_JamesSolver_0:
     def _behind_pace(self):
         if not getattr(self, '_bm_t0', None) or not getattr(self, '_bm_total', 0):
             return False
-        import time as _t
         elapsed = _t.monotonic() - self._bm_t0
         remaining_orders = max(1, self._bm_total - self._bm_done)
         remaining_time = self._RUN_BUDGET_S - elapsed
         return remaining_time / remaining_orders < self._FAST_BELOW_S
 
     def _james_hooks(self):
-        import king_solver as _km
         hooks = []
         for name in ('_CLANKER_HOOK', '_HOOK_BDF9', '_HOOK_BEAM_FLAUNCH', '_HOOK_AVC_DOPPLER', '_HOOK_ZORA_CREATOR', '_ZORA_HOOK'):
 
@@ -95,23 +101,17 @@ class _MX_JamesSolver_0:
         w3 = getattr(self, '_james_w3_cached', None)
         if w3 is not None:
             return w3
-        import os
-        from web3 import Web3
         url = (getattr(self, 'rpc_urls', {}) or {}).get('8453') or (getattr(self, 'rpc_urls', {}) or {}).get(8453) or os.environ.get('BASE_RPC_URL', 'https://mainnet.base.org')
         w3 = Web3(Web3.HTTPProvider(url, request_kwargs={'timeout': 4}))
         self._james_w3_cached = w3
         return w3
 
     def _jq_v3(self, w3, tin, tout, amt, fee):
-        from eth_abi import encode as _enc
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         sel = _kk(b'quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
         r = self._james_call(w3, self._JV3_QUOTER, sel + _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), amt, fee, 0)]))
         return int.from_bytes(r[:32], 'big') if r else 0
 
     def _jq_v2(self, w3, router, path, amt):
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         sel = _kk(b'getAmountsOut(uint256,address[])')[:4]
         r = self._james_call(w3, router, sel + _enc(['uint256', 'address[]'], [amt, [_ck(p) for p in path]]))
         if not r:
@@ -125,8 +125,6 @@ class _MX_JamesSolver_0:
             return 0
 
     def _jq_aero(self, w3, pairs, amt):
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         sel = _kk(b'getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
         routes = [(_ck(a), _ck(b), False, _ck(self._JAERO_FACTORY)) for a, b in pairs]
         r = self._james_call(w3, self._JAERO_ROUTER, sel + _enc(['uint256', '(address,address,bool,address)[]'], [amt, routes]))
@@ -141,8 +139,6 @@ class _MX_JamesSolver_0:
             return 0
 
     def _jq_v4(self, w3, tin, tout, amt, fee, tick, hook):
-        from eth_abi import encode as _enc
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         c0, c1 = (tin, tout) if int(tin, 16) < int(tout, 16) else (tout, tin)
         sel = _kk(b'quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4]
 
@@ -203,7 +199,6 @@ class JamesSolver(_MX_JamesSolver_0, KingSolver):
             super().on_benchmark_start(intent_count)
         except Exception:
             pass
-        import time as _t
         self._bm_t0 = _t.monotonic()
         self._bm_total = int(intent_count or 0)
         self._bm_done = 0
@@ -244,7 +239,6 @@ class JamesSolver(_MX_JamesSolver_0, KingSolver):
             self._bm_done = getattr(self, '_bm_done', 0) + 1
             self._dyn_order_budget = None
             if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
-                import time as _t
                 remaining_time = self._RUN_BUDGET_S - (_t.monotonic() - self._bm_t0)
                 remaining_orders = max(1, self._bm_total - self._bm_done + 1)
                 self._dyn_order_budget = max(4.0, remaining_time / remaining_orders)
@@ -334,7 +328,6 @@ class JamesSolver(_MX_JamesSolver_0, KingSolver):
     @staticmethod
     def _james_call(w3, to, data):
         try:
-            from eth_utils import to_checksum_address as _ck
             return w3.eth.call({'to': _ck(to), 'data': data})
         except Exception:
             return None
@@ -344,7 +337,6 @@ class JamesSolver(_MX_JamesSolver_0, KingSolver):
         override via table injection only when strictly better by margin."""
         if self._behind_pace():
             return None
-        import king_solver as _km
         table = getattr(_km, '_STATIC_EXOTIC_ROUTES', None)
         if table is None:
             return None

@@ -29,6 +29,8 @@ import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+import json as _json
+import calendar as _cal
 logger = logging.getLogger(__name__)
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'hydra-discovery-router')
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.70.5')
@@ -43,7 +45,6 @@ def _viking_override():
     reverts to 0 = the tie we already had. Ships empty at re-fork."""
     global _VIKING_OVERRIDE_CACHE
     if _VIKING_OVERRIDE_CACHE is None:
-        import json as _json
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_override.json')
 
         def _bh1():
@@ -64,7 +65,6 @@ def _viking_cached_bar(key):
     against. None when unknown/null. Snapshot rebuilt on each bank refresh."""
     global _VIKING_CACHED_BARS
     if _VIKING_CACHED_BARS is None:
-        import json as _json
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_cached.json')
         bars = {}
 
@@ -97,7 +97,6 @@ def _viking_frozen_index():
     construction — those are never overridden."""
     global _VIKING_FROZEN_INDEX
     if _VIKING_FROZEN_INDEX is None:
-        import json as _json
         idx = {}
         here = os.path.dirname(os.path.abspath(__file__))
         for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
@@ -123,8 +122,6 @@ def _viking_replay():
     layer (never raises)."""
     global _VIKING_REPLAY_CACHE
     if _VIKING_REPLAY_CACHE is None:
-        import json as _json
-        import calendar as _cal
         import time as _time
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_replay.json')
         out = {}

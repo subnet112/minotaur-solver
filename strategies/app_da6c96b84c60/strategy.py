@@ -18,6 +18,7 @@ from minotaur_subnet.shared.types import AppIntentDefinition, ExecutionPlan, Int
 from minotaur_subnet.sdk.intent_solver import MarketSnapshot
 from minotaur_subnet.sdk.strategy import Strategy
 from minotaur_subnet.sdk.selectors import APPROVE_SELECTOR, EXACT_INPUT_SINGLE_SELECTOR_V2, EXACT_INPUT_SELECTOR, SWAP_ROUTER_V2_CHAINS
+from minotaur_subnet.sdk.selectors import EXACT_INPUT_SINGLE_SELECTOR_V1
 APP_CONTRACT_ADDRESS = '0x0CDe9A7E60A0DF4B86c81490D0496ab3A8E104f1'
 SWAP_ROUTER02_BASE = '0x2626664c2603336E57B271c5C0b26F421741e481'
 UNISWAP_V3_FACTORY_BASE = '0x33128a8fC17869897dcE68Ed026d694621f6FDfD'
@@ -181,20 +182,27 @@ class DexAggregatorStrategy(Strategy):
                 deadline_param = int(time.time()) + 300
                 swap_calldata = _encode_exact_input_v1(path=multihop_path, recipient=APP_CONTRACT_ADDRESS, deadline=deadline_param, amount_in=input_amount, amount_out_minimum=amount_out_minimum)
                 return swap_calldata
-            if multihop_path is not None:
-                swap_calldata = _bh7()
-            else:
+
+            def _bh13():
 
                 def _bh6():
                     swap_calldata = _encode_exact_input_single_v2(token_in=input_token, token_out=output_token, fee=fee, recipient=APP_CONTRACT_ADDRESS, amount_in=input_amount, amount_out_minimum=amount_out_minimum, sqrt_price_limit_x96=0)
                     return swap_calldata
-                if chain_id in SWAP_ROUTER_V2_CHAINS:
-                    swap_calldata = _bh6()
-                else:
-                    from minotaur_subnet.sdk.selectors import EXACT_INPUT_SINGLE_SELECTOR_V1
+
+                def _bh12():
                     deadline_param = int(time.time()) + 300
                     encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(input_token, output_token, fee, APP_CONTRACT_ADDRESS, deadline_param, input_amount, amount_out_minimum, 0)])
                     swap_calldata = '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex()
+                    return swap_calldata
+                if chain_id in SWAP_ROUTER_V2_CHAINS:
+                    swap_calldata = _bh6()
+                else:
+                    swap_calldata = _bh12()
+                return swap_calldata
+            if multihop_path is not None:
+                swap_calldata = _bh7()
+            else:
+                swap_calldata = _bh13()
 
             def _bh8():
                 interactions = [Interaction(target=input_token, value='0', call_data=approve_calldata, chain_id=chain_id), Interaction(target=SWAP_ROUTER02_BASE, value='0', call_data=swap_calldata, chain_id=chain_id)]
@@ -219,7 +227,13 @@ class DexAggregatorStrategy(Strategy):
                 deadline = _bh9()
             return (1, ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce))
             return (0, None)
-        _t11 = _bh11(deadline)
-        if _t11[0]:
-            return _t11[1]
+
+        def _bh14():
+            _t11 = _bh11(deadline)
+            if _t11[0]:
+                return (1, _t11[1])
+            return (0, None)
+        _t14 = _bh14()
+        if _t14[0]:
+            return _t14[1]
 STRATEGY_CLASS = DexAggregatorStrategy

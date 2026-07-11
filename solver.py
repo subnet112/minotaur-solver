@@ -12,17 +12,26 @@ Re-fork onto a new champion = copy its solver.py to king_base.py. This file is
 fixed (no re-editing the champion's evolving code) — that's the whole point.
 """
 from __future__ import annotations
-_DR_UNSET = object()
 import logging
 import os
 import time
 from _apex_incumbent import SOLVER_CLASS as _Base
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+import json as _json
+from eth_utils import to_checksum_address as _ck
+from eth_abi import encode as _enc
+from strategies.dex_aggregator.v3_codec import encode_swap_path
+from eth_abi import decode as _dec
+from common.abi_utils import encode_approve
+from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+from eth_utils import keccak as _kk
+from concurrent.futures import ThreadPoolExecutor
 logger = logging.getLogger(__name__)
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07111753-0')
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'zenith-dev')
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'delta-dex-router')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.5.1')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'dkravets')
 _BASE = 8453
 _WETH = '0x4200000000000000000000000000000000000006'
 _MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'
@@ -54,7 +63,6 @@ def _load_dynamic_holes():
     Uni V3-routable) — baked in via a committed apex_holes.json so the benchmark sees
     them. Format: {"0xtoken": {"kind": "uni_v3"}}. Only kinds we can build are honored.
     """
-    import json as _json
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_holes.json')
 
     def _bh1():
@@ -83,7 +91,6 @@ _APEX_HOLE_ROUTES.update(_load_dynamic_holes())
 _ROUTE_TABLE_ON = os.environ.get('APEX_ROUTES', '1') == '1'
 
 def _load_route_table():
-    import json as _json
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_routes.json')
 
     def _bh3():
@@ -115,8 +122,6 @@ class _MX_MinerSolver_0:
     def _apex_alpha_output(self, w3, spec, tin, tout, amount_in):
         """Actual delivered output of the harvested route at the current block — used by the
         ALPHA gate to confirm we still beat the champion before overriding it."""
-        from eth_utils import to_checksum_address as _ck
-        from eth_abi import encode as _enc
         kind = spec.get('kind')
 
         def _bh18():
@@ -153,16 +158,20 @@ class _MX_MinerSolver_0:
             tot = 0
             for leg in legs:
 
-                def _bh23(tot):
-                    la = int(amount_in) * int(leg.get('frac', 0) or 0) // 10000
+                def _bh108(tot):
 
-                    def _bh22(tot):
-                        tot += int(self._apex_alpha_output(w3, leg, tin, tout, la) or 0)
-                        return tot
-                    if la > 0:
-                        tot = _bh22(tot)
+                    def _bh23(tot):
+                        la = int(amount_in) * int(leg.get('frac', 0) or 0) // 10000
+
+                        def _bh22(tot):
+                            tot += int(self._apex_alpha_output(w3, leg, tin, tout, la) or 0)
+                            return tot
+                        if la > 0:
+                            tot = _bh22(tot)
+                        return (la, tot)
+                    la, tot = _bh23(tot)
                     return (la, tot)
-                la, tot = _bh23(tot)
+                la, tot = _bh108(tot)
             return tot
         if kind == 'split':
             return _bh24()
@@ -173,33 +182,44 @@ class _MX_MinerSolver_0:
         (route will deliver ~champion). 0/raise => stale/gone => caller defers to base, so
         a drained pool can never turn into a regression. Much lighter than the base's
         10-venue enumeration (one call), so it stays inside budget."""
-        try:
-            from eth_utils import to_checksum_address as _ck
+
+        def _bh109():
             kind = spec.get('kind')
 
             def pad(a):
                 return a.lower().replace('0x', '').rjust(64, '0')
             if kind == 'verbatim':
-                return 1
+                return (1, 1)
             if kind in ('univ3_single', 'pancake_v3', 'split'):
-                return 1
-            if kind == 'univ3_path':
-                from strategies.dex_aggregator.v3_codec import encode_swap_path
-                from eth_abi import encode as _enc
+                return (1, 1)
+
+            def _bh110():
                 QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
                 path = encode_swap_path(list(spec['tokens']), [int(f) for f in spec['fees']])
                 d = '0xcdca1753' + _enc(['bytes', 'uint256'], [path, int(amount_in)]).hex()
                 r = w3.eth.call({'to': _ck(QUOTER), 'data': d})
-                return int(r[:32].hex(), 16) if r else 0
-            if kind == 'aero_v2':
-                from eth_abi import encode as _enc, decode as _dec
+                return (1, int(r[:32].hex(), 16) if r else 0)
+            if kind == 'univ3_path':
+                return _bh110()
+
+            def _bh112():
                 routes = [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in spec['routes']]
                 d = '0x5509a1ac' + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), routes]).hex()
                 r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': d})
+
+                def _bh111():
+                    return (1, int(_dec(['uint256[]'], bytes(r))[0][-1]))
                 try:
-                    return int(_dec(['uint256[]'], bytes(r))[0][-1])
+                    return _bh111()
                 except Exception:
-                    return 0
+                    return (1, 0)
+            if kind == 'aero_v2':
+                return _bh112()
+            return (0, None)
+        try:
+            _t109 = _bh109()
+            if _t109[0]:
+                return _t109[1]
         except Exception:
             return 0
         return 0
@@ -211,29 +231,50 @@ class _MX_MinerSolver_0:
         it, so approving Augustus `to` reverts "exceeds allowance" (2026-07-10 fix). Amount-EXACT (the
         calldata encodes srcAmount) -> defer if the order's amount differs, so a stale/mismatched route
         can never fire. Returns None on any problem (caller falls to base)."""
+
+        def _bh113():
+
+            def _bh114():
+                tin = str(params.get('input_token', '') or '')
+                raw_amt = int(params.get('input_amount', 0) or 0)
+                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                if chain_id != _BASE or raw_amt <= 0 or (not tin):
+                    return (1, None)
+                if int(spec.get('amt', 0) or 0) != raw_amt:
+                    return (1, None)
+                to = str(spec.get('to', '') or '')
+                return (0, (chain_id, raw_amt, tin, to))
+            _t114 = _bh114()
+            if _t114[0]:
+                return _t114[1]
+            chain_id, raw_amt, tin, to = _t114[1]
+
+            def _bh115():
+                spender = str(spec.get('spender', '') or to)
+                cd = str(spec.get('calldata', '') or '')
+                if not to or not cd:
+                    return (1, None)
+                recipient = self._apex_recipient(state, params)
+                ph = str(spec.get('recip', '') or '').lower().replace('0x', '')
+                new = str(recipient).lower().replace('0x', '')
+                body = (cd[2:] if cd.startswith('0x') else cd).lower()
+                return (0, (body, new, ph, spender))
+            _t115 = _bh115()
+            if _t115[0]:
+                return _t115[1]
+            body, new, ph, spender = _t115[1]
+
+            def _bh116(body):
+                if ph and len(ph) == 40 and (len(new) == 40) and (ph in body):
+                    body = body.replace(ph, new)
+                ix = [Interaction(target=tin, value='0', call_data=encode_approve(_ck(spender), int(raw_amt)), chain_id=chain_id), Interaction(target=to, value='0', call_data='0x' + body, chain_id=chain_id)]
+                return (1, ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=self._apex_deadline(snapshot), nonce=state.nonce, metadata={'solver': 'apex-route-agg', 'chain_id': chain_id}))
+                return (0, None)
+            _t116 = _bh116(body)
+            if _t116[0]:
+                return _t116[1]
         try:
-            from common.abi_utils import encode_approve
-            from eth_utils import to_checksum_address as _ck
-            tin = str(params.get('input_token', '') or '')
-            raw_amt = int(params.get('input_amount', 0) or 0)
-            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-            if chain_id != _BASE or raw_amt <= 0 or (not tin):
-                return None
-            if int(spec.get('amt', 0) or 0) != raw_amt:
-                return None
-            to = str(spec.get('to', '') or '')
-            spender = str(spec.get('spender', '') or to)
-            cd = str(spec.get('calldata', '') or '')
-            if not to or not cd:
-                return None
-            recipient = self._apex_recipient(state, params)
-            ph = str(spec.get('recip', '') or '').lower().replace('0x', '')
-            new = str(recipient).lower().replace('0x', '')
-            body = (cd[2:] if cd.startswith('0x') else cd).lower()
-            if ph and len(ph) == 40 and (len(new) == 40) and (ph in body):
-                body = body.replace(ph, new)
-            ix = [Interaction(target=tin, value='0', call_data=encode_approve(_ck(spender), int(raw_amt)), chain_id=chain_id), Interaction(target=to, value='0', call_data='0x' + body, chain_id=chain_id)]
-            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=self._apex_deadline(snapshot), nonce=state.nonce, metadata={'solver': 'apex-route-agg', 'chain_id': chain_id})
+            return _bh113()
         except Exception:
             logger.exception('[apex] agg plan build failed')
             return None
@@ -302,10 +343,16 @@ class _MX_MinerSolver_0:
                 return (0, None)
 
             def _bh32():
-                if baked_out > base_out * _AGG_GATE_BUFFER:
+
+                def _bh117():
                     _t28 = _bh28()
                     if _t28[0]:
-                        return (1, _t28[1])
+                        return (1, (1, _t28[1]))
+                    return (0, None)
+                if baked_out > base_out * _AGG_GATE_BUFFER:
+                    _t117 = _bh117()
+                    if _t117[0]:
+                        return _t117[1]
                 return (1, None)
                 return (0, None)
             _t32 = _bh32()
@@ -322,245 +369,299 @@ class _MX_MinerSolver_0:
         gated by ONE liveness quote so a drained pool defers to the base (never a
         regression). Supports univ3_single / univ3_path / aero_v2. Returns None on any
         problem so the caller falls back to the base (never worse than the current drop)."""
-        try:
-            from common.abi_utils import encode_approve
 
-            def _dr10():
+        def _bh118():
+
+            def _bh143():
                 tin = str(params.get('input_token', '') or '')
                 tout = str(params.get('output_token', '') or '')
                 amount_in = int(params.get('input_amount', 0) or 0)
                 amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
                 chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                return (amount_in, chain_id, tin, tout)
-            amount_in, chain_id, tin, tout = _dr10()
-            if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
-                return None
-            w3 = None
+                if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
+                    return (1, None)
+                w3 = None
+                return (0, (amount_in, chain_id, tin, tout, w3))
+            _t143 = _bh143()
+            if _t143[0]:
+                return _t143[1]
+            amount_in, chain_id, tin, tout, w3 = _t143[1]
 
-            def _dr6():
-                nonlocal out, w3
-                try:
-                    w3 = self._get_web3(int(chain_id))
-                except Exception:
-                    w3 = None
-                if w3 is not None:
-                    if require_live and self._apex_route_quote(w3, spec, tin, tout, amount_in) <= 0:
-                        return None
-                    if spec.get('_alpha'):
-                        champ = int(spec.get('_champ_amt', 0) or 0)
-                        if champ > 0:
-                            try:
-                                out = self._apex_alpha_output(w3, spec, tin, tout, amount_in)
-                            except Exception:
-                                out = 0
-                            if out <= champ:
-                                return None
-                return _DR_UNSET
-            _dr7 = _dr6()
-            if _dr7 is not _DR_UNSET:
-                return _dr7
+            def _bh119():
+                w3 = self._get_web3(int(chain_id))
+                return w3
+            try:
+                w3 = _bh119()
+            except Exception:
+                w3 = None
+            if w3 is not None:
+                if require_live and self._apex_route_quote(w3, spec, tin, tout, amount_in) <= 0:
+                    return None
+                if spec.get('_alpha'):
+                    champ = int(spec.get('_champ_amt', 0) or 0)
+                    if champ > 0:
 
-            def _dr23():
-                recipient = self._apex_recipient(state, params)
+                        def _bh120():
+                            out = self._apex_alpha_output(w3, spec, tin, tout, amount_in)
+                            return out
+                        try:
+                            out = _bh120()
+                        except Exception:
+                            out = 0
+                        if out <= champ:
+                            return None
+            recipient = self._apex_recipient(state, params)
+
+            def _bh144():
                 deadline = self._apex_deadline(snapshot)
                 kind = spec.get('kind')
-                return (deadline, kind, recipient)
-            deadline, kind, recipient = _dr23()
-            if kind == 'univ3_single':
+                return (deadline, kind)
+            deadline, kind = _bh144()
 
-                def _dr11():
-                    nonlocal UNISWAP_V3_ROUTERS, _ck, call, encode_exact_input_single, router, tag, target
-                    from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                    from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-                    from eth_utils import to_checksum_address as _ck
-                    router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-                    if not router:
-                        return None
+            def _bh142():
+                router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+                if not router:
+                    return (1, None)
+                use_fee = int(spec.get('fee', 3000))
 
-                    def _dr1():
-                        nonlocal _pad, best_out, dd, fee, out, rr, use_fee
-                        use_fee = int(spec.get('fee', 3000))
-                        if w3 is not None:
-
-                            def _pad(a):
-                                return a.lower().replace('0x', '').rjust(64, '0')
-                            _Q = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
-                            best_out = 0
-                            for fee in (100, 500, 3000, 10000):
-                                try:
-                                    dd = '0xc6a5026a' + _pad(tin) + _pad(tout) + hex(int(amount_in))[2:].rjust(64, '0') + hex(fee)[2:].rjust(64, '0') + '0' * 64
-                                    rr = w3.eth.call({'to': _ck(_Q), 'data': dd})
-                                    out = int(rr[:32].hex(), 16) if rr else 0
-                                except Exception:
-                                    out = 0
-                                if out > best_out:
-                                    best_out, use_fee = (out, fee)
-                            if best_out <= 0 and require_live:
-                                return None
-                        return _DR_UNSET
-                    _dr2 = _dr1()
-                    if _dr2 is not _DR_UNSET:
-                        return _dr2
-                    call = encode_exact_input_single(token_in=tin, token_out=tout, fee=use_fee, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-                    target = router
-                    tag = 'apex-route-univ3'
-                    return _DR_UNSET
-                _dr12 = _dr11()
-                if _dr12 is not _DR_UNSET:
-                    return _dr12
-            elif kind == 'pancake_v3':
-                from eth_abi import encode as _enc
-                from eth_utils import to_checksum_address as _ck
-                use_fee = int(spec.get('fee', 500))
-                if w3 is not None:
+                def _bh122(use_fee):
 
                     def _pad(a):
                         return a.lower().replace('0x', '').rjust(64, '0')
+                    _Q = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
                     best_out = 0
-                    for fee in (100, 500, 2500, 10000):
+                    for fee in (100, 500, 3000, 10000):
                         try:
                             dd = '0xc6a5026a' + _pad(tin) + _pad(tout) + hex(int(amount_in))[2:].rjust(64, '0') + hex(fee)[2:].rjust(64, '0') + '0' * 64
-                            rr = w3.eth.call({'to': _ck(_PANCAKE_QUOTER), 'data': dd})
+                            rr = w3.eth.call({'to': _ck(_Q), 'data': dd})
                             out = int(rr[:32].hex(), 16) if rr else 0
                         except Exception:
                             out = 0
-                        if out > best_out:
+
+                        def _bh121():
                             best_out, use_fee = (out, fee)
+                            return (best_out, use_fee)
+                        if out > best_out:
+                            best_out, use_fee = _bh121()
                     if best_out <= 0 and require_live:
-                        return None
-                call = '0x414bf389' + _enc(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(use_fee), _ck(recipient), int(deadline), int(amount_in), 0, 0)]).hex()
-                target = _PANCAKE_ROUTER
-                tag = 'apex-route-pancake-v3'
-            elif kind == 'univ3_path':
-
-                def _dr4():
-                    nonlocal UNISWAP_V3_ROUTERS, _ck, _enc, call, encode_swap_path, fees, path, router, tag, target, toks
-                    from eth_abi import encode as _enc
-                    from eth_utils import to_checksum_address as _ck
-                    from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                    from strategies.dex_aggregator.v3_codec import encode_swap_path
-                    router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-                    toks = list(spec.get('tokens') or [])
-                    fees = [int(f) for f in spec.get('fees') or []]
-                    if not router or len(toks) < 2 or len(fees) != len(toks) - 1:
-                        return None
-                    path = encode_swap_path(toks, fees)
-                    call = '0xb858183f' + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)]).hex()
-                    target = router
-                    tag = 'apex-route-univ3-path'
-                    return _DR_UNSET
-                _dr5 = _dr4()
-                if _dr5 is not _DR_UNSET:
-                    return _dr5
-            elif kind == 'aero_v2':
-
-                def _dr8():
-                    nonlocal _ck, _enc, call, tag, target
-                    from eth_abi import encode as _enc
-                    from eth_utils import to_checksum_address as _ck
-                    routes = spec.get('routes') or []
-                    tuples = [(_ck(r[0]), _ck(r[1]), bool(r[2]), _ck(r[3])) for r in routes]
-                    if not tuples:
-                        return None
-                    call = '0xcac88ea9' + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amount_in), 0, tuples, _ck(recipient), int(deadline)]).hex()
-                    target = _AERO_V2_ROUTER
-                    tag = 'apex-route-aero-v2'
-                    return _DR_UNSET
-                _dr9 = _dr8()
-                if _dr9 is not _DR_UNSET:
-                    return _dr9
-            elif kind == 'split':
-                from eth_abi import encode as _enc
-                from eth_utils import to_checksum_address as _ck
-                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                from strategies.dex_aggregator.v3_codec import encode_exact_input_single, encode_swap_path
-                router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-                legs = list(spec.get('legs') or [])
-
-                def _dr20():
-                    nonlocal legs
-                    if not router or not legs:
-                        return None
-                    if not _SPLIT_FULL:
-                        legs = [dict(legs[0])]
-                        legs[0]['frac'] = 10000
-                    return _DR_UNSET
-                _dr21 = _dr20()
-                if _dr21 is not _DR_UNSET:
-                    return _dr21
-                swaps = []
-                for leg in legs:
-
-                    def _dr22():
-                        frac = int(leg.get('frac', 0) or 0)
-                        leg_amt = int(amount_in) * frac // 10000
-                        return (frac, leg_amt)
-                    frac, leg_amt = _dr22()
-                    if leg_amt <= 0:
-                        continue
-                    lk = leg.get('kind')
-                    if lk == 'univ3_single':
-
-                        def _dr19():
-                            nonlocal c
-                            c = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(leg.get('fee', 3000)), recipient=recipient, deadline=deadline, amount_in=leg_amt, amount_out_minimum=0, chain_id=chain_id)
-                        _dr19()
-                    elif lk == 'univ3_path':
-                        toks = list(leg.get('tokens') or [])
-                        fees = [int(f) for f in leg.get('fees') or []]
-                        if len(toks) < 2 or len(fees) != len(toks) - 1:
-                            continue
-                        path = encode_swap_path(toks, fees)
-                        c = '0xb858183f' + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(leg_amt), 0)]).hex()
-                    else:
-                        continue
-                    swaps.append(Interaction(target=router, value='0', call_data=c, chain_id=chain_id))
-
-                def _dr15():
-                    if not swaps:
-                        return None
-                    six = [Interaction(target=tin, value='0', call_data=encode_approve(router, int(amount_in)), chain_id=chain_id)] + swaps
-                    return ExecutionPlan(intent_id=intent.app_id, interactions=six, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-route-split' if _SPLIT_FULL else 'apex-route-split1', 'chain_id': chain_id})
-                    return _DR_UNSET
-                _dr16 = _dr15()
-                if _dr16 is not _DR_UNSET:
-                    return _dr16
+                        return (1, None)
+                    return (0, use_fee)
+                if w3 is not None:
+                    _t122 = _bh122(use_fee)
+                    if _t122[0]:
+                        return (1, _t122[1])
+                    use_fee = _t122[1]
+                call = encode_exact_input_single(token_in=tin, token_out=tout, fee=use_fee, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+                target = router
+                tag = 'apex-route-univ3'
+                return (0, (call, tag, target))
+            if kind == 'univ3_single':
+                _t142 = _bh142()
+                if _t142[0]:
+                    return _t142[1]
+                call, tag, target = _t142[1]
             else:
 
-                def _dr13():
-                    if kind == 'verbatim':
-                        old = str(spec.get('recip', '') or '').lower().replace('0x', '')
+                def _bh141():
+                    use_fee = int(spec.get('fee', 500))
 
-                        def _dr3():
-                            nonlocal leg
-                            new = str(recipient).lower().replace('0x', '')
-                            sub = ('000000000000000000000000' + old, '000000000000000000000000' + new) if len(old) == 40 and len(new) == 40 else None
-                            vix = []
-                            for leg in spec.get('legs') or []:
-                                cd = str(leg.get('call_data') or '')
-                                body = (cd[2:] if cd.startswith('0x') else cd).lower()
-                                if sub and sub[0] in body:
-                                    body = body.replace(sub[0], sub[1])
-                                vix.append(Interaction(target=leg.get('target'), value=str(leg.get('value') or '0'), call_data='0x' + body, chain_id=chain_id))
-                            return vix
-                        vix = _dr3()
-                        if not vix:
-                            return None
-                        return ExecutionPlan(intent_id=intent.app_id, interactions=vix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-route-verbatim', 'chain_id': chain_id})
+                    def _bh124(use_fee):
+
+                        def _pad(a):
+                            return a.lower().replace('0x', '').rjust(64, '0')
+                        best_out = 0
+                        for fee in (100, 500, 2500, 10000):
+                            try:
+                                dd = '0xc6a5026a' + _pad(tin) + _pad(tout) + hex(int(amount_in))[2:].rjust(64, '0') + hex(fee)[2:].rjust(64, '0') + '0' * 64
+                                rr = w3.eth.call({'to': _ck(_PANCAKE_QUOTER), 'data': dd})
+                                out = int(rr[:32].hex(), 16) if rr else 0
+                            except Exception:
+                                out = 0
+
+                            def _bh123():
+                                best_out, use_fee = (out, fee)
+                                return (best_out, use_fee)
+                            if out > best_out:
+                                best_out, use_fee = _bh123()
+                        if best_out <= 0 and require_live:
+                            return (1, None)
+                        return (0, use_fee)
+                    if w3 is not None:
+                        _t124 = _bh124(use_fee)
+                        if _t124[0]:
+                            return (1, _t124[1])
+                        use_fee = _t124[1]
+                    call = '0x414bf389' + _enc(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(use_fee), _ck(recipient), int(deadline), int(amount_in), 0, 0)]).hex()
+                    target = _PANCAKE_ROUTER
+                    tag = 'apex-route-pancake-v3'
+                    return (0, (call, tag, target))
+                if kind == 'pancake_v3':
+                    _t141 = _bh141()
+                    if _t141[0]:
+                        return _t141[1]
+                    call, tag, target = _t141[1]
+                else:
+
+                    def _bh140():
+
+                        def _bh125():
+                            router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+                            toks = list(spec.get('tokens') or [])
+                            fees = [int(f) for f in spec.get('fees') or []]
+                            if not router or len(toks) < 2 or len(fees) != len(toks) - 1:
+                                return (1, None)
+                            path = encode_swap_path(toks, fees)
+                            return (0, (path, router))
+                        _t125 = _bh125()
+                        if _t125[0]:
+                            return (1, _t125[1])
+                        path, router = _t125[1]
+
+                        def _bh126():
+                            call = '0xb858183f' + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)]).hex()
+                            target = router
+                            tag = 'apex-route-univ3-path'
+                            return (call, tag, target)
+                        call, tag, target = _bh126()
+                        return (0, (call, tag, target))
+                    if kind == 'univ3_path':
+                        _t140 = _bh140()
+                        if _t140[0]:
+                            return _t140[1]
+                        call, tag, target = _t140[1]
                     else:
-                        return None
-                    return _DR_UNSET
-                _dr14 = _dr13()
-                if _dr14 is not _DR_UNSET:
-                    return _dr14
 
-            def _dr17():
+                        def _bh138():
+                            routes = spec.get('routes') or []
+                            tuples = [(_ck(r[0]), _ck(r[1]), bool(r[2]), _ck(r[3])) for r in routes]
+                            if not tuples:
+                                return (1, None)
+                            call = '0xcac88ea9' + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amount_in), 0, tuples, _ck(recipient), int(deadline)]).hex()
+                            target = _AERO_V2_ROUTER
+                            tag = 'apex-route-aero-v2'
+                            return (0, (call, tag, target))
+
+                        def _bh139():
+
+                            def _bh136():
+
+                                def _bh129():
+                                    router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+                                    legs = list(spec.get('legs') or [])
+                                    if not router or not legs:
+                                        return (1, None)
+                                    return (0, (legs, router))
+                                _t129 = _bh129()
+                                if _t129[0]:
+                                    return (1, _t129[1])
+                                legs, router = _t129[1]
+
+                                def _bh127(legs):
+                                    legs = [dict(legs[0])]
+                                    legs[0]['frac'] = 10000
+                                    return legs
+
+                                def _bh130(legs):
+                                    if not _SPLIT_FULL:
+                                        legs = _bh127(legs)
+                                    swaps = []
+                                    return (legs, swaps)
+                                legs, swaps = _bh130(legs)
+                                for leg in legs:
+                                    frac = int(leg.get('frac', 0) or 0)
+                                    leg_amt = int(amount_in) * frac // 10000
+                                    if leg_amt <= 0:
+                                        continue
+                                    lk = leg.get('kind')
+
+                                    def _bh128():
+                                        c = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(leg.get('fee', 3000)), recipient=recipient, deadline=deadline, amount_in=leg_amt, amount_out_minimum=0, chain_id=chain_id)
+                                        return c
+                                    if lk == 'univ3_single':
+                                        c = _bh128()
+                                    elif lk == 'univ3_path':
+                                        toks = list(leg.get('tokens') or [])
+                                        fees = [int(f) for f in leg.get('fees') or []]
+                                        if len(toks) < 2 or len(fees) != len(toks) - 1:
+                                            continue
+                                        path = encode_swap_path(toks, fees)
+                                        c = '0xb858183f' + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(leg_amt), 0)]).hex()
+                                    else:
+                                        continue
+                                    swaps.append(Interaction(target=router, value='0', call_data=c, chain_id=chain_id))
+
+                                def _bh131():
+                                    if not swaps:
+                                        return (1, None)
+                                    six = [Interaction(target=tin, value='0', call_data=encode_approve(router, int(amount_in)), chain_id=chain_id)] + swaps
+                                    return (1, ExecutionPlan(intent_id=intent.app_id, interactions=six, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-route-split' if _SPLIT_FULL else 'apex-route-split1', 'chain_id': chain_id}))
+                                    return (0, None)
+                                _t131 = _bh131()
+                                if _t131[0]:
+                                    return (1, _t131[1])
+                                return (0, None)
+
+                            def _bh137():
+
+                                def _bh135():
+
+                                    def _bh134():
+                                        old = str(spec.get('recip', '') or '').lower().replace('0x', '')
+                                        new = str(recipient).lower().replace('0x', '')
+                                        sub = ('000000000000000000000000' + old, '000000000000000000000000' + new) if len(old) == 40 and len(new) == 40 else None
+                                        vix = []
+                                        for leg in spec.get('legs') or []:
+
+                                            def _bh133():
+                                                cd = str(leg.get('call_data') or '')
+                                                body = (cd[2:] if cd.startswith('0x') else cd).lower()
+
+                                                def _bh132(body):
+                                                    body = body.replace(sub[0], sub[1])
+                                                    return body
+                                                if sub and sub[0] in body:
+                                                    body = _bh132(body)
+                                                vix.append(Interaction(target=leg.get('target'), value=str(leg.get('value') or '0'), call_data='0x' + body, chain_id=chain_id))
+                                                return (body, cd)
+                                            body, cd = _bh133()
+                                        if not vix:
+                                            return (1, None)
+                                        return (0, vix)
+                                    _t134 = _bh134()
+                                    if _t134[0]:
+                                        return _t134[1]
+                                    vix = _t134[1]
+                                    return ExecutionPlan(intent_id=intent.app_id, interactions=vix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-route-verbatim', 'chain_id': chain_id})
+                                if kind == 'verbatim':
+                                    return _bh135()
+                                else:
+                                    return None
+                            if kind == 'split':
+                                _t136 = _bh136()
+                                if _t136[0]:
+                                    return (1, _t136[1])
+                            else:
+                                return (1, _bh137())
+                            return (0, None)
+                        if kind == 'aero_v2':
+                            _t138 = _bh138()
+                            if _t138[0]:
+                                return _t138[1]
+                            call, tag, target = _t138[1]
+                        else:
+                            _t139 = _bh139()
+                            if _t139[0]:
+                                return _t139[1]
+
+            def _bh145():
                 ix = [Interaction(target=tin, value='0', call_data=encode_approve(target, amount_in), chain_id=chain_id), Interaction(target=target, value='0', call_data=call, chain_id=chain_id)]
-                return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': tag, 'chain_id': chain_id})
-                return _DR_UNSET
-            _dr18 = _dr17()
-            if _dr18 is not _DR_UNSET:
-                return _dr18
+                return (1, ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': tag, 'chain_id': chain_id}))
+                return (0, None)
+            _t145 = _bh145()
+            if _t145[0]:
+                return _t145[1]
+        try:
+            return _bh118()
         except Exception:
             logger.exception('[apex] route plan build failed')
             return None
@@ -619,10 +720,16 @@ class _MX_MinerSolver_0:
                 return (0, None)
 
             def _bh39():
-                if our_out > base_out * _BEAT_MARGIN:
+
+                def _bh146():
                     _t36 = _bh36()
                     if _t36[0]:
-                        return (1, _t36[1])
+                        return (1, (1, _t36[1]))
+                    return (0, None)
+                if our_out > base_out * _BEAT_MARGIN:
+                    _t146 = _bh146()
+                    if _t146[0]:
+                        return _t146[1]
                 return (1, None)
                 return (0, None)
             _t39 = _bh39()
@@ -641,30 +748,27 @@ class _MX_MinerSolver_0:
         exactInput path) and Aerodrome V2. Returns None for a multi-leg split (a HEALTHY base) or an
         unknown venue/router -> the caller then DEFERS. Conservative: only the broken single-route
         (dust) case is decoded; healthy splits are left untouched."""
-        try:
-            from eth_utils import to_checksum_address as _ck
-            from eth_abi import encode as _enc, decode as _dec
 
-            def _dr26():
-                nonlocal sel
-                try:
-                    from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                    UNIV3 = (UNISWAP_V3_ROUTERS.get(int(_BASE)) or '').lower()
-                except Exception:
-                    UNIV3 = ''
-                QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
-                swaps = []
-                for it in getattr(base_plan, 'interactions', None) or []:
-                    cd = getattr(it, 'call_data', '') or ''
-                    body = cd[2:] if cd.startswith('0x') else cd
-                    if len(body) < 8:
-                        continue
-                    sel = body[:8].lower()
-                    if sel == '095ea7b3':
-                        continue
-                    swaps.append((str(getattr(it, 'target', '') or '').lower(), sel, body[8:]))
-                return (QUOTER, UNIV3, swaps)
-            QUOTER, UNIV3, swaps = _dr26()
+        def _bh147():
+
+            def _bh148():
+                UNIV3 = (UNISWAP_V3_ROUTERS.get(int(_BASE)) or '').lower()
+                return UNIV3
+            try:
+                UNIV3 = _bh148()
+            except Exception:
+                UNIV3 = ''
+            QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
+            swaps = []
+            for it in getattr(base_plan, 'interactions', None) or []:
+                cd = getattr(it, 'call_data', '') or ''
+                body = cd[2:] if cd.startswith('0x') else cd
+                if len(body) < 8:
+                    continue
+                sel = body[:8].lower()
+                if sel == '095ea7b3':
+                    continue
+                swaps.append((str(getattr(it, 'target', '') or '').lower(), sel, body[8:]))
             if len(swaps) != 1:
                 return None
             target, sel, args = swaps[0]
@@ -675,53 +779,75 @@ class _MX_MinerSolver_0:
             def addr(i):
                 return '0x' + args[i * 64 + 24:(i + 1) * 64]
 
-            def _dr28():
-                nonlocal d, r
-                if sel == '04e45aaf' and UNIV3 and (target == UNIV3):
-                    d = '0xc6a5026a' + _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(addr(0)), _ck(addr(1)), int(word(4)), int(word(2)), 0)]).hex()
-                    r = w3.eth.call({'to': _ck(QUOTER), 'data': d})
-                    return int(r[:32].hex(), 16) if r else None
-                return _DR_UNSET
-            _dr29 = _dr28()
-            if _dr29 is not _DR_UNSET:
-                return _dr29
-            if sel == '414bf389' and UNIV3 and (target == UNIV3):
+            def _bh149():
+                d = '0xc6a5026a' + _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(addr(0)), _ck(addr(1)), int(word(4)), int(word(2)), 0)]).hex()
+                r = w3.eth.call({'to': _ck(QUOTER), 'data': d})
+                return int(r[:32].hex(), 16) if r else None
+            if sel == '04e45aaf' and UNIV3 and (target == UNIV3):
+                return _bh149()
+
+            def _bh150():
                 d = '0xc6a5026a' + _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(addr(0)), _ck(addr(1)), int(word(5)), int(word(2)), 0)]).hex()
                 r = w3.eth.call({'to': _ck(QUOTER), 'data': d})
                 return int(r[:32].hex(), 16) if r else None
+            if sel == '414bf389' and UNIV3 and (target == UNIV3):
+                return _bh150()
             if sel in ('b858183f', 'c04b8d59') and UNIV3 and (target == UNIV3):
-                try:
+
+                def _bh151():
                     raw = bytes.fromhex(args)
-                    if sel == 'b858183f':
+
+                    def _bh152():
                         path, _, amt, _ = _dec(['(bytes,address,uint256,uint256)'], raw)[0]
-                    else:
+                        return (amt, path)
+
+                    def _bh153():
                         path, _, _, amt, _ = _dec(['(bytes,address,uint256,uint256,uint256)'], raw)[0]
+                        return (amt, path)
+                    if sel == 'b858183f':
+                        amt, path = _bh152()
+                    else:
+                        amt, path = _bh153()
+                    return (amt, path)
+                try:
+                    amt, path = _bh151()
                 except Exception:
                     return None
                 d = '0xcdca1753' + _enc(['bytes', 'uint256'], [path, int(amt)]).hex()
                 r = w3.eth.call({'to': _ck(QUOTER), 'data': d})
                 return int(r[:32].hex(), 16) if r else None
 
-            def _dr24():
-                nonlocal amt, d, r
+            def _bh156():
+
+                def _bh154():
+                    dec = _dec(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], bytes.fromhex(args))
+                    amt = int(dec[0])
+                    routes = dec[2]
+                    return (amt, routes)
+                try:
+                    amt, routes = _bh154()
+                except Exception:
+                    return None
+                d = '0x5509a1ac' + _enc(['uint256', '(address,address,bool,address)[]'], [int(amt), [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in routes]]).hex()
+                r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': d})
+
+                def _bh155():
+                    return int(_dec(['uint256[]'], bytes(r))[0][-1])
+                try:
+                    return _bh155()
+                except Exception:
+                    return None
+
+            def _bh157():
                 if sel == 'cac88ea9' and target == _AERO_V2_ROUTER.lower():
-                    try:
-                        dec = _dec(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], bytes.fromhex(args))
-                        amt = int(dec[0])
-                        routes = dec[2]
-                    except Exception:
-                        return None
-                    d = '0x5509a1ac' + _enc(['uint256', '(address,address,bool,address)[]'], [int(amt), [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in routes]]).hex()
-                    r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': d})
-                    try:
-                        return int(_dec(['uint256[]'], bytes(r))[0][-1])
-                    except Exception:
-                        return None
-                return None
-                return _DR_UNSET
-            _dr25 = _dr24()
-            if _dr25 is not _DR_UNSET:
-                return _dr25
+                    return (1, _bh156())
+                return (1, None)
+                return (0, None)
+            _t157 = _bh157()
+            if _t157[0]:
+                return _t157[1]
+        try:
+            return _bh147()
         except Exception:
             return None
 
@@ -780,10 +906,16 @@ class _MX_MinerSolver_1:
             _t51 = _bh51()
             if _t51[0]:
                 return _t51[1]
-        try:
+
+        def _bh158():
             _t44 = _bh44()
             if _t44[0]:
-                return _t44[1]
+                return (1, _t44[1])
+            return (0, None)
+        try:
+            _t158 = _bh158()
+            if _t158[0]:
+                return _t158[1]
         except Exception:
             logger.exception('[apex] hole plan build failed')
         return None
@@ -796,9 +928,6 @@ class _MX_MinerSolver_1:
         return int(ts or time.time()) + 300
 
     def _apex_v2(self, intent, state, snapshot, router, path, amount_in, chain_id):
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
         params = self._normalized_swap_params(intent, state)
         recipient = self._apex_recipient(state, params)
         deadline = self._apex_deadline(snapshot)
@@ -813,9 +942,6 @@ class _MX_MinerSolver_1:
             return _t52[1]
 
     def _apex_uni_v3(self, intent, state, snapshot, tin, tout, amount_in, chain_id):
-        from common.abi_utils import encode_approve
-        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
         w3 = self._get_web3(int(chain_id))
         uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
         if w3 is None or not uni_router:
@@ -859,16 +985,18 @@ class _MX_MinerSolver_1:
             return _t56[1]
 
     def _apex_uni_mav(self, intent, state, snapshot, pool, token_a_in, tin, tout, amount_in, chain_id):
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
-        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-        w3 = self._get_web3(int(chain_id))
-        uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-        if w3 is None or not uni_router:
-            return None
-        weth_out, best_fee = (0, 500)
+
+        def _bh159():
+            w3 = self._get_web3(int(chain_id))
+            uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+            if w3 is None or not uni_router:
+                return (1, None)
+            weth_out, best_fee = (0, 500)
+            return (0, (best_fee, uni_router, w3, weth_out))
+        _t159 = _bh159()
+        if _t159[0]:
+            return _t159[1]
+        best_fee, uni_router, w3, weth_out = _t159[1]
 
         def _bh59(best_fee, weth_out):
             for fee in (500, 3000, 100, 10000):
@@ -893,10 +1021,17 @@ class _MX_MinerSolver_1:
             recipient = self._apex_recipient(state, params)
             deadline = self._apex_deadline(snapshot)
             return (0, (best_fee, deadline, mav_in, recipient))
-        _t59 = _bh59(best_fee, weth_out)
-        if _t59[0]:
-            return _t59[1]
-        best_fee, deadline, mav_in, recipient = _t59[1]
+
+        def _bh160(best_fee):
+            _t59 = _bh59(best_fee, weth_out)
+            if _t59[0]:
+                return (1, _t59[1])
+            best_fee, deadline, mav_in, recipient = _t59[1]
+            return (0, (best_fee, deadline, mav_in, recipient))
+        _t160 = _bh160(best_fee)
+        if _t160[0]:
+            return _t160[1]
+        best_fee, deadline, mav_in, recipient = _t160[1]
 
         def _bh60():
             leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
@@ -908,21 +1043,29 @@ class _MX_MinerSolver_1:
             ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=_WETH, value='0', call_data=encode_approve(_MAVERICK_ROUTER, mav_in), chain_id=chain_id), Interaction(target=_MAVERICK_ROUTER, value='0', call_data=mav, chain_id=chain_id)]
             return (1, ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-mav', 'chain_id': chain_id}))
             return (0, None)
-        _t61 = _bh61()
-        if _t61[0]:
-            return _t61[1]
+
+        def _bh161():
+            _t61 = _bh61()
+            if _t61[0]:
+                return (1, _t61[1])
+            return (0, None)
+        _t161 = _bh161()
+        if _t161[0]:
+            return _t161[1]
 
     def _apex_uni_v2_via(self, intent, state, snapshot, mid, v2_router, tin, tout, amount_in, chain_id):
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
-        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-        w3 = self._get_web3(int(chain_id))
-        uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-        if w3 is None or not uni_router:
-            return None
-        mid_out, best_fee = (0, 3000)
+
+        def _bh162():
+            w3 = self._get_web3(int(chain_id))
+            uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+            if w3 is None or not uni_router:
+                return (1, None)
+            mid_out, best_fee = (0, 3000)
+            return (0, (best_fee, mid_out, uni_router, w3))
+        _t162 = _bh162()
+        if _t162[0]:
+            return _t162[1]
+        best_fee, mid_out, uni_router, w3 = _t162[1]
 
         def _bh64(best_fee, mid_out):
             for fee in (3000, 10000, 500, 100):
@@ -947,10 +1090,17 @@ class _MX_MinerSolver_1:
             recipient = self._apex_recipient(state, params)
             deadline = self._apex_deadline(snapshot)
             return (0, (best_fee, deadline, recipient, v2_in))
-        _t64 = _bh64(best_fee, mid_out)
-        if _t64[0]:
-            return _t64[1]
-        best_fee, deadline, recipient, v2_in = _t64[1]
+
+        def _bh163(best_fee):
+            _t64 = _bh64(best_fee, mid_out)
+            if _t64[0]:
+                return (1, _t64[1])
+            best_fee, deadline, recipient, v2_in = _t64[1]
+            return (0, (best_fee, deadline, recipient, v2_in))
+        _t163 = _bh163(best_fee)
+        if _t163[0]:
+            return _t163[1]
+        best_fee, deadline, recipient, v2_in = _t163[1]
 
         def _bh65():
             leg1 = encode_exact_input_single(token_in=tin, token_out=mid, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
@@ -962,9 +1112,15 @@ class _MX_MinerSolver_1:
             ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=mid, value='0', call_data=encode_approve(v2_router, v2_in), chain_id=chain_id), Interaction(target=v2_router, value='0', call_data=leg2, chain_id=chain_id)]
             return (1, ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v2-via', 'chain_id': chain_id}))
             return (0, None)
-        _t66 = _bh66()
-        if _t66[0]:
-            return _t66[1]
+
+        def _bh164():
+            _t66 = _bh66()
+            if _t66[0]:
+                return (1, _t66[1])
+            return (0, None)
+        _t164 = _bh164()
+        if _t164[0]:
+            return _t164[1]
 
     def _apex_champ_hardcodes(self, tin, tout):
         """True if the champion base already special-cases this token/pair (its own
@@ -984,20 +1140,33 @@ class _MX_MinerSolver_1:
         def _bh68():
             for k in exotic:
 
-                def _bh67():
-                    if isinstance(k, tuple) and len(k) == 2 and (str(k[0]).lower() == tinL) and (str(k[1]).lower() == toutL):
-                        return (1, True)
-                    return (0, None)
-                _t67 = _bh67()
-                if _t67[0]:
-                    return (1, _t67[1])
+                def _bh165():
+
+                    def _bh67():
+                        if isinstance(k, tuple) and len(k) == 2 and (str(k[0]).lower() == tinL) and (str(k[1]).lower() == toutL):
+                            return (1, True)
+                        return (0, None)
+                    _t67 = _bh67()
+                    if _t67[0]:
+                        return (1, (1, _t67[1]))
+                    return (0, _t67)
+                _t165 = _bh165()
+                if _t165[0]:
+                    return _t165[1]
+                _t67 = _t165[1]
             return (0, None)
 
         def _bh69():
-            if isinstance(exotic, dict):
+
+            def _bh166():
                 _t68 = _bh68()
                 if _t68[0]:
-                    return (1, _t68[1])
+                    return (1, (1, _t68[1]))
+                return (0, None)
+            if isinstance(exotic, dict):
+                _t166 = _bh166()
+                if _t166[0]:
+                    return _t166[1]
             return (1, False)
             return (0, None)
         _t69 = _bh69()
@@ -1016,8 +1185,6 @@ class _MX_MinerSolver_2:
             return 0
 
     def _fx_v3_quote(self, w3, quoter, tin, tout, fee, amount):
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
 
         def _bh71():
             data = '0xc6a5026a' + _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amount), int(fee), 0)]).hex()
@@ -1029,8 +1196,6 @@ class _MX_MinerSolver_2:
             return 0
 
     def _fx_v2_quote(self, w3, router, path, amount):
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import to_checksum_address as _ck
 
         def _bh72():
             data = '0xd06ca61f' + _enc(['uint256', 'address[]'], [int(amount), [_ck(p) for p in path]]).hex()
@@ -1043,23 +1208,29 @@ class _MX_MinerSolver_2:
             return 0
 
     def _fx_aerov2_quote(self, w3, tin, tout, amount):
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import to_checksum_address as _ck, keccak as _kk
-        sel = '0x' + _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4].hex()
-        best = 0
-        for stable in (False, True):
-            try:
-                data = sel + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount), [(_ck(tin), _ck(tout), stable, _ck(_AERO_V2_FACTORY))]]).hex()
-                r = bytes(w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': data}))
-                amounts = _dec(['uint256[]'], r)[0]
-                best = max(best, int(amounts[-1]) if amounts else 0)
-            except Exception:
-                continue
-        return best
+
+        def _bh167():
+            sel = '0x' + _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4].hex()
+            best = 0
+            return (best, sel)
+        best, sel = _bh167()
+
+        def _bh168(best):
+            for stable in (False, True):
+                try:
+                    data = sel + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount), [(_ck(tin), _ck(tout), stable, _ck(_AERO_V2_FACTORY))]]).hex()
+                    r = bytes(w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': data}))
+                    amounts = _dec(['uint256[]'], r)[0]
+                    best = max(best, int(amounts[-1]) if amounts else 0)
+                except Exception:
+                    continue
+            return (1, best)
+            return (0, None)
+        _t168 = _bh168(best)
+        if _t168[0]:
+            return _t168[1]
 
     def _fx_qs_pool(self, w3, a, b):
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck, keccak as _kk
 
         def _bh73():
 
@@ -1083,18 +1254,24 @@ class _MX_MinerSolver_2:
         return None
 
     def _apex_frontier_sweep(self, intent, state, snapshot, params):
-        """Quote Sushi V3 / SushiV2 / AlienBase (venues king lacks) vs king's reachable
+
+        def _bh178():
+            """Quote Sushi V3 / SushiV2 / AlienBase (venues king lacks) vs king's reachable
         best; override king ONLY when an extra venue beats reachable*margin AND clears
         min_out. Quote-gated => never regresses on the quote side. Bounded + concurrent."""
-        if not _FRONTIER_ON:
-            return None
-        from concurrent.futures import ThreadPoolExecutor
-        tin = str(params.get('input_token', '') or '')
-        tout = str(params.get('output_token', '') or '')
-        if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or (tin.lower() == tout.lower()):
-            return None
-        if self._apex_champ_hardcodes(tin, tout):
-            return None
+            if not _FRONTIER_ON:
+                return (1, None)
+            tin = str(params.get('input_token', '') or '')
+            tout = str(params.get('output_token', '') or '')
+            if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or (tin.lower() == tout.lower()):
+                return (1, None)
+            if self._apex_champ_hardcodes(tin, tout):
+                return (1, None)
+            return (0, (tin, tout))
+        _t178 = _bh178()
+        if _t178[0]:
+            return _t178[1]
+        tin, tout = _t178[1]
 
         def _bh90():
             if any((hasattr(self, m) for m in ('_sweep_plan', '_sweep_quotes', '_sweep_sushi_plan'))):
@@ -1104,10 +1281,17 @@ class _MX_MinerSolver_2:
             amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
             min_out = int(params.get('min_output_amount', 0) or 0)
             return (0, (amount_in, chain_id, min_out))
-        _t90 = _bh90()
-        if _t90[0]:
-            return _t90[1]
-        amount_in, chain_id, min_out = _t90[1]
+
+        def _bh179():
+            _t90 = _bh90()
+            if _t90[0]:
+                return (1, _t90[1])
+            amount_in, chain_id, min_out = _t90[1]
+            return (0, (amount_in, chain_id, min_out))
+        _t179 = _bh179()
+        if _t179[0]:
+            return _t179[1]
+        amount_in, chain_id, min_out = _t179[1]
 
         def _bh91():
             if chain_id != _BASE or amount_in <= 0:
@@ -1123,80 +1307,92 @@ class _MX_MinerSolver_2:
         if _t91[0]:
             return _t91[1]
         via_weth, w3, weth_out = _t91[1]
-        if via_weth:
-            with ThreadPoolExecutor(max_workers=6) as ex:
-                fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
-                for fut, f in fs.items():
 
-                    def _bh76(weth_out):
-                        o = fut.result()
+        def _xf1(weth_out):
+            ex = None
+            f = None
+            fut = None
+            if via_weth:
+                with ThreadPoolExecutor(max_workers=6) as ex:
+                    fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+                    for fut, f in fs.items():
 
-                        def _bh75():
-                            weth_out, weth_fee = (o, f)
-                            return weth_out
-                        if o > weth_out:
-                            weth_out = _bh75()
-                        return (o, weth_out)
-                    o, weth_out = _bh76(weth_out)
+                        def _bh169(weth_out):
+
+                            def _bh76(weth_out):
+                                o = fut.result()
+
+                                def _bh75():
+                                    weth_out, weth_fee = (o, f)
+                                    return weth_out
+                                if o > weth_out:
+                                    weth_out = _bh75()
+                                return (o, weth_out)
+                            o, weth_out = _bh76(weth_out)
+                            return (o, weth_out)
+                        o, weth_out = _bh169(weth_out)
+            return (ex, f, fut, weth_out)
+        ex, f, fut, weth_out = _xf1(weth_out)
         wi = weth_out * 995 // 1000 if weth_out > 0 else 0
         tasks = []
         for f in (100, 500, 3000, 10000):
 
-            def _bh77():
+            def _bh170():
                 tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, tin, tout, amount_in)))
                 tasks.append(('R', None, lambda f=f: self._q1(w3, 'pancake_v3', f, tin, tout, amount_in)))
                 tasks.append(('E', ('sushi_v3_direct', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
-            _bh77()
+            _bh170()
+        for t in (1, 50, 100, 200, 2000):
 
-        def _dr27():
-            nonlocal ex, fut, out, spec
-            for t in (1, 50, 100, 200, 2000):
+            def _bh171():
+                tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, tin, tout, amount_in)))
+            _bh171()
+        for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
 
-                def _bh78():
-                    tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, tin, tout, amount_in)))
-                _bh78()
+            def _bh172():
+                tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+            _bh172()
+        tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
+        for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+
+            def _bh173():
+                tasks.append(('E', ('v2fot_direct', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
+            _bh173()
+
+        def _bh85():
+            for f in (100, 500, 3000, 10000):
+
+                def _bh174():
+                    tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, _WETH, tout, wi)))
+                    tasks.append(('E', ('sushi_v3_weth', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, _WETH, tout, f, wi)))
+                _bh174()
+            for t in (1, 50, 100, 200):
+
+                def _bh175():
+                    tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, _WETH, tout, wi)))
+                _bh175()
             for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
 
-                def _bh79():
-                    tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
-                _bh79()
-            tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, tin, tout, amount_in)))
+                def _bh176():
+                    tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+                _bh176()
+            tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
             for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
 
-                def _bh80():
-                    tasks.append(('E', ('v2fot_direct', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [tin, tout], amount_in)))
-                _bh80()
+                def _bh177():
+                    tasks.append(('E', ('v2fot_weth', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+                _bh177()
 
-            def _bh85():
-                for f in (100, 500, 3000, 10000):
+        def _bh92():
+            if wi > 0:
+                _bh85()
+            reachable, extra = (0, (0, None))
+            return (extra, reachable)
+        extra, reachable = _bh92()
 
-                    def _bh81():
-                        tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, _WETH, tout, wi)))
-                        tasks.append(('E', ('sushi_v3_weth', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, _WETH, tout, f, wi)))
-                    _bh81()
-                for t in (1, 50, 100, 200):
-
-                    def _bh82():
-                        tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, _WETH, tout, wi)))
-                    _bh82()
-                for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
-
-                    def _bh83():
-                        tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
-                    _bh83()
-                tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
-                for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-
-                    def _bh84():
-                        tasks.append(('E', ('v2fot_weth', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
-                    _bh84()
-
-            def _bh92():
-                if wi > 0:
-                    _bh85()
-                reachable, extra = (0, (0, None))
-                return (extra, reachable)
-            extra, reachable = _bh92()
+        def _xf0(ex, extra, fut, reachable):
+            out = None
+            spec = None
             with ThreadPoolExecutor(max_workers=16) as ex:
                 futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
                 for tag, spec, fut in futs:
@@ -1217,8 +1413,8 @@ class _MX_MinerSolver_2:
                         reachable = max(reachable, out)
                     else:
                         extra = _bh87(extra)
-            return (extra, reachable)
-        extra, reachable = _dr27()
+            return (extra, out, reachable, spec)
+        extra, out, reachable, spec = _xf0(ex, extra, fut, reachable)
         if reachable > 0:
             return None
         out, spec = extra
@@ -1231,10 +1427,17 @@ class _MX_MinerSolver_2:
                 return (1, _bh88())
             qs = self._apex_qs_candidate(w3, tin, tout, wi)
             return (0, qs)
-        _t93 = _bh93()
-        if _t93[0]:
-            return _t93[1]
-        qs = _t93[1]
+
+        def _bh180():
+            _t93 = _bh93()
+            if _t93[0]:
+                return (1, _t93[1])
+            qs = _t93[1]
+            return (0, qs)
+        _t180 = _bh180()
+        if _t180[0]:
+            return _t180[1]
+        qs = _t180[1]
 
         def _bh89():
             return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, qs)
@@ -1243,11 +1446,6 @@ class _MX_MinerSolver_2:
         return None
 
     def _apex_build_frontier(self, intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec):
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
-        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
         recipient = self._apex_recipient(state, params)
         deadline = self._apex_deadline(snapshot)
         kind, par = spec
@@ -1272,16 +1470,20 @@ class _MX_MinerSolver_2:
                 w3 = self._get_web3(chain_id)
                 for fee in (500, 3000, 100, 10000):
 
-                    def _bh95(best, best_fee):
-                        q = self._q1(w3, 'uniswap_v3', fee, tin, _WETH, amt)
+                    def _bh181(best, best_fee):
 
-                        def _bh94():
-                            best, best_fee = (q, fee)
-                            return (best, best_fee)
-                        if q > best:
-                            best, best_fee = _bh94()
+                        def _bh95(best, best_fee):
+                            q = self._q1(w3, 'uniswap_v3', fee, tin, _WETH, amt)
+
+                            def _bh94():
+                                best, best_fee = (q, fee)
+                                return (best, best_fee)
+                            if q > best:
+                                best, best_fee = _bh94()
+                            return (best, best_fee, q)
+                        best, best_fee, q = _bh95(best, best_fee)
                         return (best, best_fee, q)
-                    best, best_fee, q = _bh95(best, best_fee)
+                    best, best_fee, q = _bh181(best, best_fee)
                 leg = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amt, amount_out_minimum=0, chain_id=chain_id)
                 return (leg, uni)
             leg, uni = _bh96()
@@ -1321,47 +1523,82 @@ class _MX_MinerSolver_2:
                             else:
                                 return (1, None)
                             return (0, ix)
+
+                        def _bh182():
+                            _t98 = _bh98()
+                            if _t98[0]:
+                                return (1, (1, _t98[1]))
+                            ix = _t98[1]
+                            return (0, ix)
                         if kind == 'qs_direct':
                             ix = qs_leg(tin, tout, amount_in)
                         else:
-                            _t98 = _bh98()
-                            if _t98[0]:
-                                return (1, _t98[1])
-                            ix = _t98[1]
+                            _t182 = _bh182()
+                            if _t182[0]:
+                                return _t182[1]
+                            ix = _t182[1]
+                        return (0, ix)
+
+                    def _bh183():
+                        _t100 = _bh100()
+                        if _t100[0]:
+                            return (1, (1, _t100[1]))
+                        ix = _t100[1]
                         return (0, ix)
                     if kind == 'v2fot_weth':
                         ix = _bh99()
                     else:
-                        _t100 = _bh100()
-                        if _t100[0]:
-                            return (1, _t100[1])
-                        ix = _t100[1]
+                        _t183 = _bh183()
+                        if _t183[0]:
+                            return _t183[1]
+                        ix = _t183[1]
+                    return (0, ix)
+
+                def _bh184():
+                    _t102 = _bh102()
+                    if _t102[0]:
+                        return (1, (1, _t102[1]))
+                    ix = _t102[1]
                     return (0, ix)
                 if kind == 'sushi_v3_weth':
                     ix = _bh101()
                 else:
-                    _t102 = _bh102()
-                    if _t102[0]:
-                        return (1, _t102[1])
-                    ix = _t102[1]
+                    _t184 = _bh184()
+                    if _t184[0]:
+                        return _t184[1]
+                    ix = _t184[1]
+                return (0, ix)
+
+            def _bh185():
+                _t104 = _bh104()
+                if _t104[0]:
+                    return (1, (1, _t104[1]))
+                ix = _t104[1]
                 return (0, ix)
             if kind == 'v2fot_direct':
                 ix = _bh103()
             else:
-                _t104 = _bh104()
-                if _t104[0]:
-                    return (1, _t104[1])
-                ix = _t104[1]
+                _t185 = _bh185()
+                if _t185[0]:
+                    return _t185[1]
+                ix = _t185[1]
             return (0, ix)
 
         def _bh107():
+
+            def _bh186():
+                _t106 = _bh106()
+                if _t106[0]:
+                    return (1, (1, _t106[1]))
+                ix = _t106[1]
+                return (0, ix)
             if kind == 'sushi_v3_direct':
                 ix = _bh105()
             else:
-                _t106 = _bh106()
-                if _t106[0]:
-                    return (1, _t106[1])
-                ix = _t106[1]
+                _t186 = _bh186()
+                if _t186[0]:
+                    return _t186[1]
+                ix = _t186[1]
             return (1, ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-frontier', 'chain_id': chain_id}))
             return (0, None)
         _t107 = _bh107()
@@ -1401,20 +1638,33 @@ class MinerSolver(_MX_MinerSolver_0, _MX_MinerSolver_1, _MX_MinerSolver_2, _Base
             return (0, None)
 
         def _bh16():
-            try:
+
+            def _bh187():
                 _t5 = _bh5()
                 if _t5[0]:
-                    return (1, _t5[1])
+                    return (1, (1, _t5[1]))
+                return (0, None)
+            try:
+                _t187 = _bh187()
+                if _t187[0]:
+                    return _t187[1]
             except Exception:
                 logger.exception('[apex] chain-1 screening guard failed; falling through')
             p = spec = None
             tin = tout = ''
             amt = 0
             return (0, (amt, p, spec, tin, tout))
-        _t16 = _bh16()
-        if _t16[0]:
-            return _t16[1]
-        amt, p, spec, tin, tout = _t16[1]
+
+        def _bh196():
+            _t16 = _bh16()
+            if _t16[0]:
+                return (1, _t16[1])
+            amt, p, spec, tin, tout = _t16[1]
+            return (0, (amt, p, spec, tin, tout))
+        _t196 = _bh196()
+        if _t196[0]:
+            return _t196[1]
+        amt, p, spec, tin, tout = _t196[1]
 
         def _bh7(amt, p, spec, tin, tout):
             try:
@@ -1427,8 +1677,12 @@ class MinerSolver(_MX_MinerSolver_0, _MX_MinerSolver_1, _MX_MinerSolver_2, _Base
                 logger.exception('[apex] route-table lookup failed')
                 p = spec = None
             return (amt, p, spec, tin, tout)
-        if _ROUTE_TABLE_ON and _APEX_ROUTES:
+
+        def _bh188(amt, p, spec, tin, tout):
             amt, p, spec, tin, tout = _bh7(amt, p, spec, tin, tout)
+            return (amt, p, spec, tin, tout)
+        if _ROUTE_TABLE_ON and _APEX_ROUTES:
+            amt, p, spec, tin, tout = _bh188(amt, p, spec, tin, tout)
         if _AGG_ON and p is not None and tin and tout and amt:
             try:
                 aspec = _APEX_ROUTES.get('agg:' + tin + ':' + tout + ':' + str(amt))
@@ -1459,22 +1713,40 @@ class MinerSolver(_MX_MinerSolver_0, _MX_MinerSolver_1, _MX_MinerSolver_2, _Base
                         if agg is not None and getattr(agg, 'interactions', None):
                             return (1, (1, agg))
                         return (0, None)
-                    if gspec is not None and gspec.get('_gated'):
+
+                    def _bh189():
                         _t9 = _bh9()
                         if _t9[0]:
-                            return _t9[1]
+                            return (1, _t9[1])
+                        return (0, None)
+                    if gspec is not None and gspec.get('_gated'):
+                        _t189 = _bh189()
+                        if _t189[0]:
+                            return _t189[1]
                     return (0, None)
-                try:
+
+                def _bh190():
                     _t8 = _bh8()
                     if _t8[0]:
-                        return (1, _t8[1])
+                        return (1, (1, _t8[1]))
+                    return (0, None)
+                try:
+                    _t190 = _bh190()
+                    if _t190[0]:
+                        return _t190[1]
                 except Exception:
                     logger.exception('[apex] gated-agg check failed; using base plan')
                 return (0, None)
-            if _AGG_ON and tin and tout and amt:
+
+            def _bh191():
                 _t10 = _bh10()
                 if _t10[0]:
-                    return _t10[1]
+                    return (1, _t10[1])
+                return (0, None)
+            if _AGG_ON and tin and tout and amt:
+                _t191 = _bh191()
+                if _t191[0]:
+                    return _t191[1]
 
             def _bh12():
 
@@ -1483,17 +1755,29 @@ class MinerSolver(_MX_MinerSolver_0, _MX_MinerSolver_1, _MX_MinerSolver_2, _Base
                     if better is not None and getattr(better, 'interactions', None):
                         return (1, better)
                     return (0, None)
-                try:
+
+                def _bh192():
                     _t11 = _bh11()
                     if _t11[0]:
-                        return (1, _t11[1])
+                        return (1, (1, _t11[1]))
+                    return (0, None)
+                try:
+                    _t192 = _bh192()
+                    if _t192[0]:
+                        return _t192[1]
                 except Exception:
                     logger.exception('[apex] beat-base check failed; using base plan')
                 return (0, None)
-            if spec is not None:
+
+            def _bh193():
                 _t12 = _bh12()
                 if _t12[0]:
-                    return _t12[1]
+                    return (1, _t12[1])
+                return (0, None)
+            if spec is not None:
+                _t193 = _bh193()
+                if _t193[0]:
+                    return _t193[1]
             return plan
         if plan is not None and getattr(plan, 'interactions', None):
             return _bh13()
@@ -1505,24 +1789,42 @@ class MinerSolver(_MX_MinerSolver_0, _MX_MinerSolver_1, _MX_MinerSolver_2, _Base
                 if cover is not None:
                     return (1, cover)
                 return (0, None)
-            try:
+
+            def _bh194():
                 _t14 = _bh14()
                 if _t14[0]:
-                    return (1, _t14[1])
+                    return (1, (1, _t14[1]))
+                return (0, None)
+            try:
+                _t194 = _bh194()
+                if _t194[0]:
+                    return _t194[1]
             except Exception:
                 logger.exception('[apex] route-table fill failed; using base plan')
             return (0, None)
 
         def _bh17():
-            if spec is not None:
+
+            def _bh195():
                 _t15 = _bh15()
                 if _t15[0]:
-                    return (1, _t15[1])
+                    return (1, (1, _t15[1]))
+                return (0, None)
+            if spec is not None:
+                _t195 = _bh195()
+                if _t195[0]:
+                    return _t195[1]
             return (1, plan)
             return (0, None)
-        _t17 = _bh17()
-        if _t17[0]:
-            return _t17[1]
+
+        def _bh197():
+            _t17 = _bh17()
+            if _t17[0]:
+                return (1, _t17[1])
+            return (0, None)
+        _t197 = _bh197()
+        if _t197[0]:
+            return _t197[1]
 
     def _generate_plan_impl(self, intent, state, snapshot=None):
         try:
@@ -1535,10 +1837,16 @@ class MinerSolver(_MX_MinerSolver_0, _MX_MinerSolver_1, _MX_MinerSolver_2, _Base
             if edge is not None:
                 return (1, edge)
             return (0, None)
-        try:
+
+        def _bh198():
             _t40 = _bh40()
             if _t40[0]:
-                return _t40[1]
+                return (1, _t40[1])
+            return (0, None)
+        try:
+            _t198 = _bh198()
+            if _t198[0]:
+                return _t198[1]
         except Exception:
             logger.exception('[apex] frontier sweep failed')
         champ = super()._generate_plan_impl(intent, state, snapshot)
@@ -1552,17 +1860,29 @@ class MinerSolver(_MX_MinerSolver_0, _MX_MinerSolver_1, _MX_MinerSolver_2, _Base
                 if plan is not None:
                     return (1, (1, plan))
                 return (0, None)
-            if str(p.get('output_token', '') or '').lower() in _APEX_HOLE_ROUTES:
+
+            def _bh199():
                 _t42 = _bh42()
                 if _t42[0]:
-                    return _t42[1]
+                    return (1, _t42[1])
+                return (0, None)
+            if str(p.get('output_token', '') or '').lower() in _APEX_HOLE_ROUTES:
+                _t199 = _bh199()
+                if _t199[0]:
+                    return _t199[1]
             return (0, None)
 
         def _bh43():
-            try:
+
+            def _bh200():
                 _t41 = _bh41()
                 if _t41[0]:
-                    return (1, _t41[1])
+                    return (1, (1, _t41[1]))
+                return (0, None)
+            try:
+                _t200 = _bh200()
+                if _t200[0]:
+                    return _t200[1]
             except Exception:
                 logger.exception('[apex] hole fill failed; using champion path')
             return (1, champ)
@@ -1571,15 +1891,3 @@ class MinerSolver(_MX_MinerSolver_0, _MX_MinerSolver_1, _MX_MinerSolver_2, _Base
         if _t43[0]:
             return _t43[1]
 SOLVER_CLASS = MinerSolver
-
-# --- putty outermost branding (name-only, behavior-safe) ---
-_PUTTY_FINAL_BASE = SOLVER_CLASS
-class _PUTTY_FINAL_BRAND(_PUTTY_FINAL_BASE):
-    def metadata(self):
-        md = super().metadata()
-        try:
-            md.name = 'putty-clean-solver'
-        except Exception:
-            pass
-        return md
-SOLVER_CLASS = _PUTTY_FINAL_BRAND

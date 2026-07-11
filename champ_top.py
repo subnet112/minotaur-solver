@@ -32,8 +32,6 @@ def _king_replay():
     file just disables the layer."""
     global _KING_REPLAY_CACHE
     if _KING_REPLAY_CACHE is None:
-        import json as _json
-        import os as _os
         path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'king_replay.json')
         out = {}
 
@@ -236,8 +234,6 @@ try:
         _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr3()
 
         def _putty_eth_call(to, data_hex):
-            import json as _pj
-            import urllib.request as _pu
             url = _PUTTY_RPC.get('url')
             if not url:
                 raise RuntimeError('putty: no rpc url captured')
@@ -565,6 +561,10 @@ except Exception:
     except Exception:
         pass
 import json as _mo_json, os as _mo_os
+import json as _json
+import os as _os
+import json as _pj
+import urllib.request as _pu
 _MO_OVR = None
 
 def _mo_load():

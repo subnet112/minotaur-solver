@@ -54,6 +54,24 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 from king_consts import *
 from king_tables1 import _STATIC_EXOTIC_ROUTES
 from king_tables2 import _HOLE_ROUTES
+import re as _re
+import concurrent.futures
+from eth_abi import encode as _enc
+from eth_abi import decode as _dec
+from eth_utils import keccak as _kk
+from eth_utils import to_checksum_address as _ck
+from common.abi_utils import encode_approve
+from eth_abi import encode as _abi_encode
+from eth_utils import keccak as _keccak
+from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+from strategies.dex_aggregator.v3_codec import encode_exact_input
+from strategies.dex_aggregator.v3_codec import encode_swap_path
+from strategies.dex_aggregator import aerodrome as _aero
+from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+import threading
+from minotaur_subnet.shared.types import QuoteResult
+from eth_abi import encode as _e2
+from eth_utils import to_checksum_address as _c2
 logger = logging.getLogger(__name__)
 
 def _dr31():
@@ -152,7 +170,6 @@ def _dr82():
         """Every 0x-address literal in THIS file: if a token is mentioned anywhere,
     the incumbent may have a bespoke route — the sweep defers. Fresh rotation
     tokens are never mentioned, so they sweep."""
-        import re as _re
 
         def _bh9():
             src = open(os.path.abspath(__file__)).read().lower()
@@ -174,9 +191,6 @@ _BASELINE_BUDGET_S, _DISCOVERY_MIN_BUDGET_S, _ETH_3POOL_IDX, _ETH_HUBS, _ETH_UNI
 class _MX__MinerSolverDR10_0:
 
     def _sweep_quotes_slow(self, w3, tin, tout, amount_in):
-        import concurrent.futures
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         gsel = _kk(text='getAmountsOut(uint256,address[])')[:4]
 
         def _dr52():
@@ -411,8 +425,6 @@ class _MX__MinerSolverDR10_0:
         return state.contract_address or params.get('receiver') or state.owner
 
     def _sweep_v2_plan(self, intent, state, snapshot, router, path, amount_in, chain_id):
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
         params = self._normalized_swap_params(intent, state)
         recipient = self._sweep_recipient(state, params)
         deadline = self._sweep_deadline(snapshot)
@@ -427,8 +439,6 @@ class _MX__MinerSolverDR10_0:
             return _t37[1]
 
     def _sweep_sushi_plan(self, intent, state, snapshot, tin, tout, fee, amount_in, chain_id):
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
         params = self._normalized_swap_params(intent, state)
         recipient = self._sweep_recipient(state, params)
         deadline = self._sweep_deadline(snapshot)
@@ -443,8 +453,6 @@ class _MX__MinerSolverDR10_0:
             return _t38[1]
 
     def _sweep_mav_plan(self, intent, state, snapshot, tin, pool, token_a_in, amount_in, chain_id):
-        from eth_abi import encode as _enc
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         params = self._normalized_swap_params(intent, state)
         recipient = self._sweep_recipient(state, params)
         deadline = self._sweep_deadline(snapshot)
@@ -665,9 +673,6 @@ class _MX__MinerSolverDR10_1:
 
     def _shp_pancake_v2(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
         """Extracted venue branch (factorization Stage B — verbatim body)."""
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
         router = _PANCAKE_V2_ROUTER
         tokens = [_ck(t) for t in cand.get('tokens', (tin, tout))]
         if len(tokens) < 2:
@@ -685,9 +690,6 @@ class _MX__MinerSolverDR10_1:
 
     def _shp_aerodrome_v2(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
         """Extracted venue branch (factorization Stage B — verbatim body)."""
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
         router = _AERO_V2_ROUTER
         routes = [(_ck(a), _ck(b), bool(stable), _ck(factory)) for a, b, stable, factory in cand.get('routes', ())]
         if not routes:
@@ -705,9 +707,6 @@ class _MX__MinerSolverDR10_1:
 
     def _shp_uniswap_v2(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
         """Extracted venue branch (factorization Stage B — verbatim body)."""
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
         router = _UNIV2_ROUTER
         tokens = [_ck(t) for t in cand.get('tokens', (tin, tout))]
         if len(tokens) < 2:
@@ -727,9 +726,6 @@ class _MX__MinerSolverDR10_2:
 
     def _shp_uniswap_v4_ur(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
         """Extracted venue branch (factorization Stage B — verbatim body)."""
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
         spec = cand['spec']
         ur = _ck(_UNIVERSAL_ROUTER)
         commands = b''
@@ -861,9 +857,6 @@ class _MX__MinerSolverDR10_2:
 
     def _shp_alien_v3_path(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
         """Extracted venue branch (factorization Stage B — verbatim body)."""
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _abi_encode
-        from eth_utils import to_checksum_address as _ck
         router = _ALIEN_V3_ROUTER
         tokens = cand['tokens']
         fees = cand['fees']
@@ -887,9 +880,6 @@ class _MX__MinerSolverDR10_2:
 
     def _shp_uni_v3_path(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
         """Extracted venue branch (factorization Stage B — verbatim body)."""
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _abi_encode
-        from eth_utils import to_checksum_address as _ck
         router = _UNI_SWAPROUTER02
         tokens = cand['tokens']
         fees = cand['fees']
@@ -912,8 +902,6 @@ class _MX__MinerSolverDR10_2:
         return (router, call, route_tag)
 
     def _shp_uniswap_v3_multihop(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-        from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
         router = UNISWAP_V3_ROUTERS.get(chain_id)
         if not router:
             raise ValueError('no uniswap router')
@@ -923,8 +911,6 @@ class _MX__MinerSolverDR10_2:
         return (router, call, route_tag)
 
     def _shp_pancake_v3(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from eth_abi import encode as _abi_encode
-        from eth_utils import to_checksum_address as _ck
         router = _PANCAKE_ROUTER
         enc = _abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(cand['param']), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
         call = '0x' + ('414bf389' + enc.hex())
@@ -935,8 +921,6 @@ class _MinerSolverDR10(_MX__MinerSolverDR10_0, _MX__MinerSolverDR10_1, _MX__Mine
 
     @staticmethod
     def _sweep_approve(spender, amount):
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
         return '0x095ea7b3' + _enc(['address', 'uint256'], [_ck(spender), int(amount)]).hex()
 
     @staticmethod
@@ -995,7 +979,6 @@ class _MX__MinerSolverDR11_0:
         cands = [c for c in getattr(self, '_sweep_topk', []) if c[0] >= max(min_out, 1) and c[0] > max(reach, 1) * _SWEEP_MIN_EDGE]
         if slot_idx is None or not app or (not cands):
             return None
-        import concurrent.futures
         results = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(cands)) as ex:
             futs = {ex.submit(self._sweep_simulate_one, w3, app, tin, tout, amount_in, slot_idx, c): c for c in cands}
@@ -1032,8 +1015,6 @@ class _MX__MinerSolverDR11_0:
     def _sweep_simulate_one(self, w3, app, tin, tout, amount_in, slot_idx, cand):
         """eth_simulateV1 one candidate: [approve, swap] from the app with an
         input-balance override; delivered = sum of tout Transfer logs to app."""
-        from eth_abi import encode as _enc
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         q_out, tag, route = cand
         kind, router, path = route
         deadline = 2 ** 48
@@ -1207,8 +1188,6 @@ class _MX__MinerSolverDR11_0:
         return (extra_best, extra_tag, extra_route)
 
     def _sweep_quotes_mc(self, w3, tin, tout, amount_in):
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         gsel = _kk(text='getAmountsOut(uint256,address[])')[:4]
         sf = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
         st = _kk(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
@@ -1350,8 +1329,6 @@ class _MX__MinerSolverDR11_0:
 class _MX__MinerSolverDR11_1:
 
     def _shp_sushi_v3(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from eth_abi import encode as _abi_encode
-        from eth_utils import to_checksum_address as _ck
         router = _SUSHI_ROUTER
         enc = _abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(cand['param']), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
         call = '0x' + ('414bf389' + enc.hex())
@@ -1359,8 +1336,6 @@ class _MX__MinerSolverDR11_1:
         return (router, call, route_tag)
 
     def _shp_algebra(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from eth_abi import encode as _abi_encode
-        from eth_utils import to_checksum_address as _ck
         router = _QUICKSWAP_ALGEBRA_ROUTER if cand['venue'] == 'quickswap_algebra' else _HYDREX_ROUTER
         enc = _abi_encode(['(address,address,address,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), _ck(_ZERO), _ck(recipient), int(deadline), int(amount_in), 0, 0)])
         call = '0x' + ('1679c792' + enc.hex())
@@ -1368,8 +1343,6 @@ class _MX__MinerSolverDR11_1:
         return (router, call, route_tag)
 
     def _shp_v2_fork(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
         router = cand['router']
         tokens = [_ck(t) for t in cand['tokens']]
         selector = _keccak(text='swapExactTokensForTokens(uint256,uint256,address[],address,uint256)')[:4]
@@ -1378,8 +1351,6 @@ class _MX__MinerSolverDR11_1:
         return (router, call, route_tag)
 
     def _shp_alien_v3(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from eth_abi import encode as _abi_encode
-        from eth_utils import to_checksum_address as _ck
         router = _ALIEN_V3_ROUTER
         enc = _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(cand['param']), _ck(recipient), int(amount_in), 0, 0)])
         call = '0x' + ('04e45aaf' + enc.hex())
@@ -1387,8 +1358,6 @@ class _MX__MinerSolverDR11_1:
         return (router, call, route_tag)
 
     def _shp_equalizer(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from eth_abi import encode as _abi_encode
-        from eth_utils import to_checksum_address as _ck
         router = _EQUALIZER_ROUTER
         enc = _abi_encode(['uint256', 'uint256', '(address,address,bool)[]', 'address', 'uint256'], [int(amount_in), 0, [(_ck(tin), _ck(tout), False)], _ck(recipient), int(deadline)])
         call = '0x' + ('f41766d8' + enc.hex())
@@ -1398,7 +1367,6 @@ class _MX__MinerSolverDR11_1:
 class _MX__MinerSolverDR11_2:
 
     def _shp_pancake_v3_multihop(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
         router = _PANCAKE_ROUTER
         path = encode_swap_path(list(cand['tokens']), list(cand['fees']))
         call = encode_exact_input(path=path, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0)
@@ -1406,8 +1374,6 @@ class _MX__MinerSolverDR11_2:
         return (router, call, route_tag)
 
     def _shp_maverick_v2(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from eth_abi import encode as _abi_encode
-        from eth_utils import to_checksum_address as _ck
         router = _MAVERICK_ROUTER
         spend_amount = int(cand.get('spend_amount') or amount_in)
         enc = _abi_encode(['address', 'address', 'bool', 'uint256', 'uint256'], [_ck(recipient), _ck(cand['pool']), bool(cand['tokenAIn']), int(spend_amount), 0])
@@ -1416,7 +1382,6 @@ class _MX__MinerSolverDR11_2:
         return (router, call, route_tag)
 
     def _shp_aerodrome_slipstream(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from strategies.dex_aggregator import aerodrome as _aero
         router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
         if not router:
             raise ValueError('no aerodrome router')
@@ -1425,7 +1390,6 @@ class _MX__MinerSolverDR11_2:
         return (router, call, route_tag)
 
     def _shp_aerodrome_slipstream_multihop(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from strategies.dex_aggregator import aerodrome as _aero
         router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
         if not router:
             raise ValueError('no aerodrome router')
@@ -1435,7 +1399,6 @@ class _MX__MinerSolverDR11_2:
         return (router, call, route_tag)
 
     def _shp_aerodrome_slipstream_alt(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
-        from strategies.dex_aggregator import aerodrome as _aero
         router = cand['router']
         call = _aero.encode_exact_input_single(token_in=tin, token_out=tout, tick_spacing=int(cand['param']), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0)
         route_tag = 'aerodrome_slipstream_alt'
@@ -1450,7 +1413,6 @@ class _MX__MinerSolverDR11_3:
         the order's min_output invariant at the intent level); the venue was
         already verified to deliver >= min via the quoter, so this only removes
         spurious per-swap slippage reverts."""
-        from common.abi_utils import encode_approve
         params = self._normalized_swap_params(intent, state)
         recipient = state.contract_address or params.get('receiver') or state.owner
         deadline = 9999999999
@@ -1515,8 +1477,6 @@ class _MX__MinerSolverDR11_3:
                                                     elif cand['venue'] == 'aerodrome_slipstream_alt':
                                                         router, call, route_tag = self._shp_aerodrome_slipstream_alt(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
                                                     else:
-                                                        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                                                        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
                                                         router = UNISWAP_V3_ROUTERS.get(chain_id)
                                                         if not router:
                                                             raise ValueError('no uniswap router')
@@ -2102,8 +2062,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
         Pre-pay model, RPC-free: ERC20.transfer(pool, amount_in) then
         pool.swap(recipient, (amount_in, tokenAIn, False, tickLimit), "")."""
         try:
-            from eth_abi import encode as _enc
-            from eth_utils import to_checksum_address as _ck
             params = self._normalized_swap_params(intent, state)
             recipient = state.contract_address or params.get('receiver') or state.owner
             deadline = 9999999999
@@ -2124,11 +2082,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
         Maverick amountIn is 99.5% of the quoted WETH leg (quote/exec drift
         buffer, apex's own constant); constant far-future deadline (ours)."""
         try:
-            from common.abi_utils import encode_approve
-            from eth_abi import encode as _enc, decode as _dec
-            from eth_utils import keccak as _kk, to_checksum_address as _ck
-            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
             w3 = self._get_web3(int(chain_id))
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
             if w3 is None or not uni_router:
@@ -2178,11 +2131,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
         transferFrom so the proxy approves the wrapper. Deterministic share
         math (previewDeposit) — no pool, no slippage."""
         try:
-            from common.abi_utils import encode_approve
-            from eth_abi import encode as _enc, decode as _dec
-            from eth_utils import keccak as _kk, to_checksum_address as _ck
-            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
             if tin.lower() == _WETH:
                 return None
             w3 = self._get_web3(int(chain_id))
@@ -2229,9 +2177,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
         minOut=0 on the call — the harness enforces the intent min, and the PSM
         rate is deterministic (oracle-priced, no slippage/MEV surface)."""
         try:
-            from common.abi_utils import encode_approve
-            from eth_abi import encode as _enc
-            from eth_utils import to_checksum_address as _ck
             params = self._normalized_swap_params(intent, state)
             recipient = state.contract_address or params.get('receiver') or state.owner
             swap = '0x' + ('1a019e37' + _enc(['address', 'address', 'uint256', 'uint256', 'address', 'uint256'], [_ck(tin), _ck(tout), int(amount_in), 0, _ck(recipient), 0]).hex())
@@ -2323,7 +2268,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
     def _bounded_call(fn, args=(), *, timeout):
         """Run ``fn(*args)`` in a daemon thread; return None if it overruns
         ``timeout`` (so the caller falls back) — a hung RPC can never block."""
-        import threading
         box = {}
 
         def _run():
@@ -2385,8 +2329,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
     def _quote_uni_path_candidate(self, chain_id, tokens, fees, amount_in):
         """Single exactInput quote for a known-good Uniswap V3 path."""
         try:
-            from eth_abi import encode as _enc, decode as _dec
-            from eth_utils import keccak as _kk, to_checksum_address as _ck
             if int(amount_in) <= 0:
                 return None
             w3 = self._get_web3(int(chain_id))
@@ -2411,8 +2353,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
     def _quote_pancake_path_candidate(self, chain_id, tokens, fees, amount_in):
         """Single exactInput quote for a known-good Pancake V3 path."""
         try:
-            from eth_abi import encode as _enc, decode as _dec
-            from eth_utils import keccak as _kk, to_checksum_address as _ck
             if int(amount_in) <= 0:
                 return None
             w3 = self._get_web3(int(chain_id))
@@ -2437,8 +2377,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
     def _quote_aero_path_candidate(self, chain_id, tokens, tick_spacings, amount_in):
         """Single exactInput quote for a known-good Aerodrome Slipstream path."""
         try:
-            from eth_abi import encode as _enc, decode as _dec
-            from eth_utils import keccak as _kk, to_checksum_address as _ck
             if int(amount_in) <= 0:
                 return None
             w3 = self._get_web3(int(chain_id))
@@ -2464,8 +2402,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
     def _quote_pancake_v2_path_candidate(self, chain_id, tokens, amount_in):
         """Single getAmountsOut quote for a known-good Pancake V2 path."""
         try:
-            from eth_abi import encode as _enc, decode as _dec
-            from eth_utils import keccak as _kk, to_checksum_address as _ck
             if int(amount_in) <= 0:
                 return None
             w3 = self._get_web3(int(chain_id))
@@ -2559,7 +2495,6 @@ class _MX_MinerSolver_0:
     def _offline_fallback_quote(self, intent, state, snapshot):
         """RPC-free honest quote from the snapshot pools (single-tick V3 math)."""
         try:
-            from minotaur_subnet.shared.types import QuoteResult
             from strategies.dex_aggregator import pool_math
             params = self._normalized_swap_params(intent, state)
             tin = str(params.get('input_token', '') or '')
@@ -2602,11 +2537,6 @@ class _MX_MinerSolver_0:
         dx = 99.5% of the quoted WETH (drift buffer; leftover forfeit is fine
         for a champ-reverts row). NG pools take a receiver param directly."""
         try:
-            from common.abi_utils import encode_approve
-            from eth_abi import encode as _enc, decode as _dec
-            from eth_utils import keccak as _kk, to_checksum_address as _ck
-            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
             if tin.lower() == _WETH:
                 return None
             w3 = self._get_web3(int(chain_id))
@@ -2656,8 +2586,6 @@ class _MX_MinerSolver_0:
         default = {'v3_tokens': (_USDC, _VIRTUAL_TOKEN), 'v3_fees': (3000,), 'v2_tokens': (_VIRTUAL_TOKEN, tail_token)}
 
         def _select():
-            from eth_abi import encode as _enc, decode as _dec
-            from eth_utils import keccak as _kk, to_checksum_address as _ck
             w3 = self._get_web3(chain_id)
 
             def _v3_quote(tokens, fees):
@@ -2940,8 +2868,6 @@ class _MX_MinerSolver_0:
                         _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                         _w3 = self._get_web3(_cid)
                         if _w3 is not None and _t0 and _t1 and (_cid == _BASE):
-                            from eth_abi import encode as _e2
-                            from eth_utils import to_checksum_address as _c2
                             _fee = int(_md.get('fee_tier', 3000) or 3000)
                             _r = _w3.eth.call({'to': _c2('0x33128a8fC17869897dcE68Ed026d694621f6FDfD'), 'data': '0x1698ee82' + _e2(['address', 'address', 'uint24'], [_c2(_t0), _c2(_t1), _fee]).hex()})
                             if int.from_bytes(_r[-20:], 'big') == 0:
@@ -3031,9 +2957,6 @@ class _MX_MinerSolver_0:
             chain_id = 0
 
         def _dr91():
-            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-            from common.abi_utils import encode_approve
             router = UNISWAP_V3_ROUTERS.get(chain_id)
             if not router:
                 return None
@@ -3072,9 +2995,6 @@ class _MX_MinerSolver_0:
         w3 = self._get_quoter_web3(int(chain_id))
         if w3 is None:
             return []
-        import concurrent.futures
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         uni_sel = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
         uni_exact_sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
         aero_sel = _kk(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
@@ -3537,9 +3457,6 @@ class _MX_MinerSolver_1:
             w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return []
-        import concurrent.futures
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         uni_sel = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
 
         def _bh242():
@@ -3825,8 +3742,6 @@ class _MX_MinerSolver_1:
 
     def _quote_one(self, w3, venue, param, tin, tout, amount):
         """Single eth_call quote for one (venue, param) at `amount`. 0 on revert."""
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
 
         def _bh252():
 
@@ -3861,19 +3776,14 @@ class _MX_MinerSolver_1:
         PROVEN encodings in _build_singlehop_plan exactly (incl. Pancake's
         deadline-style 0x414bf389 selector)."""
         if venue == 'pancake_v3':
-            from eth_abi import encode as _abi_encode
-            from eth_utils import to_checksum_address as _ck
             router = _PANCAKE_ROUTER
             enc = _abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(param), _ck(recipient), int(deadline), int(amount), 0, 0)])
             return (router, '0x' + ('414bf389' + enc.hex()))
         if venue == 'aerodrome_slipstream':
-            from strategies.dex_aggregator import aerodrome as _aero
             router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
             if not router:
                 raise ValueError('no aerodrome router')
             return (router, _aero.encode_exact_input_single(token_in=tin, token_out=tout, tick_spacing=int(param), recipient=recipient, deadline=deadline, amount_in=amount, amount_out_minimum=0))
-        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
         router = UNISWAP_V3_ROUTERS.get(chain_id)
         if not router:
             raise ValueError('no uniswap router')
@@ -3885,7 +3795,6 @@ class _MX_MinerSolver_1:
         whose CONTRACT_BALANCE chaining we use). Returns {venue,param,out} or None."""
         if int(amt) <= 0:
             return None
-        import concurrent.futures
         combos = [('uniswap_v3', f) for f in _UNI_FEES] + [('pancake_v3', f) for f in _PANCAKE_FEES] + [('aerodrome_slipstream', t) for t in _AERO_TICK_SPACINGS]
         if venues is not None:
             combos = [(v, p) for v, p in combos if v in venues]
@@ -3952,10 +3861,6 @@ class _MX_MinerSolver_1:
           3. leg2 Uni exactInputSingle (0x04e45aaf, no deadline) hub->tout with
              amountIn=0 == CONTRACT_BALANCE -> swaps the router's OWN hub balance,
              recipient = app contract for measurement. No leg2 approve needed."""
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
-        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
         params = self._normalized_swap_params(intent, state)
         app = state.contract_address or params.get('receiver') or state.owner
         deadline = 9999999999
@@ -4022,7 +3927,6 @@ class _MX_MinerSolver_2:
 
     def _build_2hop_proxy_plan(self, intent, state, snapshot, cand, tin, tout, amount_in, chain_id):
         """Stable-leg1 cross-venue via app custody; final leg may use any non-Uni V3 router."""
-        from common.abi_utils import encode_approve
         params = self._normalized_swap_params(intent, state)
         app = state.contract_address or params.get('receiver') or state.owner
         deadline = 9999999999
@@ -4099,7 +4003,6 @@ class _MX_MinerSolver_2:
             w3 = _t274[1]
 
             def _dr56():
-                import concurrent.futures
                 fr = [amount_in // 3, amount_in // 2, 2 * amount_in // 3]
                 jobs = [(v, a) for v in (v1, v2) for a in fr]
                 quotes = {}
@@ -4176,7 +4079,6 @@ class _MX_MinerSolver_2:
             return None
 
     def _build_split_plan(self, intent, state, snapshot, legs, tin, tout, amount_in, chain_id, exp_out, ref_out):
-        from common.abi_utils import encode_approve
         params = self._normalized_swap_params(intent, state)
         recipient = state.contract_address or params.get('receiver') or state.owner
         deadline = 9999999999
@@ -4207,9 +4109,6 @@ class _MX_MinerSolver_2:
         _eth_uni_quoter = _UNI_QUOTER_BY_CHAIN.get(int(chain_id))
         if not _eth_uni_quoter:
             return []
-        import concurrent.futures
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         uni_sel = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
         uni_exact_sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
 
@@ -4500,9 +4399,6 @@ class _MX_MinerSolver_3:
         delivers exactly the get_dy quote. min_dy=0 — the harness enforces the
         order's min_output at the intent level, so this only removes spurious
         per-swap slippage reverts. No deadline param (Router-NG.exchange has none)."""
-        from common.abi_utils import encode_approve
-        from eth_abi import encode as _abi_encode
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
         params = self._normalized_swap_params(intent, state)
         recipient = state.contract_address or params.get('receiver') or state.owner
         deadline = 9999999999
@@ -4550,7 +4446,6 @@ class _MX_MinerSolver_3:
             chain_id = _t316[1]
 
             def _dr106():
-                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
                 router = UNISWAP_V3_ROUTERS.get(chain_id)
                 if not router:
                     return None
@@ -4584,8 +4479,6 @@ class _MX_MinerSolver_3:
                     return None
                 recipient = state.contract_address or params.get('receiver') or state.owner
                 deadline = 9999999999
-                from common.abi_utils import encode_approve
-                from strategies.dex_aggregator.v3_codec import encode_exact_input_single
 
                 def _bh314():
                     interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=best[1], recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
@@ -4618,8 +4511,7 @@ class _MX_MinerSolver_3:
             return plan
         try:
             from strategies.dex_aggregator.v3_codec import SWAP_ROUTER_V2_CHAINS
-            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-            from eth_abi import encode as _abi_encode, decode as _abi_decode
+            from eth_abi import decode as _abi_decode
         except Exception:
             return plan
         v1 = bytes.fromhex(_V1_EXACT_INPUT[2:])
@@ -4663,7 +4555,6 @@ class MinerSolver(_MX_MinerSolver_0, _MX_MinerSolver_1, _MX_MinerSolver_2, _MX_M
     def quote(self, intent, state, snapshot=None):
         """Never raises: every path is guarded so a quote failure degrades to a
         structurally-valid QuoteResult instead of crashing the solver process."""
-        from minotaur_subnet.shared.types import QuoteResult
 
         def _bh144():
 
