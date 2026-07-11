@@ -21,7 +21,7 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07111753-0')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07111921-4')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'zenith-dev')
 _BASE = 8453
 _WETH = '0x4200000000000000000000000000000000000006'
