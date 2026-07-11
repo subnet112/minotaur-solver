@@ -248,15 +248,22 @@ class MinerSolver(_Base):
                 d = '0xcdca1753' + _enc(['bytes', 'uint256'], [path, int(amount_in)]).hex()
                 r = w3.eth.call({'to': _ck(QUOTER), 'data': d})
                 return int(r[:32].hex(), 16) if r else 0
-            if kind == 'aero_v2':
-                from eth_abi import encode as _enc, decode as _dec
-                routes = [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in spec['routes']]
-                d = '0x5509a1ac' + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), routes]).hex()
-                r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': d})
-                try:
-                    return int(_dec(['uint256[]'], bytes(r))[0][-1])
-                except Exception:
-                    return 0
+
+            def _dr36():
+                nonlocal _enc, d, r
+                if kind == 'aero_v2':
+                    from eth_abi import encode as _enc, decode as _dec
+                    routes = [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in spec['routes']]
+                    d = '0x5509a1ac' + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), routes]).hex()
+                    r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': d})
+                    try:
+                        return int(_dec(['uint256[]'], bytes(r))[0][-1])
+                    except Exception:
+                        return 0
+                return _DR_UNSET
+            _dr37 = _dr36()
+            if _dr37 is not _DR_UNSET:
+                return _dr37
         except Exception:
             return 0
         return 0
@@ -692,18 +699,22 @@ class MinerSolver(_Base):
         if not _FRONTIER_ON:
             return None
         from concurrent.futures import ThreadPoolExecutor
-        tin = str(params.get('input_token', '') or '')
-        tout = str(params.get('output_token', '') or '')
 
-        def _dr26():
-            if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or (tin.lower() == tout.lower()):
-                return None
-            if self._apex_champ_hardcodes(tin, tout):
-                return None
-            if any((hasattr(self, m) for m in ('_sweep_plan', '_sweep_quotes', '_sweep_sushi_plan'))):
-                return None
-            return _DR_UNSET
-        _dr27 = _dr26()
+        def _dr38():
+            tin = str(params.get('input_token', '') or '')
+            tout = str(params.get('output_token', '') or '')
+
+            def _dr26():
+                if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or (tin.lower() == tout.lower()):
+                    return None
+                if self._apex_champ_hardcodes(tin, tout):
+                    return None
+                if any((hasattr(self, m) for m in ('_sweep_plan', '_sweep_quotes', '_sweep_sushi_plan'))):
+                    return None
+                return _DR_UNSET
+            _dr27 = _dr26()
+            return (_dr27, tin, tout)
+        _dr27, tin, tout = _dr38()
         if _dr27 is not _DR_UNSET:
             return _dr27
         amount_in = None

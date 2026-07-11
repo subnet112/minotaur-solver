@@ -372,10 +372,14 @@ class MinerSolver(_Base):
             return None
         if any((hasattr(self, m) for m in ('_sweep_plan', '_sweep_quotes', '_sweep_sushi_plan'))):
             return None
-        chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-        amount_in = int(params.get('input_amount', 0) or 0)
-        amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-        min_out = int(params.get('min_output_amount', 0) or 0)
+
+        def _dr11():
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            amount_in = int(params.get('input_amount', 0) or 0)
+            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+            min_out = int(params.get('min_output_amount', 0) or 0)
+            return (amount_in, chain_id, min_out)
+        amount_in, chain_id, min_out = _dr11()
         if chain_id != _BASE or amount_in <= 0:
             return None
         w3 = self._get_web3(chain_id)
@@ -387,16 +391,21 @@ class MinerSolver(_Base):
 
         def _vg3():
             nonlocal extra, out, reachable, spec, wi
-            wethL = _WETH.lower()
-            via_weth = tin.lower() != wethL and tout.lower() != wethL
-            weth_fee, weth_out = (500, 0)
-            if via_weth:
-                with ThreadPoolExecutor(max_workers=6) as ex:
-                    fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
-                    for fut, f in fs.items():
-                        o = fut.result()
-                        if o > weth_out:
-                            weth_out, weth_fee = (o, f)
+
+            def _dr10():
+                nonlocal ex, fut
+                wethL = _WETH.lower()
+                via_weth = tin.lower() != wethL and tout.lower() != wethL
+                weth_fee, weth_out = (500, 0)
+                if via_weth:
+                    with ThreadPoolExecutor(max_workers=6) as ex:
+                        fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+                        for fut, f in fs.items():
+                            o = fut.result()
+                            if o > weth_out:
+                                weth_out, weth_fee = (o, f)
+                return weth_out
+            weth_out = _dr10()
             wi = weth_out * 995 // 1000 if weth_out > 0 else 0
             tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
             reachable, extra = (0, (0, None))

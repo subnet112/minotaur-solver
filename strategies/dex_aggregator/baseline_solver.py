@@ -119,12 +119,16 @@ def _compute_platform_fee_wei(gas_units: int, gas_price_wei: int) -> int:
 class _BaselineSwapSolverDR1(IntentSolver):
 
     def _normalized_swap_params(self, intent: AppIntentDefinition, state: IntentState) -> dict[str, Any]:
-        params = _state_params(state)
-        receiver_default = state.contract_address or state.owner
-        if getattr(state, 'typed_context', None) is not None:
-            typed = state.typed_context
-            params = {**params, 'input_token': getattr(typed, 'input_token', params.get('input_token', '')), 'output_token': getattr(typed, 'output_token', params.get('output_token', '')), 'input_amount': getattr(typed, 'input_amount', params.get('input_amount', 0)), 'min_output_amount': getattr(typed, 'min_output_amount', params.get('min_output_amount', params.get('output_amount', 0))), 'receiver': getattr(typed, 'receiver', receiver_default), 'fee_tier': getattr(typed, 'fee_tier', params.get('fee_tier', 3000))}
-        result = normalize_swap_intent_params(params, manifest=manifest_from_definition(intent), intent_name=_intent_function_from_state(state, 'swap'), receiver_default=receiver_default, slippage_bps=self._processor.slippage_bps if self._processor else 50)
+
+        def _dr30():
+            params = _state_params(state)
+            receiver_default = state.contract_address or state.owner
+            if getattr(state, 'typed_context', None) is not None:
+                typed = state.typed_context
+                params = {**params, 'input_token': getattr(typed, 'input_token', params.get('input_token', '')), 'output_token': getattr(typed, 'output_token', params.get('output_token', '')), 'input_amount': getattr(typed, 'input_amount', params.get('input_amount', 0)), 'min_output_amount': getattr(typed, 'min_output_amount', params.get('min_output_amount', params.get('output_amount', 0))), 'receiver': getattr(typed, 'receiver', receiver_default), 'fee_tier': getattr(typed, 'fee_tier', params.get('fee_tier', 3000))}
+            result = normalize_swap_intent_params(params, manifest=manifest_from_definition(intent), intent_name=_intent_function_from_state(state, 'swap'), receiver_default=receiver_default, slippage_bps=self._processor.slippage_bps if self._processor else 50)
+            return result
+        result = _dr30()
         for key, chain_key in [('input_token', '_input_chain'), ('output_token', '_output_chain')]:
             val = result.get(key, '')
             if val and val.startswith('eip155:'):
@@ -371,17 +375,21 @@ class BaselineSwapSolver(_BaselineSwapSolverDR1):
                 continue
             self._discover_pools_for_pair(chain_id, token_in, mid, pool_states)
             self._discover_pools_for_pair(chain_id, mid, token_out, pool_states)
-        from strategies.dex_aggregator import aerodrome as _aero
-        if chain_id in _aero.AERODROME_SLIPSTREAM_FACTORY:
-            w3 = self._get_web3(chain_id)
-            if w3 is not None:
-                _aero.discover_pools_for_pair(w3, chain_id, token_in, token_out, pool_states, self._query_pool_state, self._pair_discovery_cache, cache_ttl=self._pool_cache_ttl)
-                for mid in intermediaries:
-                    mid_lower = mid.lower()
-                    if mid_lower == in_lower or mid_lower == out_lower:
-                        continue
-                    _aero.discover_pools_for_pair(w3, chain_id, token_in, mid, pool_states, self._query_pool_state, self._pair_discovery_cache, cache_ttl=self._pool_cache_ttl)
-                    _aero.discover_pools_for_pair(w3, chain_id, mid, token_out, pool_states, self._query_pool_state, self._pair_discovery_cache, cache_ttl=self._pool_cache_ttl)
+
+        def _dr31():
+            nonlocal mid, mid_lower
+            from strategies.dex_aggregator import aerodrome as _aero
+            if chain_id in _aero.AERODROME_SLIPSTREAM_FACTORY:
+                w3 = self._get_web3(chain_id)
+                if w3 is not None:
+                    _aero.discover_pools_for_pair(w3, chain_id, token_in, token_out, pool_states, self._query_pool_state, self._pair_discovery_cache, cache_ttl=self._pool_cache_ttl)
+                    for mid in intermediaries:
+                        mid_lower = mid.lower()
+                        if mid_lower == in_lower or mid_lower == out_lower:
+                            continue
+                        _aero.discover_pools_for_pair(w3, chain_id, token_in, mid, pool_states, self._query_pool_state, self._pair_discovery_cache, cache_ttl=self._pool_cache_ttl)
+                        _aero.discover_pools_for_pair(w3, chain_id, mid, token_out, pool_states, self._query_pool_state, self._pair_discovery_cache, cache_ttl=self._pool_cache_ttl)
+        _dr31()
         return pool_states
 
     def _derive_prices(self, pool_states, chain_id=1):
@@ -560,20 +568,26 @@ class BaselineSwapSolver(_BaselineSwapSolverDR1):
                     zero_for_one = t0 == input_token.lower()
                 except Exception:
                     pass
-        if not pool_address:
-            raise ValueError(f'No pool found for {input_token}/{output_token} on chain {chain_id}')
 
-        def _dr1():
-            MIN_SQRT_RATIO = 4295128739
-            MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342
-            sqrt_price_limit = MIN_SQRT_RATIO + 1 if zero_for_one else MAX_SQRT_RATIO - 1
-            swap_selector = '128acb08'
-            callback_data = abi_encode(['address', 'address', 'uint24'], [input_token if input_token.startswith('0x') else '0x' + '0' * 40, output_token if output_token.startswith('0x') else '0x' + '0' * 40, 3000])
-            swap_calldata = '0x' + swap_selector + recipient.replace('0x', '').lower().zfill(64) + ('01' if zero_for_one else '00').zfill(64) + hex(amount_in)[2:].zfill(64) + hex(sqrt_price_limit)[2:].zfill(64) + hex(160)[2:].zfill(64) + hex(len(callback_data))[2:].zfill(64) + callback_data.hex()
-            return swap_calldata
-        swap_calldata = _dr1()
-        interactions = [Interaction(target=input_token, value='0', call_data='0x095ea7b3' + pool_address.replace('0x', '').lower().zfill(64) + hex(amount_in)[2:].zfill(64), chain_id=chain_id), Interaction(target=pool_address, value='0', call_data=swap_calldata, chain_id=chain_id)]
-        return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3_direct_pool', 'pool': pool_address, 'zero_for_one': zero_for_one, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(amount_in), 'min_output_amount': str(min_output), 'chain_id': chain_id})
+        def _dr25():
+            if not pool_address:
+                raise ValueError(f'No pool found for {input_token}/{output_token} on chain {chain_id}')
+
+            def _dr1():
+                MIN_SQRT_RATIO = 4295128739
+                MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342
+                sqrt_price_limit = MIN_SQRT_RATIO + 1 if zero_for_one else MAX_SQRT_RATIO - 1
+                swap_selector = '128acb08'
+                callback_data = abi_encode(['address', 'address', 'uint24'], [input_token if input_token.startswith('0x') else '0x' + '0' * 40, output_token if output_token.startswith('0x') else '0x' + '0' * 40, 3000])
+                swap_calldata = '0x' + swap_selector + recipient.replace('0x', '').lower().zfill(64) + ('01' if zero_for_one else '00').zfill(64) + hex(amount_in)[2:].zfill(64) + hex(sqrt_price_limit)[2:].zfill(64) + hex(160)[2:].zfill(64) + hex(len(callback_data))[2:].zfill(64) + callback_data.hex()
+                return swap_calldata
+            swap_calldata = _dr1()
+            interactions = [Interaction(target=input_token, value='0', call_data='0x095ea7b3' + pool_address.replace('0x', '').lower().zfill(64) + hex(amount_in)[2:].zfill(64), chain_id=chain_id), Interaction(target=pool_address, value='0', call_data=swap_calldata, chain_id=chain_id)]
+            return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3_direct_pool', 'pool': pool_address, 'zero_for_one': zero_for_one, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(amount_in), 'min_output_amount': str(min_output), 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr26 = _dr25()
+        if _dr26 is not _DR_UNSET:
+            return _dr26
 
     def _generate_yield_plan(self, intent, state, snapshot=None):
         """Delegate to BaselineYieldStrategy for rebalance intents."""
@@ -783,11 +797,17 @@ class BaselineSwapSolver(_BaselineSwapSolverDR1):
             slippage_bps = self._processor.slippage_bps
             min_output = expected_output * (10000 - slippage_bps) // 10000
         deadline = context.timestamp + self._processor.deadline_offset
-        recipient = state.contract_address or swap_params.get('receiver', state.owner)
-        tick_spacing = int(hop['pool_state'].get('tickSpacing', 0))
-        interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=_aero.encode_exact_input_single(token_in=input_token, token_out=output_token, tick_spacing=tick_spacing, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0), chain_id=chain_id)]
-        logger.info('Aerodrome single-hop plan: %s -> %s tickSpacing=%d expected_out=%d', input_token[:10], output_token[:10], tick_spacing, expected_output)
-        return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'aerodrome_slipstream', 'dex': 'aerodrome', 'router': router, 'tick_spacing': tick_spacing, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(amount_in), 'min_output_amount': str(min_output), 'expected_output': str(expected_output), 'chain_id': chain_id})
+
+        def _dr28():
+            recipient = state.contract_address or swap_params.get('receiver', state.owner)
+            tick_spacing = int(hop['pool_state'].get('tickSpacing', 0))
+            interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=_aero.encode_exact_input_single(token_in=input_token, token_out=output_token, tick_spacing=tick_spacing, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0), chain_id=chain_id)]
+            logger.info('Aerodrome single-hop plan: %s -> %s tickSpacing=%d expected_out=%d', input_token[:10], output_token[:10], tick_spacing, expected_output)
+            return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'aerodrome_slipstream', 'dex': 'aerodrome', 'router': router, 'tick_spacing': tick_spacing, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(amount_in), 'min_output_amount': str(min_output), 'expected_output': str(expected_output), 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr29 = _dr28()
+        if _dr29 is not _DR_UNSET:
+            return _dr29
 
     def _build_aerodrome_multihop_plan(self, intent, state, context, hops, input_token, output_token, amount_in, expected_output, chain_id):
         """Multi-hop swap routed entirely through Aerodrome's Slipstream
@@ -892,8 +912,11 @@ class BaselineSwapSolver(_BaselineSwapSolverDR1):
                 chain_legs.append(ChainLeg(chain_id=dst_chain, interactions=dest_interactions, intent_selector=swap_sel, metadata={'type': 'destination_action'}))
             _dr7()
         else:
-            chain_legs.append(ChainLeg(chain_id=src_chain, interactions=[], intent_selector=bridge_sel, metadata={'type': 'bridge_source'}))
-            bridge_requests.append(BridgeRequest(token=input_token, amount=input_amount, src_chain_id=src_chain, dst_chain_id=dst_chain, recipient=recipient, purpose=f'bridge {input_token[:10]}.. to dest chain'))
+
+            def _dr27():
+                chain_legs.append(ChainLeg(chain_id=src_chain, interactions=[], intent_selector=bridge_sel, metadata={'type': 'bridge_source'}))
+                bridge_requests.append(BridgeRequest(token=input_token, amount=input_amount, src_chain_id=src_chain, dst_chain_id=dst_chain, recipient=recipient, purpose=f'bridge {input_token[:10]}.. to dest chain'))
+            _dr27()
             dest_interactions = self._build_dest_swap_interactions(intent, state, snapshot, dst_chain, output_token, recipient)
             chain_legs.append(ChainLeg(chain_id=dst_chain, interactions=dest_interactions, intent_selector=swap_sel, metadata={'type': 'destination_swap'}))
         cross_chain_plan = CrossChainPlan(legs=chain_legs, bridge_requests=bridge_requests)
@@ -1129,8 +1152,14 @@ class BaselineSwapSolver(_BaselineSwapSolverDR1):
                 if bridge_quote_b:
                     final_output = bridge_quote_b.estimated_output
                     bridge_token_out = bridge_quote_b.token_out
-                    if bridge_token_out.lower() == output_token.lower():
-                        return QuoteResult(estimated_output=str(final_output), route_summary=f'Cross-chain: {route_desc} + bridge {src_chain}→{dst_chain}', gas_estimate=_GAS_BASE_OVERHEAD * 2 + _GAS_PER_HOP * len(hops), metadata={'cross_chain': True, 'direction': 'swap_then_bridge', 'src_chain': src_chain, 'dst_chain': dst_chain, 'bridge_fee': bridge_quote_b.fee, 'swap_output': swap_output, 'hops': len(hops), 'protocol': 'UniswapV3 + Hyperlane'}, computed_params={'min_output_amount': str(final_output)})
+
+                    def _dr23():
+                        if bridge_token_out.lower() == output_token.lower():
+                            return QuoteResult(estimated_output=str(final_output), route_summary=f'Cross-chain: {route_desc} + bridge {src_chain}→{dst_chain}', gas_estimate=_GAS_BASE_OVERHEAD * 2 + _GAS_PER_HOP * len(hops), metadata={'cross_chain': True, 'direction': 'swap_then_bridge', 'src_chain': src_chain, 'dst_chain': dst_chain, 'bridge_fee': bridge_quote_b.fee, 'swap_output': swap_output, 'hops': len(hops), 'protocol': 'UniswapV3 + Hyperlane'}, computed_params={'min_output_amount': str(final_output)})
+                        return _DR_UNSET
+                    _dr24 = _dr23()
+                    if _dr24 is not _DR_UNSET:
+                        return _dr24
         raise ValueError(f'No cross-chain route found for {input_token[:10]}.. ({src_chain}) → {output_token[:10]}.. ({dst_chain})')
 
     def check_trigger(self, intent, state, snapshot=None):
