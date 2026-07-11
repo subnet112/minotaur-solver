@@ -159,12 +159,16 @@ def _dr20():
         from minotaur_subnet.shared.types import Interaction as _IX
         ur = '0x6fF5693b99212Da76ad316178A184AB56D299b43'
         ix = _leg1_swap_ix(spec, tin, amount_in, ur, chain_id)
-        c0, c1, fee, tick, hooks = spec['pool']
-        settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), 1 << 255, False])
-        swap = _abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(spec['zero_for_one']), 0, 0, b'')])
-        take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
-        sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
-        plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
+
+        def _dr35():
+            c0, c1, fee, tick, hooks = spec['pool']
+            settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), 1 << 255, False])
+            swap = _abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(spec['zero_for_one']), 0, 0, b'')])
+            take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
+            sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
+            plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
+            return plan
+        plan = _dr35()
         exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
         ix.append(_IX(target=ur, value='0', call_data=exec_call, chain_id=chain_id))
         return ix
@@ -628,34 +632,40 @@ class MinerSolver(_ChampBase):
             return None
         WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
         FEE = {frozenset((WETH, '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')): 500, frozenset((WETH, '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599')): 500}
-        ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
-        recip = str(p.get('receiver', '') or '0x0000000000000000000000000000000000000001')
-        approve = _IX(target=_ck(tin), value='0', call_data='0x095ea7b3' + _enc(['address', 'uint256'], [_ck(ROUTER), amt]).hex(), chain_id=1)
 
-        def _dr16():
+        def _dr31():
+            ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+            recip = str(p.get('receiver', '') or '0x0000000000000000000000000000000000000001')
+            approve = _IX(target=_ck(tin), value='0', call_data='0x095ea7b3' + _enc(['address', 'uint256'], [_ck(ROUTER), amt]).hex(), chain_id=1)
 
-            def path_bytes(tokens, fees):
-                b = b''
-                for i, t in enumerate(tokens):
-                    b += bytes.fromhex(t[2:])
-                    if i < len(fees):
-                        b += fees[i].to_bytes(3, 'big')
-                return b
-            if frozenset((tin, tout)) in FEE:
-                tokens, fees = ([tin, tout], [FEE[frozenset((tin, tout))]])
-            elif WETH not in (tin, tout):
-                f1 = FEE.get(frozenset((tin, WETH)), 3000)
-                f2 = FEE.get(frozenset((WETH, tout)), 3000)
-                tokens, fees = ([tin, WETH, tout], [f1, f2])
-            else:
-                tokens, fees = ([tin, tout], [3000])
-            swap_data = '0xc04b8d59' + _enc(['(bytes,address,uint256,uint256,uint256)'], [(path_bytes(tokens, fees), _ck(recip), 9999999999, amt, 0)]).hex()
-            return (fees, swap_data)
-        fees, swap_data = _dr16()
-        swap = _IX(target=_ck(ROUTER), value='0', call_data=swap_data, chain_id=1)
-        logger.info('[hydra] eth fastpath %s->%s amt=%s hops=%d', tin[:8], tout[:8], amt, len(fees))
-        self._bm_done = getattr(self, '_bm_done', 0) + 1
-        return _EP(intent_id=intent.app_id, interactions=[approve, swap], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-eth-fastpath', 'chain_id': 1})
+            def _dr16():
+
+                def path_bytes(tokens, fees):
+                    b = b''
+                    for i, t in enumerate(tokens):
+                        b += bytes.fromhex(t[2:])
+                        if i < len(fees):
+                            b += fees[i].to_bytes(3, 'big')
+                    return b
+                if frozenset((tin, tout)) in FEE:
+                    tokens, fees = ([tin, tout], [FEE[frozenset((tin, tout))]])
+                elif WETH not in (tin, tout):
+                    f1 = FEE.get(frozenset((tin, WETH)), 3000)
+                    f2 = FEE.get(frozenset((WETH, tout)), 3000)
+                    tokens, fees = ([tin, WETH, tout], [f1, f2])
+                else:
+                    tokens, fees = ([tin, tout], [3000])
+                swap_data = '0xc04b8d59' + _enc(['(bytes,address,uint256,uint256,uint256)'], [(path_bytes(tokens, fees), _ck(recip), 9999999999, amt, 0)]).hex()
+                return (fees, swap_data)
+            fees, swap_data = _dr16()
+            swap = _IX(target=_ck(ROUTER), value='0', call_data=swap_data, chain_id=1)
+            logger.info('[hydra] eth fastpath %s->%s amt=%s hops=%d', tin[:8], tout[:8], amt, len(fees))
+            self._bm_done = getattr(self, '_bm_done', 0) + 1
+            return _EP(intent_id=intent.app_id, interactions=[approve, swap], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-eth-fastpath', 'chain_id': 1})
+            return _DR_UNSET
+        _dr32 = _dr31()
+        if _dr32 is not _DR_UNSET:
+            return _dr32
 
     def _hydra_census_plan(self, intent, state, snapshot, hooked_only):
         p = self._normalized_swap_params(intent, state)
@@ -671,24 +681,30 @@ class MinerSolver(_ChampBase):
             return None
         spec = None
 
-        def _dr25():
-            nonlocal spec
-            if tin in (c0, c1):
-                spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': tin, 'zero_for_one': c0 == tin}
-            elif _WETH in (c0, c1) and tin == _USDC:
-                spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': _WETH, 'zero_for_one': c0 == _WETH, 'v3_tokens': (_USDC, _WETH), 'v3_fees': (500,)}
-            if spec is None:
-                return None
+        def _dr33():
+
+            def _dr25():
+                nonlocal spec
+                if tin in (c0, c1):
+                    spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': tin, 'zero_for_one': c0 == tin}
+                elif _WETH in (c0, c1) and tin == _USDC:
+                    spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': _WETH, 'zero_for_one': c0 == _WETH, 'v3_tokens': (_USDC, _WETH), 'v3_fees': (500,)}
+                if spec is None:
+                    return None
+                return _DR_UNSET
+            _dr26 = _dr25()
+            if _dr26 is not _DR_UNSET:
+                return _dr26
+            cand = {'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-census', 'out': 1, 'gas_est': 650000, 'gas_model': 1000000}
+            cplan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amt, chain_id)
+            if cplan is not None and getattr(cplan, 'interactions', None):
+                logger.info('[hydra] census cover %s->%s (hook %s, pre=%s)', tin[:8], tout[:8], hooks[:10], hooked_only)
+                return cplan
+            return None
             return _DR_UNSET
-        _dr26 = _dr25()
-        if _dr26 is not _DR_UNSET:
-            return _dr26
-        cand = {'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-census', 'out': 1, 'gas_est': 650000, 'gas_model': 1000000}
-        cplan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amt, chain_id)
-        if cplan is not None and getattr(cplan, 'interactions', None):
-            logger.info('[hydra] census cover %s->%s (hook %s, pre=%s)', tin[:8], tout[:8], hooks[:10], hooked_only)
-            return cplan
-        return None
+        _dr34 = _dr33()
+        if _dr34 is not _DR_UNSET:
+            return _dr34
 SOLVER_CLASS = MinerSolver
 try:
     import logging as _putty_logging

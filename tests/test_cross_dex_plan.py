@@ -103,17 +103,21 @@ def test_uniswap_singlehop_anchors_min_to_exact_output_not_input():
     s = _solver()
     s._normalized_swap_params = lambda intent, state: {'input_token': WETH, 'output_token': USDC, 'input_amount': 10 ** 18, 'min_output_amount': 0, 'receiver': OWNER, 'fee_tier': 500}
     ctx = ProcessorContext(chain_id=CHAIN, timestamp=1000, block_number=0)
-    hop = {'dex': DEX_UNISWAP_V3, 'pool_state': {'dex': DEX_UNISWAP_V3, 'fee': 500}, 'fee': 500, 'token_in': WETH, 'token_out': USDC, 'amount_in': 10 ** 18, 'amount_out': 175000000}
-    expected = 175000000
-    plan = s._build_uniswap_singlehop_plan(_intent(), _state(), ctx, hop, WETH, USDC, 10 ** 18, expected, CHAIN)
-    assert len(plan.interactions) == 2
-    spender, amount = _decode_approve(plan.interactions[0].call_data)
-    assert _addr_eq(plan.interactions[0].target, WETH)
-    assert _addr_eq(spender, UNISWAP_V3_ROUTERS[CHAIN])
-    assert amount == 10 ** 18
-    swap = _decode_uni_v2_swap(plan.interactions[1].call_data)
-    assert _addr_eq(swap['token_in'], WETH) and _addr_eq(swap['token_out'], USDC)
-    assert swap['fee'] == 500
+
+    def _dr2():
+        hop = {'dex': DEX_UNISWAP_V3, 'pool_state': {'dex': DEX_UNISWAP_V3, 'fee': 500}, 'fee': 500, 'token_in': WETH, 'token_out': USDC, 'amount_in': 10 ** 18, 'amount_out': 175000000}
+        expected = 175000000
+        plan = s._build_uniswap_singlehop_plan(_intent(), _state(), ctx, hop, WETH, USDC, 10 ** 18, expected, CHAIN)
+        assert len(plan.interactions) == 2
+        spender, amount = _decode_approve(plan.interactions[0].call_data)
+        assert _addr_eq(plan.interactions[0].target, WETH)
+        assert _addr_eq(spender, UNISWAP_V3_ROUTERS[CHAIN])
+        assert amount == 10 ** 18
+        swap = _decode_uni_v2_swap(plan.interactions[1].call_data)
+        assert _addr_eq(swap['token_in'], WETH) and _addr_eq(swap['token_out'], USDC)
+        assert swap['fee'] == 500
+        return (expected, swap)
+    expected, swap = _dr2()
     assert _addr_eq(swap['recipient'], CONTRACT)
     slippage = s._processor.slippage_bps
     assert swap['min_out'] == expected * (10000 - slippage) // 10000

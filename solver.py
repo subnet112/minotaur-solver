@@ -30,8 +30,8 @@ from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'hydra-discovery-router')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.70.5')
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07111427-1')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
@@ -275,12 +275,18 @@ class VikingSolver(_HydraBase):
             return plan
         if row:
             import time as _time
-            age = _time.time() - float(row.get('at') or 0)
-            if age > self._V_ROW_FRESH_S:
-                fresh = self._v_engine_fresh(intent, state, snapshot)
-                if fresh is not None:
-                    logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
-                    return fresh
+
+            def _dr5():
+                age = _time.time() - float(row.get('at') or 0)
+                if age > self._V_ROW_FRESH_S:
+                    fresh = self._v_engine_fresh(intent, state, snapshot)
+                    if fresh is not None:
+                        logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
+                        return fresh
+                return _DR_UNSET
+            _dr6 = _dr5()
+            if _dr6 is not _DR_UNSET:
+                return _dr6
         rp = self._v_replay_plan(key, intent, state, snapshot)
         if rp is not None:
             logger.info('[viking] fill-empty serve %s', key[:64])
@@ -290,3 +296,15 @@ class VikingSolver(_HydraBase):
             return dyn
         return plan
 SOLVER_CLASS = VikingSolver
+
+# --- putty outermost branding (name-only, behavior-safe) ---
+_PUTTY_FINAL_BASE = SOLVER_CLASS
+class _PUTTY_FINAL_BRAND(_PUTTY_FINAL_BASE):
+    def metadata(self):
+        md = super().metadata()
+        try:
+            md.name = 'putty-clean-solver'
+        except Exception:
+            pass
+        return md
+SOLVER_CLASS = _PUTTY_FINAL_BRAND

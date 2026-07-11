@@ -197,7 +197,10 @@ class _MinerSolverDR10(BaselineSwapSolver):
         for f in (100, 500, 2500, 10000):
             jobs.append(('reach', None, lambda f=f: q_v3(_SWEEP_PAN_Q, tin, tout, amount_in, f)))
         for tk in (1, 50, 100, 200, 2000):
-            jobs.append(('reach', None, lambda tk=tk: q_v3(_SWEEP_AERO_Q, tin, tout, amount_in, tk, tick=True)))
+
+            def _dr77():
+                jobs.append(('reach', None, lambda tk=tk: q_v3(_SWEEP_AERO_Q, tin, tout, amount_in, tk, tick=True)))
+            _dr77()
 
         def _dr29():
             for stf in (False, True):
@@ -228,21 +231,27 @@ class _MinerSolverDR10(BaselineSwapSolver):
                         pools = _dec(['address[]'], r)[0]
                     except Exception:
                         return (0, None)
-                    token_a_in = tin.lower() == lo.lower()
-                    tick = 2147483647 if token_a_in else -2147483648
-                    best, best_pool = (0, None)
-                    for pool in list(pools)[:3]:
-                        rr = _call(_SWEEP_MAV_Q, calc + _enc(['address', 'uint128', 'bool', 'bool', 'int32'], [_ck(pool), int(amount_in), token_a_in, False, tick]))
-                        if rr:
-                            try:
-                                out = int(_dec(['uint256', 'uint256', 'uint256'], rr)[1])
-                            except Exception:
-                                out = 0
-                            if out > best:
-                                best, best_pool = (out, pool)
-                    if best_pool is None:
-                        return (0, None)
-                    return (best, ('maverick', (best_pool, token_a_in), [tin, tout]))
+
+                    def _dr127():
+                        token_a_in = tin.lower() == lo.lower()
+                        tick = 2147483647 if token_a_in else -2147483648
+                        best, best_pool = (0, None)
+                        for pool in list(pools)[:3]:
+                            rr = _call(_SWEEP_MAV_Q, calc + _enc(['address', 'uint128', 'bool', 'bool', 'int32'], [_ck(pool), int(amount_in), token_a_in, False, tick]))
+                            if rr:
+                                try:
+                                    out = int(_dec(['uint256', 'uint256', 'uint256'], rr)[1])
+                                except Exception:
+                                    out = 0
+                                if out > best:
+                                    best, best_pool = (out, pool)
+                        if best_pool is None:
+                            return (0, None)
+                        return (best, ('maverick', (best_pool, token_a_in), [tin, tout]))
+                        return _DR_UNSET
+                    _dr128 = _dr127()
+                    if _dr128 is not _DR_UNSET:
+                        return _dr128
                 reach_best = 0
                 return q_mav
             q_mav = _dr14()
@@ -808,13 +817,17 @@ class _MinerSolverDR11(_MinerSolverDR10):
                     continue
             except Exception:
                 continue
-            if tag == 'reach':
-                reach_best = max(reach_best, out)
-            else:
-                if route is not None and out > 0:
-                    _extras.append((out, tag, route))
-                if out > extra_best:
-                    extra_best, extra_tag, extra_route = (out, tag, route)
+
+            def _dr129():
+                nonlocal extra_best, extra_route, extra_tag, reach_best
+                if tag == 'reach':
+                    reach_best = max(reach_best, out)
+                else:
+                    if route is not None and out > 0:
+                        _extras.append((out, tag, route))
+                    if out > extra_best:
+                        extra_best, extra_tag, extra_route = (out, tag, route)
+            _dr129()
         return (reach_best, extra_best, extra_tag, extra_route, _extras, mav_pools)
 
     def _swq_mav(self, mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, mc, _extras, extra_best, extra_tag, extra_route):
@@ -1501,20 +1514,26 @@ class _MinerSolverDR56(_MinerSolverDR11):
             amount_in = int(params.get('input_amount', 0) or 0)
             amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
             min_out = int(params.get('min_output_amount', 0) or 0)
-            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-            if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
-                return None
-            key = (tin.lower(), tout.lower())
-            spec = _STATIC_EXOTIC_ROUTES.get(key)
-            if spec is None:
-                return None
-            if min_out > 1 and key not in _STATIC_EXOTIC_HIGH_MIN_OK:
-                return None
-            kind, param = spec
-            r = self._sep_kind_cand(intent, state, snapshot, kind, param, tin, tout, amount_in, min_out, chain_id)
-            if isinstance(r, dict):
-                return self._build_singlehop_plan(intent, state, snapshot, r, tin, tout, amount_in, chain_id)
-            return r
+
+            def _dr130():
+                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
+                    return None
+                key = (tin.lower(), tout.lower())
+                spec = _STATIC_EXOTIC_ROUTES.get(key)
+                if spec is None:
+                    return None
+                if min_out > 1 and key not in _STATIC_EXOTIC_HIGH_MIN_OK:
+                    return None
+                kind, param = spec
+                r = self._sep_kind_cand(intent, state, snapshot, kind, param, tin, tout, amount_in, min_out, chain_id)
+                if isinstance(r, dict):
+                    return self._build_singlehop_plan(intent, state, snapshot, r, tin, tout, amount_in, chain_id)
+                return r
+                return _DR_UNSET
+            _dr131 = _dr130()
+            if _dr131 is not _DR_UNSET:
+                return _dr131
         except Exception:
             logger.exception('[solver] static exotic plan build failed')
             return None
@@ -1773,16 +1792,20 @@ class _MinerSolverDR77(_MinerSolverDR56):
             w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
-            path = b''
-            for i, token in enumerate(tokens):
-                addr = str(token)
-                path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
-                if i < len(fees):
-                    path += int(fees[i]).to_bytes(3, byteorder='big')
-            sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
-            payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
-            raw = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + (sel + payload).hex()})
-            out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
+
+            def _dr121():
+                path = b''
+                for i, token in enumerate(tokens):
+                    addr = str(token)
+                    path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
+                    if i < len(fees):
+                        path += int(fees[i]).to_bytes(3, byteorder='big')
+                sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
+                payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
+                raw = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + (sel + payload).hex()})
+                out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
+                return (gas_est, out)
+            gas_est, out = _dr121()
             if int(out) <= 0:
                 return None
             return {'venue': 'uniswap_v3_multihop', 'param': tuple((int(f) for f in fees)), 'tokens': tuple(tokens), 'fees': tuple((int(f) for f in fees)), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _GAS_MULTIHOP + int(gas_est), 'fast_edge': True}
@@ -1799,16 +1822,20 @@ class _MinerSolverDR77(_MinerSolverDR56):
             w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
-            path = b''
-            for i, token in enumerate(tokens):
-                addr = str(token)
-                path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
-                if i < len(fees):
-                    path += int(fees[i]).to_bytes(3, byteorder='big')
-            sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
-            payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
-            raw = w3.eth.call({'to': _ck(_PANCAKE_QUOTER), 'data': '0x' + (sel + payload).hex()})
-            out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
+
+            def _dr122():
+                path = b''
+                for i, token in enumerate(tokens):
+                    addr = str(token)
+                    path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
+                    if i < len(fees):
+                        path += int(fees[i]).to_bytes(3, byteorder='big')
+                sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
+                payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
+                raw = w3.eth.call({'to': _ck(_PANCAKE_QUOTER), 'data': '0x' + (sel + payload).hex()})
+                out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
+                return (gas_est, out)
+            gas_est, out = _dr122()
             if int(out) <= 0:
                 return None
             return {'venue': 'pancake_v3_multihop', 'param': tuple((int(f) for f in fees)), 'tokens': tuple(tokens), 'fees': tuple((int(f) for f in fees)), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _GAS_MULTIHOP + int(gas_est), 'fast_edge': True}
@@ -1825,16 +1852,20 @@ class _MinerSolverDR77(_MinerSolverDR56):
             w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
-            path = b''
-            for i, token in enumerate(tokens):
-                addr = str(token)
-                path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
-                if i < len(tick_spacings):
-                    path += (int(tick_spacings[i]) & 16777215).to_bytes(3, byteorder='big')
-            sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
-            payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
-            raw = w3.eth.call({'to': _ck(_AERO_QUOTER), 'data': '0x' + (sel + payload).hex()})
-            out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
+
+            def _dr124():
+                path = b''
+                for i, token in enumerate(tokens):
+                    addr = str(token)
+                    path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
+                    if i < len(tick_spacings):
+                        path += (int(tick_spacings[i]) & 16777215).to_bytes(3, byteorder='big')
+                sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
+                payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
+                raw = w3.eth.call({'to': _ck(_AERO_QUOTER), 'data': '0x' + (sel + payload).hex()})
+                out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
+                return (gas_est, out)
+            gas_est, out = _dr124()
             if int(out) <= 0:
                 return None
             ticks = tuple((int(t) for t in tick_spacings))
@@ -1917,7 +1948,176 @@ class _MinerSolverDR77(_MinerSolverDR56):
             pass
         return merged
 
-class MinerSolver(_MinerSolverDR77):
+class _MinerSolverDR123(_MinerSolverDR77):
+
+    def _generate_plan_impl(self, intent, state, snapshot=None):
+        try:
+            _p0 = self._normalized_swap_params(intent, state)
+            if str(_p0.get('input_token', '') or '').lower() in _FAST_DIRECT_INPUTS:
+                _sp = self._usdbc_static_plan(intent, state, snapshot, _p0)
+                if _sp is not None:
+                    return _sp
+        except Exception:
+            logger.exception('[solver] usdbc static intercept failed; normal path')
+
+        def _dr70():
+            nonlocal plan
+            try:
+                _p1 = self._normalized_swap_params(intent, state)
+                if str(_p1.get('output_token', '') or '').lower() in _HOLE_ROUTES:
+                    _hp = self._hole_plan(intent, state, snapshot, _p1)
+                    if _hp is not None:
+                        return _hp
+            except Exception:
+                logger.exception('[solver] hole-token intercept failed; normal path')
+            try:
+                _p2 = self._normalized_swap_params(intent, state)
+                _ep = self._static_exotic_plan(intent, state, snapshot, _p2)
+                if _ep is not None:
+                    return _ep
+            except Exception:
+                logger.exception('[solver] static exotic intercept failed; normal path')
+
+            def _dr22():
+                nonlocal _sp, plan
+                try:
+                    _p3 = self._normalized_swap_params(intent, state)
+                    _sp = self._sweep_plan(intent, state, snapshot, _p3)
+                    if _sp is not None:
+                        return _sp
+                except Exception:
+                    logger.exception('[sweep] universal sweep failed; normal path')
+                _dyn = getattr(self, '_dyn_order_budget', None)
+                _sel_to = _SELECT_BUDGET_S if _dyn is None else min(_SELECT_BUDGET_S, _dyn)
+                _base_to = _BASELINE_BUDGET_S if _dyn is None else min(_BASELINE_BUDGET_S, _dyn)
+                enhanced = self._bounded_call(self._score_aware_singlehop, (intent, state, snapshot, None), timeout=_sel_to)
+                if enhanced is not None:
+                    plan = enhanced
+                else:
+
+                    def _baseline():
+                        return BaselineSwapSolver.generate_plan(self, intent, state, snapshot)
+                    base_plan = self._bounded_call(_baseline, timeout=_base_to)
+                    if base_plan is None:
+                        base_plan = self._offline_fallback_plan(intent, state, snapshot)
+                    plan = base_plan
+                return _DR_UNSET
+            _dr23 = _dr22()
+            if _dr23 is not _DR_UNSET:
+                return _dr23
+            plan = self._fix_multihop_v2(plan)
+            return _DR_UNSET
+        _dr71 = _dr70()
+        if _dr71 is not _DR_UNSET:
+            return _dr71
+        try:
+            _md = getattr(plan, 'metadata', None) or {}
+            _empty = plan is None or not getattr(plan, 'interactions', None) or _md.get('route') == 'last_resort_empty' or (_md.get('solver') in ('best-effort', 'offline-fallback'))
+
+            def _dr125():
+                if not _empty and 'solver' not in _md and (_md.get('route') == 'uniswap_v3'):
+                    try:
+
+                        def _dr38():
+                            nonlocal _empty
+                            _p5 = self._normalized_swap_params(intent, state)
+                            _t0, _t1 = (str(_p5.get('input_token', '')), str(_p5.get('output_token', '')))
+                            _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                            _w3 = self._get_web3(_cid)
+                            if _w3 is not None and _t0 and _t1 and (_cid == _BASE):
+                                from eth_abi import encode as _e2
+                                from eth_utils import to_checksum_address as _c2
+                                _fee = int(_md.get('fee_tier', 3000) or 3000)
+                                _r = _w3.eth.call({'to': _c2('0x33128a8fC17869897dcE68Ed026d694621f6FDfD'), 'data': '0x1698ee82' + _e2(['address', 'address', 'uint24'], [_c2(_t0), _c2(_t1), _fee]).hex()})
+                                if int.from_bytes(_r[-20:], 'big') == 0:
+                                    _empty = True
+                        _dr38()
+                    except Exception:
+                        pass
+                if _empty:
+                    _dyn_dc = getattr(self, '_dyn_order_budget', None)
+                    if _dyn_dc is None or _dyn_dc >= _DISCOVERY_MIN_BUDGET_S:
+                        _p4 = self._normalized_swap_params(intent, state)
+                        _dp = self._dynamic_discovery_plan(intent, state, snapshot, _p4)
+                        if _dp is not None:
+                            return _dp
+                return _DR_UNSET
+            _dr126 = _dr125()
+            if _dr126 is not _DR_UNSET:
+                return _dr126
+        except Exception:
+            logger.exception('[discovery] rescue failed; normal fallback')
+        if plan is None:
+            logger.warning('[solver] no plan from baseline/selection — last-resort plan')
+            plan = self._last_resort_plan(intent, state, snapshot)
+        return plan
+
+    def _last_resort_plan(self, intent, state, snapshot=None):
+        """Best-effort, never-raising plan for when every primary path failed.
+
+        Order: (1) the RPC-free offline snapshot plan, (2) a structurally-valid
+        default-fee Uniswap single-hop for the requested pair (may or may not
+        fill, but is a real approve+swap — strictly better than an empty plan
+        for both screening structure checks and live coverage), (3) a final
+        structurally-empty plan only when the pair is genuinely unroutable on
+        this chain (e.g. Ethereum-mainnet token addresses on a Base book)."""
+        try:
+            fb = self._offline_fallback_plan(intent, state, snapshot)
+            if fb is not None:
+                return fb
+        except Exception:
+            logger.exception('[solver] last-resort: offline fallback raised')
+        try:
+            bep = self._best_effort_singlehop_plan(intent, state, snapshot)
+            if bep is not None:
+                return bep
+        except Exception:
+            logger.exception('[solver] last-resort: best-effort single-hop raised')
+        return self._empty_plan(intent, state)
+
+    def _best_effort_singlehop_plan(self, intent, state, snapshot):
+        """Build a default-fee Uniswap V3 approve+exactInputSingle for the pair
+        WITHOUT any RPC verification. Returns None if params are unusable
+        (missing tokens, non-positive amount, cross-chain eip155 address, or no
+        router for the chain)."""
+        params = self._normalized_swap_params(intent, state)
+        tin = str(params.get('input_token', '') or '')
+        tout = str(params.get('output_token', '') or '')
+        try:
+            amount_in = int(params.get('input_amount', 0) or 0)
+            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+        except (TypeError, ValueError):
+            amount_in = 0
+        if not tin or not tout or amount_in <= 0 or tin.startswith('eip155:') or tout.startswith('eip155:') or (not tin.startswith('0x')) or (not tout.startswith('0x')):
+            return None
+        try:
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+        except (TypeError, ValueError):
+            chain_id = 0
+
+        def _dr91():
+            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+            from common.abi_utils import encode_approve
+            router = UNISWAP_V3_ROUTERS.get(chain_id)
+            if not router:
+                return None
+            recipient = state.contract_address or params.get('receiver') or state.owner
+            deadline = 9999999999
+            interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=3000, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
+            return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=interactions, deadline=deadline, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'best-effort', 'route': 'uniswap_v3', 'fee_tier': 3000, 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr92 = _dr91()
+        if _dr92 is not _DR_UNSET:
+            return _dr92
+
+    @staticmethod
+    def _empty_plan(intent, state):
+        """Structurally-valid (non-null) empty plan — the absolute last resort
+        for a genuinely unroutable pair. Never raises."""
+        return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=[], deadline=int(time.time()) + 300, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'route': 'last_resort_empty'})
+
+class MinerSolver(_MinerSolverDR123):
     """Baseline routing + score-aware multi-venue single-hop selection."""
 
     def quote(self, intent, state, snapshot=None):
@@ -2130,167 +2330,6 @@ class MinerSolver(_MinerSolverDR77):
         except Exception:
             logger.exception('[discovery] plan build failed')
             return None
-
-    def _generate_plan_impl(self, intent, state, snapshot=None):
-        try:
-            _p0 = self._normalized_swap_params(intent, state)
-            if str(_p0.get('input_token', '') or '').lower() in _FAST_DIRECT_INPUTS:
-                _sp = self._usdbc_static_plan(intent, state, snapshot, _p0)
-                if _sp is not None:
-                    return _sp
-        except Exception:
-            logger.exception('[solver] usdbc static intercept failed; normal path')
-
-        def _dr70():
-            nonlocal plan
-            try:
-                _p1 = self._normalized_swap_params(intent, state)
-                if str(_p1.get('output_token', '') or '').lower() in _HOLE_ROUTES:
-                    _hp = self._hole_plan(intent, state, snapshot, _p1)
-                    if _hp is not None:
-                        return _hp
-            except Exception:
-                logger.exception('[solver] hole-token intercept failed; normal path')
-            try:
-                _p2 = self._normalized_swap_params(intent, state)
-                _ep = self._static_exotic_plan(intent, state, snapshot, _p2)
-                if _ep is not None:
-                    return _ep
-            except Exception:
-                logger.exception('[solver] static exotic intercept failed; normal path')
-
-            def _dr22():
-                nonlocal _sp, plan
-                try:
-                    _p3 = self._normalized_swap_params(intent, state)
-                    _sp = self._sweep_plan(intent, state, snapshot, _p3)
-                    if _sp is not None:
-                        return _sp
-                except Exception:
-                    logger.exception('[sweep] universal sweep failed; normal path')
-                _dyn = getattr(self, '_dyn_order_budget', None)
-                _sel_to = _SELECT_BUDGET_S if _dyn is None else min(_SELECT_BUDGET_S, _dyn)
-                _base_to = _BASELINE_BUDGET_S if _dyn is None else min(_BASELINE_BUDGET_S, _dyn)
-                enhanced = self._bounded_call(self._score_aware_singlehop, (intent, state, snapshot, None), timeout=_sel_to)
-                if enhanced is not None:
-                    plan = enhanced
-                else:
-
-                    def _baseline():
-                        return BaselineSwapSolver.generate_plan(self, intent, state, snapshot)
-                    base_plan = self._bounded_call(_baseline, timeout=_base_to)
-                    if base_plan is None:
-                        base_plan = self._offline_fallback_plan(intent, state, snapshot)
-                    plan = base_plan
-                return _DR_UNSET
-            _dr23 = _dr22()
-            if _dr23 is not _DR_UNSET:
-                return _dr23
-            plan = self._fix_multihop_v2(plan)
-            return _DR_UNSET
-        _dr71 = _dr70()
-        if _dr71 is not _DR_UNSET:
-            return _dr71
-        try:
-            _md = getattr(plan, 'metadata', None) or {}
-            _empty = plan is None or not getattr(plan, 'interactions', None) or _md.get('route') == 'last_resort_empty' or (_md.get('solver') in ('best-effort', 'offline-fallback'))
-            if not _empty and 'solver' not in _md and (_md.get('route') == 'uniswap_v3'):
-                try:
-
-                    def _dr38():
-                        nonlocal _empty
-                        _p5 = self._normalized_swap_params(intent, state)
-                        _t0, _t1 = (str(_p5.get('input_token', '')), str(_p5.get('output_token', '')))
-                        _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                        _w3 = self._get_web3(_cid)
-                        if _w3 is not None and _t0 and _t1 and (_cid == _BASE):
-                            from eth_abi import encode as _e2
-                            from eth_utils import to_checksum_address as _c2
-                            _fee = int(_md.get('fee_tier', 3000) or 3000)
-                            _r = _w3.eth.call({'to': _c2('0x33128a8fC17869897dcE68Ed026d694621f6FDfD'), 'data': '0x1698ee82' + _e2(['address', 'address', 'uint24'], [_c2(_t0), _c2(_t1), _fee]).hex()})
-                            if int.from_bytes(_r[-20:], 'big') == 0:
-                                _empty = True
-                    _dr38()
-                except Exception:
-                    pass
-            if _empty:
-                _dyn_dc = getattr(self, '_dyn_order_budget', None)
-                if _dyn_dc is None or _dyn_dc >= _DISCOVERY_MIN_BUDGET_S:
-                    _p4 = self._normalized_swap_params(intent, state)
-                    _dp = self._dynamic_discovery_plan(intent, state, snapshot, _p4)
-                    if _dp is not None:
-                        return _dp
-        except Exception:
-            logger.exception('[discovery] rescue failed; normal fallback')
-        if plan is None:
-            logger.warning('[solver] no plan from baseline/selection — last-resort plan')
-            plan = self._last_resort_plan(intent, state, snapshot)
-        return plan
-
-    def _last_resort_plan(self, intent, state, snapshot=None):
-        """Best-effort, never-raising plan for when every primary path failed.
-
-        Order: (1) the RPC-free offline snapshot plan, (2) a structurally-valid
-        default-fee Uniswap single-hop for the requested pair (may or may not
-        fill, but is a real approve+swap — strictly better than an empty plan
-        for both screening structure checks and live coverage), (3) a final
-        structurally-empty plan only when the pair is genuinely unroutable on
-        this chain (e.g. Ethereum-mainnet token addresses on a Base book)."""
-        try:
-            fb = self._offline_fallback_plan(intent, state, snapshot)
-            if fb is not None:
-                return fb
-        except Exception:
-            logger.exception('[solver] last-resort: offline fallback raised')
-        try:
-            bep = self._best_effort_singlehop_plan(intent, state, snapshot)
-            if bep is not None:
-                return bep
-        except Exception:
-            logger.exception('[solver] last-resort: best-effort single-hop raised')
-        return self._empty_plan(intent, state)
-
-    def _best_effort_singlehop_plan(self, intent, state, snapshot):
-        """Build a default-fee Uniswap V3 approve+exactInputSingle for the pair
-        WITHOUT any RPC verification. Returns None if params are unusable
-        (missing tokens, non-positive amount, cross-chain eip155 address, or no
-        router for the chain)."""
-        params = self._normalized_swap_params(intent, state)
-        tin = str(params.get('input_token', '') or '')
-        tout = str(params.get('output_token', '') or '')
-        try:
-            amount_in = int(params.get('input_amount', 0) or 0)
-            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-        except (TypeError, ValueError):
-            amount_in = 0
-        if not tin or not tout or amount_in <= 0 or tin.startswith('eip155:') or tout.startswith('eip155:') or (not tin.startswith('0x')) or (not tout.startswith('0x')):
-            return None
-        try:
-            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-        except (TypeError, ValueError):
-            chain_id = 0
-
-        def _dr91():
-            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-            from common.abi_utils import encode_approve
-            router = UNISWAP_V3_ROUTERS.get(chain_id)
-            if not router:
-                return None
-            recipient = state.contract_address or params.get('receiver') or state.owner
-            deadline = 9999999999
-            interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=3000, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
-            return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=interactions, deadline=deadline, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'best-effort', 'route': 'uniswap_v3', 'fee_tier': 3000, 'chain_id': chain_id})
-            return _DR_UNSET
-        _dr92 = _dr91()
-        if _dr92 is not _DR_UNSET:
-            return _dr92
-
-    @staticmethod
-    def _empty_plan(intent, state):
-        """Structurally-valid (non-null) empty plan — the absolute last resort
-        for a genuinely unroutable pair. Never raises."""
-        return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=[], deadline=int(time.time()) + 300, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'route': 'last_resort_empty'})
 
     def _enumerate_singlehop_quotes(self, chain_id, tin, tout, amount_in):
         """Exact-quote every single-hop venue CONCURRENTLY. Returns list of
@@ -3197,8 +3236,12 @@ class MinerSolver(_MinerSolverDR77):
                 if raw[:4] != v1:
                     continue
                 path, recipient, _deadline, amt_in, amt_min = _abi_decode(['(bytes,address,uint256,uint256,uint256)'], raw[4:])[0]
-                ix.call_data = '0x' + (v2 + _abi_encode(['(bytes,address,uint256,uint256)'], [(path, recipient, amt_in, amt_min)])).hex()
-                changed = True
+
+                def _dr132():
+                    nonlocal changed
+                    ix.call_data = '0x' + (v2 + _abi_encode(['(bytes,address,uint256,uint256)'], [(path, recipient, amt_in, amt_min)])).hex()
+                    changed = True
+                _dr132()
             except Exception:
                 continue
         if changed:
