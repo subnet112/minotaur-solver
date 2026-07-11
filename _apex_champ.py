@@ -51,22 +51,26 @@ def _load_agent_strategies():
     _t1 = _bh1()
     if _t1[0]:
         return _t1[1]
-    out = _t1[1]
-    for app_dir in _STRATEGIES_DIR.iterdir():
-        strat_file = app_dir / 'strategy.py'
-        if not (app_dir.is_dir() and app_dir.name.startswith('app_') and strat_file.is_file()):
-            continue
-        try:
-            spec = importlib.util.spec_from_file_location(f'agent_strategy_{app_dir.name}', strat_file)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            from minotaur_subnet.sdk.strategy import Strategy
-            for obj in vars(mod).values():
-                if isinstance(obj, type) and issubclass(obj, Strategy) and (obj is not Strategy):
-                    out[app_dir.name] = obj()
-                    break
-        except Exception:
-            logger.exception('[james] skipping broken strategy %s', strat_file)
+
+    def _dr13():
+        out = _t1[1]
+        for app_dir in _STRATEGIES_DIR.iterdir():
+            strat_file = app_dir / 'strategy.py'
+            if not (app_dir.is_dir() and app_dir.name.startswith('app_') and strat_file.is_file()):
+                continue
+            try:
+                spec = importlib.util.spec_from_file_location(f'agent_strategy_{app_dir.name}', strat_file)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                from minotaur_subnet.sdk.strategy import Strategy
+                for obj in vars(mod).values():
+                    if isinstance(obj, type) and issubclass(obj, Strategy) and (obj is not Strategy):
+                        out[app_dir.name] = obj()
+                        break
+            except Exception:
+                logger.exception('[james] skipping broken strategy %s', strat_file)
+        return out
+    out = _dr13()
     return out
 
 class _MX_JamesSolver_0:
@@ -263,6 +267,7 @@ class JamesSolver(_MX_JamesSolver_0, KingSolver):
             _t6 = _bh6()
             if _t6[0]:
                 return _t6[1]
+            return _DR_UNSET
         _dr9 = _dr8()
         if _dr9 is not _DR_UNSET:
             return _dr9
@@ -340,17 +345,21 @@ class JamesSolver(_MX_JamesSolver_0, KingSolver):
         table = getattr(_km, '_STATIC_EXOTIC_ROUTES', None)
         if table is None:
             return None
-        try:
-            p = self._normalized_swap_params(intent, state)
-        except Exception:
-            p = dict(getattr(state, 'raw_params', {}) or {})
-        tin = str(p.get('input_token', '') or '').lower()
-        tout = str(p.get('output_token', '') or '').lower()
 
-        def _bh18():
-            amt = int(p.get('input_amount', 0) or 0)
-            min_out = int(p.get('min_output_amount', 0) or 0)
-            return (amt, min_out)
+        def _dr10():
+            try:
+                p = self._normalized_swap_params(intent, state)
+            except Exception:
+                p = dict(getattr(state, 'raw_params', {}) or {})
+            tin = str(p.get('input_token', '') or '').lower()
+            tout = str(p.get('output_token', '') or '').lower()
+
+            def _bh18():
+                amt = int(p.get('input_amount', 0) or 0)
+                min_out = int(p.get('min_output_amount', 0) or 0)
+                return (amt, min_out)
+            return (_bh18, tin, tout)
+        _bh18, tin, tout = _dr10()
         try:
             amt, min_out = _bh18()
         except (TypeError, ValueError):
@@ -364,8 +373,12 @@ class JamesSolver(_MX_JamesSolver_0, KingSolver):
         _dr7 = _dr6()
         if _dr7 is not _DR_UNSET:
             return _dr7
-        w3 = self._james_w3()
-        weth_leg = amt if tin == self._JWETH.lower() else self._jq_v3(w3, self._JUSDC, self._JWETH, amt, 500)
+
+        def _dr11():
+            w3 = self._james_w3()
+            weth_leg = amt if tin == self._JWETH.lower() else self._jq_v3(w3, self._JUSDC, self._JWETH, amt, 500)
+            return (w3, weth_leg)
+        w3, weth_leg = _dr11()
         best_out, best_spec = (0, None)
 
         def _dr2():
@@ -400,14 +413,18 @@ class JamesSolver(_MX_JamesSolver_0, KingSolver):
 
             def _dr1():
                 nonlocal proxy
-                for fee in (100, 500, 3000, 10000):
-                    proxy = max(proxy, self._jq_v3(w3, tin, tout, amt, fee))
-                    if weth_leg and tin != self._JWETH.lower():
-                        proxy = max(proxy, self._jq_v3(w3, self._JWETH, tout, weth_leg, fee))
-                for router in (self._JUNIV2, self._JPANCV2):
-                    proxy = max(proxy, self._jq_v2(w3, router, [tin, tout], amt))
-                    if tin != self._JWETH.lower():
-                        proxy = max(proxy, self._jq_v2(w3, router, [tin, self._JWETH, tout], amt))
+
+                def _dr12():
+                    nonlocal proxy
+                    for fee in (100, 500, 3000, 10000):
+                        proxy = max(proxy, self._jq_v3(w3, tin, tout, amt, fee))
+                        if weth_leg and tin != self._JWETH.lower():
+                            proxy = max(proxy, self._jq_v3(w3, self._JWETH, tout, weth_leg, fee))
+                    for router in (self._JUNIV2, self._JPANCV2):
+                        proxy = max(proxy, self._jq_v2(w3, router, [tin, tout], amt))
+                        if tin != self._JWETH.lower():
+                            proxy = max(proxy, self._jq_v2(w3, router, [tin, self._JWETH, tout], amt))
+                _dr12()
                 proxy = max(proxy, self._jq_aero(w3, [(tin, tout)], amt))
             _dr1()
             if tin != self._JWETH.lower():

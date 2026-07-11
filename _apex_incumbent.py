@@ -318,6 +318,7 @@ class VikingSolver(_HydraBase):
                 _t24 = _bh24()
                 if _t24[0]:
                     return _t24[1]
+                return _DR_UNSET
 
             def _bh25():
                 _dr4 = _dr3()
@@ -412,21 +413,27 @@ class VikingSolver(_HydraBase):
             return plan
         if row:
             import time as _time
-            age = _time.time() - float(row.get('at') or 0)
 
-            def _bh32():
-                fresh = self._v_engine_fresh(intent, state, snapshot)
+            def _dr5():
+                age = _time.time() - float(row.get('at') or 0)
 
-                def _bh31():
-                    logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
-                    return fresh
-                if fresh is not None:
-                    return (1, _bh31())
-                return (0, None)
-            if age > self._V_ROW_FRESH_S:
-                _t32 = _bh32()
-                if _t32[0]:
-                    return _t32[1]
+                def _bh32():
+                    fresh = self._v_engine_fresh(intent, state, snapshot)
+
+                    def _bh31():
+                        logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
+                        return fresh
+                    if fresh is not None:
+                        return (1, _bh31())
+                    return (0, None)
+                if age > self._V_ROW_FRESH_S:
+                    _t32 = _bh32()
+                    if _t32[0]:
+                        return _t32[1]
+                return _DR_UNSET
+            _dr6 = _dr5()
+            if _dr6 is not _DR_UNSET:
+                return _dr6
         rp = self._v_replay_plan(key, intent, state, snapshot)
 
         def _bh33():
