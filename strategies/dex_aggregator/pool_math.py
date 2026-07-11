@@ -11,7 +11,7 @@ import math
 from typing import Any
 Q96 = 1 << 96
 
-def compute_v3_output(sqrt_price_x96: int, liquidity: int, amount_in: int, zero_for_one: bool, fee_ppm: int) -> int:
+def compute_v3_output(sqrt_price_x96, liquidity, amount_in, zero_for_one, fee_ppm):
     """Compute single-tick output for a Uniswap V3 swap.
 
     Within-tick only — large swaps crossing tick boundaries will be
@@ -55,7 +55,7 @@ def compute_v3_output(sqrt_price_x96: int, liquidity: int, amount_in: int, zero_
         output = liquidity * Q96 * delta_sqrt_price // (sqrt_price_x96 * new_sqrt_price)
     return max(0, output)
 
-def find_best_pool(pool_states: dict[str, dict[str, Any]], token_in: str, token_out: str, amount_in: int) -> tuple[str, dict[str, Any], int] | None:
+def find_best_pool(pool_states, token_in, token_out, amount_in):
     """Find the pool giving the best output for a token pair swap.
 
     Scans pool_states for pools matching the token pair (checking both
@@ -74,11 +74,11 @@ def find_best_pool(pool_states: dict[str, dict[str, Any]], token_in: str, token_
     """
     token_in_lower = token_in.lower()
     token_out_lower = token_out.lower()
-    best: tuple[str, dict[str, Any], int] | None = None
+    best = None
 
     def _dr2():
         nonlocal liquidity, pool, pool_addr, zero_for_one
-        candidates: list[tuple[str, dict[str, Any], int, bool, int]] = []
+        candidates = []
         max_liquidity = 0
         for pool_addr, pool in pool_states.items():
             t0 = pool.get('token0', '').lower()
@@ -104,7 +104,7 @@ def find_best_pool(pool_states: dict[str, dict[str, Any]], token_in: str, token_
             best = (pool_addr, pool, output)
     return best
 
-def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token_out: str, amount_in: int, intermediaries: list[str] | None=None) -> tuple[int, str, list[dict[str, Any]]] | None:
+def find_best_route(pool_states, token_in, token_out, amount_in, intermediaries=None):
 
     def _dr1():
         nonlocal best_description, best_hops, best_output, intermediaries

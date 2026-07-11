@@ -54,10 +54,10 @@ V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b21811
 V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
 MAX_CALLS = 90
 
-def _sorted_pair(a: str, b: str) -> tuple[str, str]:
+def _sorted_pair(a, b):
     return (a, b) if int(a, 16) < int(b, 16) else (b, a)
 
-def v4_pool_id(c0: str, c1: str, fee: int, tick: int, hooks: str) -> bytes:
+def v4_pool_id(c0, c1, fee, tick, hooks):
     """keccak(abi.encode(PoolKey)) — computed offline, no RPC."""
     return _kk(_enc(['address', 'address', 'uint24', 'int24', 'address'], [_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)]))
 
@@ -65,58 +65,90 @@ class DiscoveryEngine:
     """Stateless per-call sweep; ``call`` is an eth_call thunk with the
     solver's socket timeout already applied: call(to, data) -> bytes|None."""
 
-    def __init__(self, call: Callable[[str, str], Any]):
+    def __init__(self, call):
         self._call = call
         self._used = 0
 
-    def _c(self, to: str, data: bytes) -> bytes | None:
+    def _c(self, to, data):
         if self._used >= MAX_CALLS:
             return None
         self._used += 1
-        try:
+
+        def _bh1():
             r = self._call(_ck(to), '0x' + data.hex())
             if r is None:
                 return None
             return bytes(r)
+        try:
+            return _bh1()
         except Exception:
             return None
 
-    def _v2_quote(self, router: str, path: list[str], amount_in: int) -> int:
+    def _v2_quote(self, router, path, amount_in):
         data = _kk(text='getAmountsOut(uint256,address[])')[:4] + _enc(['uint256', 'address[]'], [amount_in, [_ck(p) for p in path]])
         r = self._c(router, data)
         if not r:
             return 0
-        try:
+
+        def _bh2():
             return int(_dec(['uint256[]'], r)[0][-1])
+        try:
+            return _bh2()
         except Exception:
             return 0
 
-    def v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
-        forks = V2_FORKS_BASE if chain_id == 8453 else V2_FORKS_MAINNET if chain_id == 1 else ()
-        hubs = [WETH, USDC] if chain_id == 8453 else ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48']
-        out: list[dict] = []
-        paths = [[tin, tout]] + [[tin, h, tout] for h in hubs if h.lower() not in (tin.lower(), tout.lower())]
-        for label, router, native in forks:
-            for path in paths:
-                q = self._v2_quote(router, path, amount_in)
-                if q <= 0:
-                    continue
-                n_hops = len(path) - 1
-                base = {'out': q, 'tokens': tuple(path), 'gas_est': 150000 * n_hops, 'gas_model': 350000 + 150000 * n_hops, 'discovered': label}
-                if native:
-                    out.append({**base, 'venue': native, 'param': tuple(path)})
-                else:
-                    out.append({**base, 'venue': 'v2_fork', 'router': router, 'param': router})
-                break
-        return out
+    def v2_candidates(self, chain_id, tin, tout, amount_in):
 
-    def aero_v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
-        if chain_id != 8453:
-            return []
-        out: list[dict] = []
-        route_sets: list[tuple[tuple, ...]] = []
-        for stable in (False, True):
-            route_sets.append(((tin, tout, stable, AERO_V2_FACTORY),))
+        def _bh5():
+            forks = V2_FORKS_BASE if chain_id == 8453 else V2_FORKS_MAINNET if chain_id == 1 else ()
+            hubs = [WETH, USDC] if chain_id == 8453 else ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48']
+            out = []
+            paths = [[tin, tout]] + [[tin, h, tout] for h in hubs if h.lower() not in (tin.lower(), tout.lower())]
+            return (forks, out, paths)
+        forks, out, paths = _bh5()
+
+        def _bh6():
+            for label, router, native in forks:
+                for path in paths:
+                    q = self._v2_quote(router, path, amount_in)
+                    if q <= 0:
+                        continue
+                    n_hops = len(path) - 1
+                    base = {'out': q, 'tokens': tuple(path), 'gas_est': 150000 * n_hops, 'gas_model': 350000 + 150000 * n_hops, 'discovered': label}
+
+                    def _bh3():
+                        out.append({**base, 'venue': native, 'param': tuple(path)})
+
+                    def _bh4():
+                        out.append({**base, 'venue': 'v2_fork', 'router': router, 'param': router})
+                    if native:
+                        _bh3()
+                    else:
+                        _bh4()
+                    break
+            return (1, out)
+            return (0, None)
+        _t6 = _bh6()
+        if _t6[0]:
+            return _t6[1]
+
+    def aero_v2_candidates(self, chain_id, tin, tout, amount_in):
+
+        def _bh8():
+            if chain_id != 8453:
+                return (1, [])
+            out = []
+            route_sets = []
+            for stable in (False, True):
+
+                def _bh7():
+                    route_sets.append(((tin, tout, stable, AERO_V2_FACTORY),))
+                _bh7()
+            return (0, (out, route_sets))
+        _t8 = _bh8()
+        if _t8[0]:
+            return _t8[1]
+        out, route_sets = _t8[1]
         for hub in (WETH, USDC):
             if hub.lower() in (tin.lower(), tout.lower()):
                 continue
@@ -135,37 +167,54 @@ class DiscoveryEngine:
             out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
         return out
 
-    def _v4_liquidity(self, pool_id: bytes) -> int:
+    def _v4_liquidity(self, pool_id):
         data = _kk(text='getLiquidity(bytes32)')[:4] + pool_id
         r = self._c(V4_STATE_VIEW, data)
         if not r:
             return 0
-        try:
+
+        def _bh9():
             return int.from_bytes(r[-16:], 'big')
+        try:
+            return _bh9()
         except Exception:
             return 0
 
-    def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int) -> int:
-        c0, c1, fee, tick, hooks = key
-        data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
-        r = self._c(V4_QUOTER, data)
+    def _v4_quote(self, key, zero_for_one, amount_in):
+
+        def _bh11():
+            c0, c1, fee, tick, hooks = key
+            data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
+            r = self._c(V4_QUOTER, data)
+            return r
+        r = _bh11()
         if not r or len(r) < 32:
             return 0
-        try:
+
+        def _bh10():
             return int(_dec(['uint256', 'uint256'], r)[0])
+        try:
+            return _bh10()
         except Exception:
             return 0
 
-    def v4_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
-        """Find a V4 pool holding ``tout`` against a known base currency.
+    def v4_candidates(self, chain_id, tin, tout, amount_in):
+
+        def _bh12():
+            """Find a V4 pool holding ``tout`` against a known base currency.
 
         Emits ``uniswap_v4_ur`` specs matching the solver's existing builder:
         base == tin -> single v4 leg; base != tin -> UR v3 leg (tin->WETH/USDC)
         chained into the v4 leg via CONTRACT_BALANCE.
         """
-        if chain_id != 8453:
-            return []
-        out: list[dict] = []
+            if chain_id != 8453:
+                return (1, [])
+            out = []
+            return (0, out)
+        _t12 = _bh12()
+        if _t12[0]:
+            return _t12[1]
+        out = _t12[1]
         for base in V4_BASES:
             if base.lower() == tout.lower():
                 continue
@@ -176,7 +225,7 @@ class DiscoveryEngine:
                     continue
                 zero_for_one = c0.lower() == base.lower()
                 leg_in = amount_in
-                spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else WETH, 'zero_for_one': zero_for_one}
+                spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else WETH, 'zero_for_one': zero_for_one}
                 if base.lower() != tin.lower():
 
                     def _dr1():
@@ -198,11 +247,15 @@ class DiscoveryEngine:
                 break
         return out
 
-    def discover(self, chain_id: int, tin: str, tout: str, amount_in: int, min_out: int) -> list[dict]:
-        """All venue families, cheapest/most-likely first. Returns candidates
+    def discover(self, chain_id, tin, tout, amount_in, min_out):
+
+        def _bh13(tin, tout):
+            """All venue families, cheapest/most-likely first. Returns candidates
         sorted by quoted output desc; quoted candidates beat probed ones."""
-        tin, tout = (tin.lower(), tout.lower())
-        cands: list[dict] = []
+            tin, tout = (tin.lower(), tout.lower())
+            cands = []
+            return (cands, tin, tout)
+        cands, tin, tout = _bh13(tin, tout)
         try:
             cands += self.v2_candidates(chain_id, tin, tout, amount_in)
             if not (min_out <= 1 and cands):
@@ -211,6 +264,12 @@ class DiscoveryEngine:
                 cands += self.v4_candidates(chain_id, tin, tout, amount_in)
         except Exception:
             logger.exception('[discovery] sweep failed (%s->%s)', tin, tout)
-        cands.sort(key=lambda c: c.get('out', 0), reverse=True)
-        logger.info('[discovery] %s->%s chain=%s: %d candidate(s), %d rpc calls', tin[:8], tout[:8], chain_id, len(cands), self._used)
-        return cands
+
+        def _bh14():
+            cands.sort(key=lambda c: c.get('out', 0), reverse=True)
+            logger.info('[discovery] %s->%s chain=%s: %d candidate(s), %d rpc calls', tin[:8], tout[:8], chain_id, len(cands), self._used)
+            return (1, cands)
+            return (0, None)
+        _t14 = _bh14()
+        if _t14[0]:
+            return _t14[1]

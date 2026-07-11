@@ -31,12 +31,19 @@ except Exception:
 logger = logging.getLogger(__name__)
 _STRATEGIES_DIR = Path(__file__).parent / 'strategies'
 
-def _load_agent_strategies() -> dict:
-    """Load Strategy classes from strategies/<app_id>/strategy.py, keyed by
+def _load_agent_strategies():
+
+    def _bh1():
+        """Load Strategy classes from strategies/<app_id>/strategy.py, keyed by
     app_id. Never raises — a broken strategy file is skipped."""
-    out: dict = {}
-    if not _STRATEGIES_DIR.is_dir():
-        return out
+        out = {}
+        if not _STRATEGIES_DIR.is_dir():
+            return (1, out)
+        return (0, out)
+    _t1 = _bh1()
+    if _t1[0]:
+        return _t1[1]
+    out = _t1[1]
     for app_dir in _STRATEGIES_DIR.iterdir():
         strat_file = app_dir / 'strategy.py'
         if not (app_dir.is_dir() and app_dir.name.startswith('app_') and strat_file.is_file()):
@@ -54,7 +61,100 @@ def _load_agent_strategies() -> dict:
             logger.exception('[james] skipping broken strategy %s', strat_file)
     return out
 
-class JamesSolver(KingSolver):
+class _MX_JamesSolver_0:
+
+    def _behind_pace(self):
+        if not getattr(self, '_bm_t0', None) or not getattr(self, '_bm_total', 0):
+            return False
+        import time as _t
+        elapsed = _t.monotonic() - self._bm_t0
+        remaining_orders = max(1, self._bm_total - self._bm_done)
+        remaining_time = self._RUN_BUDGET_S - elapsed
+        return remaining_time / remaining_orders < self._FAST_BELOW_S
+
+    def _james_hooks(self):
+        import king_solver as _km
+        hooks = []
+        for name in ('_CLANKER_HOOK', '_HOOK_BDF9', '_HOOK_BEAM_FLAUNCH', '_HOOK_AVC_DOPPLER', '_HOOK_ZORA_CREATOR', '_ZORA_HOOK'):
+
+            def _bh13():
+                v = getattr(_km, name, None)
+                if isinstance(v, str) and v.startswith('0x'):
+                    hooks.append(v)
+                return v
+            v = _bh13()
+        for h in self._JV4_HOOK_FALLBACKS:
+
+            def _bh14():
+                if h not in hooks:
+                    hooks.append(h)
+            _bh14()
+        return hooks
+
+    def _james_w3(self):
+        w3 = getattr(self, '_james_w3_cached', None)
+        if w3 is not None:
+            return w3
+        import os
+        from web3 import Web3
+        url = (getattr(self, 'rpc_urls', {}) or {}).get('8453') or (getattr(self, 'rpc_urls', {}) or {}).get(8453) or os.environ.get('BASE_RPC_URL', 'https://mainnet.base.org')
+        w3 = Web3(Web3.HTTPProvider(url, request_kwargs={'timeout': 4}))
+        self._james_w3_cached = w3
+        return w3
+
+    def _jq_v3(self, w3, tin, tout, amt, fee):
+        from eth_abi import encode as _enc
+        from eth_utils import keccak as _kk, to_checksum_address as _ck
+        sel = _kk(b'quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
+        r = self._james_call(w3, self._JV3_QUOTER, sel + _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), amt, fee, 0)]))
+        return int.from_bytes(r[:32], 'big') if r else 0
+
+    def _jq_v2(self, w3, router, path, amt):
+        from eth_abi import encode as _enc, decode as _dec
+        from eth_utils import keccak as _kk, to_checksum_address as _ck
+        sel = _kk(b'getAmountsOut(uint256,address[])')[:4]
+        r = self._james_call(w3, router, sel + _enc(['uint256', 'address[]'], [amt, [_ck(p) for p in path]]))
+        if not r:
+            return 0
+
+        def _bh15():
+            return _dec(['uint256[]'], r)[0][-1]
+        try:
+            return _bh15()
+        except Exception:
+            return 0
+
+    def _jq_aero(self, w3, pairs, amt):
+        from eth_abi import encode as _enc, decode as _dec
+        from eth_utils import keccak as _kk, to_checksum_address as _ck
+        sel = _kk(b'getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
+        routes = [(_ck(a), _ck(b), False, _ck(self._JAERO_FACTORY)) for a, b in pairs]
+        r = self._james_call(w3, self._JAERO_ROUTER, sel + _enc(['uint256', '(address,address,bool,address)[]'], [amt, routes]))
+        if not r:
+            return 0
+
+        def _bh16():
+            return _dec(['uint256[]'], r)[0][-1]
+        try:
+            return _bh16()
+        except Exception:
+            return 0
+
+    def _jq_v4(self, w3, tin, tout, amt, fee, tick, hook):
+        from eth_abi import encode as _enc
+        from eth_utils import keccak as _kk, to_checksum_address as _ck
+        c0, c1 = (tin, tout) if int(tin, 16) < int(tout, 16) else (tout, tin)
+        sel = _kk(b'quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4]
+
+        def _bh17():
+            r = self._james_call(w3, self._JV4_QUOTER, sel + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), fee, tick, _ck(hook)), c0.lower() == tin.lower(), amt, b'')]))
+            return (1, int.from_bytes(r[:32], 'big') if r else 0)
+            return (0, None)
+        _t17 = _bh17()
+        if _t17[0]:
+            return _t17[1]
+
+class JamesSolver(_MX_JamesSolver_0, KingSolver):
     """King primary; agent strategies cover its empty-plan blind spots; a
     benchmark time-governor guarantees the full corpus gets answered.
 
@@ -70,6 +170,18 @@ class JamesSolver(KingSolver):
     """
     _FAST_BELOW_S = 6.0
     _RUN_BUDGET_S = 860.0
+    _JAMES_CANONICAL = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x940181a94a35a4569e4529a3cdfb74e38fd98631'}
+    _JAMES_MARGIN = 1.1
+    _JV4_QUOTER = '0x0d5e0F971ED27FBfF6c2837bf31316121532048D'
+    _JV3_QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
+    _JUNIV2 = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
+    _JPANCV2 = '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'
+    _JAERO_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
+    _JAERO_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
+    _JWETH = '0x4200000000000000000000000000000000000006'
+    _JUSDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    _JV4_DYN_FEE = 8388608
+    _JV4_HOOK_FALLBACKS = ('0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc', '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544', '0x8dc3b85e1dc1c846ebf3971179a751896842e5dc', '0x892d3c2b4abeaaf67d52a7b29783e2161b7cad40', '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040')
 
     def initialize(self, config):
         super().initialize(config)
@@ -78,12 +190,15 @@ class JamesSolver(KingSolver):
         self._bm_total = 0
         self._bm_done = 0
         for strat in self._agent_strategies.values():
-            try:
-                strat.initialize(config)
-            except Exception:
-                logger.exception('[james] agent strategy initialize failed')
 
-    def on_benchmark_start(self, intent_count: int=0):
+            def _bh2():
+                try:
+                    strat.initialize(config)
+                except Exception:
+                    logger.exception('[james] agent strategy initialize failed')
+            _bh2()
+
+    def on_benchmark_start(self, intent_count=0):
         try:
             super().on_benchmark_start(intent_count)
         except Exception:
@@ -101,15 +216,6 @@ class JamesSolver(KingSolver):
             pass
         self._bm_t0 = None
 
-    def _behind_pace(self) -> bool:
-        if not getattr(self, '_bm_t0', None) or not getattr(self, '_bm_total', 0):
-            return False
-        import time as _t
-        elapsed = _t.monotonic() - self._bm_t0
-        remaining_orders = max(1, self._bm_total - self._bm_done)
-        remaining_time = self._RUN_BUDGET_S - elapsed
-        return remaining_time / remaining_orders < self._FAST_BELOW_S
-
     def _fast_plan(self, intent, state, snapshot=None):
         """King's cheap path (offline snapshot / best-effort single-hop) —
         seconds, mostly RPC-free. Falls back to None if internals drift."""
@@ -123,9 +229,12 @@ class JamesSolver(KingSolver):
             return None
 
     @staticmethod
-    def _is_empty(plan) -> bool:
-        try:
+    def _is_empty(plan):
+
+        def _bh3():
             return plan is None or not getattr(plan, 'interactions', None)
+        try:
+            return _bh3()
         except Exception:
             return True
 
@@ -139,12 +248,27 @@ class JamesSolver(KingSolver):
                 remaining_time = self._RUN_BUDGET_S - (_t.monotonic() - self._bm_t0)
                 remaining_orders = max(1, self._bm_total - self._bm_done + 1)
                 self._dyn_order_budget = max(4.0, remaining_time / remaining_orders)
-            if self._behind_pace():
+
+            def _bh5():
                 fast = self._fast_plan(intent, state, snapshot)
-                if not self._is_empty(fast):
+
+                def _bh4():
                     logger.info('[james] governor fast-path plan (order %d/%d)', self._bm_done, self._bm_total)
                     return fast
-            return _DR_UNSET
+                if not self._is_empty(fast):
+                    return (1, _bh4())
+                return (0, None)
+
+            def _bh6():
+                if self._behind_pace():
+                    _t5 = _bh5()
+                    if _t5[0]:
+                        return (1, _t5[1])
+                return (1, _DR_UNSET)
+                return (0, None)
+            _t6 = _bh6()
+            if _t6[0]:
+                return _t6[1]
         _dr9 = _dr8()
         if _dr9 is not _DR_UNSET:
             return _dr9
@@ -153,60 +277,59 @@ class JamesSolver(KingSolver):
         except Exception:
             logger.exception('[james] king generate_plan raised')
             plan = None
-        try:
+
+        def _bh7():
             better = self._james_v4_edge(intent, state, snapshot)
             if not self._is_empty(better):
-                return better
-        except Exception:
-            logger.exception('[james] v4 edge failed; king plan stands')
-        if not self._is_empty(plan):
-            return plan
-        app_id = str(getattr(intent, 'app_id', '') or '')
-        strat = getattr(self, '_agent_strategies', {}).get(app_id)
-        if strat is not None:
+                return (1, better)
+            return (0, None)
+
+        def _bh11():
             try:
+                _t7 = _bh7()
+                if _t7[0]:
+                    return (1, _t7[1])
+            except Exception:
+                logger.exception('[james] v4 edge failed; king plan stands')
+            if not self._is_empty(plan):
+                return (1, plan)
+            app_id = str(getattr(intent, 'app_id', '') or '')
+            strat = getattr(self, '_agent_strategies', {}).get(app_id)
+            return (0, (app_id, strat))
+        _t11 = _bh11()
+        if _t11[0]:
+            return _t11[1]
+        app_id, strat = _t11[1]
+
+        def _bh10():
+
+            def _bh8():
                 alt = strat.generate_plan(intent, state, snapshot)
-                if not self._is_empty(alt):
+
+                def _bh9():
                     logger.info('[james] blind-spot cover via agent strategy for %s', app_id)
-                    return alt
+                    return (1, alt)
+                if not self._is_empty(alt):
+                    return _bh9()
+                return (0, None)
+            try:
+                _t8 = _bh8()
+                if _t8[0]:
+                    return (1, _t8[1])
             except Exception:
                 logger.exception('[james] agent strategy fallback raised')
-        return plan
-    _JAMES_CANONICAL = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x940181a94a35a4569e4529a3cdfb74e38fd98631'}
-    _JAMES_MARGIN = 1.1
-    _JV4_QUOTER = '0x0d5e0F971ED27FBfF6c2837bf31316121532048D'
-    _JV3_QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
-    _JUNIV2 = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
-    _JPANCV2 = '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'
-    _JAERO_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
-    _JAERO_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
-    _JWETH = '0x4200000000000000000000000000000000000006'
-    _JUSDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-    _JV4_DYN_FEE = 8388608
-    _JV4_HOOK_FALLBACKS = ('0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc', '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544', '0x8dc3b85e1dc1c846ebf3971179a751896842e5dc', '0x892d3c2b4abeaaf67d52a7b29783e2161b7cad40', '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040')
+            return (0, None)
 
-    def _james_hooks(self):
-        import king_solver as _km
-        hooks = []
-        for name in ('_CLANKER_HOOK', '_HOOK_BDF9', '_HOOK_BEAM_FLAUNCH', '_HOOK_AVC_DOPPLER', '_HOOK_ZORA_CREATOR', '_ZORA_HOOK'):
-            v = getattr(_km, name, None)
-            if isinstance(v, str) and v.startswith('0x'):
-                hooks.append(v)
-        for h in self._JV4_HOOK_FALLBACKS:
-            if h not in hooks:
-                hooks.append(h)
-        return hooks
-
-    def _james_w3(self):
-        w3 = getattr(self, '_james_w3_cached', None)
-        if w3 is not None:
-            return w3
-        import os
-        from web3 import Web3
-        url = (getattr(self, 'rpc_urls', {}) or {}).get('8453') or (getattr(self, 'rpc_urls', {}) or {}).get(8453) or os.environ.get('BASE_RPC_URL', 'https://mainnet.base.org')
-        w3 = Web3(Web3.HTTPProvider(url, request_kwargs={'timeout': 4}))
-        self._james_w3_cached = w3
-        return w3
+        def _bh12():
+            if strat is not None:
+                _t10 = _bh10()
+                if _t10[0]:
+                    return (1, _t10[1])
+            return (1, plan)
+            return (0, None)
+        _t12 = _bh12()
+        if _t12[0]:
+            return _t12[1]
 
     @staticmethod
     def _james_call(w3, to, data):
@@ -215,46 +338,6 @@ class JamesSolver(KingSolver):
             return w3.eth.call({'to': _ck(to), 'data': data})
         except Exception:
             return None
-
-    def _jq_v3(self, w3, tin, tout, amt, fee):
-        from eth_abi import encode as _enc
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
-        sel = _kk(b'quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
-        r = self._james_call(w3, self._JV3_QUOTER, sel + _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), amt, fee, 0)]))
-        return int.from_bytes(r[:32], 'big') if r else 0
-
-    def _jq_v2(self, w3, router, path, amt):
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
-        sel = _kk(b'getAmountsOut(uint256,address[])')[:4]
-        r = self._james_call(w3, router, sel + _enc(['uint256', 'address[]'], [amt, [_ck(p) for p in path]]))
-        if not r:
-            return 0
-        try:
-            return _dec(['uint256[]'], r)[0][-1]
-        except Exception:
-            return 0
-
-    def _jq_aero(self, w3, pairs, amt):
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
-        sel = _kk(b'getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
-        routes = [(_ck(a), _ck(b), False, _ck(self._JAERO_FACTORY)) for a, b in pairs]
-        r = self._james_call(w3, self._JAERO_ROUTER, sel + _enc(['uint256', '(address,address,bool,address)[]'], [amt, routes]))
-        if not r:
-            return 0
-        try:
-            return _dec(['uint256[]'], r)[0][-1]
-        except Exception:
-            return 0
-
-    def _jq_v4(self, w3, tin, tout, amt, fee, tick, hook):
-        from eth_abi import encode as _enc
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
-        c0, c1 = (tin, tout) if int(tin, 16) < int(tout, 16) else (tout, tin)
-        sel = _kk(b'quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4]
-        r = self._james_call(w3, self._JV4_QUOTER, sel + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), fee, tick, _ck(hook)), c0.lower() == tin.lower(), amt, b'')]))
-        return int.from_bytes(r[:32], 'big') if r else 0
 
     def _james_v4_edge(self, intent, state, snapshot=None):
         """Probe generic V4 pools for exotic pairs the king's table lacks;
@@ -271,9 +354,13 @@ class JamesSolver(KingSolver):
             p = dict(getattr(state, 'raw_params', {}) or {})
         tin = str(p.get('input_token', '') or '').lower()
         tout = str(p.get('output_token', '') or '').lower()
-        try:
+
+        def _bh18():
             amt = int(p.get('input_amount', 0) or 0)
             min_out = int(p.get('min_output_amount', 0) or 0)
+            return (amt, min_out)
+        try:
+            amt, min_out = _bh18()
         except (TypeError, ValueError):
             return None
 
@@ -295,11 +382,18 @@ class JamesSolver(KingSolver):
                 if weth_leg:
                     out = self._jq_v4(w3, self._JWETH, tout, weth_leg, self._JV4_DYN_FEE, 200, hook)
                     if out > best_out:
-                        c0, c1 = (self._JWETH, tout) if int(self._JWETH, 16) < int(tout, 16) else (tout, self._JWETH)
-                        spec = {'pool': (c0, c1, self._JV4_DYN_FEE, 200, hook), 'settle': self._JWETH, 'zero_for_one': c0.lower() == self._JWETH.lower()}
-                        if tin == self._JUSDC.lower():
+
+                        def _bh20():
+                            c0, c1 = (self._JWETH, tout) if int(self._JWETH, 16) < int(tout, 16) else (tout, self._JWETH)
+                            spec = {'pool': (c0, c1, self._JV4_DYN_FEE, 200, hook), 'settle': self._JWETH, 'zero_for_one': c0.lower() == self._JWETH.lower()}
+                            return (c0, c1, spec)
+                        c0, c1, spec = _bh20()
+
+                        def _bh19():
                             spec['v3_tokens'] = (self._JUSDC, self._JWETH)
                             spec['v3_fees'] = (500,)
+                        if tin == self._JUSDC.lower():
+                            _bh19()
                         best_out, best_spec = (out, spec)
             if not best_spec:
                 return None
@@ -328,10 +422,16 @@ class JamesSolver(KingSolver):
                 proxy = max(proxy, self._jq_aero(w3, [(tin, self._JWETH), (self._JWETH, tout)], amt))
             if best_out <= max(proxy, min_out, 1) * self._JAMES_MARGIN:
                 return None
-            logger.info('[james] V4 edge fires %s->%s: v4=%d proxy=%d (x%.2f) hook=%s', tin[:8], tout[:8], best_out, proxy, best_out / max(proxy, 1), best_spec['pool'][4][:10])
-            table[tin, tout] = ('uniswap_v4_ur', best_spec)
-            try:
+
+            def _bh22():
+                logger.info('[james] V4 edge fires %s->%s: v4=%d proxy=%d (x%.2f) hook=%s', tin[:8], tout[:8], best_out, proxy, best_out / max(proxy, 1), best_spec['pool'][4][:10])
+                table[tin, tout] = ('uniswap_v4_ur', best_spec)
+            _bh22()
+
+            def _bh21():
                 self.__dict__.get('_plan_cache', {}).clear()
+            try:
+                _bh21()
             except Exception:
                 pass
             return _DR_UNSET
