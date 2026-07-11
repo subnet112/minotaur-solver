@@ -25,17 +25,18 @@ SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _KING_REPLAY_CACHE = None
 _KING_OVERRIDE_CACHE = None
 
-def _king_replay():
+def _king_replay() -> dict:
     """Lazy, memoized king_replay.json {"tin|tout|amt": {"interactions": [...]}}.
     Deferred out of module import so the Stage-2 init check (60s budget on a
     CPU-starved screening box) never pays the parse. Never raises — a broken
     file just disables the layer."""
     global _KING_REPLAY_CACHE
     if _KING_REPLAY_CACHE is None:
+        import json as _json
+        import os as _os
         path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'king_replay.json')
-        out = {}
-
-        def _bh1():
+        out: dict = {}
+        try:
             data = _json.load(open(path)) or {}
             for key, spec in data.items() if isinstance(data, dict) else []:
                 try:
@@ -44,11 +45,6 @@ def _king_replay():
                         out[str(key).lower()] = ix
                 except Exception:
                     continue
-            return (0, None)
-        try:
-            _t1 = _bh1()
-            if _t1[0]:
-                return _t1[1]
         except Exception:
             out = {}
         _KING_REPLAY_CACHE = out
@@ -62,88 +58,42 @@ class JamesSolver(_ApexBase):
         return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='Current-champion base + raw-replay blind-spot cover (captured router calldata for venues outside its engine)', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     @staticmethod
-    def _is_empty(plan):
-
-        def _bh2():
-            return plan is None or not getattr(plan, 'interactions', None)
+    def _is_empty(plan) -> bool:
         try:
-            return _bh2()
+            return plan is None or not getattr(plan, 'interactions', None)
         except Exception:
             return True
 
     def _swap_key(self, intent, state):
         """Exact (tin|tout|amt) replay key for this order; None on any problem.
         Uses the lineage's normalizer when present, state.raw_params otherwise."""
-
-        def _bh3():
+        try:
             norm = getattr(self, '_normalized_swap_params', None)
-
-            def _bh4():
-                p = norm(intent, state) if callable(norm) else {}
-                return p
             try:
-                p = _bh4()
+                p = norm(intent, state) if callable(norm) else {}
             except Exception:
                 p = {}
-
-            def _bh5():
+            if not p:
                 p = dict(getattr(state, 'raw_params', None) or {})
-                return p
-
-            def _bh7():
-                if not p:
-                    p = _bh5()
-                tin = str(p.get('input_token', '') or '').lower()
-                tout = str(p.get('output_token', '') or '').lower()
-                amt = str(int(p.get('input_amount', 0) or 0))
-                return (amt, tin, tout)
-            amt, tin, tout = _bh7()
-
-            def _bh6():
-                return (1, tin + '|' + tout + '|' + amt)
-
-            def _bh8():
-                if tin and tout and (amt != '0'):
-                    return (1, _bh6())
-                return (1, (0, None))
-                return (0, None)
-            _t8 = _bh8()
-            if _t8[0]:
-                return _t8[1]
-        try:
-            _t3 = _bh3()
-            if _t3[0]:
-                return _t3[1]
+            tin = str(p.get('input_token', '') or '').lower()
+            tout = str(p.get('output_token', '') or '').lower()
+            amt = str(int(p.get('input_amount', 0) or 0))
+            if tin and tout and (amt != '0'):
+                return tin + '|' + tout + '|' + amt
         except Exception:
             pass
         return None
 
     def _replay_plan(self, key, intent, state, snapshot):
         """Build the captured replay plan for an exact key; None on any problem."""
-
-        def _bh9():
-
-            def _bh10():
-                ixs = _king_replay().get(key) if key else None
-                if not ixs or Interaction is None or ExecutionPlan is None:
-                    return (1, None)
-                chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
-                ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in ixs]
-                return (0, (chain_id, ix))
-            _t10 = _bh10()
-            if _t10[0]:
-                return _t10[1]
-            chain_id, ix = _t10[1]
-
-            def _bh11():
-                rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'king-replay', 'chain_id': chain_id})
-                return (1, None if self._is_empty(rp) else rp)
-                return (0, None)
-            _t11 = _bh11()
-            if _t11[0]:
-                return _t11[1]
         try:
-            return _bh9()
+            ixs = _king_replay().get(key) if key else None
+            if not ixs or Interaction is None or ExecutionPlan is None:
+                return None
+            chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+            ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in ixs]
+            rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'king-replay', 'chain_id': chain_id})
+            return None if self._is_empty(rp) else rp
         except Exception:
             logger.exception('[james] replay build failed')
             return None
@@ -154,55 +104,40 @@ class JamesSolver(_ApexBase):
         except Exception:
             logger.exception('[james] champion generate_plan raised')
             plan = None
-
-        def _bh14():
-
-            def _bh12():
-                rp = self._replay_plan(self._swap_key(intent, state), intent, state, snapshot)
-
-                def _bh13():
-                    logger.info('[james] raw-replay fill (fill-only-empty)')
-                    return (1, rp)
-                if rp is not None:
-                    return _bh13()
-                return (0, None)
+        if self._is_empty(plan):
             try:
-                _t12 = _bh12()
-                if _t12[0]:
-                    return (1, _t12[1])
+                rp = self._replay_plan(self._swap_key(intent, state), intent, state, snapshot)
+                if rp is not None:
+                    logger.info('[james] raw-replay fill (fill-only-empty)')
+                    return rp
             except Exception:
                 logger.exception('[james] raw-replay fill failed; champion plan stands')
-            return (0, None)
-        if self._is_empty(plan):
-            _t14 = _bh14()
-            if _t14[0]:
-                return _t14[1]
         return plan
 SOLVER_CLASS = JamesSolver
 try:
-    import logging as _putty_logging
-    from eth_abi import encode as _putty_abi_encode
-    from minotaur_subnet.shared.types import ExecutionPlan as _PuttyExecutionPlan
-    from minotaur_subnet.shared.types import Interaction as _PuttyInteraction
-    try:
-        from eth_utils import to_checksum_address as _putty_ck
-    except Exception:
 
-        def _putty_ck(a):
-            return a
-    _putty_log = _putty_logging.getLogger('putty_shim')
-    _PUTTY_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-    _PUTTY_WETH = '0x4200000000000000000000000000000000000006'
-    _PUTTY_BASE_CHAIN = 8453
-    _PUTTY_DEADLINE = 9999999999
-    _PUTTY_APPROVE_SEL = bytes.fromhex('095ea7b3')
-    _PUTTY_EXACT_IN_SINGLE_SEL = bytes.fromhex('a026383e')
-    _PUTTY_TRANSFER_SEL = bytes.fromhex('a9059cbb')
-    _PUTTY_PAIR_SWAP_SEL = bytes.fromhex('022c0d9f')
+    def _dr13():
+        import logging as _putty_logging
+        from eth_abi import encode as _putty_abi_encode
+        from minotaur_subnet.shared.types import ExecutionPlan as _PuttyExecutionPlan
+        from minotaur_subnet.shared.types import Interaction as _PuttyInteraction
+        try:
+            from eth_utils import to_checksum_address as _putty_ck
+        except Exception:
 
-    def _dr9():
+            def _putty_ck(a):
+                return a
+        _putty_log = _putty_logging.getLogger('putty_shim')
+        _PUTTY_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+        _PUTTY_WETH = '0x4200000000000000000000000000000000000006'
+        _PUTTY_BASE_CHAIN = 8453
+        _PUTTY_DEADLINE = 9999999999
+        _PUTTY_APPROVE_SEL = bytes.fromhex('095ea7b3')
+        _PUTTY_EXACT_IN_SINGLE_SEL = bytes.fromhex('a026383e')
+        _PUTTY_TRANSFER_SEL = bytes.fromhex('a9059cbb')
+        _PUTTY_PAIR_SWAP_SEL = bytes.fromhex('022c0d9f')
 
-        def _bh39():
+        def _dr9():
             _PUTTY_DEPOSIT_SEL = bytes.fromhex('6e553f65')
             _PUTTY_GET_AMOUNT_OUT_SEL = bytes.fromhex('f140a35a')
             _PUTTY_QUOTE_SINGLE_SEL = bytes.fromhex('c6a5026a')
@@ -214,236 +149,163 @@ try:
             _PUTTY_OLD_SINGLE_SEL = bytes.fromhex('414bf389')
             _PUTTY_CURVE_XCHG_SEL = bytes.fromhex('ddc1f59d')
             _PUTTY_SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
-            return (_PUTTY_CURVE_XCHG_SEL, _PUTTY_DEPOSIT_SEL, _PUTTY_GET_AMOUNT_OUT_SEL, _PUTTY_MSG_SENDER, _PUTTY_OLD_SINGLE_SEL, _PUTTY_QUOTE_SINGLE_SEL, _PUTTY_R02_PATH_SEL, _PUTTY_R02_SINGLE_SEL, _PUTTY_SUSHI_V3_ROUTER, _PUTTY_UNI_QUOTER, _PUTTY_UNI_R02)
-        _PUTTY_CURVE_XCHG_SEL, _PUTTY_DEPOSIT_SEL, _PUTTY_GET_AMOUNT_OUT_SEL, _PUTTY_MSG_SENDER, _PUTTY_OLD_SINGLE_SEL, _PUTTY_QUOTE_SINGLE_SEL, _PUTTY_R02_PATH_SEL, _PUTTY_R02_SINGLE_SEL, _PUTTY_SUSHI_V3_ROUTER, _PUTTY_UNI_QUOTER, _PUTTY_UNI_R02 = _bh39()
 
-        def _dr3():
-            _PUTTY_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
-            _PUTTY_CURVE_SUPEROETHB = '0x302a94e3c28c290eaf2a4605fc52e11eb915f378'
-            _PUTTY_ROUTES = {}
-            _PUTTY_SUBS = {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
-
-            def _bh15():
+            def _dr3():
+                _PUTTY_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
+                _PUTTY_CURVE_SUPEROETHB = '0x302a94e3c28c290eaf2a4605fc52e11eb915f378'
+                _PUTTY_ROUTES = {}
+                _PUTTY_SUBS = {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
                 _PUTTY_SUBS_WETH = {'0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True),), 'lo': 100000000000000, 'hi': 10000000000000000}}
                 _PUTTY_RPC = {'url': None}
-                return (1, (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER))
-                return (0, None)
-            _t15 = _bh15()
-            if _t15[0]:
-                return _t15[1]
-        _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr3()
+                return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER)
+            _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr3()
 
-        def _putty_eth_call(to, data_hex):
-            url = _PUTTY_RPC.get('url')
-            if not url:
-                raise RuntimeError('putty: no rpc url captured')
-            body = _pj.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': _putty_ck(to), 'data': data_hex}, 'latest']}).encode()
-            req = _pu.Request(url, data=body, headers={'content-type': 'application/json'})
-
-            def _bh16():
-                out = _pj.loads(resp.read())
-                return out
-
-            def _bh18():
+            def _putty_eth_call(to, data_hex):
+                import json as _pj
+                import urllib.request as _pu
+                url = _PUTTY_RPC.get('url')
+                if not url:
+                    raise RuntimeError('putty: no rpc url captured')
+                body = _pj.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': _putty_ck(to), 'data': data_hex}, 'latest']}).encode()
+                req = _pu.Request(url, data=body, headers={'content-type': 'application/json'})
                 with _pu.urlopen(req, timeout=10) as resp:
-                    out = _bh16()
+                    out = _pj.loads(resp.read())
                 res = out.get('result')
-                return (out, res)
-            out, res = _bh18()
-
-            def _bh17():
-                raise RuntimeError(f'putty eth_call failed: {out.get('error')}')
-
-            def _bh19():
                 if not res or res == '0x':
-                    return (1, _bh17())
-                return (1, bytes.fromhex(res[2:]))
-                return (0, None)
-            _t19 = _bh19()
-            if _t19[0]:
-                return _t19[1]
+                    raise RuntimeError(f'putty eth_call failed: {out.get('error')}')
+                return bytes.fromhex(res[2:])
 
-        def _putty_encode_approve(spender, amount):
-            return '0x' + (_PUTTY_APPROVE_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(spender), int(amount)])).hex()
+            def _putty_encode_approve(spender, amount):
+                return '0x' + (_PUTTY_APPROVE_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(spender), int(amount)])).hex()
 
-        def _putty_encode_exact_input_single(token_in, token_out, tick_spacing, recipient, amount_in):
-            enc = _putty_abi_encode(['(address,address,int24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(tick_spacing), _putty_ck(recipient), int(_PUTTY_DEADLINE), int(amount_in), 0, 0)])
-            return '0x' + (_PUTTY_EXACT_IN_SINGLE_SEL + enc).hex()
+            def _putty_encode_exact_input_single(token_in, token_out, tick_spacing, recipient, amount_in):
+                enc = _putty_abi_encode(['(address,address,int24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(tick_spacing), _putty_ck(recipient), int(_PUTTY_DEADLINE), int(amount_in), 0, 0)])
+                return '0x' + (_PUTTY_EXACT_IN_SINGLE_SEL + enc).hex()
 
-        def _putty_state_getter(state):
-            """Champion-agnostic reader over the STABLE IntentState surface."""
-            raw = {}
-
-            def _bh20(raw):
-
-                def _bh21():
-                    raw = dict(state.raw_params_view() or {})
-                    return raw
-                if hasattr(state, 'raw_params_view'):
-                    raw = _bh21()
-                return raw
-            try:
-                raw = _bh20(raw)
-            except Exception:
+            def _putty_state_getter(state):
+                """Champion-agnostic reader over the STABLE IntentState surface."""
                 raw = {}
-
-            def _bh23(raw):
-
-                def _bh22():
-                    raw = dict(getattr(state, 'raw_params', {}) or {})
-                    return raw
                 try:
-                    raw = _bh22()
+                    if hasattr(state, 'raw_params_view'):
+                        raw = dict(state.raw_params_view() or {})
                 except Exception:
                     raw = {}
-                return raw
-            if not raw:
-                raw = _bh23(raw)
-            typed = getattr(state, 'typed_context', None)
+                if not raw:
+                    try:
+                        raw = dict(getattr(state, 'raw_params', {}) or {})
+                    except Exception:
+                        raw = {}
+                typed = getattr(state, 'typed_context', None)
 
-            def _get(key):
-                v = raw.get(key)
-                if (v is None or v == '') and typed is not None:
-                    v = getattr(typed, key, None)
-                return v
-            return _get
+                def _get(key):
+                    v = raw.get(key)
+                    if (v is None or v == '') and typed is not None:
+                        v = getattr(typed, key, None)
+                    return v
+                return _get
 
-        def _putty_build_alt_plan(intent, state, token_out, amount_in, router, tick_spacing):
-
-            def _bh24():
+            def _putty_build_alt_plan(intent, state, token_out, amount_in, router, tick_spacing):
                 recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
                 chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
                 interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
-                return (chain_id, interactions)
-            chain_id, interactions = _bh24()
-            return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'aerodrome_slipstream_alt', 'venue_param': int(tick_spacing), 'chain_id': chain_id})
+                return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'aerodrome_slipstream_alt', 'venue_param': int(tick_spacing), 'chain_id': chain_id})
 
-        def _putty_ix(target, data, chain_id):
-            return _PuttyInteraction(target=_putty_ck(target), value='0', call_data=data, chain_id=chain_id)
+            def _putty_ix(target, data, chain_id):
+                return _PuttyInteraction(target=_putty_ck(target), value='0', call_data=data, chain_id=chain_id)
 
-        def _putty_encode_transfer(to, amount):
-            return '0x' + (_PUTTY_TRANSFER_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(to), int(amount)])).hex()
+            def _putty_encode_transfer(to, amount):
+                return '0x' + (_PUTTY_TRANSFER_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(to), int(amount)])).hex()
 
-        def _putty_r02_single(token_out, fee, recipient, amount_in):
-            enc = _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(token_out), int(fee), _putty_ck(recipient), int(amount_in), 0, 0)])
-            return '0x' + (_PUTTY_R02_SINGLE_SEL + enc).hex()
+            def _putty_r02_single(token_out, fee, recipient, amount_in):
+                enc = _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(token_out), int(fee), _putty_ck(recipient), int(amount_in), 0, 0)])
+                return '0x' + (_PUTTY_R02_SINGLE_SEL + enc).hex()
 
-        def _putty_r02_path(mids, token_out, fees, recipient, amount_in):
-
-            def _bh26():
+            def _putty_r02_path(mids, token_out, fees, recipient, amount_in):
                 toks = [_PUTTY_USDC] + list(mids) + [token_out]
                 path = b''
                 for i, f in enumerate(fees):
-
-                    def _bh25(path):
-                        path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
-                        return path
-                    path = _bh25(path)
+                    path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
                 path += bytes.fromhex(toks[-1][2:])
                 enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
-                return enc
-            enc = _bh26()
-            return '0x' + (_PUTTY_R02_PATH_SEL + enc).hex()
+                return '0x' + (_PUTTY_R02_PATH_SEL + enc).hex()
 
-        def _putty_quote_usdc_weth(fee, amount_in):
-            data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(_PUTTY_WETH), int(amount_in), int(fee), 0)])).hex()
-            raw = _putty_eth_call(_PUTTY_UNI_QUOTER, data)
-            out = int.from_bytes(raw[:32], 'big')
-            if out <= 0:
-                raise RuntimeError('putty quoter returned 0')
-            return out
+            def _putty_quote_usdc_weth(fee, amount_in):
+                data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(_PUTTY_WETH), int(amount_in), int(fee), 0)])).hex()
+                raw = _putty_eth_call(_PUTTY_UNI_QUOTER, data)
+                out = int.from_bytes(raw[:32], 'big')
+                if out <= 0:
+                    raise RuntimeError('putty quoter returned 0')
+                return out
 
-        def _putty_quote_v3(quoter, token_in, token_out, fee, amount_in):
-            """QuoterV2-ABI single quote (uni + sushi share the struct); 0 on failure."""
+            def _putty_quote_v3(quoter, token_in, token_out, fee, amount_in):
+                """QuoterV2-ABI single quote (uni + sushi share the struct); 0 on failure."""
+                try:
+                    data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(amount_in), int(fee), 0)])).hex()
+                    raw = _putty_eth_call(quoter, data)
+                    return int.from_bytes(raw[:32], 'big')
+                except Exception:
+                    return 0
 
-            def _bh27():
-                data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(amount_in), int(fee), 0)])).hex()
-                raw = _putty_eth_call(quoter, data)
-                return int.from_bytes(raw[:32], 'big')
-            try:
-                return _bh27()
-            except Exception:
-                return 0
-
-        def _putty_best_usdc_weth(amount_in):
-            """Best uni-v3 USDC->WETH quote over fees {100,500,3000} — a strict
+            def _putty_best_usdc_weth(amount_in):
+                """Best uni-v3 USDC->WETH quote over fees {100,500,3000} — a strict
         SUPERSET of the champion curve_ng probe set {500,3000}, so our WETH
         leg is never worse than the champion's."""
-            best_out, best_fee = (0, 0)
-            for fee in (100, 500, 3000):
-
-                def _bh29(best_fee, best_out):
+                best_out, best_fee = (0, 0)
+                for fee in (100, 500, 3000):
                     out = _putty_quote_v3(_PUTTY_UNI_QUOTER, _PUTTY_USDC, _PUTTY_WETH, fee, amount_in)
-
-                    def _bh28():
-                        best_out, best_fee = (out, fee)
-                        return (best_fee, best_out)
                     if out > best_out:
-                        best_fee, best_out = _bh28()
-                    return (best_fee, best_out, out)
-                best_fee, best_out, out = _bh29(best_fee, best_out)
-            if best_out <= 0:
-                raise RuntimeError('putty: no uni USDC->WETH quote')
-            return (best_out, best_fee)
+                        best_out, best_fee = (out, fee)
+                if best_out <= 0:
+                    raise RuntimeError('putty: no uni USDC->WETH quote')
+                return (best_out, best_fee)
 
-        def _putty_pair_get_amount_out(pair, amount_in, token_in):
-            data = '0x' + (_PUTTY_GET_AMOUNT_OUT_SEL + _putty_abi_encode(['uint256', 'address'], [int(amount_in), _putty_ck(token_in)])).hex()
-            out = int.from_bytes(_putty_eth_call(pair, data)[:32], 'big')
-            if out <= 0:
-                raise RuntimeError('putty getAmountOut returned 0')
-            return out
+            def _putty_pair_get_amount_out(pair, amount_in, token_in):
+                data = '0x' + (_PUTTY_GET_AMOUNT_OUT_SEL + _putty_abi_encode(['uint256', 'address'], [int(amount_in), _putty_ck(token_in)])).hex()
+                out = int.from_bytes(_putty_eth_call(pair, data)[:32], 'big')
+                if out <= 0:
+                    raise RuntimeError('putty getAmountOut returned 0')
+                return out
 
-        def _putty_sub_interactions(spec, token_out, amount_in, recipient, chain_id):
-            """Build the substituted interaction list for one table entry."""
-            kind = spec['kind']
+            def _putty_sub_interactions(spec, token_out, amount_in, recipient, chain_id):
+                """Build the substituted interaction list for one table entry."""
+                kind = spec['kind']
+                if kind == 'univ3_single':
+                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
 
-            def _bh30():
-                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
-            if kind == 'univ3_single':
-                return _bh30()
-
-            def _dr4():
-
-                def _bh31():
-                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
-                if kind == 'univ3_path':
-                    return _bh31()
-
-                def _bh32():
-                    quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
-                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
-                if kind == 'erc4626':
-                    return _bh32()
-                return _DR_UNSET
-
-            def _bh36():
+                def _dr4():
+                    if kind == 'univ3_path':
+                        return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
+                    if kind == 'erc4626':
+                        quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
+                        return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
+                    return _DR_UNSET
                 _dr5 = _dr4()
                 if _dr5 is not _DR_UNSET:
-                    return (1, _dr5)
-                return (0, None)
-            _t36 = _bh36()
-            if _t36[0]:
-                return _t36[1]
-            if kind == 'curve_full':
-                weth_out, fee = _putty_best_usdc_weth(amount_in)
-                pool = spec['pool']
-                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(pool, weth_out), chain_id), _putty_ix(pool, '0x' + (_PUTTY_CURVE_XCHG_SEL + _putty_abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(weth_out), 0, _putty_ck(recipient)])).hex(), chain_id)]
-
-            def _dr1():
-                nonlocal fee, weth_out
-                if kind == 'uni_sushi':
+                    return _dr5
+                if kind == 'curve_full':
                     weth_out, fee = _putty_best_usdc_weth(amount_in)
-                    sushi_fee = int(spec['sushi_fee'])
-                    if _putty_quote_v3(_PUTTY_SUSHI_V3_QUOTER, _PUTTY_WETH, token_out, sushi_fee, weth_out) <= 0:
-                        raise RuntimeError('putty: sushi leg quote empty')
-                    sushi_call = '0x' + (_PUTTY_OLD_SINGLE_SEL + _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_WETH), _putty_ck(token_out), sushi_fee, _putty_ck(recipient), int(_PUTTY_DEADLINE), int(weth_out), 0, 0)])).hex()
-                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(_PUTTY_SUSHI_V3_ROUTER, weth_out), chain_id), _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id)]
-                return _DR_UNSET
 
-            def _bh37():
+                    def _dr11():
+                        pool = spec['pool']
+                        return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(pool, weth_out), chain_id), _putty_ix(pool, '0x' + (_PUTTY_CURVE_XCHG_SEL + _putty_abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(weth_out), 0, _putty_ck(recipient)])).hex(), chain_id)]
+                        return _DR_UNSET
+                    _dr12 = _dr11()
+                    if _dr12 is not _DR_UNSET:
+                        return _dr12
+
+                def _dr1():
+                    nonlocal fee, weth_out
+                    if kind == 'uni_sushi':
+                        weth_out, fee = _putty_best_usdc_weth(amount_in)
+                        sushi_fee = int(spec['sushi_fee'])
+                        if _putty_quote_v3(_PUTTY_SUSHI_V3_QUOTER, _PUTTY_WETH, token_out, sushi_fee, weth_out) <= 0:
+                            raise RuntimeError('putty: sushi leg quote empty')
+                        sushi_call = '0x' + (_PUTTY_OLD_SINGLE_SEL + _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_WETH), _putty_ck(token_out), sushi_fee, _putty_ck(recipient), int(_PUTTY_DEADLINE), int(weth_out), 0, 0)])).hex()
+                        return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(_PUTTY_SUSHI_V3_ROUTER, weth_out), chain_id), _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id)]
+                    return _DR_UNSET
                 _dr2 = _dr1()
                 if _dr2 is not _DR_UNSET:
-                    return (1, _dr2)
+                    return _dr2
                 if kind == 'aero_pd':
 
                     def _dr8():
@@ -451,44 +313,26 @@ try:
                         ixs = [_putty_ix(hops[0][0], _putty_encode_transfer(hops[0][1], amount_in), chain_id)]
                         cur = int(amount_in)
                         for i, (tin, pair, in_is_t0) in enumerate(hops):
-
-                            def _bh35():
-
-                                def _bh33():
-                                    out = _putty_pair_get_amount_out(pair, cur, tin)
-                                    to = recipient if i == len(hops) - 1 else hops[i + 1][1]
-                                    a0, a1 = (0, out) if in_is_t0 else (out, 0)
-                                    return (a0, a1, out, to)
-                                a0, a1, out, to = _bh33()
-
-                                def _bh34():
-                                    ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
-                                    cur = out
-                                    return cur
-                                cur = _bh34()
-                                return (a0, a1, cur, out, to)
-                            a0, a1, cur, out, to = _bh35()
+                            out = _putty_pair_get_amount_out(pair, cur, tin)
+                            to = recipient if i == len(hops) - 1 else hops[i + 1][1]
+                            a0, a1 = (0, out) if in_is_t0 else (out, 0)
+                            ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
+                            cur = out
                         return ixs
                     ixs = _dr8()
-                    return (1, ixs)
+                    return ixs
                 raise RuntimeError(f'putty: unknown sub kind {kind}')
-                return (0, None)
-            _t37 = _bh37()
-            if _t37[0]:
-                return _t37[1]
 
-        def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
-
-            def _bh38():
+            def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
                 recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
                 chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
                 interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
-                return (chain_id, interactions)
-            chain_id, interactions = _bh38()
-            return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id})
-        return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter)
-    _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter = _dr9()
-    _PuttyChampionBase = SOLVER_CLASS
+                return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id})
+            return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter)
+        _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter = _dr9()
+        _PuttyChampionBase = SOLVER_CLASS
+        return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_USDC, _PUTTY_WETH, _PuttyChampionBase, _putty_build_alt_plan, _putty_build_sub_plan, _putty_log, _putty_state_getter)
+    _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_USDC, _PUTTY_WETH, _PuttyChampionBase, _putty_build_alt_plan, _putty_build_sub_plan, _putty_log, _putty_state_getter = _dr13()
 
     class PuttyEdgeSolver(_PuttyChampionBase):
         """Champion primary; substitutes a known-good alt-CL plan on exactly the
@@ -496,35 +340,36 @@ try:
         everywhere else; any failure in our path falls back to the champion."""
 
         def initialize(self, *args, **kwargs):
-
-            def _bh40():
+            try:
                 for cfg in list(args) + list(kwargs.values()):
                     if isinstance(cfg, dict):
                         urls = cfg.get('rpc_urls') or {}
-
-                        def _bh41():
+                        if isinstance(urls, dict):
                             url = urls.get(8453) or urls.get('8453')
                             if url:
                                 _PUTTY_RPC['url'] = str(url)
-                            return url
-                        if isinstance(urls, dict):
-                            url = _bh41()
-            try:
-                _bh40()
             except Exception:
                 pass
             return super().initialize(*args, **kwargs)
 
         def generate_plan(self, *args, **kwargs):
             try:
-                intent = args[0] if len(args) > 0 else kwargs.get('intent', kwargs.get('app'))
-                state = args[1] if len(args) > 1 else kwargs.get('state')
+
+                def _dr14():
+                    intent = args[0] if len(args) > 0 else kwargs.get('intent', kwargs.get('app'))
+                    state = args[1] if len(args) > 1 else kwargs.get('state')
+                    return (intent, state)
+                intent, state = _dr14()
                 if state is not None:
-                    get = _putty_state_getter(state)
-                    tin = str(get('input_token') or '').strip()
-                    tout = str(get('output_token') or '').strip()
-                    amount_in = int(get('input_amount') or 0)
-                    route = _PUTTY_ROUTES.get(tout.lower())
+
+                    def _dr10():
+                        get = _putty_state_getter(state)
+                        tin = str(get('input_token') or '').strip()
+                        tout = str(get('output_token') or '').strip()
+                        amount_in = int(get('input_amount') or 0)
+                        route = _PUTTY_ROUTES.get(tout.lower())
+                        return (amount_in, route, tin, tout)
+                    amount_in, route, tin, tout = _dr10()
                     if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
                         router, tick_spacing = route
                         plan = _putty_build_alt_plan(intent, state, tout, amount_in, router, tick_spacing)
@@ -561,22 +406,14 @@ except Exception:
     except Exception:
         pass
 import json as _mo_json, os as _mo_os
-import json as _json
-import os as _os
-import json as _pj
-import urllib.request as _pu
 _MO_OVR = None
 
 def _mo_load():
     global _MO_OVR
     if _MO_OVR is None:
-
-        def _bh42():
-            global _MO_OVR
+        try:
             _d = _mo_json.load(open(_mo_os.path.join(_mo_os.path.dirname(_mo_os.path.abspath(__file__)), 'override_replay.json')))
             _MO_OVR = {str(_k).lower(): _v.get('interactions') for _k, _v in _d.items() if isinstance(_v, dict) and _v.get('interactions')}
-        try:
-            _bh42()
         except Exception:
             _MO_OVR = {}
     return _MO_OVR
@@ -585,44 +422,17 @@ _MO_Base = SOLVER_CLASS
 class _MinoOverrideSolver(_MO_Base):
 
     def _mo_key(self, intent, state):
-
-        def _bh43():
-            p = dict(getattr(state, 'raw_params', None) or {})
-
-            def _bh45(p):
-                tc = getattr(state, 'typed_context', None)
-
-                def _bh44(p):
-                    p = getattr(tc, 'raw_params', p) or p
-                    return p
-                if tc is not None:
-                    p = _bh44(p)
-                return p
-
-            def _bh47(p):
-                if not p.get('input_token'):
-                    p = _bh45(p)
-                tin = str(p.get('input_token', '') or '').lower()
-                tout = str(p.get('output_token', '') or '').lower()
-                amt = str(int(p.get('input_amount', 0) or 0))
-                return (amt, tin, tout)
-            amt, tin, tout = _bh47(p)
-
-            def _bh46():
-                return (1, tin + '|' + tout + '|' + amt)
-
-            def _bh48():
-                if tin and tout and (amt != '0'):
-                    return (1, _bh46())
-                return (1, (0, None))
-                return (0, None)
-            _t48 = _bh48()
-            if _t48[0]:
-                return _t48[1]
         try:
-            _t43 = _bh43()
-            if _t43[0]:
-                return _t43[1]
+            p = dict(getattr(state, 'raw_params', None) or {})
+            if not p.get('input_token'):
+                tc = getattr(state, 'typed_context', None)
+                if tc is not None:
+                    p = getattr(tc, 'raw_params', p) or p
+            tin = str(p.get('input_token', '') or '').lower()
+            tout = str(p.get('output_token', '') or '').lower()
+            amt = str(int(p.get('input_amount', 0) or 0))
+            if tin and tout and (amt != '0'):
+                return tin + '|' + tout + '|' + amt
         except Exception:
             pass
         return None
