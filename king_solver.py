@@ -20,7 +20,7 @@ from king_base import MinerSolver as _Base
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'viking-mino-solver')
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '96.0.0')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _BASE = 8453
@@ -161,14 +161,20 @@ class MinerSolver(_Base):
                 q = 0
             if q > best_out:
                 best_out, best_fee = (q, fee)
-        if best_out <= 0:
-            return None
-        params = self._normalized_swap_params(intent, state)
-        recipient = self._apex_recipient(state, params)
-        deadline = self._apex_deadline(snapshot)
-        call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-        ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=call, chain_id=chain_id)]
-        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v3', 'chain_id': chain_id})
+
+        def _dr17():
+            if best_out <= 0:
+                return None
+            params = self._normalized_swap_params(intent, state)
+            recipient = self._apex_recipient(state, params)
+            deadline = self._apex_deadline(snapshot)
+            call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+            ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=call, chain_id=chain_id)]
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v3', 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr18 = _dr17()
+        if _dr18 is not _DR_UNSET:
+            return _dr18
 
     def _apex_uni_mav(self, intent, state, snapshot, pool, token_a_in, tin, tout, amount_in, chain_id):
         from common.abi_utils import encode_approve
@@ -397,7 +403,11 @@ class MinerSolver(_Base):
         via_weth = _dr15()
         if via_weth:
             with ThreadPoolExecutor(max_workers=6) as ex:
-                fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+
+                def _dr16():
+                    fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+                    return fs
+                fs = _dr16()
                 for fut, f in fs.items():
                     o = fut.result()
                     if o > weth_out:

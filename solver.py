@@ -31,7 +31,7 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07101854-4')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '9.1.0-named')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
@@ -275,12 +275,18 @@ class VikingSolver(_HydraBase):
             return plan
         if row:
             import time as _time
-            age = _time.time() - float(row.get('at') or 0)
-            if age > self._V_ROW_FRESH_S:
-                fresh = self._v_engine_fresh(intent, state, snapshot)
-                if fresh is not None:
-                    logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
-                    return fresh
+
+            def _dr5():
+                age = _time.time() - float(row.get('at') or 0)
+                if age > self._V_ROW_FRESH_S:
+                    fresh = self._v_engine_fresh(intent, state, snapshot)
+                    if fresh is not None:
+                        logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
+                        return fresh
+                return _DR_UNSET
+            _dr6 = _dr5()
+            if _dr6 is not _DR_UNSET:
+                return _dr6
         rp = self._v_replay_plan(key, intent, state, snapshot)
         if rp is not None:
             logger.info('[viking] fill-empty serve %s', key[:64])
@@ -294,7 +300,7 @@ import json as _gjson
 import os as _gos
 from minotaur_subnet.shared.types import Interaction as _GIx, ExecutionPlan as _GPlan
 _GORAN_BASE = SOLVER_CLASS
-_GORAN_NAME = _gos.environ.get('GORAN_SOLVER_NAME', 'goran-router')
+_GORAN_NAME = _gos.environ.get('GORAN_SOLVER_NAME', 'putty-clean-solver')
 _GORAN_AUTHOR = 'goran-h-key'
 try:
     _GORAN_OVERRIDES = _gjson.load(open(_gos.path.join(_gos.path.dirname(_gos.path.abspath(__file__)), 'overrides.json')))
@@ -337,3 +343,15 @@ class GoranSolver(_GORAN_BASE):
             pass
         return super().generate_plan(intent, state, snapshot)
 SOLVER_CLASS = GoranSolver
+
+# --- putty outermost branding (name-only, behavior-safe) ---
+_PUTTY_FINAL_BASE = SOLVER_CLASS
+class _PUTTY_FINAL_BRAND(_PUTTY_FINAL_BASE):
+    def metadata(self):
+        md = super().metadata()
+        try:
+            md.name = 'putty-clean-solver'
+        except Exception:
+            pass
+        return md
+SOLVER_CLASS = _PUTTY_FINAL_BRAND
