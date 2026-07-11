@@ -576,15 +576,19 @@ class _MinerSolverDR10(BaselineSwapSolver):
         if has_v4:
 
             def _vw_h1():
-                if spec.get('pools'):
-                    legs = [(pk, bool(zfo)) for pk, zfo in spec['pools']]
-                else:
-                    legs = [(spec['pool'], bool(spec['zero_for_one']))]
-                action_list = [11] + [6] * len(legs) + [14]
-                settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), int(_UR_CONTRACT_BALANCE), False])
-                swaps = []
-                for (c0, c1, fee, tick_spacing, hooks), zfo in legs:
-                    swaps.append(_abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick_spacing), _ck(hooks)), zfo, 0, 0, b'')]))
+
+                def _dr91():
+                    if spec.get('pools'):
+                        legs = [(pk, bool(zfo)) for pk, zfo in spec['pools']]
+                    else:
+                        legs = [(spec['pool'], bool(spec['zero_for_one']))]
+                    action_list = [11] + [6] * len(legs) + [14]
+                    settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), int(_UR_CONTRACT_BALANCE), False])
+                    swaps = []
+                    for (c0, c1, fee, tick_spacing, hooks), zfo in legs:
+                        swaps.append(_abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick_spacing), _ck(hooks)), zfo, 0, 0, b'')]))
+                    return (action_list, settle, swaps)
+                action_list, settle, swaps = _dr91()
                 take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
                 params_list = [settle] + swaps + [take]
                 if spec.get('sweep_settle'):
@@ -2025,18 +2029,24 @@ class _MinerSolverDR1(_MinerSolverDR10):
         chain_id = None
         min_out = None
 
-        def _vgk6_1():
-            nonlocal amount_in, chain_id, min_out
-            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-            min_out = int(params.get('min_output_amount', 0) or 0)
-            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-        _vgk6_1()
-        if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
-            return None
-        if tin in _SWEEP_KG and tout in _SWEEP_KG:
-            return None
-        if tout in _SWEEP_KNOWN:
-            return None
+        def _dr73():
+
+            def _vgk6_1():
+                nonlocal amount_in, chain_id, min_out
+                amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+                min_out = int(params.get('min_output_amount', 0) or 0)
+                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            _vgk6_1()
+            if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
+                return None
+            if tin in _SWEEP_KG and tout in _SWEEP_KG:
+                return None
+            if tout in _SWEEP_KNOWN:
+                return None
+            return _DR_UNSET
+        _dr90 = _dr73()
+        if _dr90 is not _DR_UNSET:
+            return _dr90
         w3 = self._get_web3(chain_id)
         if w3 is None:
             return None
@@ -2405,16 +2415,20 @@ class MinerSolver(_MinerSolverDR73):
             w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
-            path = b''
-            for i, token in enumerate(tokens):
-                addr = str(token)
-                path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
-                if i < len(fees):
-                    path += int(fees[i]).to_bytes(3, byteorder='big')
-            sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
-            payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
-            raw = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + (sel + payload).hex()})
-            out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
+
+            def _dr92():
+                path = b''
+                for i, token in enumerate(tokens):
+                    addr = str(token)
+                    path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
+                    if i < len(fees):
+                        path += int(fees[i]).to_bytes(3, byteorder='big')
+                sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
+                payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
+                raw = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + (sel + payload).hex()})
+                out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
+                return (gas_est, out)
+            gas_est, out = _dr92()
             if int(out) <= 0:
                 return None
             return {'venue': 'uniswap_v3_multihop', 'param': tuple((int(f) for f in fees)), 'tokens': tuple(tokens), 'fees': tuple((int(f) for f in fees)), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _GAS_MULTIHOP + int(gas_est), 'fast_edge': True}
@@ -2431,16 +2445,20 @@ class MinerSolver(_MinerSolverDR73):
             w3 = self._get_web3(int(chain_id))
             if w3 is None:
                 return None
-            path = b''
-            for i, token in enumerate(tokens):
-                addr = str(token)
-                path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
-                if i < len(fees):
-                    path += int(fees[i]).to_bytes(3, byteorder='big')
-            sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
-            payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
-            raw = w3.eth.call({'to': _ck(_PANCAKE_QUOTER), 'data': '0x' + (sel + payload).hex()})
-            out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
+
+            def _dr93():
+                path = b''
+                for i, token in enumerate(tokens):
+                    addr = str(token)
+                    path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
+                    if i < len(fees):
+                        path += int(fees[i]).to_bytes(3, byteorder='big')
+                sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
+                payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
+                raw = w3.eth.call({'to': _ck(_PANCAKE_QUOTER), 'data': '0x' + (sel + payload).hex()})
+                out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
+                return (gas_est, out)
+            gas_est, out = _dr93()
             if int(out) <= 0:
                 return None
             return {'venue': 'pancake_v3_multihop', 'param': tuple((int(f) for f in fees)), 'tokens': tuple(tokens), 'fees': tuple((int(f) for f in fees)), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _GAS_MULTIHOP + int(gas_est), 'fast_edge': True}

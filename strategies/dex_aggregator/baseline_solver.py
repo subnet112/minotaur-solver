@@ -1129,8 +1129,14 @@ class BaselineSwapSolver(_BaselineSwapSolverDR1):
                 if bridge_quote_b:
                     final_output = bridge_quote_b.estimated_output
                     bridge_token_out = bridge_quote_b.token_out
-                    if bridge_token_out.lower() == output_token.lower():
-                        return QuoteResult(estimated_output=str(final_output), route_summary=f'Cross-chain: {route_desc} + bridge {src_chain}→{dst_chain}', gas_estimate=_GAS_BASE_OVERHEAD * 2 + _GAS_PER_HOP * len(hops), metadata={'cross_chain': True, 'direction': 'swap_then_bridge', 'src_chain': src_chain, 'dst_chain': dst_chain, 'bridge_fee': bridge_quote_b.fee, 'swap_output': swap_output, 'hops': len(hops), 'protocol': 'UniswapV3 + Hyperlane'}, computed_params={'min_output_amount': str(final_output)})
+
+                    def _dr23():
+                        if bridge_token_out.lower() == output_token.lower():
+                            return QuoteResult(estimated_output=str(final_output), route_summary=f'Cross-chain: {route_desc} + bridge {src_chain}→{dst_chain}', gas_estimate=_GAS_BASE_OVERHEAD * 2 + _GAS_PER_HOP * len(hops), metadata={'cross_chain': True, 'direction': 'swap_then_bridge', 'src_chain': src_chain, 'dst_chain': dst_chain, 'bridge_fee': bridge_quote_b.fee, 'swap_output': swap_output, 'hops': len(hops), 'protocol': 'UniswapV3 + Hyperlane'}, computed_params={'min_output_amount': str(final_output)})
+                        return _DR_UNSET
+                    _dr24 = _dr23()
+                    if _dr24 is not _DR_UNSET:
+                        return _dr24
         raise ValueError(f'No cross-chain route found for {input_token[:10]}.. ({src_chain}) → {output_token[:10]}.. ({dst_chain})')
 
     def check_trigger(self, intent, state, snapshot=None):

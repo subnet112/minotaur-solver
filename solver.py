@@ -31,7 +31,7 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07110718-4')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07110933-3')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
