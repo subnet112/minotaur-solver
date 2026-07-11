@@ -121,18 +121,21 @@ class DiscoveryEngine:
             if hub.lower() in (tin.lower(), tout.lower()):
                 continue
             route_sets.append(((tin, hub, False, AERO_V2_FACTORY), (hub, tout, False, AERO_V2_FACTORY)))
-        for routes in route_sets:
-            data = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [amount_in, [(_ck(a), _ck(b), s, _ck(f)) for a, b, s, f in routes]])
-            r = self._c(AERO_V2_ROUTER, data)
-            if not r:
-                continue
-            try:
-                q = int(_dec(['uint256[]'], r)[0][-1])
-            except Exception:
-                continue
-            if q <= 0:
-                continue
-            out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
+
+        def _dr2():
+            for routes in route_sets:
+                data = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [amount_in, [(_ck(a), _ck(b), s, _ck(f)) for a, b, s, f in routes]])
+                r = self._c(AERO_V2_ROUTER, data)
+                if not r:
+                    continue
+                try:
+                    q = int(_dec(['uint256[]'], r)[0][-1])
+                except Exception:
+                    continue
+                if q <= 0:
+                    continue
+                out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
+        _dr2()
         return out
 
     def _v4_liquidity(self, pool_id: bytes) -> int:
