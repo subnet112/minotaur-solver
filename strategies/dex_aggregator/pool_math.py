@@ -7,6 +7,7 @@ Works with pool_states dicts (from RPC queries or MarketSnapshot) where
 each pool has: token0, token1, fee, sqrtPriceX96, liquidity.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import math
 from typing import Any
 Q96 = 1 << 96
@@ -32,28 +33,34 @@ def compute_v3_output(sqrt_price_x96, liquidity, amount_in, zero_for_one, fee_pp
     """
     if liquidity <= 0 or amount_in <= 0 or sqrt_price_x96 <= 0:
         return 0
-    amount_after_fee = amount_in * (1000000 - fee_ppm) // 1000000
-    if amount_after_fee <= 0:
-        return 0
-    MAX_SQRT_PRICE_IMPACT = sqrt_price_x96 // 100
-    if zero_for_one:
-        numerator = amount_after_fee * sqrt_price_x96
-        denominator = liquidity * Q96 + amount_after_fee * sqrt_price_x96
-        if denominator <= 0:
+
+    def _dr4():
+        amount_after_fee = amount_in * (1000000 - fee_ppm) // 1000000
+        if amount_after_fee <= 0:
             return 0
-        delta_sqrt_price = numerator * sqrt_price_x96 // denominator
-        if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
-            return 0
-        output = liquidity * delta_sqrt_price // Q96
-    else:
-        delta_sqrt_price = amount_after_fee * Q96 // liquidity
-        if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
-            return 0
-        new_sqrt_price = sqrt_price_x96 + delta_sqrt_price
-        if new_sqrt_price <= 0:
-            return 0
-        output = liquidity * Q96 * delta_sqrt_price // (sqrt_price_x96 * new_sqrt_price)
-    return max(0, output)
+        MAX_SQRT_PRICE_IMPACT = sqrt_price_x96 // 100
+        if zero_for_one:
+            numerator = amount_after_fee * sqrt_price_x96
+            denominator = liquidity * Q96 + amount_after_fee * sqrt_price_x96
+            if denominator <= 0:
+                return 0
+            delta_sqrt_price = numerator * sqrt_price_x96 // denominator
+            if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
+                return 0
+            output = liquidity * delta_sqrt_price // Q96
+        else:
+            delta_sqrt_price = amount_after_fee * Q96 // liquidity
+            if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
+                return 0
+            new_sqrt_price = sqrt_price_x96 + delta_sqrt_price
+            if new_sqrt_price <= 0:
+                return 0
+            output = liquidity * Q96 * delta_sqrt_price // (sqrt_price_x96 * new_sqrt_price)
+        return max(0, output)
+        return _DR_UNSET
+    _dr5 = _dr4()
+    if _dr5 is not _DR_UNSET:
+        return _dr5
 
 def find_best_pool(pool_states, token_in, token_out, amount_in):
     """Find the pool giving the best output for a token pair swap.
@@ -138,8 +145,12 @@ def find_best_route(pool_states, token_in, token_out, amount_in, intermediaries=
             continue
         _, state2, final_output = hop2
         if final_output > best_output:
-            fee1 = int(state1.get('fee', 3000))
-            fee2 = int(state2.get('fee', 3000))
+
+            def _dr3():
+                fee1 = int(state1.get('fee', 3000))
+                fee2 = int(state2.get('fee', 3000))
+                return (fee1, fee2)
+            fee1, fee2 = _dr3()
             best_output = final_output
             best_description = f'2-hop via {fee1 / 1000000:.2%} + {fee2 / 1000000:.2%} pools'
             best_hops = [{'pool_addr': hop1[0], 'pool_state': state1, 'fee': fee1}, {'pool_addr': hop2[0], 'pool_state': state2, 'fee': fee2}]
