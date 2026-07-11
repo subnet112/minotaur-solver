@@ -13,43 +13,18 @@ champion. 84 rows, KyberSwap-verified, PMM-free (RFQ quotes expire), gas<=1.5M.
 """
 from __future__ import annotations
 _DR_UNSET = object()
+import logging
+import os
+from apex_king_base import SOLVER_CLASS as _ApexBase
+from minotaur_subnet.sdk.intent_solver import SolverMetadata
+from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+logger = logging.getLogger(__name__)
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-king-solver')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.87.5-edge')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
+_KING_REPLAY_CACHE = None
+_KING_OVERRIDE_CACHE = None
 
-def _vwm2():
-    global ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _ApexBase, _DR_UNSET, _KING_OVERRIDE_CACHE, _KING_REPLAY_CACHE, logger, logging, os
-    _DR_UNSET = object()
-    import logging
-    import os
-    from apex_king_base import SOLVER_CLASS as _ApexBase
-    from minotaur_subnet.sdk.intent_solver import SolverMetadata
-    from minotaur_subnet.shared.types import ExecutionPlan, Interaction
-    logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-king-solver')
-    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.87.5-edge')
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
-    _KING_REPLAY_CACHE = None
-    _KING_OVERRIDE_CACHE = None
-_vwm2()
-
-def _king_override() -> set:
-    """Lazy king_override.json — exact keys where the champion's coverage is
-    PROVEN FAKE: its apex_routes seals encode univ3/aero/pancake-v3 for tokens
-    whose only real liquidity is hydrex/baseswap/maverick/clanker/flaunch/zora/
-    thirdfy/infinity/alien-cl/sky-psm (verified per-token against its published
-    table) => its plan reverts => champion delivers 0, ALWAYS. For these keys
-    fill-only-empty is blind (their non-empty reverting plan is inherited by
-    us), so the replay row is served UNCONDITIONALLY instead: our delivery vs
-    their structural 0 = a win; a stale replay = 0 = the tie we already had."""
-    global _KING_OVERRIDE_CACHE
-    if _KING_OVERRIDE_CACHE is None:
-        import json as _json
-        import os as _os
-        path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'king_override.json')
-        try:
-            data = _json.load(open(path))
-            _KING_OVERRIDE_CACHE = {str(k).lower() for k in data} if isinstance(data, list) else set()
-        except Exception:
-            _KING_OVERRIDE_CACHE = set()
-    return _KING_OVERRIDE_CACHE
 
 def _king_replay() -> dict:
     """Lazy, memoized king_replay.json {"tin|tout|amt": {"interactions": [...]}}.
@@ -140,8 +115,6 @@ class JamesSolver(_ApexBase):
                 logger.exception('[james] raw-replay fill failed; champion plan stands')
         return plan
 SOLVER_CLASS = JamesSolver
-import ast as _vg_ast, os as _vg_os
-_VGD = _vg_ast.literal_eval(open(_vg_os.path.join(_vg_os.path.dirname(_vg_os.path.abspath(__file__)), 'champ_top_vgdata.txt')).read())
 try:
     import logging as _putty_logging
     from eth_abi import encode as _putty_abi_encode
@@ -162,9 +135,9 @@ try:
     _PUTTY_EXACT_IN_SINGLE_SEL = bytes.fromhex('a026383e')
     _PUTTY_TRANSFER_SEL = bytes.fromhex('a9059cbb')
     _PUTTY_PAIR_SWAP_SEL = bytes.fromhex('022c0d9f')
-    _PUTTY_DEPOSIT_SEL = bytes.fromhex('6e553f65')
 
-    def _dr8():
+    def _dr9():
+        _PUTTY_DEPOSIT_SEL = bytes.fromhex('6e553f65')
         _PUTTY_GET_AMOUNT_OUT_SEL = bytes.fromhex('f140a35a')
         _PUTTY_QUOTE_SINGLE_SEL = bytes.fromhex('c6a5026a')
         _PUTTY_R02_SINGLE_SEL = bytes.fromhex('04e45aaf')
@@ -175,12 +148,16 @@ try:
         _PUTTY_OLD_SINGLE_SEL = bytes.fromhex('414bf389')
         _PUTTY_CURVE_XCHG_SEL = bytes.fromhex('ddc1f59d')
         _PUTTY_SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
-        _PUTTY_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
-        _PUTTY_CURVE_SUPEROETHB = '0x302a94e3c28c290eaf2a4605fc52e11eb915f378'
-        _PUTTY_ROUTES = {}
-        _PUTTY_SUBS = _VGD['_PUTTY_SUBS']
-        _PUTTY_SUBS_WETH = _VGD['_PUTTY_SUBS_WETH']
-        _PUTTY_RPC = {'url': None}
+
+        def _dr3():
+            _PUTTY_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
+            _PUTTY_CURVE_SUPEROETHB = '0x302a94e3c28c290eaf2a4605fc52e11eb915f378'
+            _PUTTY_ROUTES = {}
+            _PUTTY_SUBS = {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
+            _PUTTY_SUBS_WETH = {'0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True),), 'lo': 100000000000000, 'hi': 10000000000000000}}
+            _PUTTY_RPC = {'url': None}
+            return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER)
+        _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr3()
 
         def _putty_eth_call(to, data_hex):
             import json as _pj
@@ -294,16 +271,16 @@ try:
             if kind == 'univ3_single':
                 return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
 
-            def _dr3():
+            def _dr4():
                 if kind == 'univ3_path':
                     return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
                 if kind == 'erc4626':
                     quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
                     return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
                 return _DR_UNSET
-            _dr4 = _dr3()
-            if _dr4 is not _DR_UNSET:
-                return _dr4
+            _dr5 = _dr4()
+            if _dr5 is not _DR_UNSET:
+                return _dr5
             if kind == 'curve_full':
                 weth_out, fee = _putty_best_usdc_weth(amount_in)
                 pool = spec['pool']
@@ -324,7 +301,7 @@ try:
                 return _dr2
             if kind == 'aero_pd':
 
-                def _dr7():
+                def _dr8():
                     hops = spec['hops']
                     ixs = [_putty_ix(hops[0][0], _putty_encode_transfer(hops[0][1], amount_in), chain_id)]
                     cur = int(amount_in)
@@ -335,17 +312,17 @@ try:
                         ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
                         cur = out
                     return ixs
-                ixs = _dr7()
+                ixs = _dr8()
                 return ixs
             raise RuntimeError(f'putty: unknown sub kind {kind}')
-        return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_state_getter, _putty_sub_interactions)
-    _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_state_getter, _putty_sub_interactions = _dr8()
 
-    def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
-        recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
-        chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
-        interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
-        return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id})
+        def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
+            recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
+            chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
+            interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
+            return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id})
+        return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter)
+    _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter = _dr9()
     _PuttyChampionBase = SOLVER_CLASS
 
     class PuttyEdgeSolver(_PuttyChampionBase):
@@ -384,7 +361,7 @@ try:
                             return plan
                     spec = _PUTTY_SUBS.get(tout.lower())
 
-                    def _dr5():
+                    def _dr6():
                         nonlocal plan
                         if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
                             plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
@@ -398,9 +375,9 @@ try:
                                 _putty_log.info('[putty] eps WETH substitution %s for %s amt=%s', spec_w['kind'], tout, amount_in)
                                 return plan
                         return _DR_UNSET
-                    _dr6 = _dr5()
-                    if _dr6 is not _DR_UNSET:
-                        return _dr6
+                    _dr7 = _dr6()
+                    if _dr7 is not _DR_UNSET:
+                        return _dr7
             except Exception:
                 _putty_log.exception('[putty] edge failed; deferring to champion plan')
             return super().generate_plan(*args, **kwargs)

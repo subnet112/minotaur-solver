@@ -131,7 +131,7 @@ class JamesSolver(KingSolver):
 
     def generate_plan(self, intent, state, snapshot=None):
 
-        def _dr6():
+        def _dr8():
             self._bm_done = getattr(self, '_bm_done', 0) + 1
             self._dyn_order_budget = None
             if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
@@ -145,9 +145,9 @@ class JamesSolver(KingSolver):
                     logger.info('[james] governor fast-path plan (order %d/%d)', self._bm_done, self._bm_total)
                     return fast
             return _DR_UNSET
-        _dr7 = _dr6()
-        if _dr7 is not _DR_UNSET:
-            return _dr7
+        _dr9 = _dr8()
+        if _dr9 is not _DR_UNSET:
+            return _dr9
         try:
             plan = super().generate_plan(intent, state, snapshot)
         except Exception:
@@ -277,19 +277,19 @@ class JamesSolver(KingSolver):
         except (TypeError, ValueError):
             return None
 
-        def _dr4():
+        def _dr6():
             chain_id = int(getattr(state, 'chain_id', 0) or 0)
             if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())) or ((tin, tout) in table):
                 return None
             return _DR_UNSET
-        _dr5 = _dr4()
-        if _dr5 is not _DR_UNSET:
-            return _dr5
+        _dr7 = _dr6()
+        if _dr7 is not _DR_UNSET:
+            return _dr7
         w3 = self._james_w3()
         weth_leg = amt if tin == self._JWETH.lower() else self._jq_v3(w3, self._JUSDC, self._JWETH, amt, 500)
         best_out, best_spec = (0, None)
 
-        def _vg8b():
+        def _dr2():
             nonlocal best_out, best_spec
             for hook in self._james_hooks():
                 if weth_leg:
@@ -301,12 +301,15 @@ class JamesSolver(KingSolver):
                             spec['v3_tokens'] = (self._JUSDC, self._JWETH)
                             spec['v3_fees'] = (500,)
                         best_out, best_spec = (out, spec)
-        _vg8b()
-        if not best_spec:
-            return None
+            if not best_spec:
+                return None
+            return _DR_UNSET
+        _dr3 = _dr2()
+        if _dr3 is not _DR_UNSET:
+            return _dr3
         proxy = 0
 
-        def _dr2():
+        def _dr4():
             nonlocal proxy
 
             def _dr1():
@@ -325,19 +328,16 @@ class JamesSolver(KingSolver):
                 proxy = max(proxy, self._jq_aero(w3, [(tin, self._JWETH), (self._JWETH, tout)], amt))
             if best_out <= max(proxy, min_out, 1) * self._JAMES_MARGIN:
                 return None
-
-            def _vg8():
-                logger.info('[james] V4 edge fires %s->%s: v4=%d proxy=%d (x%.2f) hook=%s', tin[:8], tout[:8], best_out, proxy, best_out / max(proxy, 1), best_spec['pool'][4][:10])
-                table[tin, tout] = ('uniswap_v4_ur', best_spec)
-            _vg8()
+            logger.info('[james] V4 edge fires %s->%s: v4=%d proxy=%d (x%.2f) hook=%s', tin[:8], tout[:8], best_out, proxy, best_out / max(proxy, 1), best_spec['pool'][4][:10])
+            table[tin, tout] = ('uniswap_v4_ur', best_spec)
             try:
                 self.__dict__.get('_plan_cache', {}).clear()
             except Exception:
                 pass
             return _DR_UNSET
-        _dr3 = _dr2()
-        if _dr3 is not _DR_UNSET:
-            return _dr3
+        _dr5 = _dr4()
+        if _dr5 is not _DR_UNSET:
+            return _dr5
         return super().generate_plan(intent, state, snapshot)
 
     def metadata(self):

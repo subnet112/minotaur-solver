@@ -30,8 +30,8 @@ from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07110718-4')
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'hydra-discovery-router')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.70.5')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
@@ -53,38 +53,6 @@ def _viking_override() -> set:
     return _VIKING_OVERRIDE_CACHE
 _VIKING_CACHED_BARS = None
 _VIKING_FROZEN_INDEX = None
-_VIKING_MIRROR_CACHE = None
-_VIKING_BLOCKLIST_CACHE = None
-
-def _viking_blocklist() -> set:
-    """Lazy viking_blocklist.json — keys card-proven to REGRESS when we serve
-    our own material (fork-hostile row reverts / below-bar engine): serve the
-    champion's mirror row FIRST there. Strictly >= the status quo: mirror
-    executes -> wei-tie, mirror rotted -> drop (what happens today anyway)."""
-    global _VIKING_BLOCKLIST_CACHE
-    if _VIKING_BLOCKLIST_CACHE is None:
-        import json as _json
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_blocklist.json')
-        try:
-            _VIKING_BLOCKLIST_CACHE = {str(k).lower() for k in _json.load(open(path)) or []}
-        except Exception:
-            _VIKING_BLOCKLIST_CACHE = set()
-    return _VIKING_BLOCKLIST_CACHE
-
-def _viking_mirror() -> dict:
-    """Lazy champ_mirror.json — the reigning champion's OWN replay bank,
-    verbatim. Serving these rows wei-ties the champion's cert bars regardless
-    of market drift. Rebuilt on champion change (git/publish snapshot)."""
-    global _VIKING_MIRROR_CACHE
-    if _VIKING_MIRROR_CACHE is None:
-        import json as _json
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_mirror.json')
-        try:
-            data = _json.load(open(path)) or {}
-            _VIKING_MIRROR_CACHE = {str(k).lower(): v for k, v in data.items() if isinstance(v, dict) and v.get('interactions')}
-        except Exception:
-            _VIKING_MIRROR_CACHE = {}
-    return _VIKING_MIRROR_CACHE
 
 def _viking_cached_bar(key):
     """Lazy champ_cached.json — key -> the champion's CERT-CACHED delivery for
@@ -158,7 +126,7 @@ def _viking_replay() -> dict:
                     bout = int((spec or {}).get('built_out', 0) or 0)
                 except (TypeError, ValueError):
                     bout = 0
-                out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at, 'ok': bool((spec or {}).get('fork_ok')), 'cls': str((spec or {}).get('class') or '')}
+                out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
         except Exception:
             out = {}
         _VIKING_REPLAY_CACHE = out
@@ -233,7 +201,7 @@ class VikingSolver(_HydraBase):
             tout = str(p.get('output_token', '') or '').lower()
             spec = self._VIKING_DYN_FALLBACKS.get((tin, tout))
 
-            def _dr1():
+            def _dr3():
                 if not spec:
                     return None
                 amount_in = int(p.get('input_amount', 0) or 0)
@@ -248,15 +216,13 @@ class VikingSolver(_HydraBase):
                     logger.info('[viking] dynamic fallback %s->%s amt=%s via %s/%s', tin[:8], tout[:8], amount_in, venue, param)
                 return plan
                 return _DR_UNSET
-            _dr2 = _dr1()
-            if _dr2 is not _DR_UNSET:
-                return _dr2
+            _dr4 = _dr3()
+            if _dr4 is not _DR_UNSET:
+                return _dr4
         except Exception:
             logger.exception('[viking] dynamic fallback failed')
             return None
     _V_ROW_FRESH_S = 6 * 3600.0
-    _V_BAR_FRESH_S = 45 * 60.0
-    _V_BAR_MARGIN = 1.02
     _V_GATE_MIN_BUDGET_S = 8.0
 
     def _v_engine_fresh(self, intent, state, snapshot):
@@ -277,106 +243,50 @@ class VikingSolver(_HydraBase):
     def generate_plan(self, intent, state, snapshot=None):
         key = self._v_swap_key(intent, state)
         row = _viking_replay().get(key) if key else None
-        if key and key in _viking_override() and (row or {}).get('ok'):
+        if key and key in _viking_override():
             plan = self._v_replay_plan(key, intent, state, snapshot)
             if plan is not None:
                 logger.info('[viking] override serve %s', key[:64])
                 return plan
-        blocked = bool(key and key in _viking_blocklist())
-        if blocked:
-            mrow = _viking_mirror().get(key)
-            if mrow:
-                mp = self._v_mirror_plan(mrow, intent, state, snapshot)
-                if mp is not None:
-                    logger.info('[viking] blocklist mirror serve %s', key[:64])
-                    return mp
         plan = super().generate_plan(intent, state, snapshot)
         if not self._v_is_empty(plan):
-            if blocked:
-                return plan
-            rp = self._v_bar_serve(key, row, plan, intent, state, snapshot)
-            return rp if rp is not None else plan
-        return self._v_fill_empty(key, None if blocked else row, plan, intent, state, snapshot)
+            bar = _viking_cached_bar(key)
 
-    def _v_bar_serve(self, key, row, plan, intent, state, snapshot=None):
-        if not (row and row.get('ok')):
-            return None
-        import time as _time
-        age = _time.time() - float(row.get('at') or 0)
-        bar = _viking_cached_bar(key)
-        if not bar:
-            if age > self._V_ROW_FRESH_S:
-                return None
-            if row.get('cls') != 'hydra-champfail-cover':
-                return None
-            rp = self._v_replay_plan(key, intent, state, snapshot)
-            if rp is not None:
-                logger.info('[viking] cover preempt %s', key[:64])
-            return rp
-        if age > self._V_BAR_FRESH_S:
-            return None
-        if int(row.get('out') or 0) < bar * self._V_BAR_MARGIN:
-            return None
-        sig = None
-        try:
-            sig = frozenset(((str(getattr(i, 'target', '')).lower(), str(getattr(i, 'call_data', '')).lower()) for i in plan.interactions))
-        except Exception:
-            pass
-        if sig is not None and sig in _viking_frozen_index().get(key, []):
-            return None
-        rp = self._v_replay_plan(key, intent, state, snapshot)
-        if rp is not None:
-            logger.info('[viking] cached-bar serve %s (stamp %s >= bar %s)', key[:64], row.get('out'), bar)
-        return rp
-
-    def _v_fill_empty(self, key, row, plan, intent, state, snapshot=None):
-        if row and row.get('ok'):
+            def _dr1():
+                nonlocal _time, rp
+                if bar and row:
+                    import time as _time
+                    fresh_row = _time.time() - float(row.get('at') or 0) <= self._V_ROW_FRESH_S
+                    if fresh_row and int(row.get('out') or 0) >= bar:
+                        sig = None
+                        try:
+                            sig = frozenset(((str(getattr(i, 'target', '')).lower(), str(getattr(i, 'call_data', '')).lower()) for i in plan.interactions))
+                        except Exception:
+                            pass
+                        if sig is None or sig not in _viking_frozen_index().get(key, []):
+                            rp = self._v_replay_plan(key, intent, state, snapshot)
+                            if rp is not None:
+                                logger.info('[viking] cached-bar serve %s (stamp %s >= bar %s)', key[:64], row.get('out'), bar)
+                                return rp
+                return _DR_UNSET
+            _dr2 = _dr1()
+            if _dr2 is not _DR_UNSET:
+                return _dr2
+            return plan
+        if row:
             import time as _time
             age = _time.time() - float(row.get('at') or 0)
-            if age <= self._V_ROW_FRESH_S:
-                rp = self._v_replay_plan(key, intent, state, snapshot)
-                if rp is not None:
-                    logger.info('[viking] fill-empty serve %s', key[:64])
-                    return rp
-        mrow = _viking_mirror().get(key) if key else None
-        if mrow:
-            mp = self._v_mirror_plan(mrow, intent, state, snapshot)
-            if mp is not None:
-                logger.info('[viking] mirror serve %s', key[:64])
-                return mp
-        fresh = self._v_engine_fresh(intent, state, snapshot)
-        if fresh is not None:
-            logger.info('[viking] engine-fresh serve %s', (key or '?')[:64])
-            return fresh
+            if age > self._V_ROW_FRESH_S:
+                fresh = self._v_engine_fresh(intent, state, snapshot)
+                if fresh is not None:
+                    logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
+                    return fresh
+        rp = self._v_replay_plan(key, intent, state, snapshot)
+        if rp is not None:
+            logger.info('[viking] fill-empty serve %s', key[:64])
+            return rp
         dyn = self._v_dynamic_fallback(intent, state, snapshot)
         if dyn is not None:
             return dyn
         return plan
-
-    def _v_mirror_plan(self, mrow, intent, state, snapshot=None):
-        """ExecutionPlan from a champion-mirror row (verbatim calldata)."""
-        try:
-            rows = (mrow or {}).get('interactions') or []
-            rows = [r for r in rows if r.get('target') and r.get('data')]
-            if not rows:
-                return None
-            chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
-            ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
-            rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-mirror', 'chain_id': chain_id})
-            return None if self._v_is_empty(rp) else rp
-        except Exception:
-            logger.exception('[viking] mirror build failed')
-            return None
 SOLVER_CLASS = VikingSolver
-
-# --- putty outermost branding (name-only, behavior-safe) ---
-_PUTTY_FINAL_BASE = SOLVER_CLASS
-class _PUTTY_FINAL_BRAND(_PUTTY_FINAL_BASE):
-    def metadata(self):
-        md = super().metadata()
-        try:
-            md.name = 'putty-clean-solver'
-        except Exception:
-            pass
-        return md
-SOLVER_CLASS = _PUTTY_FINAL_BRAND
