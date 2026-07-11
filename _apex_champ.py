@@ -10,6 +10,7 @@ blind-spot cover) this wrapper can only tie the champion or dethrone it by
 covering an order it zeroes — it cannot lose ground.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import importlib.util
 import logging
 from pathlib import Path
@@ -129,18 +130,24 @@ class JamesSolver(KingSolver):
             return True
 
     def generate_plan(self, intent, state, snapshot=None):
-        self._bm_done = getattr(self, '_bm_done', 0) + 1
-        self._dyn_order_budget = None
-        if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
-            import time as _t
-            remaining_time = self._RUN_BUDGET_S - (_t.monotonic() - self._bm_t0)
-            remaining_orders = max(1, self._bm_total - self._bm_done + 1)
-            self._dyn_order_budget = max(4.0, remaining_time / remaining_orders)
-        if self._behind_pace():
-            fast = self._fast_plan(intent, state, snapshot)
-            if not self._is_empty(fast):
-                logger.info('[james] governor fast-path plan (order %d/%d)', self._bm_done, self._bm_total)
-                return fast
+
+        def _dr6():
+            self._bm_done = getattr(self, '_bm_done', 0) + 1
+            self._dyn_order_budget = None
+            if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
+                import time as _t
+                remaining_time = self._RUN_BUDGET_S - (_t.monotonic() - self._bm_t0)
+                remaining_orders = max(1, self._bm_total - self._bm_done + 1)
+                self._dyn_order_budget = max(4.0, remaining_time / remaining_orders)
+            if self._behind_pace():
+                fast = self._fast_plan(intent, state, snapshot)
+                if not self._is_empty(fast):
+                    logger.info('[james] governor fast-path plan (order %d/%d)', self._bm_done, self._bm_total)
+                    return fast
+            return _DR_UNSET
+        _dr7 = _dr6()
+        if _dr7 is not _DR_UNSET:
+            return _dr7
         try:
             plan = super().generate_plan(intent, state, snapshot)
         except Exception:
@@ -269,12 +276,19 @@ class JamesSolver(KingSolver):
             min_out = int(p.get('min_output_amount', 0) or 0)
         except (TypeError, ValueError):
             return None
-        chain_id = int(getattr(state, 'chain_id', 0) or 0)
-        if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())) or ((tin, tout) in table):
-            return None
+
+        def _dr4():
+            chain_id = int(getattr(state, 'chain_id', 0) or 0)
+            if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())) or ((tin, tout) in table):
+                return None
+            return _DR_UNSET
+        _dr5 = _dr4()
+        if _dr5 is not _DR_UNSET:
+            return _dr5
         w3 = self._james_w3()
         weth_leg = amt if tin == self._JWETH.lower() else self._jq_v3(w3, self._JUSDC, self._JWETH, amt, 500)
         best_out, best_spec = (0, None)
+
         def _vg8b():
             nonlocal best_out, best_spec
             for hook in self._james_hooks():
@@ -292,30 +306,38 @@ class JamesSolver(KingSolver):
             return None
         proxy = 0
 
-        def _dr1():
+        def _dr2():
             nonlocal proxy
-            for fee in (100, 500, 3000, 10000):
-                proxy = max(proxy, self._jq_v3(w3, tin, tout, amt, fee))
-                if weth_leg and tin != self._JWETH.lower():
-                    proxy = max(proxy, self._jq_v3(w3, self._JWETH, tout, weth_leg, fee))
-            for router in (self._JUNIV2, self._JPANCV2):
-                proxy = max(proxy, self._jq_v2(w3, router, [tin, tout], amt))
-                if tin != self._JWETH.lower():
-                    proxy = max(proxy, self._jq_v2(w3, router, [tin, self._JWETH, tout], amt))
-            proxy = max(proxy, self._jq_aero(w3, [(tin, tout)], amt))
-        _dr1()
-        if tin != self._JWETH.lower():
-            proxy = max(proxy, self._jq_aero(w3, [(tin, self._JWETH), (self._JWETH, tout)], amt))
-        if best_out <= max(proxy, min_out, 1) * self._JAMES_MARGIN:
-            return None
-        def _vg8():
-            logger.info('[james] V4 edge fires %s->%s: v4=%d proxy=%d (x%.2f) hook=%s', tin[:8], tout[:8], best_out, proxy, best_out / max(proxy, 1), best_spec['pool'][4][:10])
-            table[tin, tout] = ('uniswap_v4_ur', best_spec)
-        _vg8()
-        try:
-            self.__dict__.get('_plan_cache', {}).clear()
-        except Exception:
-            pass
+
+            def _dr1():
+                nonlocal proxy
+                for fee in (100, 500, 3000, 10000):
+                    proxy = max(proxy, self._jq_v3(w3, tin, tout, amt, fee))
+                    if weth_leg and tin != self._JWETH.lower():
+                        proxy = max(proxy, self._jq_v3(w3, self._JWETH, tout, weth_leg, fee))
+                for router in (self._JUNIV2, self._JPANCV2):
+                    proxy = max(proxy, self._jq_v2(w3, router, [tin, tout], amt))
+                    if tin != self._JWETH.lower():
+                        proxy = max(proxy, self._jq_v2(w3, router, [tin, self._JWETH, tout], amt))
+                proxy = max(proxy, self._jq_aero(w3, [(tin, tout)], amt))
+            _dr1()
+            if tin != self._JWETH.lower():
+                proxy = max(proxy, self._jq_aero(w3, [(tin, self._JWETH), (self._JWETH, tout)], amt))
+            if best_out <= max(proxy, min_out, 1) * self._JAMES_MARGIN:
+                return None
+
+            def _vg8():
+                logger.info('[james] V4 edge fires %s->%s: v4=%d proxy=%d (x%.2f) hook=%s', tin[:8], tout[:8], best_out, proxy, best_out / max(proxy, 1), best_spec['pool'][4][:10])
+                table[tin, tout] = ('uniswap_v4_ur', best_spec)
+            _vg8()
+            try:
+                self.__dict__.get('_plan_cache', {}).clear()
+            except Exception:
+                pass
+            return _DR_UNSET
+        _dr3 = _dr2()
+        if _dr3 is not _DR_UNSET:
+            return _dr3
         return super().generate_plan(intent, state, snapshot)
 
     def metadata(self):
