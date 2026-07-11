@@ -31,7 +31,7 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07110718-4')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '5.07110933-0')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
@@ -150,15 +150,19 @@ def _viking_replay() -> dict:
                 rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
                 if not rows:
                     continue
-                try:
-                    at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
-                except Exception:
-                    at = 0
-                try:
-                    bout = int((spec or {}).get('built_out', 0) or 0)
-                except (TypeError, ValueError):
-                    bout = 0
-                out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at, 'ok': bool((spec or {}).get('fork_ok')), 'cls': str((spec or {}).get('class') or '')}
+
+                def _dr5():
+                    try:
+                        at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
+                    except Exception:
+                        at = 0
+                    try:
+                        bout = int((spec or {}).get('built_out', 0) or 0)
+                    except (TypeError, ValueError):
+                        bout = 0
+                    out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at, 'ok': bool((spec or {}).get('fork_ok')), 'cls': str((spec or {}).get('class') or '')}
+                    return (at, bout)
+                at, bout = _dr5()
         except Exception:
             out = {}
         _VIKING_REPLAY_CACHE = out
@@ -304,26 +308,33 @@ class VikingSolver(_HydraBase):
         import time as _time
         age = _time.time() - float(row.get('at') or 0)
         bar = _viking_cached_bar(key)
-        if not bar:
-            if age > self._V_ROW_FRESH_S:
+
+        def _dr3():
+            nonlocal rp
+            if not bar:
+                if age > self._V_ROW_FRESH_S:
+                    return None
+                if row.get('cls') != 'hydra-champfail-cover':
+                    return None
+                rp = self._v_replay_plan(key, intent, state, snapshot)
+                if rp is not None:
+                    logger.info('[viking] cover preempt %s', key[:64])
+                return rp
+            if age > self._V_BAR_FRESH_S:
                 return None
-            if row.get('cls') != 'hydra-champfail-cover':
+            if int(row.get('out') or 0) < bar * self._V_BAR_MARGIN:
                 return None
-            rp = self._v_replay_plan(key, intent, state, snapshot)
-            if rp is not None:
-                logger.info('[viking] cover preempt %s', key[:64])
-            return rp
-        if age > self._V_BAR_FRESH_S:
-            return None
-        if int(row.get('out') or 0) < bar * self._V_BAR_MARGIN:
-            return None
-        sig = None
-        try:
-            sig = frozenset(((str(getattr(i, 'target', '')).lower(), str(getattr(i, 'call_data', '')).lower()) for i in plan.interactions))
-        except Exception:
-            pass
-        if sig is not None and sig in _viking_frozen_index().get(key, []):
-            return None
+            sig = None
+            try:
+                sig = frozenset(((str(getattr(i, 'target', '')).lower(), str(getattr(i, 'call_data', '')).lower()) for i in plan.interactions))
+            except Exception:
+                pass
+            if sig is not None and sig in _viking_frozen_index().get(key, []):
+                return None
+            return _DR_UNSET
+        _dr4 = _dr3()
+        if _dr4 is not _DR_UNSET:
+            return _dr4
         rp = self._v_replay_plan(key, intent, state, snapshot)
         if rp is not None:
             logger.info('[viking] cached-bar serve %s (stamp %s >= bar %s)', key[:64], row.get('out'), bar)
@@ -368,10 +379,10 @@ class VikingSolver(_HydraBase):
             logger.exception('[viking] mirror build failed')
             return None
 SOLVER_CLASS = VikingSolver
-
-# --- putty outermost branding (name-only, behavior-safe) ---
 _PUTTY_FINAL_BASE = SOLVER_CLASS
+
 class _PUTTY_FINAL_BRAND(_PUTTY_FINAL_BASE):
+
     def metadata(self):
         md = super().metadata()
         try:

@@ -125,16 +125,20 @@ class DexAggregatorStrategy(Strategy):
             try:
                 from web3 import Web3
                 w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': 3}))
-                fee = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token)
-                if fee is None:
-                    for bridge in (WETH, USDC):
-                        if input_token.lower() == bridge.lower() or output_token.lower() == bridge.lower():
-                            continue
-                        fee_in = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, bridge)
-                        fee_out = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, bridge, output_token)
-                        if fee_in is not None and fee_out is not None:
-                            multihop_path = _encode_path(input_token, fee_in, bridge, fee_out, output_token)
-                            break
+
+                def _dr3():
+                    nonlocal fee, multihop_path
+                    fee = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token)
+                    if fee is None:
+                        for bridge in (WETH, USDC):
+                            if input_token.lower() == bridge.lower() or output_token.lower() == bridge.lower():
+                                continue
+                            fee_in = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, bridge)
+                            fee_out = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, bridge, output_token)
+                            if fee_in is not None and fee_out is not None:
+                                multihop_path = _encode_path(input_token, fee_in, bridge, fee_out, output_token)
+                                break
+                _dr3()
             except Exception:
                 fee = None
                 multihop_path = None

@@ -248,15 +248,22 @@ class MinerSolver(_Base):
                 d = '0xcdca1753' + _enc(['bytes', 'uint256'], [path, int(amount_in)]).hex()
                 r = w3.eth.call({'to': _ck(QUOTER), 'data': d})
                 return int(r[:32].hex(), 16) if r else 0
-            if kind == 'aero_v2':
-                from eth_abi import encode as _enc, decode as _dec
-                routes = [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in spec['routes']]
-                d = '0x5509a1ac' + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), routes]).hex()
-                r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': d})
-                try:
-                    return int(_dec(['uint256[]'], bytes(r))[0][-1])
-                except Exception:
-                    return 0
+
+            def _dr36():
+                nonlocal _enc, d, r
+                if kind == 'aero_v2':
+                    from eth_abi import encode as _enc, decode as _dec
+                    routes = [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in spec['routes']]
+                    d = '0x5509a1ac' + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), routes]).hex()
+                    r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': d})
+                    try:
+                        return int(_dec(['uint256[]'], bytes(r))[0][-1])
+                    except Exception:
+                        return 0
+                return _DR_UNSET
+            _dr37 = _dr36()
+            if _dr37 is not _DR_UNSET:
+                return _dr37
         except Exception:
             return 0
         return 0
@@ -488,14 +495,20 @@ class MinerSolver(_Base):
                 q = 0
             if q > best_out:
                 best_out, best_fee = (q, fee)
-        if best_out <= 0:
-            return None
-        params = self._normalized_swap_params(intent, state)
-        recipient = self._apex_recipient(state, params)
-        deadline = self._apex_deadline(snapshot)
-        call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-        ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=call, chain_id=chain_id)]
-        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v3', 'chain_id': chain_id})
+
+        def _dr40():
+            if best_out <= 0:
+                return None
+            params = self._normalized_swap_params(intent, state)
+            recipient = self._apex_recipient(state, params)
+            deadline = self._apex_deadline(snapshot)
+            call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+            ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=call, chain_id=chain_id)]
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v3', 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr41 = _dr40()
+        if _dr41 is not _DR_UNSET:
+            return _dr41
 
     def _apex_uni_mav(self, intent, state, snapshot, pool, token_a_in, tin, tout, amount_in, chain_id):
         from common.abi_utils import encode_approve
@@ -692,18 +705,22 @@ class MinerSolver(_Base):
         if not _FRONTIER_ON:
             return None
         from concurrent.futures import ThreadPoolExecutor
-        tin = str(params.get('input_token', '') or '')
-        tout = str(params.get('output_token', '') or '')
 
-        def _dr26():
-            if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or (tin.lower() == tout.lower()):
-                return None
-            if self._apex_champ_hardcodes(tin, tout):
-                return None
-            if any((hasattr(self, m) for m in ('_sweep_plan', '_sweep_quotes', '_sweep_sushi_plan'))):
-                return None
-            return _DR_UNSET
-        _dr27 = _dr26()
+        def _dr38():
+            tin = str(params.get('input_token', '') or '')
+            tout = str(params.get('output_token', '') or '')
+
+            def _dr26():
+                if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or (tin.lower() == tout.lower()):
+                    return None
+                if self._apex_champ_hardcodes(tin, tout):
+                    return None
+                if any((hasattr(self, m) for m in ('_sweep_plan', '_sweep_quotes', '_sweep_sushi_plan'))):
+                    return None
+                return _DR_UNSET
+            _dr27 = _dr26()
+            return (_dr27, tin, tout)
+        _dr27, tin, tout = _dr38()
         if _dr27 is not _DR_UNSET:
             return _dr27
         amount_in = None
@@ -721,8 +738,12 @@ class MinerSolver(_Base):
         w3 = self._get_web3(chain_id)
         if w3 is None:
             return None
-        wethL = _WETH.lower()
-        via_weth = tin.lower() != wethL and tout.lower() != wethL
+
+        def _dr42():
+            wethL = _WETH.lower()
+            via_weth = tin.lower() != wethL and tout.lower() != wethL
+            return via_weth
+        via_weth = _dr42()
         weth_fee, weth_out = (500, 0)
 
         def _vg7b():
@@ -1050,11 +1071,15 @@ try:
                 intent = args[0] if len(args) > 0 else kwargs.get('intent', kwargs.get('app'))
                 state = args[1] if len(args) > 1 else kwargs.get('state')
                 if state is not None:
-                    get = _putty_state_getter(state)
-                    tin = str(get('input_token') or '').strip()
-                    tout = str(get('output_token') or '').strip()
-                    amount_in = int(get('input_amount') or 0)
-                    route = _PUTTY_ROUTES.get(tout.lower())
+
+                    def _dr39():
+                        get = _putty_state_getter(state)
+                        tin = str(get('input_token') or '').strip()
+                        tout = str(get('output_token') or '').strip()
+                        amount_in = int(get('input_amount') or 0)
+                        route = _PUTTY_ROUTES.get(tout.lower())
+                        return (amount_in, route, tin, tout)
+                    amount_in, route, tin, tout = _dr39()
                     if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
                         router, tick_spacing = route
                         plan = _putty_build_alt_plan(intent, state, tout, amount_in, router, tick_spacing)
