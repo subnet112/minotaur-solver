@@ -44,22 +44,26 @@ V2_FORKS_MAINNET = (('uniswap_v2', '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
 AERO_V2_ROUTER = '0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43'
 AERO_V2_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
 V4_STATE_VIEW = '0xA3c0c9b65baD0b08107Aa264b0f3dB444b867A71'
-V4_QUOTER = '0x0d5e0F971ED27FBfF6c2837bf31316121532048D'
-V4_DYN_FEE = 8388608
-CLANKER_HOOK = '0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc'
-HOOK_BDF9 = '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'
-ZORA_HOOK = '0xc8d077444625eb300a427a6dfb2b1dbf9b159040'
-ZORA_CREATOR_HOOK = '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040'
-V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
-V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
-MAX_CALLS = 90
 
-def _sorted_pair(a: str, b: str) -> tuple[str, str]:
-    return (a, b) if int(a, 16) < int(b, 16) else (b, a)
+def _dr3():
+    V4_QUOTER = '0x0d5e0F971ED27FBfF6c2837bf31316121532048D'
+    V4_DYN_FEE = 8388608
+    CLANKER_HOOK = '0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc'
+    HOOK_BDF9 = '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'
+    ZORA_HOOK = '0xc8d077444625eb300a427a6dfb2b1dbf9b159040'
+    ZORA_CREATOR_HOOK = '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040'
+    V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
+    V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
+    MAX_CALLS = 90
 
-def v4_pool_id(c0: str, c1: str, fee: int, tick: int, hooks: str) -> bytes:
-    """keccak(abi.encode(PoolKey)) — computed offline, no RPC."""
-    return _kk(_enc(['address', 'address', 'uint24', 'int24', 'address'], [_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)]))
+    def _sorted_pair(a: str, b: str) -> tuple[str, str]:
+        return (a, b) if int(a, 16) < int(b, 16) else (b, a)
+
+    def v4_pool_id(c0: str, c1: str, fee: int, tick: int, hooks: str) -> bytes:
+        """keccak(abi.encode(PoolKey)) — computed offline, no RPC."""
+        return _kk(_enc(['address', 'address', 'uint24', 'int24', 'address'], [_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)]))
+    return (CLANKER_HOOK, HOOK_BDF9, MAX_CALLS, V4_BASES, V4_DYN_FEE, V4_KEY_GRID, V4_QUOTER, ZORA_CREATOR_HOOK, ZORA_HOOK, _sorted_pair, v4_pool_id)
+CLANKER_HOOK, HOOK_BDF9, MAX_CALLS, V4_BASES, V4_DYN_FEE, V4_KEY_GRID, V4_QUOTER, ZORA_CREATOR_HOOK, ZORA_HOOK, _sorted_pair, v4_pool_id = _dr3()
 
 class DiscoveryEngine:
     """Stateless per-call sweep; ``call`` is an eth_call thunk with the
@@ -94,20 +98,24 @@ class DiscoveryEngine:
     def v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
         forks = V2_FORKS_BASE if chain_id == 8453 else V2_FORKS_MAINNET if chain_id == 1 else ()
         hubs = [WETH, USDC] if chain_id == 8453 else ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48']
-        out: list[dict] = []
-        paths = [[tin, tout]] + [[tin, h, tout] for h in hubs if h.lower() not in (tin.lower(), tout.lower())]
-        for label, router, native in forks:
-            for path in paths:
-                q = self._v2_quote(router, path, amount_in)
-                if q <= 0:
-                    continue
-                n_hops = len(path) - 1
-                base = {'out': q, 'tokens': tuple(path), 'gas_est': 150000 * n_hops, 'gas_model': 350000 + 150000 * n_hops, 'discovered': label}
-                if native:
-                    out.append({**base, 'venue': native, 'param': tuple(path)})
-                else:
-                    out.append({**base, 'venue': 'v2_fork', 'router': router, 'param': router})
-                break
+
+        def _dr6():
+            out: list[dict] = []
+            paths = [[tin, tout]] + [[tin, h, tout] for h in hubs if h.lower() not in (tin.lower(), tout.lower())]
+            for label, router, native in forks:
+                for path in paths:
+                    q = self._v2_quote(router, path, amount_in)
+                    if q <= 0:
+                        continue
+                    n_hops = len(path) - 1
+                    base = {'out': q, 'tokens': tuple(path), 'gas_est': 150000 * n_hops, 'gas_model': 350000 + 150000 * n_hops, 'discovered': label}
+                    if native:
+                        out.append({**base, 'venue': native, 'param': tuple(path)})
+                    else:
+                        out.append({**base, 'venue': 'v2_fork', 'router': router, 'param': router})
+                    break
+            return out
+        out = _dr6()
         return out
 
     def aero_v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
@@ -121,18 +129,21 @@ class DiscoveryEngine:
             if hub.lower() in (tin.lower(), tout.lower()):
                 continue
             route_sets.append(((tin, hub, False, AERO_V2_FACTORY), (hub, tout, False, AERO_V2_FACTORY)))
-        for routes in route_sets:
-            data = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [amount_in, [(_ck(a), _ck(b), s, _ck(f)) for a, b, s, f in routes]])
-            r = self._c(AERO_V2_ROUTER, data)
-            if not r:
-                continue
-            try:
-                q = int(_dec(['uint256[]'], r)[0][-1])
-            except Exception:
-                continue
-            if q <= 0:
-                continue
-            out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
+
+        def _dr2():
+            for routes in route_sets:
+                data = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [amount_in, [(_ck(a), _ck(b), s, _ck(f)) for a, b, s, f in routes]])
+                r = self._c(AERO_V2_ROUTER, data)
+                if not r:
+                    continue
+                try:
+                    q = int(_dec(['uint256[]'], r)[0][-1])
+                except Exception:
+                    continue
+                if q <= 0:
+                    continue
+                out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
+        _dr2()
         return out
 
     def _v4_liquidity(self, pool_id: bytes) -> int:
@@ -176,7 +187,11 @@ class DiscoveryEngine:
                     continue
                 zero_for_one = c0.lower() == base.lower()
                 leg_in = amount_in
-                spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else WETH, 'zero_for_one': zero_for_one}
+
+                def _dr5():
+                    spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else WETH, 'zero_for_one': zero_for_one}
+                    return spec
+                spec = _dr5()
                 if base.lower() != tin.lower():
 
                     def _dr1():
@@ -192,7 +207,10 @@ class DiscoveryEngine:
                 q = self._v4_quote((c0, c1, fee, tick, hooks), zero_for_one, leg_in) if leg_in else 1
                 if q <= 0:
                     continue
-                out.append({'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'})
+
+                def _dr4():
+                    out.append({'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'})
+                _dr4()
                 break
             if out:
                 break
