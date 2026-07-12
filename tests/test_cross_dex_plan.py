@@ -63,61 +63,77 @@ def _uni_then_aero_hops():
     return [hop1, hop2]
 
 def test_cross_dex_plan_emits_sequential_per_hop_with_correct_recipients():
-    s = _solver()
-    s._normalized_swap_params = lambda intent, state: {'input_token': WETH, 'output_token': DAI, 'input_amount': 10 ** 18, 'min_output_amount': ORDER_MIN, 'receiver': OWNER, 'fee_tier': 500}
-    ctx = ProcessorContext(chain_id=CHAIN, timestamp=1000, block_number=0)
-    hops = _uni_then_aero_hops()
-    plan = s._build_cross_dex_plan(_intent(), _state(), ctx, hops, WETH, DAI, 10 ** 18, 174000000, CHAIN)
-    assert len(plan.interactions) == 4
-    uni_router = UNISWAP_V3_ROUTERS[CHAIN]
-    aero_router = _aero.AERODROME_SLIPSTREAM_ROUTER[CHAIN]
-    spender1, amount1 = _decode_approve(plan.interactions[0].call_data)
-    assert _addr_eq(plan.interactions[0].target, WETH)
-    assert _addr_eq(spender1, uni_router)
-    assert amount1 == 10 ** 18
-    swap1 = _decode_uni_v2_swap(plan.interactions[1].call_data)
-    assert _addr_eq(plan.interactions[1].target, uni_router)
-    assert _addr_eq(swap1['token_in'], WETH) and _addr_eq(swap1['token_out'], USDC)
-    assert swap1['amount_in'] == 10 ** 18
-    assert swap1['fee'] == 500
-    assert _addr_eq(swap1['recipient'], _MSG_SENDER_SENTINEL)
 
-    def _dr1():
-        assert swap1['min_out'] == 0
-        spender2, amount2 = _decode_approve(plan.interactions[2].call_data)
-        assert _addr_eq(plan.interactions[2].target, USDC)
-        assert _addr_eq(spender2, aero_router)
-        assert amount2 == 175000000
-        swap2 = _decode_aero_swap(plan.interactions[3].call_data)
-        assert _addr_eq(plan.interactions[3].target, aero_router)
-        assert _addr_eq(swap2['token_in'], USDC) and _addr_eq(swap2['token_out'], DAI)
-        assert swap2['amount_in'] == 175000000
-        assert swap2['tick_spacing'] == 100
-        assert _addr_eq(swap2['recipient'], CONTRACT)
-        assert swap2['min_out'] == ORDER_MIN
-        assert plan.metadata['route'] == 'cross_dex_sequential'
-        assert plan.metadata['dexes'] == [DEX_UNISWAP_V3, DEX_AERODROME_SLIPSTREAM]
-    _dr1()
+    def _dr6():
+        s = _solver()
+        s._normalized_swap_params = lambda intent, state: {'input_token': WETH, 'output_token': DAI, 'input_amount': 10 ** 18, 'min_output_amount': ORDER_MIN, 'receiver': OWNER, 'fee_tier': 500}
+        ctx = ProcessorContext(chain_id=CHAIN, timestamp=1000, block_number=0)
+        hops = _uni_then_aero_hops()
+        plan = s._build_cross_dex_plan(_intent(), _state(), ctx, hops, WETH, DAI, 10 ** 18, 174000000, CHAIN)
+        assert len(plan.interactions) == 4
+        uni_router = UNISWAP_V3_ROUTERS[CHAIN]
+        aero_router = _aero.AERODROME_SLIPSTREAM_ROUTER[CHAIN]
+        return (aero_router, plan, uni_router)
+    aero_router, plan, uni_router = _dr6()
+    spender1, amount1 = _decode_approve(plan.interactions[0].call_data)
+
+    def _dr3():
+        assert _addr_eq(plan.interactions[0].target, WETH)
+        assert _addr_eq(spender1, uni_router)
+        assert amount1 == 10 ** 18
+        swap1 = _decode_uni_v2_swap(plan.interactions[1].call_data)
+        assert _addr_eq(plan.interactions[1].target, uni_router)
+        assert _addr_eq(swap1['token_in'], WETH) and _addr_eq(swap1['token_out'], USDC)
+        assert swap1['amount_in'] == 10 ** 18
+        assert swap1['fee'] == 500
+        assert _addr_eq(swap1['recipient'], _MSG_SENDER_SENTINEL)
+
+        def _dr1():
+            assert swap1['min_out'] == 0
+            spender2, amount2 = _decode_approve(plan.interactions[2].call_data)
+            assert _addr_eq(plan.interactions[2].target, USDC)
+            assert _addr_eq(spender2, aero_router)
+
+            def _dr4():
+                assert amount2 == 175000000
+                swap2 = _decode_aero_swap(plan.interactions[3].call_data)
+                assert _addr_eq(plan.interactions[3].target, aero_router)
+                assert _addr_eq(swap2['token_in'], USDC) and _addr_eq(swap2['token_out'], DAI)
+                assert swap2['amount_in'] == 175000000
+                assert swap2['tick_spacing'] == 100
+                assert _addr_eq(swap2['recipient'], CONTRACT)
+                assert swap2['min_out'] == ORDER_MIN
+                assert plan.metadata['route'] == 'cross_dex_sequential'
+                assert plan.metadata['dexes'] == [DEX_UNISWAP_V3, DEX_AERODROME_SLIPSTREAM]
+            _dr4()
+        _dr1()
+    _dr3()
 
 def test_uniswap_singlehop_anchors_min_to_exact_output_not_input():
     s = _solver()
     s._normalized_swap_params = lambda intent, state: {'input_token': WETH, 'output_token': USDC, 'input_amount': 10 ** 18, 'min_output_amount': 0, 'receiver': OWNER, 'fee_tier': 500}
     ctx = ProcessorContext(chain_id=CHAIN, timestamp=1000, block_number=0)
-    hop = {'dex': DEX_UNISWAP_V3, 'pool_state': {'dex': DEX_UNISWAP_V3, 'fee': 500}, 'fee': 500, 'token_in': WETH, 'token_out': USDC, 'amount_in': 10 ** 18, 'amount_out': 175000000}
-    expected = 175000000
-    plan = s._build_uniswap_singlehop_plan(_intent(), _state(), ctx, hop, WETH, USDC, 10 ** 18, expected, CHAIN)
-    assert len(plan.interactions) == 2
-    spender, amount = _decode_approve(plan.interactions[0].call_data)
-    assert _addr_eq(plan.interactions[0].target, WETH)
-    assert _addr_eq(spender, UNISWAP_V3_ROUTERS[CHAIN])
-    assert amount == 10 ** 18
-    swap = _decode_uni_v2_swap(plan.interactions[1].call_data)
-    assert _addr_eq(swap['token_in'], WETH) and _addr_eq(swap['token_out'], USDC)
-    assert swap['fee'] == 500
-    assert _addr_eq(swap['recipient'], CONTRACT)
-    slippage = s._processor.slippage_bps
-    assert swap['min_out'] == expected * (10000 - slippage) // 10000
-    assert swap['min_out'] < 10 ** 9
+
+    def _dr5():
+        hop = {'dex': DEX_UNISWAP_V3, 'pool_state': {'dex': DEX_UNISWAP_V3, 'fee': 500}, 'fee': 500, 'token_in': WETH, 'token_out': USDC, 'amount_in': 10 ** 18, 'amount_out': 175000000}
+        expected = 175000000
+        plan = s._build_uniswap_singlehop_plan(_intent(), _state(), ctx, hop, WETH, USDC, 10 ** 18, expected, CHAIN)
+        assert len(plan.interactions) == 2
+        spender, amount = _decode_approve(plan.interactions[0].call_data)
+        assert _addr_eq(plan.interactions[0].target, WETH)
+
+        def _dr2():
+            assert _addr_eq(spender, UNISWAP_V3_ROUTERS[CHAIN])
+            assert amount == 10 ** 18
+            swap = _decode_uni_v2_swap(plan.interactions[1].call_data)
+            assert _addr_eq(swap['token_in'], WETH) and _addr_eq(swap['token_out'], USDC)
+            assert swap['fee'] == 500
+            assert _addr_eq(swap['recipient'], CONTRACT)
+            slippage = s._processor.slippage_bps
+            assert swap['min_out'] == expected * (10000 - slippage) // 10000
+            assert swap['min_out'] < 10 ** 9
+        _dr2()
+    _dr5()
 
 def test_uniswap_singlehop_uses_order_min_when_present():
     s = _solver()
@@ -144,13 +160,16 @@ def _hop(dex):
 def test_executability_matrix():
     s = _solver()
     uni, aero = (_hop(DEX_UNISWAP_V3), _hop(DEX_AERODROME_SLIPSTREAM))
-    assert s._is_executable_route([uni], CHAIN) is True
-    assert s._is_executable_route([aero], CHAIN) is True
-    assert s._is_executable_route([uni, uni], CHAIN) is True
-    assert s._is_executable_route([aero, aero], CHAIN) is True
-    assert s._is_executable_route([uni, aero], CHAIN) is True
-    assert s._is_executable_route([aero, uni], CHAIN) is False
-    assert s._is_executable_route([uni, aero], 1) is False
+
+    def _dr7():
+        assert s._is_executable_route([uni], CHAIN) is True
+        assert s._is_executable_route([aero], CHAIN) is True
+        assert s._is_executable_route([uni, uni], CHAIN) is True
+        assert s._is_executable_route([aero, aero], CHAIN) is True
+        assert s._is_executable_route([uni, aero], CHAIN) is True
+        assert s._is_executable_route([aero, uni], CHAIN) is False
+        assert s._is_executable_route([uni, aero], 1) is False
+    _dr7()
 
 def _dispatch_solver(monkeypatch_route):
     s = _solver()
