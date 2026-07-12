@@ -282,7 +282,7 @@ def _dr20():
             from common.abi_utils import encode_approve
             from strategies.dex_aggregator import aerodrome as _aero
             leg1 = '0x' + (_keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4] + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['leg1_fee']), '0x0000000000000000000000000000000000000001', int(amount_in), 0, 0)])).hex()
-            slip_router = _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+            slip_router = spec.get('slip_router') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
 
             def _dr55():
                 leg2 = _aero.encode_exact_input_single(token_in=spec['mid'], token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=recipient, deadline=9999999999, amount_in=int(mid_amount), amount_out_minimum=0)
