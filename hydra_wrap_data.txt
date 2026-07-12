@@ -119,7 +119,7 @@
                                                                                                                                'gas_model': 750000,
                                                                                                                                'out': 1,
                                                                                                                                'param': 'v2-push-085d',
-                                                                                                                               'spec': {'fixed_out': 287550000000000000000,
+                                                                                                                               'spec': {'fixed_out': 287550000000000000000, 'dyn_reserves': 1, 'dyn_haircut': 999,
                                                                                                                                         'leg1_fee': 500,
                                                                                                                                         'leg1_router': 'uni',
                                                                                                                                         'mid': '0x4200000000000000000000000000000000000006',
