@@ -31,21 +31,6 @@ import logging
 import os
 from champ_top import SOLVER_CLASS as _ChampBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
-import ast as _hw_ast
-from eth_abi import encode as _abi_encode
-from eth_utils import keccak as _keccak
-from eth_utils import to_checksum_address as _ck
-from minotaur_subnet.shared.types import Interaction as _IX
-from common.abi_utils import encode_approve
-from strategies.dex_aggregator import aerodrome as _aero
-import json as _json
-import re as _re
-from eth_abi import decode as _dec
-from eth_abi import encode as _enc
-from king_consts import _PANCAKE_QUOTER
-from king_consts import _UNI_QUOTER
-import json as _pj
-import urllib.request as _pu
 logger = logging.getLogger(__name__)
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '4.0.0-c13')
@@ -57,6 +42,7 @@ def _dr20():
     _WETH = '0x4200000000000000000000000000000000000006'
     _DAI = '0x50c5725949a6f0c72e6c4a641f24049a917db0cb'
     _T00000E = '0x00000e7efa313f4e11bfff432471ed9423ac6b30'
+    import ast as _hw_ast
     _HW_DATA = _hw_ast.literal_eval(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hydra_wrap_data.txt')).read())
     _HYDRA_STATIC_COVERS = _HW_DATA['static_covers']
     _HYDRA_QUALITY_OVERRIDES = _HW_DATA['quality_overrides']
@@ -74,34 +60,23 @@ def _dr20():
     (currency0, currency1, hooks, poolManager, fee, bytes32 parameters).
     Fork-verified 07-07 block 48308270: +93.3% over engine, 175k gas; PoolKey
     field order hash-verified against the Kyber-reported poolId."""
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        from minotaur_subnet.shared.types import Interaction as _IX
         c0, c1, hooks, pool_mgr, fee, params_hex = spec['pool']
         pool_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee), bytes.fromhex(params_hex[2:] if params_hex.startswith('0x') else params_hex))
 
         def _dr27():
-
-            def _bh1():
-                settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), 1 << 255, False])
-                swap = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(pool_key, bool(spec['zero_for_one']), 0, 0, b'')])
-                take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
-                return (settle, swap, take)
-            settle, swap, take = _bh1()
-
-            def _bh2():
-                sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
-                plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
-                exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
-                return exec_call
-            exec_call = _bh2()
+            settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), 1 << 255, False])
+            swap = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(pool_key, bool(spec['zero_for_one']), 0, 0, b'')])
+            take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
+            sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
+            plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
+            exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
             return exec_call
-
-        def _bh3():
-            exec_call = _dr27()
-            transfer_call = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [_ck(_PCS_INFINITY_UR), int(amount_in)])).hex()
-            return (1, [_IX(target=tin, value='0', call_data=transfer_call, chain_id=chain_id), _IX(target=_PCS_INFINITY_UR, value='0', call_data=exec_call, chain_id=chain_id)])
-            return (0, None)
-        _t3 = _bh3()
-        if _t3[0]:
-            return _t3[1]
+        exec_call = _dr27()
+        transfer_call = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [_ck(_PCS_INFINITY_UR), int(amount_in)])).hex()
+        return [_IX(target=tin, value='0', call_data=transfer_call, chain_id=chain_id), _IX(target=_PCS_INFINITY_UR, value='0', call_data=exec_call, chain_id=chain_id)]
     _UNIV4_UR = '0x6fF5693b99212Da76ad316178A184AB56D299b43'
 
     def _build_infinity_v4_chain_ix(spec, tin, tout, amount_in, recipient, chain_id):
@@ -109,50 +84,35 @@ def _dr20():
         the Uniswap Universal Router, then a V4 exact-in leg2 (mid -> tout -> app)
         settled with CONTRACT_BALANCE — both legs open-delta, so no frozen
         intermediate amount (drift-safe push-chaining across two routers)."""
+        from minotaur_subnet.shared.types import Interaction as _IX
 
         def _leg1():
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
             c0, c1, hooks, pool_mgr, fee, params_hex = spec['inf_pool']
             inf_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee), bytes.fromhex(params_hex[2:] if params_hex.startswith('0x') else params_hex))
 
             def _dr30():
-
-                def _bh4():
-                    settle1 = _abi_encode(['address', 'uint256', 'bool'], [_ck(tin), 1 << 255, False])
-                    swap1 = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(inf_key, bool(spec['inf_zfo']), 0, 0, b'')])
-                    take1 = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['mid']), _ck(_UNIV4_UR), 0])
-                    sweep1 = _abi_encode(['address', 'address', 'uint256'], [_ck(tin), _ck(recipient), 0])
-                    return (settle1, swap1, sweep1, take1)
-                settle1, swap1, sweep1, take1 = _bh4()
-
-                def _bh5():
-                    plan1 = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle1, swap1, take1, sweep1]])
-                    exec1 = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan1], 9999999999])).hex()
-                    return (1, exec1)
-                    return (0, None)
-                _t5 = _bh5()
-                if _t5[0]:
-                    return _t5[1]
-
-            def _bh6():
-                exec1 = _dr30()
-                transfer1 = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [_ck(_PCS_INFINITY_UR), int(amount_in)])).hex()
-                return (1, (transfer1, exec1))
-                return (0, None)
-            _t6 = _bh6()
-            if _t6[0]:
-                return _t6[1]
+                settle1 = _abi_encode(['address', 'uint256', 'bool'], [_ck(tin), 1 << 255, False])
+                swap1 = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(inf_key, bool(spec['inf_zfo']), 0, 0, b'')])
+                take1 = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['mid']), _ck(_UNIV4_UR), 0])
+                sweep1 = _abi_encode(['address', 'address', 'uint256'], [_ck(tin), _ck(recipient), 0])
+                plan1 = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle1, swap1, take1, sweep1]])
+                exec1 = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan1], 9999999999])).hex()
+                return exec1
+            exec1 = _dr30()
+            transfer1 = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [_ck(_PCS_INFINITY_UR), int(amount_in)])).hex()
+            return (transfer1, exec1)
 
         def _leg2():
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
             v0, v1, vfee, vts, vhooks = spec['v4_pool']
             v4_key = (_ck(v0), _ck(v1), int(vfee), int(vts), _ck(vhooks))
             settle2 = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['mid']), 1 << 255, False])
-
-            def _bh7():
-                swap2 = _abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [(v4_key, bool(spec['v4_zfo']), 0, 0, b'')])
-                take2 = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
-                plan2 = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14]), [settle2, swap2, take2]])
-                return plan2
-            plan2 = _bh7()
+            swap2 = _abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [(v4_key, bool(spec['v4_zfo']), 0, 0, b'')])
+            take2 = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
+            plan2 = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14]), [settle2, swap2, take2]])
             return '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan2], 9999999999])).hex()
         transfer1, exec1 = _leg1()
         exec2 = _leg2()
@@ -164,33 +124,29 @@ def _dr20():
         """Exact-in V3-style swap of the order input, output landing AT the next
     leg's pool/pair (push-chaining — funds must never rest at the app
     mid-plan; the executor can't spend from there)."""
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        from minotaur_subnet.shared.types import Interaction as _IX
         mid = spec['mid']
         fee = int(spec['leg1_fee'])
-
-        def _bh8():
+        if spec['leg1_router'] == 'pancake':
             router = _PANCAKE_SMART_ROUTER
             call = '0x' + (_keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))')[:4] + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(mid), fee, _ck(land_at), 9999999999, int(amount_in), 0, 0)])).hex()
-            return (call, router)
-
-        def _bh9():
+        else:
             router = _UNI_ROUTER02
             call = '0x' + (_keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4] + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(mid), fee, _ck(land_at), int(amount_in), 0, 0)])).hex()
-            return (call, router)
-        if spec['leg1_router'] == 'pancake':
-            call, router = _bh8()
-        else:
-            call, router = _bh9()
+        from common.abi_utils import encode_approve
         return [_IX(target=tin, value='0', call_data=encode_approve(router, int(amount_in)), chain_id=chain_id), _IX(target=router, value='0', call_data=call, chain_id=chain_id)]
 
     def _build_maverick_push_ix(spec, tin, amount_in, recipient, chain_id):
         """leg1 lands mid AT the Maverick pool, then pool.swap in push mode
     (data=b'' -> pool pays itself from its balance delta) -> app."""
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        from minotaur_subnet.shared.types import Interaction as _IX
         ix = _leg1_swap_ix(spec, tin, amount_in, spec['pool'], chain_id)
-
-        def _bh10():
-            swap = '0x' + (_keccak(text='swap(address,(uint256,bool,bool,int32),bytes)')[:4] + _abi_encode(['address', '(uint256,bool,bool,int32)', 'bytes'], [_ck(recipient), (int(spec['swap_amount']), bool(spec['token_a_in']), False, 2 ** 31 - 1 if spec['token_a_in'] else -2 ** 31 + 1), b''])).hex()
-            ix.append(_IX(target=spec['pool'], value='0', call_data=swap, chain_id=chain_id))
-        _bh10()
+        swap = '0x' + (_keccak(text='swap(address,(uint256,bool,bool,int32),bytes)')[:4] + _abi_encode(['address', '(uint256,bool,bool,int32)', 'bytes'], [_ck(recipient), (int(spec['swap_amount']), bool(spec['token_a_in']), False, 2 ** 31 - 1 if spec['token_a_in'] else -2 ** 31 + 1), b''])).hex()
+        ix.append(_IX(target=spec['pool'], value='0', call_data=swap, chain_id=chain_id))
         return ix
 
     def _build_univ4_push_ix(spec, tin, tout, amount_in, recipient, chain_id):
@@ -198,46 +154,32 @@ def _dr20():
     execute: SETTLE(mid, CONTRACT_BALANCE, payerIsUser=False) -> swap ->
     TAKE(tout -> app) -> TAKE(mid sweep). Mirrors the engine's aero->UR
     chaining; avoids the UR V3-prefix Permit2/STF path entirely."""
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        from minotaur_subnet.shared.types import Interaction as _IX
         ur = '0x6fF5693b99212Da76ad316178A184AB56D299b43'
         ix = _leg1_swap_ix(spec, tin, amount_in, ur, chain_id)
         c0, c1, fee, tick, hooks = spec['pool']
         settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), 1 << 255, False])
-
-        def _bh11():
-            swap = _abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(spec['zero_for_one']), 0, 0, b'')])
-            take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
-            return (swap, take)
-        swap, take = _bh11()
-
-        def _bh12():
-            sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
-            plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
-            exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
-            return exec_call
-        exec_call = _bh12()
-
-        def _bh13():
-            ix.append(_IX(target=ur, value='0', call_data=exec_call, chain_id=chain_id))
-            return (1, ix)
-            return (0, None)
-        _t13 = _bh13()
-        if _t13[0]:
-            return _t13[1]
+        swap = _abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(spec['zero_for_one']), 0, 0, b'')])
+        take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
+        sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
+        plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
+        exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
+        ix.append(_IX(target=ur, value='0', call_data=exec_call, chain_id=chain_id))
+        return ix
 
     def _build_v2_push_ix(spec, tin, amount_in, recipient, chain_id):
         """leg1 lands mid AT the V2 pair, then pair.swap(fixed out, to=app) —
     push-native; the haircut vs quote absorbs reserve drift."""
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        from minotaur_subnet.shared.types import Interaction as _IX
         ix = _leg1_swap_ix(spec, tin, amount_in, spec['pair'], chain_id)
         a0, a1 = (0, int(spec['fixed_out'])) if int(spec['out_index']) == 1 else (int(spec['fixed_out']), 0)
-
-        def _bh14():
-            swap = '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(recipient), b''])).hex()
-            ix.append(_IX(target=spec['pair'], value='0', call_data=swap, chain_id=chain_id))
-            return (1, ix)
-            return (0, None)
-        _t14 = _bh14()
-        if _t14[0]:
-            return _t14[1]
+        swap = '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(recipient), b''])).hex()
+        ix.append(_IX(target=spec['pair'], value='0', call_data=swap, chain_id=chain_id))
+        return ix
 
     def _build_v3_path02_ix(spec, tin, amount_in, recipient, chain_id):
         """Multi-hop Uniswap V3 exactInput via SwapRouter02 (4-field ABI, NO
@@ -245,24 +187,18 @@ def _dr20():
     encodes the V1 5-field struct (0xc04b8d59), which SwapRouter02 rejects,
     so path routes are built wrapper-locally. Hops chain router-side; only
     the final output lands at the app (EXECUTOR/APP law)."""
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        from minotaur_subnet.shared.types import Interaction as _IX
+        from common.abi_utils import encode_approve
         tokens = list(spec['tokens'])
         fees = list(spec['fees'])
         path = b''
         for t, f in zip(tokens[:-1], fees):
-
-            def _bh15(path):
-                path += bytes.fromhex(_ck(t)[2:]) + int(f).to_bytes(3, 'big')
-                return path
-            path = _bh15(path)
+            path += bytes.fromhex(_ck(t)[2:]) + int(f).to_bytes(3, 'big')
         path += bytes.fromhex(_ck(tokens[-1])[2:])
-
-        def _bh16():
-            call = '0x' + (_keccak(text='exactInput((bytes,address,uint256,uint256))')[:4] + _abi_encode(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)])).hex()
-            return (1, [_IX(target=tin, value='0', call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id), _IX(target=_UNI_ROUTER02, value='0', call_data=call, chain_id=chain_id)])
-            return (0, None)
-        _t16 = _bh16()
-        if _t16[0]:
-            return _t16[1]
+        call = '0x' + (_keccak(text='exactInput((bytes,address,uint256,uint256))')[:4] + _abi_encode(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)])).hex()
+        return [_IX(target=tin, value='0', call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id), _IX(target=_UNI_ROUTER02, value='0', call_data=call, chain_id=chain_id)]
 
     def _build_v2_direct_ix(spec, tin, amount_in, recipient, chain_id, amount_out):
         """Router-identical V2 swap served directly at the pair: transfer the
@@ -270,16 +206,13 @@ def _dr20():
     from the router's own reserves formula at the plan block, so delivery is
     wei-identical to swapExactTokensForTokens — minus the router-dispatch gas
     (armed GAS_MARGIN_BPS defense)."""
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        from minotaur_subnet.shared.types import Interaction as _IX
         transfer = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [_ck(spec['pair']), int(amount_in)])).hex()
         a0, a1 = (0, int(amount_out)) if int(spec['out_index']) == 1 else (int(amount_out), 0)
-
-        def _bh17():
-            swap = '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(recipient), b''])).hex()
-            return (1, [_IX(target=tin, value='0', call_data=transfer, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=swap, chain_id=chain_id)])
-            return (0, None)
-        _t17 = _bh17()
-        if _t17[0]:
-            return _t17[1]
+        swap = '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(recipient), b''])).hex()
+        return [_IX(target=tin, value='0', call_data=transfer, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=swap, chain_id=chain_id)]
 
     def _build_v3_slip_chain_ix(spec, tin, tout, amount_in, mid_amount, recipient, chain_id):
         """2-leg chain through the EXECUTOR: uni-V3 leg1 (tin->mid) with the
@@ -287,29 +220,25 @@ def _dr20():
     the executor, which CAN spend them — unlike the app), then a canonical
     Slipstream leg2 (mid->tout) sized to exactly the same-block leg1 quote,
     output -> the app."""
+        from eth_abi import encode as _abi_encode
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        from minotaur_subnet.shared.types import Interaction as _IX
+        from common.abi_utils import encode_approve
+        from strategies.dex_aggregator import aerodrome as _aero
         leg1 = '0x' + (_keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4] + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['leg1_fee']), '0x0000000000000000000000000000000000000001', int(amount_in), 0, 0)])).hex()
         slip_router = _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
         leg2 = _aero.encode_exact_input_single(token_in=spec['mid'], token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=recipient, deadline=9999999999, amount_in=int(mid_amount), amount_out_minimum=0)
         return [_IX(target=tin, value='0', call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id), _IX(target=_UNI_ROUTER02, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(slip_router, int(mid_amount)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id)]
-
-    def _bh18():
-        _HYDRA_V1_APP = '0x0cde9a7e60a0df4b86c81490d0496ab3a8e104f1'
-        return (1, (SOLVER_AUTHOR, _HYDRA_FLAKE_PREEMPT, _HYDRA_QUALITY_OVERRIDES, _HYDRA_STATIC_COVERS, _HYDRA_V1_APP, _USDC, _WETH, _build_infinity_cl_ix, _build_infinity_v4_chain_ix, _build_maverick_push_ix, _build_univ4_push_ix, _build_v2_direct_ix, _build_v2_push_ix, _build_v3_path02_ix, _build_v3_slip_chain_ix))
-        return (0, None)
-    _t18 = _bh18()
-    if _t18[0]:
-        return _t18[1]
+    _HYDRA_V1_APP = '0x0cde9a7e60a0df4b86c81490d0496ab3a8e104f1'
+    return (SOLVER_AUTHOR, _HYDRA_FLAKE_PREEMPT, _HYDRA_QUALITY_OVERRIDES, _HYDRA_STATIC_COVERS, _HYDRA_V1_APP, _USDC, _WETH, _build_infinity_cl_ix, _build_infinity_v4_chain_ix, _build_maverick_push_ix, _build_univ4_push_ix, _build_v2_direct_ix, _build_v2_push_ix, _build_v3_path02_ix, _build_v3_slip_chain_ix)
 SOLVER_AUTHOR, _HYDRA_FLAKE_PREEMPT, _HYDRA_QUALITY_OVERRIDES, _HYDRA_STATIC_COVERS, _HYDRA_V1_APP, _USDC, _WETH, _build_infinity_cl_ix, _build_infinity_v4_chain_ix, _build_maverick_push_ix, _build_univ4_push_ix, _build_v2_direct_ix, _build_v2_push_ix, _build_v3_path02_ix, _build_v3_slip_chain_ix = _dr20()
 
 def _hydra_frozen_ok(state):
     """Frozen replay/mirror plans hardcode the V1 app as recipient. Serve them
     only for that app — V2 (app_8409d0c9b6a0, AppIntentBaseV2, draft as of
     07-06) orders must go to the engine, which builds recipients dynamically."""
-
-    def _bh19():
-        return str(state.contract_address or '').lower() == _HYDRA_V1_APP
     try:
-        return _bh19()
+        return str(state.contract_address or '').lower() == _HYDRA_V1_APP
     except Exception:
         return False
 
@@ -319,31 +248,22 @@ def _load_replay():
     93-order corpus, e29718949/55) by making the whole KNOWN corpus free.
     Regenerated in the lab after every absorption; loader is inert when the
     JSON is absent."""
+    import json as _json
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hydra_replay.json')
-
-    def _bh20():
+    try:
         raw = _json.load(open(path)) or {}
-        return raw
-
-    def _bh21():
+    except Exception:
+        return {}
+    out = {}
+    for k, spec in raw.items():
         try:
-            raw = _bh20()
+            tin, tout, amt = k.split('|')
+            ix = spec['interactions']
+            if ix:
+                out[tin.lower(), tout.lower(), int(amt)] = ix
         except Exception:
-            return (1, {})
-        out = {}
-        for k, spec in raw.items():
-            try:
-                tin, tout, amt = k.split('|')
-                ix = spec['interactions']
-                if ix:
-                    out[tin.lower(), tout.lower(), int(amt)] = ix
-            except Exception:
-                continue
-        return (1, out)
-        return (0, None)
-    _t21 = _bh21()
-    if _t21[0]:
-        return _t21[1]
+            continue
+    return out
 _HYDRA_REPLAY_CACHE = None
 
 def _hydra_replay():
@@ -357,15 +277,13 @@ def _load_census():
     not in any champion table). Token-keyed POST-engine fallback — fires only
     when the champion-identical stack returns nothing, so it is win-or-skip on
     future plant orders by construction."""
+    import json as _json
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hydra_census.json')
-
-    def _bh22():
-        raw = _json.load(open(path)) or {}
-        return raw
     try:
-        raw = _bh22()
+        raw = _json.load(open(path)) or {}
     except Exception:
         return {}
+    import re as _re
     baked = set()
     here = os.path.dirname(os.path.abspath(__file__))
     for fn in ('james_base.py', 'king_solver.py', 'king_base.py', '_apex_champ.py', 'apex_routes.json'):
@@ -376,12 +294,8 @@ def _load_census():
             continue
 
     def _dr28():
-
-        def _bh23():
-            head = int(raw.pop('_head', 0) or 0)
-            out, pre = ({}, set())
-            return (head, out, pre)
-        head, out, pre = _bh23()
+        head = int(raw.pop('_head', 0) or 0)
+        out, pre = ({}, set())
         for tok, spec in raw.items():
             try:
                 if tok.lower() in baked:
@@ -394,15 +308,9 @@ def _load_census():
                 continue
         return (out, pre)
         return _DR_UNSET
-
-    def _bh24():
-        _dr29 = _dr28()
-        if _dr29 is not _DR_UNSET:
-            return (1, _dr29)
-        return (0, None)
-    _t24 = _bh24()
-    if _t24[0]:
-        return _t24[1]
+    _dr29 = _dr28()
+    if _dr29 is not _DR_UNSET:
+        return _dr29
 _HYDRA_CENSUS_CACHE = None
 
 def _hydra_census():
@@ -420,35 +328,24 @@ class MinerSolver(_ChampBase):
         return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='Champion superset: james pace-governor + apex frontier + king engine + hydra static covers (incl. mainnet) and dynamic discovery', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     def generate_plan(self, intent, state, snapshot=None):
-
-        def _bh25():
+        try:
             chain1 = int(state.chain_id or 0) == 1
-            return chain1
-
-        def _bh26():
+        except Exception:
+            chain1 = False
+        if chain1:
             try:
-                chain1 = _bh25()
-            except Exception:
-                chain1 = False
-            if chain1:
-                try:
-                    plan = self._hydra_eth_fastpath(intent, state)
-                    if plan is not None:
-                        return (1, plan)
-                except Exception:
-                    logger.exception('[hydra] eth fastpath failed; deferring')
-            try:
-                plan = self._hydra_serve_pre(intent, state, snapshot)
+                plan = self._hydra_eth_fastpath(intent, state)
                 if plan is not None:
-                    return (1, plan)
+                    return plan
             except Exception:
-                logger.exception('[hydra] quality/flake pre-empt failed; deferring to engine')
-            plan = None
-            return (0, plan)
-        _t26 = _bh26()
-        if _t26[0]:
-            return _t26[1]
-        plan = _t26[1]
+                logger.exception('[hydra] eth fastpath failed; deferring')
+        try:
+            plan = self._hydra_serve_pre(intent, state, snapshot)
+            if plan is not None:
+                return plan
+        except Exception:
+            logger.exception('[hydra] quality/flake pre-empt failed; deferring to engine')
+        plan = None
         try:
             plan = super().generate_plan(intent, state, snapshot)
         except Exception:
@@ -463,46 +360,26 @@ class MinerSolver(_ChampBase):
         return (p, (str(p.get('input_token', '') or '').lower(), str(p.get('output_token', '') or '').lower(), int(p.get('input_amount', 0) or 0)))
 
     def _hydra_serve_pre(self, intent, state, snapshot):
-
-        def _bh30():
-            """QUALITY OVERRIDES fire BEFORE the engine (v1.40.1): lab-proven routes
+        """QUALITY OVERRIDES fire BEFORE the engine (v1.40.1): lab-proven routes
         that beat the shared engine's own choice at the same block. The one
         exception to champion-first — justified because delivering MORE than
         the champion is always safe. Then FLAKE PRE-EMPT (v1.40.4): for keys
         the engine repeatedly drops via non-empty reverting plans, serve the
         order-API harvested winning plan pre-engine."""
-            p, qkey = self._hydra_qkey(intent, state)
-            qcand = _HYDRA_QUALITY_OVERRIDES.get(qkey)
-            return (p, qcand, qkey)
-        p, qcand, qkey = _bh30()
-
-        def _bh28():
+        p, qkey = self._hydra_qkey(intent, state)
+        qcand = _HYDRA_QUALITY_OVERRIDES.get(qkey)
+        if qcand is not None:
             chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-
-            def _bh27():
+            if chain_id == 8453:
                 qplan = self._hydra_serve_quality(intent, state, snapshot, p, qkey, qcand, chain_id)
                 if qplan is not None:
-                    return (1, qplan)
-                return (0, None)
-            if chain_id == 8453:
-                _t27 = _bh27()
-                if _t27[0]:
-                    return (1, _t27[1])
-            return (0, chain_id)
-        if qcand is not None:
-            _t28 = _bh28()
-            if _t28[0]:
-                return _t28[1]
-            chain_id = _t28[1]
+                    return qplan
         if qkey in _HYDRA_FLAKE_PREEMPT and _hydra_frozen_ok(state):
-
-            def _bh29():
-                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                ix = _hydra_replay().get(qkey)
-                return (chain_id, ix)
-            chain_id, ix = _bh29()
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            ix = _hydra_replay().get(qkey)
             if ix and chain_id == 8453:
                 from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                from minotaur_subnet.shared.types import Interaction as _IX
                 logger.info('[hydra] flake pre-empt %s->%s amt=%s (%d ix)', qkey[0][:8], qkey[1][:8], qkey[2], len(ix))
                 return _EP(intent_id=intent.app_id, interactions=[_IX(target=i['target'], value=str(i.get('value', '0') or '0'), call_data=i['data'], chain_id=8453) for i in ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-flake-preempt', 'chain_id': 8453})
         return None
@@ -528,15 +405,9 @@ class MinerSolver(_ChampBase):
                         return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-two-leg', 'chain_id': chain_id})
                     return None
                 return _DR_UNSET
-
-            def _bh31():
-                _dr3 = _dr2()
-                if _dr3 is not _DR_UNSET:
-                    return (1, _dr3)
-                return (0, None)
-            _t31 = _bh31()
-            if _t31[0]:
-                return _t31[1]
+            _dr3 = _dr2()
+            if _dr3 is not _DR_UNSET:
+                return _dr3
             if qcand.get('venue') in ('maverick_push', 'v2_push', 'univ4_push'):
                 recipient = state.contract_address or p.get('receiver') or state.owner
 
@@ -556,21 +427,25 @@ class MinerSolver(_ChampBase):
                                     logger.info('[hydra] dynamic push size %s (leg1 %s)', spec['swap_amount'], q)
                             except Exception:
                                 logger.exception('[hydra] leg1 quote failed; frozen size')
+                        if spec.get('dyn_reserves'):
+                            try:
+                                q = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
+                                out = self._hydra_v2_reserves_out(spec, q, chain_id) if q else None
+                                if out:
+                                    spec = dict(spec)
+                                    spec['fixed_out'] = out * int(spec.get('dyn_haircut', 999)) // 1000
+                                    logger.info('[hydra] dynamic push out %s (leg1 %s)', spec['fixed_out'], q)
+                            except Exception:
+                                logger.exception('[hydra] dyn reserves failed; frozen out')
                         ix = builder(spec, qkey[0], qkey[2], recipient, chain_id)
                     from minotaur_subnet.shared.types import ExecutionPlan as _EP
                 _dr1()
                 logger.info('[hydra] QUALITY %s %s->%s amt=%s', qcand['venue'], qkey[0][:8], qkey[1][:8], qkey[2])
                 return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-push', 'chain_id': chain_id})
             return _DR_UNSET
-
-        def _bh35():
-            _dr24 = _dr23()
-            if _dr24 is not _DR_UNSET:
-                return (1, _dr24)
-            return (0, None)
-        _t35 = _bh35()
-        if _t35[0]:
-            return _t35[1]
+        _dr24 = _dr23()
+        if _dr24 is not _DR_UNSET:
+            return _dr24
         if qcand.get('venue') == 'v3_slip_chain':
             spec = qcand['spec']
             mid_amount = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
@@ -600,15 +475,9 @@ class MinerSolver(_ChampBase):
                             return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-v2-direct', 'chain_id': chain_id})
                         return None
                     return _DR_UNSET
-
-                def _bh32():
-                    _dr5 = _dr4()
-                    if _dr5 is not _DR_UNSET:
-                        return (1, _dr5)
-                    return (0, None)
-                _t32 = _bh32()
-                if _t32[0]:
-                    return _t32[1]
+                _dr5 = _dr4()
+                if _dr5 is not _DR_UNSET:
+                    return _dr5
                 if qcand.get('venue') == 'v3_path02':
                     recipient = state.contract_address or p.get('receiver') or state.owner
                     ix = _build_v3_path02_ix(qcand['spec'], qkey[0], qkey[2], recipient, chain_id)
@@ -616,15 +485,9 @@ class MinerSolver(_ChampBase):
                     logger.info('[hydra] QUALITY v3-path02 %s->%s amt=%s', qkey[0][:8], qkey[1][:8], qkey[2])
                     return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-v3-path02', 'chain_id': chain_id})
                 return _DR_UNSET
-
-            def _bh33():
-                _dr10 = _dr9()
-                if _dr10 is not _DR_UNSET:
-                    return (1, _dr10)
-                return (0, None)
-            _t33 = _bh33()
-            if _t33[0]:
-                return _t33[1]
+            _dr10 = _dr9()
+            if _dr10 is not _DR_UNSET:
+                return _dr10
             if qcand.get('venue') == 'infinity_v4_chain':
                 recipient = state.contract_address or p.get('receiver') or state.owner
                 ix = _build_infinity_v4_chain_ix(qcand['spec'], qkey[0], qkey[1], qkey[2], recipient, chain_id)
@@ -638,34 +501,22 @@ class MinerSolver(_ChampBase):
                 logger.info('[hydra] QUALITY infinity-cl %s->%s amt=%s', qkey[0][:8], qkey[1][:8], qkey[2])
                 return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-infinity', 'chain_id': chain_id})
             return _DR_UNSET
-
-        def _bh36():
-            _dr15 = _dr14()
-            if _dr15 is not _DR_UNSET:
-                return (1, _dr15)
-            qplan = self._build_singlehop_plan(intent, state, snapshot, qcand, qkey[0], qkey[1], qkey[2], chain_id)
-            return (0, qplan)
-        _t36 = _bh36()
-        if _t36[0]:
-            return _t36[1]
-        qplan = _t36[1]
-
-        def _bh34():
+        _dr15 = _dr14()
+        if _dr15 is not _DR_UNSET:
+            return _dr15
+        qplan = self._build_singlehop_plan(intent, state, snapshot, qcand, qkey[0], qkey[1], qkey[2], chain_id)
+        if qplan is not None:
             logger.info('[hydra] QUALITY override %s->%s amt=%s via %s', qkey[0][:8], qkey[1][:8], qkey[2], qcand['param'])
-
-        def _bh37():
-            if qplan is not None:
-                _bh34()
-            return (1, qplan)
-            return (0, None)
-        _t37 = _bh37()
-        if _t37[0]:
-            return _t37[1]
+        return qplan
 
     def _hydra_quote_leg1(self, spec, tin, amount_in, chain_id):
         """Same-block QuoterV2 quote of a push route's leg1 (uni/pancake V3
         exact-in). Deterministic vs execution at the same block — the quoter
         simulates the identical swap the router performs."""
+        from eth_abi import decode as _dec
+        from eth_abi import encode as _enc
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        from king_consts import _PANCAKE_QUOTER, _UNI_QUOTER
         w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return None
@@ -678,30 +529,23 @@ class MinerSolver(_ChampBase):
             pass
         quoter = _PANCAKE_QUOTER if spec.get('leg1_router') == 'pancake' else _UNI_QUOTER
         sel = _keccak(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
-
-        def _bh39():
-            params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(spec['mid']), int(amount_in), int(spec['leg1_fee']), 0)])
-            for attempt in (1, 2):
-
-                def _bh38():
-                    r = w3.eth.call({'to': _ck(quoter), 'data': '0x' + (sel + params).hex()})
-                    out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], r)[0])
-                    return out if out > 0 else None
-                try:
-                    return (1, _bh38())
-                except Exception:
-                    if attempt == 2:
-                        raise
-            return (1, None)
-            return (0, None)
-        _t39 = _bh39()
-        if _t39[0]:
-            return _t39[1]
+        params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(spec['mid']), int(amount_in), int(spec['leg1_fee']), 0)])
+        for attempt in (1, 2):
+            try:
+                r = w3.eth.call({'to': _ck(quoter), 'data': '0x' + (sel + params).hex()})
+                out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], r)[0])
+                return out if out > 0 else None
+            except Exception:
+                if attempt == 2:
+                    raise
+        return None
 
     def _hydra_v2_reserves_out(self, spec, amount_in, chain_id):
         """Same-block pair.getReserves -> the V2 router's own amountOut
         formula (fee_num/fee_den): wei-identical to what
         swapExactTokensForTokens would deliver at this block."""
+        from eth_abi import decode as _dec
+        from eth_utils import to_checksum_address as _ck
         w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return None
@@ -713,28 +557,15 @@ class MinerSolver(_ChampBase):
         except Exception:
             pass
         for attempt in (1, 2):
-
-            def _bh40():
-
-                def _bh41():
-                    r = w3.eth.call({'to': _ck(spec['pair']), 'data': '0x0902f1ac'})
-                    r0, r1, _ts = _dec(['uint112', 'uint112', 'uint32'], r)
-                    rin, rout = (r0, r1) if int(spec['out_index']) == 1 else (r1, r0)
-                    fee = int(spec.get('fee_num', 997))
-                    den = int(spec.get('fee_den', 1000))
-                    return (den, fee, rin, rout)
-                den, fee, rin, rout = _bh41()
-
-                def _bh42():
-                    ain = int(amount_in) * fee
-                    out = ain * rout // (rin * den + ain)
-                    return (1, out if out > 0 else None)
-                    return (0, None)
-                _t42 = _bh42()
-                if _t42[0]:
-                    return _t42[1]
             try:
-                return _bh40()
+                r = w3.eth.call({'to': _ck(spec['pair']), 'data': '0x0902f1ac'})
+                r0, r1, _ts = _dec(['uint112', 'uint112', 'uint32'], r)
+                rin, rout = (r0, r1) if int(spec['out_index']) == 1 else (r1, r0)
+                fee = int(spec.get('fee_num', 997))
+                den = int(spec.get('fee_den', 1000))
+                ain = int(amount_in) * fee
+                out = ain * rout // (rin * den + ain)
+                return out if out > 0 else None
             except Exception:
                 if attempt == 2:
                     raise
@@ -766,51 +597,28 @@ class MinerSolver(_ChampBase):
                 chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                 if ix and chain_id == 8453 and _hydra_frozen_ok(state):
                     from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                    from minotaur_subnet.shared.types import Interaction as _IX
                     rplan = _EP(intent_id=intent.app_id, interactions=[_IX(target=i['target'], value=str(i.get('value', '0') or '0'), call_data=i['data'], chain_id=8453) for i in ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-replay', 'chain_id': 8453})
                     logger.info('[hydra] replay serve %s->%s amt=%s (%d ix)', rkey[0][:8], rkey[1][:8], rkey[2], len(ix))
                     return rplan
             except Exception:
                 logger.exception('[hydra] replay serve failed')
             return _DR_UNSET
-
-        def _bh44():
-            _dr22 = _dr21()
-            if _dr22 is not _DR_UNSET:
-                return (1, _dr22)
-            return (0, None)
-        _t44 = _bh44()
-        if _t44[0]:
-            return _t44[1]
-
-        def _bh43():
+        _dr22 = _dr21()
+        if _dr22 is not _DR_UNSET:
+            return _dr22
+        try:
             cplan = self._hydra_census_plan(intent, state, snapshot, hooked_only=False)
             if cplan is not None:
-                return (1, cplan)
-            return (0, None)
-
-        def _bh45():
-            try:
-                _t43 = _bh43()
-                if _t43[0]:
-                    return (1, _t43[1])
-            except Exception:
-                logger.exception('[hydra] census fallback failed')
-            return (1, None)
-            return (0, None)
-        _t45 = _bh45()
-        if _t45[0]:
-            return _t45[1]
+                return cplan
+        except Exception:
+            logger.exception('[hydra] census fallback failed')
+        return None
 
     def check_trigger(self, intent, state, snapshot=None):
-
-        def _bh46():
-            if int(state.chain_id or 0) == 1:
-                return (1, True)
-            return (0, None)
         try:
-            _t46 = _bh46()
-            if _t46[0]:
-                return _t46[1]
+            if int(state.chain_id or 0) == 1:
+                return True
         except Exception:
             pass
         return super().check_trigger(intent, state, snapshot)
@@ -819,7 +627,9 @@ class MinerSolver(_ChampBase):
         """Zero-RPC Ethereum-mainnet plan: approve + Uniswap V3 exactInput
         single-hop (or 2-hop via WETH) on the deepest fee tiers. Covers the
         fixed screening scenarios (swap + limit_order shapes) instantly."""
-        from minotaur_subnet.shared.types import ExecutionPlan as _EP
+        from eth_abi import encode as _enc
+        from eth_utils import to_checksum_address as _ck
+        from minotaur_subnet.shared.types import ExecutionPlan as _EP, Interaction as _IX
         p = self._normalized_swap_params(intent, state)
         tin = str(p.get('input_token', '') or '').lower()
         tout = str(p.get('output_token', '') or '').lower()
@@ -827,81 +637,42 @@ class MinerSolver(_ChampBase):
         if not tin or not tout or amt <= 0:
             return None
         WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
-
-        def _bh53():
-            FEE = {frozenset((WETH, '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')): 500, frozenset((WETH, '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599')): 500}
-            ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
-            recip = str(p.get('receiver', '') or '0x0000000000000000000000000000000000000001')
-            approve = _IX(target=_ck(tin), value='0', call_data='0x095ea7b3' + _enc(['address', 'uint256'], [_ck(ROUTER), amt]).hex(), chain_id=1)
-            return (FEE, ROUTER, approve, recip)
-        FEE, ROUTER, approve, recip = _bh53()
+        FEE = {frozenset((WETH, '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')): 500, frozenset((WETH, '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599')): 500}
+        ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+        recip = str(p.get('receiver', '') or '0x0000000000000000000000000000000000000001')
+        approve = _IX(target=_ck(tin), value='0', call_data='0x095ea7b3' + _enc(['address', 'uint256'], [_ck(ROUTER), amt]).hex(), chain_id=1)
 
         def _dr16():
 
             def path_bytes(tokens, fees):
                 b = b''
                 for i, t in enumerate(tokens):
-
-                    def _bh48(b):
-                        b += bytes.fromhex(t[2:])
-
-                        def _bh47(b):
-                            b += fees[i].to_bytes(3, 'big')
-                            return b
-                        if i < len(fees):
-                            b = _bh47(b)
-                        return b
-                    b = _bh48(b)
+                    b += bytes.fromhex(t[2:])
+                    if i < len(fees):
+                        b += fees[i].to_bytes(3, 'big')
                 return b
-
-            def _bh51():
-                tokens, fees = ([tin, tout], [FEE[frozenset((tin, tout))]])
-                return (fees, tokens)
-
-            def _bh52():
-
-                def _bh49():
-                    f1 = FEE.get(frozenset((tin, WETH)), 3000)
-                    f2 = FEE.get(frozenset((WETH, tout)), 3000)
-                    tokens, fees = ([tin, WETH, tout], [f1, f2])
-                    return (fees, tokens)
-
-                def _bh50():
-                    tokens, fees = ([tin, tout], [3000])
-                    return (fees, tokens)
-                if WETH not in (tin, tout):
-                    fees, tokens = _bh49()
-                else:
-                    fees, tokens = _bh50()
-                return (fees, tokens)
             if frozenset((tin, tout)) in FEE:
-                fees, tokens = _bh51()
+                tokens, fees = ([tin, tout], [FEE[frozenset((tin, tout))]])
+            elif WETH not in (tin, tout):
+                f1 = FEE.get(frozenset((tin, WETH)), 3000)
+                f2 = FEE.get(frozenset((WETH, tout)), 3000)
+                tokens, fees = ([tin, WETH, tout], [f1, f2])
             else:
-                fees, tokens = _bh52()
+                tokens, fees = ([tin, tout], [3000])
             swap_data = '0xc04b8d59' + _enc(['(bytes,address,uint256,uint256,uint256)'], [(path_bytes(tokens, fees), _ck(recip), 9999999999, amt, 0)]).hex()
             return (fees, swap_data)
-
-        def _bh54():
-            fees, swap_data = _dr16()
-            swap = _IX(target=_ck(ROUTER), value='0', call_data=swap_data, chain_id=1)
-            logger.info('[hydra] eth fastpath %s->%s amt=%s hops=%d', tin[:8], tout[:8], amt, len(fees))
-            self._bm_done = getattr(self, '_bm_done', 0) + 1
-            return (1, _EP(intent_id=intent.app_id, interactions=[approve, swap], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-eth-fastpath', 'chain_id': 1}))
-            return (0, None)
-        _t54 = _bh54()
-        if _t54[0]:
-            return _t54[1]
+        fees, swap_data = _dr16()
+        swap = _IX(target=_ck(ROUTER), value='0', call_data=swap_data, chain_id=1)
+        logger.info('[hydra] eth fastpath %s->%s amt=%s hops=%d', tin[:8], tout[:8], amt, len(fees))
+        self._bm_done = getattr(self, '_bm_done', 0) + 1
+        return _EP(intent_id=intent.app_id, interactions=[approve, swap], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-eth-fastpath', 'chain_id': 1})
 
     def _hydra_census_plan(self, intent, state, snapshot, hooked_only):
-
-        def _bh56():
-            p = self._normalized_swap_params(intent, state)
-            tin = str(p.get('input_token', '') or '').lower()
-            tout = str(p.get('output_token', '') or '').lower()
-            amt = int(p.get('input_amount', 0) or 0)
-            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-            return (amt, chain_id, tin, tout)
-        amt, chain_id, tin, tout = _bh56()
+        p = self._normalized_swap_params(intent, state)
+        tin = str(p.get('input_token', '') or '').lower()
+        tout = str(p.get('output_token', '') or '').lower()
+        amt = int(p.get('input_amount', 0) or 0)
+        chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
         pool = _hydra_census()[0].get(tout)
         if not pool or amt <= 0 or chain_id != 8453 or (tin not in (_USDC, _WETH)):
             return None
@@ -919,31 +690,15 @@ class MinerSolver(_ChampBase):
             if spec is None:
                 return None
             return _DR_UNSET
-
-        def _bh57():
-            _dr26 = _dr25()
-            if _dr26 is not _DR_UNSET:
-                return (1, _dr26)
-            cand = {'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-census', 'out': 1, 'gas_est': 650000, 'gas_model': 1000000}
-            cplan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amt, chain_id)
-            return (0, cplan)
-        _t57 = _bh57()
-        if _t57[0]:
-            return _t57[1]
-        cplan = _t57[1]
-
-        def _bh55():
+        _dr26 = _dr25()
+        if _dr26 is not _DR_UNSET:
+            return _dr26
+        cand = {'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-census', 'out': 1, 'gas_est': 650000, 'gas_model': 1000000}
+        cplan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amt, chain_id)
+        if cplan is not None and getattr(cplan, 'interactions', None):
             logger.info('[hydra] census cover %s->%s (hook %s, pre=%s)', tin[:8], tout[:8], hooks[:10], hooked_only)
             return cplan
-
-        def _bh58():
-            if cplan is not None and getattr(cplan, 'interactions', None):
-                return (1, _bh55())
-            return (1, None)
-            return (0, None)
-        _t58 = _bh58()
-        if _t58[0]:
-            return _t58[1]
+        return None
 SOLVER_CLASS = MinerSolver
 try:
     import logging as _putty_logging
@@ -967,67 +722,42 @@ try:
     _PUTTY_PAIR_SWAP_SEL = bytes.fromhex('022c0d9f')
 
     def _dr13():
-
-        def _bh83():
-            _PUTTY_DEPOSIT_SEL = bytes.fromhex('6e553f65')
-            _PUTTY_GET_AMOUNT_OUT_SEL = bytes.fromhex('f140a35a')
-            _PUTTY_QUOTE_SINGLE_SEL = bytes.fromhex('c6a5026a')
-            _PUTTY_R02_SINGLE_SEL = bytes.fromhex('04e45aaf')
-            _PUTTY_R02_PATH_SEL = bytes.fromhex('b858183f')
-            _PUTTY_UNI_R02 = '0x2626664c2603336E57B271c5C0b26F421741e481'
-            _PUTTY_UNI_QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
-            _PUTTY_MSG_SENDER = '0x0000000000000000000000000000000000000001'
-            _PUTTY_OLD_SINGLE_SEL = bytes.fromhex('414bf389')
-            _PUTTY_CURVE_XCHG_SEL = bytes.fromhex('ddc1f59d')
-            _PUTTY_SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
-            return (_PUTTY_CURVE_XCHG_SEL, _PUTTY_DEPOSIT_SEL, _PUTTY_GET_AMOUNT_OUT_SEL, _PUTTY_MSG_SENDER, _PUTTY_OLD_SINGLE_SEL, _PUTTY_QUOTE_SINGLE_SEL, _PUTTY_R02_PATH_SEL, _PUTTY_R02_SINGLE_SEL, _PUTTY_SUSHI_V3_ROUTER, _PUTTY_UNI_QUOTER, _PUTTY_UNI_R02)
-        _PUTTY_CURVE_XCHG_SEL, _PUTTY_DEPOSIT_SEL, _PUTTY_GET_AMOUNT_OUT_SEL, _PUTTY_MSG_SENDER, _PUTTY_OLD_SINGLE_SEL, _PUTTY_QUOTE_SINGLE_SEL, _PUTTY_R02_PATH_SEL, _PUTTY_R02_SINGLE_SEL, _PUTTY_SUSHI_V3_ROUTER, _PUTTY_UNI_QUOTER, _PUTTY_UNI_R02 = _bh83()
+        _PUTTY_DEPOSIT_SEL = bytes.fromhex('6e553f65')
+        _PUTTY_GET_AMOUNT_OUT_SEL = bytes.fromhex('f140a35a')
+        _PUTTY_QUOTE_SINGLE_SEL = bytes.fromhex('c6a5026a')
+        _PUTTY_R02_SINGLE_SEL = bytes.fromhex('04e45aaf')
+        _PUTTY_R02_PATH_SEL = bytes.fromhex('b858183f')
+        _PUTTY_UNI_R02 = '0x2626664c2603336E57B271c5C0b26F421741e481'
+        _PUTTY_UNI_QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
+        _PUTTY_MSG_SENDER = '0x0000000000000000000000000000000000000001'
+        _PUTTY_OLD_SINGLE_SEL = bytes.fromhex('414bf389')
+        _PUTTY_CURVE_XCHG_SEL = bytes.fromhex('ddc1f59d')
+        _PUTTY_SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
 
         def _dr6():
             _PUTTY_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
             _PUTTY_CURVE_SUPEROETHB = '0x302a94e3c28c290eaf2a4605fc52e11eb915f378'
             _PUTTY_ROUTES = {}
             _PUTTY_SUBS = {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
-
-            def _bh59():
-                _PUTTY_SUBS_WETH = {'0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True),), 'lo': 100000000000000, 'hi': 10000000000000000}}
-                _PUTTY_RPC = {'url': None}
-                return (1, (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER))
-                return (0, None)
-            _t59 = _bh59()
-            if _t59[0]:
-                return _t59[1]
+            _PUTTY_SUBS_WETH = {'0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True),), 'lo': 100000000000000, 'hi': 10000000000000000}}
+            _PUTTY_RPC = {'url': None}
+            return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER)
         _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr6()
 
         def _putty_eth_call(to, data_hex):
+            import json as _pj
+            import urllib.request as _pu
             url = _PUTTY_RPC.get('url')
             if not url:
                 raise RuntimeError('putty: no rpc url captured')
             body = _pj.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': _putty_ck(to), 'data': data_hex}, 'latest']}).encode()
             req = _pu.Request(url, data=body, headers={'content-type': 'application/json'})
-
-            def _bh60():
+            with _pu.urlopen(req, timeout=10) as resp:
                 out = _pj.loads(resp.read())
-                return out
-
-            def _bh62():
-                with _pu.urlopen(req, timeout=10) as resp:
-                    out = _bh60()
-                res = out.get('result')
-                return (out, res)
-            out, res = _bh62()
-
-            def _bh61():
+            res = out.get('result')
+            if not res or res == '0x':
                 raise RuntimeError(f'putty eth_call failed: {out.get('error')}')
-
-            def _bh63():
-                if not res or res == '0x':
-                    return (1, _bh61())
-                return (1, bytes.fromhex(res[2:]))
-                return (0, None)
-            _t63 = _bh63()
-            if _t63[0]:
-                return _t63[1]
+            return bytes.fromhex(res[2:])
 
         def _putty_encode_approve(spender, amount):
             return '0x' + (_PUTTY_APPROVE_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(spender), int(amount)])).hex()
@@ -1039,32 +769,16 @@ try:
         def _putty_state_getter(state):
             """Champion-agnostic reader over the STABLE IntentState surface."""
             raw = {}
-
-            def _bh64(raw):
-
-                def _bh65():
-                    raw = dict(state.raw_params_view() or {})
-                    return raw
-                if hasattr(state, 'raw_params_view'):
-                    raw = _bh65()
-                return raw
             try:
-                raw = _bh64(raw)
+                if hasattr(state, 'raw_params_view'):
+                    raw = dict(state.raw_params_view() or {})
             except Exception:
                 raw = {}
-
-            def _bh67(raw):
-
-                def _bh66():
-                    raw = dict(getattr(state, 'raw_params', {}) or {})
-                    return raw
+            if not raw:
                 try:
-                    raw = _bh66()
+                    raw = dict(getattr(state, 'raw_params', {}) or {})
                 except Exception:
                     raw = {}
-                return raw
-            if not raw:
-                raw = _bh67(raw)
             typed = getattr(state, 'typed_context', None)
 
             def _get(key):
@@ -1075,13 +789,9 @@ try:
             return _get
 
         def _putty_build_alt_plan(intent, state, token_out, amount_in, router, tick_spacing):
-
-            def _bh68():
-                recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
-                chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
-                interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
-                return (chain_id, interactions)
-            chain_id, interactions = _bh68()
+            recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
+            chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
+            interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
             return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'aerodrome_slipstream_alt', 'venue_param': int(tick_spacing), 'chain_id': chain_id})
 
         def _putty_ix(target, data, chain_id):
@@ -1095,20 +805,12 @@ try:
             return '0x' + (_PUTTY_R02_SINGLE_SEL + enc).hex()
 
         def _putty_r02_path(mids, token_out, fees, recipient, amount_in):
-
-            def _bh70():
-                toks = [_PUTTY_USDC] + list(mids) + [token_out]
-                path = b''
-                for i, f in enumerate(fees):
-
-                    def _bh69(path):
-                        path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
-                        return path
-                    path = _bh69(path)
-                path += bytes.fromhex(toks[-1][2:])
-                enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
-                return enc
-            enc = _bh70()
+            toks = [_PUTTY_USDC] + list(mids) + [token_out]
+            path = b''
+            for i, f in enumerate(fees):
+                path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
+            path += bytes.fromhex(toks[-1][2:])
+            enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
             return '0x' + (_PUTTY_R02_PATH_SEL + enc).hex()
 
         def _putty_quote_usdc_weth(fee, amount_in):
@@ -1121,13 +823,10 @@ try:
 
         def _putty_quote_v3(quoter, token_in, token_out, fee, amount_in):
             """QuoterV2-ABI single quote (uni + sushi share the struct); 0 on failure."""
-
-            def _bh71():
+            try:
                 data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(amount_in), int(fee), 0)])).hex()
                 raw = _putty_eth_call(quoter, data)
                 return int.from_bytes(raw[:32], 'big')
-            try:
-                return _bh71()
             except Exception:
                 return 0
 
@@ -1137,17 +836,9 @@ try:
         leg is never worse than the champion's."""
             best_out, best_fee = (0, 0)
             for fee in (100, 500, 3000):
-
-                def _bh73(best_fee, best_out):
-                    out = _putty_quote_v3(_PUTTY_UNI_QUOTER, _PUTTY_USDC, _PUTTY_WETH, fee, amount_in)
-
-                    def _bh72():
-                        best_out, best_fee = (out, fee)
-                        return (best_fee, best_out)
-                    if out > best_out:
-                        best_fee, best_out = _bh72()
-                    return (best_fee, best_out, out)
-                best_fee, best_out, out = _bh73(best_fee, best_out)
+                out = _putty_quote_v3(_PUTTY_UNI_QUOTER, _PUTTY_USDC, _PUTTY_WETH, fee, amount_in)
+                if out > best_out:
+                    best_out, best_fee = (out, fee)
             if best_out <= 0:
                 raise RuntimeError('putty: no uni USDC->WETH quote')
             return (best_out, best_fee)
@@ -1162,34 +853,19 @@ try:
         def _putty_sub_interactions(spec, token_out, amount_in, recipient, chain_id):
             """Build the substituted interaction list for one table entry."""
             kind = spec['kind']
-
-            def _bh74():
-                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
             if kind == 'univ3_single':
-                return _bh74()
+                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
 
             def _dr11():
-
-                def _bh75():
-                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
                 if kind == 'univ3_path':
-                    return _bh75()
-
-                def _bh76():
+                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
+                if kind == 'erc4626':
                     quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
                     return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
-                if kind == 'erc4626':
-                    return _bh76()
                 return _DR_UNSET
-
-            def _bh80():
-                _dr12 = _dr11()
-                if _dr12 is not _DR_UNSET:
-                    return (1, _dr12)
-                return (0, None)
-            _t80 = _bh80()
-            if _t80[0]:
-                return _t80[1]
+            _dr12 = _dr11()
+            if _dr12 is not _DR_UNSET:
+                return _dr12
             if kind == 'curve_full':
                 weth_out, fee = _putty_best_usdc_weth(amount_in)
                 pool = spec['pool']
@@ -1205,52 +881,30 @@ try:
                     sushi_call = '0x' + (_PUTTY_OLD_SINGLE_SEL + _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_WETH), _putty_ck(token_out), sushi_fee, _putty_ck(recipient), int(_PUTTY_DEADLINE), int(weth_out), 0, 0)])).hex()
                     return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(_PUTTY_SUSHI_V3_ROUTER, weth_out), chain_id), _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id)]
                 return _DR_UNSET
+            _dr8 = _dr7()
+            if _dr8 is not _DR_UNSET:
+                return _dr8
+            if kind == 'aero_pd':
 
-            def _bh81():
-                _dr8 = _dr7()
-                if _dr8 is not _DR_UNSET:
-                    return (1, _dr8)
-                if kind == 'aero_pd':
-
-                    def _dr19():
-                        hops = spec['hops']
-                        ixs = [_putty_ix(hops[0][0], _putty_encode_transfer(hops[0][1], amount_in), chain_id)]
-                        cur = int(amount_in)
-                        for i, (tin, pair, in_is_t0) in enumerate(hops):
-
-                            def _bh79():
-
-                                def _bh77():
-                                    out = _putty_pair_get_amount_out(pair, cur, tin)
-                                    to = recipient if i == len(hops) - 1 else hops[i + 1][1]
-                                    a0, a1 = (0, out) if in_is_t0 else (out, 0)
-                                    return (a0, a1, out, to)
-                                a0, a1, out, to = _bh77()
-
-                                def _bh78():
-                                    ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
-                                    cur = out
-                                    return cur
-                                cur = _bh78()
-                                return (a0, a1, cur, out, to)
-                            a0, a1, cur, out, to = _bh79()
-                        return ixs
-                    ixs = _dr19()
-                    return (1, ixs)
-                raise RuntimeError(f'putty: unknown sub kind {kind}')
-                return (0, None)
-            _t81 = _bh81()
-            if _t81[0]:
-                return _t81[1]
+                def _dr19():
+                    hops = spec['hops']
+                    ixs = [_putty_ix(hops[0][0], _putty_encode_transfer(hops[0][1], amount_in), chain_id)]
+                    cur = int(amount_in)
+                    for i, (tin, pair, in_is_t0) in enumerate(hops):
+                        out = _putty_pair_get_amount_out(pair, cur, tin)
+                        to = recipient if i == len(hops) - 1 else hops[i + 1][1]
+                        a0, a1 = (0, out) if in_is_t0 else (out, 0)
+                        ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
+                        cur = out
+                    return ixs
+                ixs = _dr19()
+                return ixs
+            raise RuntimeError(f'putty: unknown sub kind {kind}')
 
         def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
-
-            def _bh82():
-                recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
-                chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
-                interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
-                return (chain_id, interactions)
-            chain_id, interactions = _bh82()
+            recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
+            chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
+            interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
             return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id})
         return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter)
     _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter = _dr13()
@@ -1262,21 +916,14 @@ try:
         everywhere else; any failure in our path falls back to the champion."""
 
         def initialize(self, *args, **kwargs):
-
-            def _bh84():
+            try:
                 for cfg in list(args) + list(kwargs.values()):
                     if isinstance(cfg, dict):
                         urls = cfg.get('rpc_urls') or {}
-
-                        def _bh85():
+                        if isinstance(urls, dict):
                             url = urls.get(8453) or urls.get('8453')
                             if url:
                                 _PUTTY_RPC['url'] = str(url)
-                            return url
-                        if isinstance(urls, dict):
-                            url = _bh85()
-            try:
-                _bh84()
             except Exception:
                 pass
             return super().initialize(*args, **kwargs)

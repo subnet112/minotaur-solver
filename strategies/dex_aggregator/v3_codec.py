@@ -12,14 +12,40 @@ Two router variants are in production deployments today:
 universally — V2 SwapRouter02 still exposes the deadline-included
 exactInput on every chain we deploy to.
 """
-from eth_abi.abi import encode
-EXACT_INPUT_SINGLE_SELECTOR_V1 = bytes.fromhex('414bf389')
-EXACT_INPUT_SINGLE_SELECTOR_V2 = bytes.fromhex('04e45aaf')
-EXACT_INPUT_SINGLE_SELECTOR = EXACT_INPUT_SINGLE_SELECTOR_V1
-SWAP_ROUTER_V2_CHAINS = {8453, 10, 42161}
-EXACT_INPUT_SELECTOR = bytes.fromhex('c04b8d59')
 
-def encode_exact_input_single(token_in, token_out, fee, recipient, deadline, amount_in, amount_out_minimum, sqrt_price_limit_x96=0, chain_id=0):
+from eth_abi.abi import encode
+
+# Uniswap V3 SwapRouter V1 — exactInputSingle WITH deadline
+# Signature: exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))
+EXACT_INPUT_SINGLE_SELECTOR_V1 = bytes.fromhex("414bf389")
+
+# Uniswap V3 SwapRouter V2 (SwapRouter02) — exactInputSingle WITHOUT deadline
+# Signature: exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))
+EXACT_INPUT_SINGLE_SELECTOR_V2 = bytes.fromhex("04e45aaf")
+
+# Default: V1 for backward compatibility
+EXACT_INPUT_SINGLE_SELECTOR = EXACT_INPUT_SINGLE_SELECTOR_V1
+
+# Chains that use SwapRouter02 (V2 encoding, no deadline param).
+# BT EVM is intentionally absent — Astrid Bridge deployed V1 there.
+SWAP_ROUTER_V2_CHAINS = {8453, 10, 42161}  # Base, Optimism, Arbitrum
+
+# Uniswap V3 SwapRouter.exactInput(ExactInputParams)
+# Signature: exactInput((bytes,address,uint256,uint256,uint256))
+EXACT_INPUT_SELECTOR = bytes.fromhex("c04b8d59")
+
+
+def encode_exact_input_single(
+    token_in: str,
+    token_out: str,
+    fee: int,
+    recipient: str,
+    deadline: int,
+    amount_in: int,
+    amount_out_minimum: int,
+    sqrt_price_limit_x96: int = 0,
+    chain_id: int = 0,
+) -> str:
     """Encode Uniswap V3 SwapRouter.exactInputSingle calldata.
 
     Auto-detects SwapRouter version by chain_id:
@@ -40,16 +66,31 @@ def encode_exact_input_single(token_in, token_out, fee, recipient, deadline, amo
     Returns:
         The ABI-encoded calldata as a 0x-prefixed hex string.
     """
-
-    def _bh1():
-        encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
-        return '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V2 + encoded_params).hex()
     if chain_id in SWAP_ROUTER_V2_CHAINS:
-        return _bh1()
-    encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, deadline, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
-    return '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex()
+        # SwapRouter02: no deadline field
+        encoded_params = encode(
+            ["(address,address,uint24,address,uint256,uint256,uint160)"],
+            [(token_in, token_out, fee, recipient, amount_in,
+              amount_out_minimum, sqrt_price_limit_x96)],
+        )
+        return "0x" + (EXACT_INPUT_SINGLE_SELECTOR_V2 + encoded_params).hex()
 
-def encode_exact_input(path, recipient, deadline, amount_in, amount_out_minimum):
+    # SwapRouter V1: includes deadline
+    encoded_params = encode(
+        ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
+        [(token_in, token_out, fee, recipient, deadline, amount_in,
+          amount_out_minimum, sqrt_price_limit_x96)],
+    )
+    return "0x" + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex()
+
+
+def encode_exact_input(
+    path: bytes,
+    recipient: str,
+    deadline: int,
+    amount_in: int,
+    amount_out_minimum: int,
+) -> str:
     """Encode Uniswap V3 SwapRouter.exactInput calldata (multi-hop).
 
     This encodes a multi-hop swap through a sequence of Uniswap V3 pools.
@@ -69,10 +110,22 @@ def encode_exact_input(path, recipient, deadline, amount_in, amount_out_minimum)
     Returns:
         The ABI-encoded calldata as a 0x-prefixed hex string.
     """
-    encoded_params = encode(['(bytes,address,uint256,uint256,uint256)'], [(path, recipient, deadline, amount_in, amount_out_minimum)])
-    return '0x' + (EXACT_INPUT_SELECTOR + encoded_params).hex()
+    encoded_params = encode(
+        ["(bytes,address,uint256,uint256,uint256)"],
+        [
+            (
+                path,
+                recipient,
+                deadline,
+                amount_in,
+                amount_out_minimum,
+            )
+        ],
+    )
+    return "0x" + (EXACT_INPUT_SELECTOR + encoded_params).hex()
 
-def encode_swap_path(tokens, fees):
+
+def encode_swap_path(tokens: list[str], fees: list[int]) -> bytes:
     """Encode a Uniswap V3 multi-hop swap path.
 
     Packs token addresses and fee tiers into the format expected by
@@ -92,24 +145,18 @@ def encode_swap_path(tokens, fees):
             or if fewer than 2 tokens are provided.
     """
     if len(tokens) < 2:
-        raise ValueError(f'Need at least 2 tokens for a path, got {len(tokens)}')
-
-    def _bh2():
-        raise ValueError(f'Need exactly {len(tokens) - 1} fees for {len(tokens)} tokens, got {len(fees)}')
+        raise ValueError(f"Need at least 2 tokens for a path, got {len(tokens)}")
     if len(fees) != len(tokens) - 1:
-        return _bh2()
-    path = b''
+        raise ValueError(
+            f"Need exactly {len(tokens) - 1} fees for {len(tokens)} tokens, "
+            f"got {len(fees)}"
+        )
+
+    path = b""
     for i, token in enumerate(tokens):
+        addr_hex = token[2:] if token.startswith("0x") else token
+        path += bytes.fromhex(addr_hex)
+        if i < len(fees):
+            path += fees[i].to_bytes(3, byteorder="big")
 
-        def _bh4(path):
-            addr_hex = token[2:] if token.startswith('0x') else token
-            path += bytes.fromhex(addr_hex)
-
-            def _bh3(path):
-                path += fees[i].to_bytes(3, byteorder='big')
-                return path
-            if i < len(fees):
-                path = _bh3(path)
-            return (addr_hex, path)
-        addr_hex, path = _bh4(path)
     return path
