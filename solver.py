@@ -376,6 +376,7 @@ class MinerSolver(_Base):
         gated by ONE liveness quote so a drained pool defers to the base (never a
         regression). Supports univ3_single / univ3_path / aero_v2. Returns None on any
         problem so the caller falls back to the base (never worse than the current drop)."""
+        UNISWAP_V3_ROUTERS = _pad = encode_exact_input_single = encode_swap_path = fees = leg = path = router = toks = None
         try:
             from common.abi_utils import encode_approve
 
@@ -524,61 +525,9 @@ class MinerSolver(_Base):
                 if _dr9 is not _DR_UNSET:
                     return _dr9
             elif kind == 'split':
-                from eth_abi import encode as _enc
-                from eth_utils import to_checksum_address as _ck
-                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                from strategies.dex_aggregator.v3_codec import encode_exact_input_single, encode_swap_path
-                router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-                legs = list(spec.get('legs') or [])
-
-                def _dr24():
-                    nonlocal legs
-                    if not router or not legs:
-                        return None
-                    if not _SPLIT_FULL:
-                        legs = [dict(legs[0])]
-                        legs[0]['frac'] = 10000
-                    return _DR_UNSET
-                _dr25 = _dr24()
-                if _dr25 is not _DR_UNSET:
-                    return _dr25
-                swaps = []
-                for leg in legs:
-
-                    def _dr26():
-                        frac = int(leg.get('frac', 0) or 0)
-                        leg_amt = int(amount_in) * frac // 10000
-                        return (frac, leg_amt)
-                    frac, leg_amt = _dr26()
-                    if leg_amt <= 0:
-                        continue
-                    lk = leg.get('kind')
-                    if lk == 'univ3_single':
-
-                        def _dr22():
-                            nonlocal c
-                            c = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(leg.get('fee', 3000)), recipient=recipient, deadline=deadline, amount_in=leg_amt, amount_out_minimum=0, chain_id=chain_id)
-                        _dr22()
-                    elif lk == 'univ3_path':
-                        toks = list(leg.get('tokens') or [])
-                        fees = [int(f) for f in leg.get('fees') or []]
-                        if len(toks) < 2 or len(fees) != len(toks) - 1:
-                            continue
-                        path = encode_swap_path(toks, fees)
-                        c = '0xb858183f' + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(leg_amt), 0)]).hex()
-                    else:
-                        continue
-                    swaps.append(Interaction(target=router, value='0', call_data=c, chain_id=chain_id))
-
-                def _dr18():
-                    if not swaps:
-                        return None
-                    six = [Interaction(target=tin, value='0', call_data=encode_approve(router, int(amount_in)), chain_id=chain_id)] + swaps
-                    return ExecutionPlan(intent_id=intent.app_id, interactions=six, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-route-split' if _SPLIT_FULL else 'apex-route-split1', 'chain_id': chain_id})
-                    return _DR_UNSET
-                _dr19 = _dr18()
-                if _dr19 is not _DR_UNSET:
-                    return _dr19
+                _r = self._afx21854(UNISWAP_V3_ROUTERS, _ck, _dr19, _dr25, _enc, amount_in, c, chain_id, deadline, encode_approve, encode_exact_input_single, encode_swap_path, fees, frac, intent, leg, leg_amt, legs, lk, path, recipient, router, spec, state, swaps, tin, toks, tout)
+                if _r is not _DR_UNSET:
+                    return _r
             else:
 
                 def _dr15():
@@ -618,6 +567,65 @@ class MinerSolver(_Base):
         except Exception:
             logger.exception('[apex] route plan build failed')
             return None
+    def _afx21854(self, UNISWAP_V3_ROUTERS, _ck, _dr19, _dr25, _enc, amount_in, c, chain_id, deadline, encode_approve, encode_exact_input_single, encode_swap_path, fees, frac, intent, leg, leg_amt, legs, lk, path, recipient, router, spec, state, swaps, tin, toks, tout):
+        """auto-lifted return-terminated branch (verbatim; behavior-identical)."""
+        from eth_abi import encode as _enc
+        from eth_utils import to_checksum_address as _ck
+        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+        from strategies.dex_aggregator.v3_codec import encode_exact_input_single, encode_swap_path
+        router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+        legs = list(spec.get('legs') or [])
+
+        def _dr24():
+            nonlocal legs
+            if not router or not legs:
+                return None
+            if not _SPLIT_FULL:
+                legs = [dict(legs[0])]
+                legs[0]['frac'] = 10000
+            return _DR_UNSET
+        _dr25 = _dr24()
+        if _dr25 is not _DR_UNSET:
+            return _dr25
+        swaps = []
+        for leg in legs:
+
+            def _dr26():
+                frac = int(leg.get('frac', 0) or 0)
+                leg_amt = int(amount_in) * frac // 10000
+                return (frac, leg_amt)
+            frac, leg_amt = _dr26()
+            if leg_amt <= 0:
+                continue
+            lk = leg.get('kind')
+            if lk == 'univ3_single':
+
+                def _dr22():
+                    nonlocal c
+                    c = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(leg.get('fee', 3000)), recipient=recipient, deadline=deadline, amount_in=leg_amt, amount_out_minimum=0, chain_id=chain_id)
+                _dr22()
+            elif lk == 'univ3_path':
+                toks = list(leg.get('tokens') or [])
+                fees = [int(f) for f in leg.get('fees') or []]
+                if len(toks) < 2 or len(fees) != len(toks) - 1:
+                    continue
+                path = encode_swap_path(toks, fees)
+                c = '0xb858183f' + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(leg_amt), 0)]).hex()
+            else:
+                continue
+            swaps.append(Interaction(target=router, value='0', call_data=c, chain_id=chain_id))
+
+        def _dr18():
+            if not swaps:
+                return None
+            six = [Interaction(target=tin, value='0', call_data=encode_approve(router, int(amount_in)), chain_id=chain_id)] + swaps
+            return ExecutionPlan(intent_id=intent.app_id, interactions=six, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-route-split' if _SPLIT_FULL else 'apex-route-split1', 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr19 = _dr18()
+        if _dr19 is not _DR_UNSET:
+            return _dr19
+        return _DR_UNSET
+
 
     def _apex_beat_base(self, intent, state, snapshot, params, spec, base_plan):
         """Override a NON-EMPTY base plan IFF our harvested route live-quotes to > _BEAT_MARGIN x
