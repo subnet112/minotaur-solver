@@ -153,25 +153,31 @@ class JamesSolver(KingSolver):
         except Exception:
             logger.exception('[james] king generate_plan raised')
             plan = None
-        try:
-            better = self._james_v4_edge(intent, state, snapshot)
-            if not self._is_empty(better):
-                return better
-        except Exception:
-            logger.exception('[james] v4 edge failed; king plan stands')
-        if not self._is_empty(plan):
-            return plan
-        app_id = str(getattr(intent, 'app_id', '') or '')
-        strat = getattr(self, '_agent_strategies', {}).get(app_id)
-        if strat is not None:
+
+        def _dr12():
             try:
-                alt = strat.generate_plan(intent, state, snapshot)
-                if not self._is_empty(alt):
-                    logger.info('[james] blind-spot cover via agent strategy for %s', app_id)
-                    return alt
+                better = self._james_v4_edge(intent, state, snapshot)
+                if not self._is_empty(better):
+                    return better
             except Exception:
-                logger.exception('[james] agent strategy fallback raised')
-        return plan
+                logger.exception('[james] v4 edge failed; king plan stands')
+            if not self._is_empty(plan):
+                return plan
+            app_id = str(getattr(intent, 'app_id', '') or '')
+            strat = getattr(self, '_agent_strategies', {}).get(app_id)
+            if strat is not None:
+                try:
+                    alt = strat.generate_plan(intent, state, snapshot)
+                    if not self._is_empty(alt):
+                        logger.info('[james] blind-spot cover via agent strategy for %s', app_id)
+                        return alt
+                except Exception:
+                    logger.exception('[james] agent strategy fallback raised')
+            return plan
+            return _DR_UNSET
+        _dr13 = _dr12()
+        if _dr13 is not _DR_UNSET:
+            return _dr13
     _JAMES_CANONICAL = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x940181a94a35a4569e4529a3cdfb74e38fd98631'}
     _JAMES_MARGIN = 1.1
     _JV4_QUOTER = '0x0d5e0F971ED27FBfF6c2837bf31316121532048D'
@@ -265,12 +271,16 @@ class JamesSolver(KingSolver):
         table = getattr(_km, '_STATIC_EXOTIC_ROUTES', None)
         if table is None:
             return None
-        try:
-            p = self._normalized_swap_params(intent, state)
-        except Exception:
-            p = dict(getattr(state, 'raw_params', {}) or {})
-        tin = str(p.get('input_token', '') or '').lower()
-        tout = str(p.get('output_token', '') or '').lower()
+
+        def _dr10():
+            try:
+                p = self._normalized_swap_params(intent, state)
+            except Exception:
+                p = dict(getattr(state, 'raw_params', {}) or {})
+            tin = str(p.get('input_token', '') or '').lower()
+            tout = str(p.get('output_token', '') or '').lower()
+            return (p, tin, tout)
+        p, tin, tout = _dr10()
         try:
             amt = int(p.get('input_amount', 0) or 0)
             min_out = int(p.get('min_output_amount', 0) or 0)
@@ -285,8 +295,12 @@ class JamesSolver(KingSolver):
         _dr7 = _dr6()
         if _dr7 is not _DR_UNSET:
             return _dr7
-        w3 = self._james_w3()
-        weth_leg = amt if tin == self._JWETH.lower() else self._jq_v3(w3, self._JUSDC, self._JWETH, amt, 500)
+
+        def _dr11():
+            w3 = self._james_w3()
+            weth_leg = amt if tin == self._JWETH.lower() else self._jq_v3(w3, self._JUSDC, self._JWETH, amt, 500)
+            return (w3, weth_leg)
+        w3, weth_leg = _dr11()
         best_out, best_spec = (0, None)
 
         def _dr2():

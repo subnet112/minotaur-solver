@@ -11,6 +11,7 @@ address (the `recipient` param in the router call), NOT to `receiver` and
 NOT left at the proxy. Otherwise the plan scores 0.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import time
 from typing import Any
 from eth_abi.abi import encode
@@ -33,67 +34,73 @@ def _dr3():
     _GET_POOL_SELECTOR = bytes.fromhex('1698ee82')
     _LIQUIDITY_SELECTOR = bytes.fromhex('1a686502')
 
-    def _fee_for_pair(token_a: str, token_b: str) -> int:
-        key = frozenset({token_a.lower(), token_b.lower()})
-        return _FEE_TIERS.get(key, _DEFAULT_FEE)
+    def _dr5():
 
-    def _encode_approve(spender: str, amount: int) -> str:
-        encoded_params = encode(['address', 'uint256'], [spender, amount])
-        return '0x' + (APPROVE_SELECTOR + encoded_params).hex()
+        def _fee_for_pair(token_a: str, token_b: str) -> int:
+            key = frozenset({token_a.lower(), token_b.lower()})
+            return _FEE_TIERS.get(key, _DEFAULT_FEE)
 
-    def _encode_exact_input_single_v2(token_in: str, token_out: str, fee: int, recipient: str, amount_in: int, amount_out_minimum: int, sqrt_price_limit_x96: int=0) -> str:
-        """SwapRouter02 (V2) exactInputSingle — no deadline param."""
-        encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
-        return '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V2 + encoded_params).hex()
+        def _encode_approve(spender: str, amount: int) -> str:
+            encoded_params = encode(['address', 'uint256'], [spender, amount])
+            return '0x' + (APPROVE_SELECTOR + encoded_params).hex()
 
-    def _encode_path(token_in: str, fee1: int, token_mid: str, fee2: int, token_out: str) -> bytes:
-        """Uniswap V3 multi-hop path encoding: tokenIn + fee(3B) + tokenMid + fee(3B) + tokenOut."""
+        def _encode_exact_input_single_v2(token_in: str, token_out: str, fee: int, recipient: str, amount_in: int, amount_out_minimum: int, sqrt_price_limit_x96: int=0) -> str:
+            """SwapRouter02 (V2) exactInputSingle — no deadline param."""
+            encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
+            return '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V2 + encoded_params).hex()
 
-        def _addr_bytes(addr: str) -> bytes:
-            return bytes.fromhex(addr[2:].rjust(40, '0'))
-        return _addr_bytes(token_in) + fee1.to_bytes(3, 'big') + _addr_bytes(token_mid) + fee2.to_bytes(3, 'big') + _addr_bytes(token_out)
+        def _encode_path(token_in: str, fee1: int, token_mid: str, fee2: int, token_out: str) -> bytes:
+            """Uniswap V3 multi-hop path encoding: tokenIn + fee(3B) + tokenMid + fee(3B) + tokenOut."""
 
-    def _encode_exact_input_v1(path: bytes, recipient: str, deadline: int, amount_in: int, amount_out_minimum: int) -> str:
-        encoded_params = encode(['(bytes,address,uint256,uint256,uint256)'], [(path, recipient, deadline, amount_in, amount_out_minimum)])
-        return '0x' + (EXACT_INPUT_SELECTOR + encoded_params).hex()
+            def _addr_bytes(addr: str) -> bytes:
+                return bytes.fromhex(addr[2:].rjust(40, '0'))
+            return _addr_bytes(token_in) + fee1.to_bytes(3, 'big') + _addr_bytes(token_mid) + fee2.to_bytes(3, 'big') + _addr_bytes(token_out)
 
-    def _eth_call(w3: Any, target: str, data: bytes) -> bytes | None:
-        try:
-            return bytes(w3.eth.call({'to': target, 'data': data}))
-        except Exception:
-            return None
+        def _encode_exact_input_v1(path: bytes, recipient: str, deadline: int, amount_in: int, amount_out_minimum: int) -> str:
+            encoded_params = encode(['(bytes,address,uint256,uint256,uint256)'], [(path, recipient, deadline, amount_in, amount_out_minimum)])
+            return '0x' + (EXACT_INPUT_SELECTOR + encoded_params).hex()
 
-    def _get_pool(w3: Any, factory: str, token_a: str, token_b: str, fee: int) -> str | None:
-        data = _GET_POOL_SELECTOR + encode(['address', 'address', 'uint24'], [token_a, token_b, fee])
-        result = _eth_call(w3, factory, data)
-        if not result or len(result) < 32:
-            return None
-        addr_int = int.from_bytes(result[-20:], 'big')
-        if addr_int == 0:
-            return None
-        return '0x' + result[-20:].hex()
+        def _eth_call(w3: Any, target: str, data: bytes) -> bytes | None:
+            try:
+                return bytes(w3.eth.call({'to': target, 'data': data}))
+            except Exception:
+                return None
 
-    def _get_liquidity(w3: Any, pool: str) -> int:
-        result = _eth_call(w3, pool, _LIQUIDITY_SELECTOR)
-        if not result:
-            return 0
-        return int.from_bytes(result[-32:], 'big')
+        def _get_pool(w3: Any, factory: str, token_a: str, token_b: str, fee: int) -> str | None:
+            data = _GET_POOL_SELECTOR + encode(['address', 'address', 'uint24'], [token_a, token_b, fee])
+            result = _eth_call(w3, factory, data)
+            if not result or len(result) < 32:
+                return None
+            addr_int = int.from_bytes(result[-20:], 'big')
+            if addr_int == 0:
+                return None
+            return '0x' + result[-20:].hex()
 
-    def _find_best_fee_tier(w3: Any, factory: str, token_a: str, token_b: str) -> int | None:
-        """Probe fee tiers in priority order; among tiers with a real pool, pick
+        def _get_liquidity(w3: Any, pool: str) -> int:
+            result = _eth_call(w3, pool, _LIQUIDITY_SELECTOR)
+            if not result:
+                return 0
+            return int.from_bytes(result[-32:], 'big')
+
+        def _find_best_fee_tier(w3: Any, factory: str, token_a: str, token_b: str) -> int | None:
+            """Probe fee tiers in priority order; among tiers with a real pool, pick
     the highest-liquidity one. Returns None if no pool exists at any tier."""
-        best_fee = None
-        best_liquidity = -1
-        for fee in _FEE_TIER_PROBE_ORDER:
-            pool = _get_pool(w3, factory, token_a, token_b, fee)
-            if pool is None:
-                continue
-            liquidity = _get_liquidity(w3, pool)
-            if liquidity > best_liquidity:
-                best_liquidity = liquidity
-                best_fee = fee
-        return best_fee
-    return (_FEE_TIER_PROBE_ORDER, _encode_approve, _encode_exact_input_single_v2, _encode_exact_input_v1, _encode_path, _fee_for_pair, _find_best_fee_tier, _get_pool)
+            best_fee = None
+            best_liquidity = -1
+            for fee in _FEE_TIER_PROBE_ORDER:
+                pool = _get_pool(w3, factory, token_a, token_b, fee)
+                if pool is None:
+                    continue
+                liquidity = _get_liquidity(w3, pool)
+                if liquidity > best_liquidity:
+                    best_liquidity = liquidity
+                    best_fee = fee
+            return best_fee
+        return (_FEE_TIER_PROBE_ORDER, _encode_approve, _encode_exact_input_single_v2, _encode_exact_input_v1, _encode_path, _fee_for_pair, _find_best_fee_tier, _get_pool)
+        return _DR_UNSET
+    _dr6 = _dr5()
+    if _dr6 is not _DR_UNSET:
+        return _dr6
 _FEE_TIER_PROBE_ORDER, _encode_approve, _encode_exact_input_single_v2, _encode_exact_input_v1, _encode_path, _fee_for_pair, _find_best_fee_tier, _get_pool = _dr3()
 
 class DexAggregatorStrategy(Strategy):

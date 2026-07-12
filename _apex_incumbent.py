@@ -30,7 +30,7 @@ from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'hydra-discovery-router')
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.71.0')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
@@ -112,23 +112,27 @@ def _viking_replay() -> dict:
         import time as _time
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_replay.json')
         out: dict = {}
-        try:
-            data = _json.load(open(path)) or {}
-            for key, spec in data.items() if isinstance(data, dict) else []:
-                rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
-                if not rows:
-                    continue
-                try:
-                    at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
-                except Exception:
-                    at = 0
-                try:
-                    bout = int((spec or {}).get('built_out', 0) or 0)
-                except (TypeError, ValueError):
-                    bout = 0
-                out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
-        except Exception:
-            out = {}
+
+        def _dr7():
+            nonlocal out
+            try:
+                data = _json.load(open(path)) or {}
+                for key, spec in data.items() if isinstance(data, dict) else []:
+                    rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
+                    if not rows:
+                        continue
+                    try:
+                        at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
+                    except Exception:
+                        at = 0
+                    try:
+                        bout = int((spec or {}).get('built_out', 0) or 0)
+                    except (TypeError, ValueError):
+                        bout = 0
+                    out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
+            except Exception:
+                out = {}
+        _dr7()
         _VIKING_REPLAY_CACHE = out
     return _VIKING_REPLAY_CACHE
 
@@ -243,11 +247,18 @@ class VikingSolver(_HydraBase):
     def generate_plan(self, intent, state, snapshot=None):
         key = self._v_swap_key(intent, state)
         row = _viking_replay().get(key) if key else None
-        if key and key in _viking_override():
-            plan = self._v_replay_plan(key, intent, state, snapshot)
-            if plan is not None:
-                logger.info('[viking] override serve %s', key[:64])
-                return plan
+
+        def _dr8():
+            nonlocal plan
+            if key and key in _viking_override():
+                plan = self._v_replay_plan(key, intent, state, snapshot)
+                if plan is not None:
+                    logger.info('[viking] override serve %s', key[:64])
+                    return plan
+            return _DR_UNSET
+        _dr9 = _dr8()
+        if _dr9 is not _DR_UNSET:
+            return _dr9
         plan = super().generate_plan(intent, state, snapshot)
         if not self._v_is_empty(plan):
             bar = _viking_cached_bar(key)
@@ -275,18 +286,30 @@ class VikingSolver(_HydraBase):
             return plan
         if row:
             import time as _time
-            age = _time.time() - float(row.get('at') or 0)
-            if age > self._V_ROW_FRESH_S:
-                fresh = self._v_engine_fresh(intent, state, snapshot)
-                if fresh is not None:
-                    logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
-                    return fresh
+
+            def _dr5():
+                age = _time.time() - float(row.get('at') or 0)
+                if age > self._V_ROW_FRESH_S:
+                    fresh = self._v_engine_fresh(intent, state, snapshot)
+                    if fresh is not None:
+                        logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
+                        return fresh
+                return _DR_UNSET
+            _dr6 = _dr5()
+            if _dr6 is not _DR_UNSET:
+                return _dr6
         rp = self._v_replay_plan(key, intent, state, snapshot)
-        if rp is not None:
-            logger.info('[viking] fill-empty serve %s', key[:64])
-            return rp
-        dyn = self._v_dynamic_fallback(intent, state, snapshot)
-        if dyn is not None:
-            return dyn
-        return plan
+
+        def _dr10():
+            if rp is not None:
+                logger.info('[viking] fill-empty serve %s', key[:64])
+                return rp
+            dyn = self._v_dynamic_fallback(intent, state, snapshot)
+            if dyn is not None:
+                return dyn
+            return plan
+            return _DR_UNSET
+        _dr11 = _dr10()
+        if _dr11 is not _DR_UNSET:
+            return _dr11
 SOLVER_CLASS = VikingSolver
