@@ -161,14 +161,20 @@ class MinerSolver(_Base):
                 q = 0
             if q > best_out:
                 best_out, best_fee = (q, fee)
-        if best_out <= 0:
-            return None
-        params = self._normalized_swap_params(intent, state)
-        recipient = self._apex_recipient(state, params)
-        deadline = self._apex_deadline(snapshot)
-        call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-        ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=call, chain_id=chain_id)]
-        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v3', 'chain_id': chain_id})
+
+        def _dr17():
+            if best_out <= 0:
+                return None
+            params = self._normalized_swap_params(intent, state)
+            recipient = self._apex_recipient(state, params)
+            deadline = self._apex_deadline(snapshot)
+            call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+            ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=call, chain_id=chain_id)]
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v3', 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr18 = _dr17()
+        if _dr18 is not _DR_UNSET:
+            return _dr18
 
     def _apex_uni_mav(self, intent, state, snapshot, pool, token_a_in, tin, tout, amount_in, chain_id):
         from common.abi_utils import encode_approve
@@ -348,9 +354,13 @@ class MinerSolver(_Base):
                 tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, _WETH, tout, wi)))
             for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
                 tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
-            tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
-            for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-                tasks.append(('E', ('v2fot_weth', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+
+            def _dr20():
+                nonlocal rtr
+                tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
+                for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+                    tasks.append(('E', ('v2fot_weth', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+            _dr20()
         return tasks
 
     def _apex_frontier_sweep(self, intent, state, snapshot, params):
@@ -360,18 +370,22 @@ class MinerSolver(_Base):
         if not _FRONTIER_ON:
             return None
         from concurrent.futures import ThreadPoolExecutor
-        tin = str(params.get('input_token', '') or '')
-        tout = str(params.get('output_token', '') or '')
 
-        def _dr5():
-            if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or (tin.lower() == tout.lower()):
-                return None
-            if self._apex_champ_hardcodes(tin, tout):
-                return None
-            if any((hasattr(self, m) for m in ('_sweep_plan', '_sweep_quotes', '_sweep_sushi_plan'))):
-                return None
-            return _DR_UNSET
-        _dr6 = _dr5()
+        def _dr19():
+            tin = str(params.get('input_token', '') or '')
+            tout = str(params.get('output_token', '') or '')
+
+            def _dr5():
+                if not tin or not tout or tout.lower() in _FRONTIER_MAJORS or (tin.lower() == tout.lower()):
+                    return None
+                if self._apex_champ_hardcodes(tin, tout):
+                    return None
+                if any((hasattr(self, m) for m in ('_sweep_plan', '_sweep_quotes', '_sweep_sushi_plan'))):
+                    return None
+                return _DR_UNSET
+            _dr6 = _dr5()
+            return (_dr6, tin, tout)
+        _dr6, tin, tout = _dr19()
         if _dr6 is not _DR_UNSET:
             return _dr6
 
@@ -397,7 +411,11 @@ class MinerSolver(_Base):
         via_weth = _dr15()
         if via_weth:
             with ThreadPoolExecutor(max_workers=6) as ex:
-                fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+
+                def _dr16():
+                    fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+                    return fs
+                fs = _dr16()
                 for fut, f in fs.items():
                     o = fut.result()
                     if o > weth_out:
@@ -457,33 +475,39 @@ class MinerSolver(_Base):
             call = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amt), 0, [_ck(p) for p in path], _ck(recipient), int(deadline)]).hex()
             return [Interaction(target=path[0], value='0', call_data=encode_approve(router, amt), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
 
-        def qs_leg(_in, _out, amt):
-            call = '0x1679c792' + _enc(['(address,address,address,address,uint256,uint256,uint256,uint160)'], [(_ck(_in), _ck(_out), _ck(_ZERO_ADDR), _ck(recipient), int(deadline), int(amt), 0, 0)]).hex()
-            return [Interaction(target=_in, value='0', call_data=encode_approve(_QS_ALGEBRA_ROUTER, amt), chain_id=chain_id), Interaction(target=_QS_ALGEBRA_ROUTER, value='0', call_data=call, chain_id=chain_id)]
+        def _dr21():
 
-        def uni_weth_leg(amt):
-            uni = UNISWAP_V3_ROUTERS.get(chain_id)
-            best_fee, best = (500, 0)
-            w3 = self._get_web3(chain_id)
-            for fee in (500, 3000, 100, 10000):
-                q = self._q1(w3, 'uniswap_v3', fee, tin, _WETH, amt)
-                if q > best:
-                    best, best_fee = (q, fee)
-            leg = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amt, amount_out_minimum=0, chain_id=chain_id)
-            return [Interaction(target=tin, value='0', call_data=encode_approve(uni, amt), chain_id=chain_id), Interaction(target=uni, value='0', call_data=leg, chain_id=chain_id)]
-        if kind == 'sushi_v3_direct':
-            ix = sushi_v3_leg(tin, tout, par, amount_in)
-        elif kind == 'v2fot_direct':
-            ix = v2fot_leg(par, [tin, tout], amount_in)
-        elif kind == 'sushi_v3_weth':
-            ix = uni_weth_leg(amount_in) + sushi_v3_leg(_WETH, tout, par, wi)
-        elif kind == 'v2fot_weth':
-            ix = uni_weth_leg(amount_in) + v2fot_leg(par, [_WETH, tout], wi)
-        elif kind == 'qs_direct':
-            ix = qs_leg(tin, tout, amount_in)
-        elif kind == 'qs_weth':
-            ix = uni_weth_leg(amount_in) + qs_leg(_WETH, tout, wi)
-        else:
-            return None
-        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-frontier', 'chain_id': chain_id})
+            def qs_leg(_in, _out, amt):
+                call = '0x1679c792' + _enc(['(address,address,address,address,uint256,uint256,uint256,uint160)'], [(_ck(_in), _ck(_out), _ck(_ZERO_ADDR), _ck(recipient), int(deadline), int(amt), 0, 0)]).hex()
+                return [Interaction(target=_in, value='0', call_data=encode_approve(_QS_ALGEBRA_ROUTER, amt), chain_id=chain_id), Interaction(target=_QS_ALGEBRA_ROUTER, value='0', call_data=call, chain_id=chain_id)]
+
+            def uni_weth_leg(amt):
+                uni = UNISWAP_V3_ROUTERS.get(chain_id)
+                best_fee, best = (500, 0)
+                w3 = self._get_web3(chain_id)
+                for fee in (500, 3000, 100, 10000):
+                    q = self._q1(w3, 'uniswap_v3', fee, tin, _WETH, amt)
+                    if q > best:
+                        best, best_fee = (q, fee)
+                leg = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amt, amount_out_minimum=0, chain_id=chain_id)
+                return [Interaction(target=tin, value='0', call_data=encode_approve(uni, amt), chain_id=chain_id), Interaction(target=uni, value='0', call_data=leg, chain_id=chain_id)]
+            if kind == 'sushi_v3_direct':
+                ix = sushi_v3_leg(tin, tout, par, amount_in)
+            elif kind == 'v2fot_direct':
+                ix = v2fot_leg(par, [tin, tout], amount_in)
+            elif kind == 'sushi_v3_weth':
+                ix = uni_weth_leg(amount_in) + sushi_v3_leg(_WETH, tout, par, wi)
+            elif kind == 'v2fot_weth':
+                ix = uni_weth_leg(amount_in) + v2fot_leg(par, [_WETH, tout], wi)
+            elif kind == 'qs_direct':
+                ix = qs_leg(tin, tout, amount_in)
+            elif kind == 'qs_weth':
+                ix = uni_weth_leg(amount_in) + qs_leg(_WETH, tout, wi)
+            else:
+                return None
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-frontier', 'chain_id': chain_id})
+            return _DR_UNSET
+        _dr22 = _dr21()
+        if _dr22 is not _DR_UNSET:
+            return _dr22
 SOLVER_CLASS = MinerSolver
