@@ -115,7 +115,7 @@
                                                                                                                                                      '0x4200000000000000000000000000000000000006',
                                                                                                                                                      '0x00000e7efa313f4e11bfff432471ed9423ac6b30')},
                                                                                                                                  'venue': 'v3_path02'},
-                       ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x0963a1abaf36ca88c21032b82e479353126a1c4b', 2000000): {'gas_est': 300000,
+                       ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x462f0085cb261ab49ad048a2b35ee77135684308', 2000000): {'venue': 'v2_push', 'param': 'v2-push-0757', 'gas_est': 300000, 'gas_model': 750000, 'out': 1, 'spec': {'leg1_router': 'uni', 'leg1_fee': 500, 'mid': '0x4200000000000000000000000000000000000006', 'pair': '0x830fe61c153656e4811524dfd72607cf32a7f1fa', 'out_index': 1, 'fixed_out': 83627784907327611002016, 'dyn_reserves': 1, 'dyn_haircut': 999}}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x0963a1abaf36ca88c21032b82e479353126a1c4b', 2000000): {'gas_est': 300000,
                                                                                                                                'gas_model': 750000,
                                                                                                                                'out': 1,
                                                                                                                                'param': 'v2-push-085d',
