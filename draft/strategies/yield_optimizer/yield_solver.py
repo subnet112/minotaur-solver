@@ -64,17 +64,21 @@ def _query_aave_rate(rpc_url: str) -> float:
 def _query_compound_rate(rpc_url: str) -> float:
     """Query Compound V3 USDC supply rate via RPC."""
     try:
-        import urllib.request
-        import json
-        payload = json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': COMPOUND_V3_CUSDC, 'data': '0x7eb71131'}, 'latest']}).encode()
-        req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
-        resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
-        util_hex = resp.get('result', '0x0')
-        utilization = int(util_hex, 16)
-        data = '0xd955759d' + _encode_uint256(utilization)
-        payload = json.dumps({'jsonrpc': '2.0', 'id': 2, 'method': 'eth_call', 'params': [{'to': COMPOUND_V3_CUSDC, 'data': data}, 'latest']}).encode()
-        req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
-        resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+
+        def _dr2():
+            import urllib.request
+            import json
+            payload = json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': COMPOUND_V3_CUSDC, 'data': '0x7eb71131'}, 'latest']}).encode()
+            req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
+            resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+            util_hex = resp.get('result', '0x0')
+            utilization = int(util_hex, 16)
+            data = '0xd955759d' + _encode_uint256(utilization)
+            payload = json.dumps({'jsonrpc': '2.0', 'id': 2, 'method': 'eth_call', 'params': [{'to': COMPOUND_V3_CUSDC, 'data': data}, 'latest']}).encode()
+            req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
+            resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+            return resp
+        resp = _dr2()
         rate_hex = resp.get('result', '0x0')
         rate_per_second = int(rate_hex, 16)
         return rate_per_second * 31536000 / 1e+18 * 100
