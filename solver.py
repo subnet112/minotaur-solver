@@ -32,7 +32,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 _PUTTY_FINAL_BRAND = 'hydra-discovery-router'
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.73.5')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.73.6')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
@@ -387,94 +387,3 @@ class _PuttyCleanSolver(VikingSolver):
             pass
         return _m
 SOLVER_CLASS = _PuttyCleanSolver
-
-
-# ── FILL-EMPTY SKIP COVER (2026-07-13) ────────────────────────────────────────────────
-# DURABLE build = champion's well-factored base + this lean cover. Wrap the champion
-# solver: only when it SKIPS (returns no plan) do we try a quote-gated UniV3 cover.
-# Base-delivered orders are returned UNTOUCHED -> ZERO regression. The cover fires only
-# when a live QuoterV2 quote >= min_output, so it fills a champ-skip (0 -> win) or defers
-# (tie). Split into small helper scopes so nothing exceeds the champion's factoring floor
-# -> a copier who matches this delivery inherits the same floor and cannot out-factor us.
-_SC_QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
-_SC_ROUTER = '0x2626664c2603336E57B271c5C0b26F421741e481'
-_SC_QSEL = '0xc6a5026a'
-_SC_QIN = ['address', 'address', 'uint256', 'uint24', 'uint160']
-_SC_QOUT = ['uint256', 'uint160', 'uint32', 'uint256']
-_SC_FEES = (100, 500, 3000, 10000)
-
-
-class _CoverSolver(_PuttyCleanSolver):
-
-    def _cover_best_quote(self, w3, tin, tout, amt):
-        from eth_utils import to_checksum_address as _ck
-        from eth_abi import encode as _abienc, decode as _abidec
-        best, best_fee = 0, None
-        for fee in _SC_FEES:
-            try:
-                data = _SC_QSEL + _abienc(_SC_QIN, [_ck(tin), _ck(tout), amt, fee, 0]).hex()
-                r = bytes(w3.eth.call({'to': _ck(_SC_QUOTER), 'data': data}))
-                out = _abidec(_SC_QOUT, r)[0]
-                if out > best:
-                    best, best_fee = out, fee
-            except Exception:
-                pass
-        return best, best_fee
-
-    def _cover_plan(self, intent, state, snapshot, tin, tout, amt, mino, best_fee):
-        from eth_utils import to_checksum_address as _ck
-        from common.abi_utils import encode_approve
-        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-        chain_id = int(getattr(state, 'chain_id', 0) or 0)
-        recipient = self._apex_recipient(state, self._normalized_swap_params(intent, state))
-        deadline = int(self._apex_deadline(snapshot))
-        router = _ck(_SC_ROUTER)
-        call = encode_exact_input_single(_ck(tin), _ck(tout), int(best_fee), _ck(recipient),
-                                         deadline, amt, mino, 0, chain_id)
-        ix = [Interaction(target=_ck(tin), value='0', call_data=encode_approve(router, amt), chain_id=chain_id),
-              Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
-        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline,
-                             nonce=state.nonce, metadata={'solver': 'skip-cover', 'chain_id': chain_id})
-
-    def _skip_cover(self, intent, state, snapshot):
-        try:
-            chain_id = int(getattr(state, 'chain_id', 0) or 0)
-            if chain_id != 8453:
-                return None
-            p = self._normalized_swap_params(intent, state)
-            tin = str(p.get('input_token', '') or '')
-            tout = str(p.get('output_token', '') or '')
-            amt = int(p.get('input_amount', 0) or 0)
-            mino = int(p.get('min_output_amount', 0) or 0)
-            if amt <= 0 or not tin or not tout or tin.lower() == tout.lower():
-                return None
-            w3 = self._get_web3(chain_id)
-            if w3 is None:
-                return None
-            best, best_fee = self._cover_best_quote(w3, tin, tout, amt)
-            if best_fee is None or best <= 0 or best < mino:
-                return None
-            return self._cover_plan(intent, state, snapshot, tin, tout, amt, mino, best_fee)
-        except Exception:
-            return None
-
-    def generate_plan(self, intent, state, snapshot=None):
-        plan = super().generate_plan(intent, state, snapshot)
-        if plan is not None and getattr(plan, 'interactions', None):
-            return plan
-        cover = self._skip_cover(intent, state, snapshot)
-        return cover if cover is not None else plan
-
-    def metadata(self):
-        try:
-            base = super().metadata()
-        except Exception:
-            base = None
-        name = os.environ.get('MINOTAUR_SOLVER_NAME', 'delta-dex-router')
-        ver = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.7.0')
-        chains = getattr(base, 'supported_chains', None) or [8453]
-        return SolverMetadata(name=name, version=ver, author='dkravets',
-                              description='skip-cover on the certified base', supported_chains=chains)
-
-
-SOLVER_CLASS = _CoverSolver
