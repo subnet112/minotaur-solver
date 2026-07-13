@@ -278,87 +278,95 @@ class JamesSolver(KingSolver):
         except (TypeError, ValueError):
             return None
         chain_id = int(getattr(state, 'chain_id', 0) or 0)
-        if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())):
-            return None
-        w3 = self._james_w3()
-        eth = self._J_ETH
-        if tin == self._JWETH.lower():
-            weth_leg, leg1_fee = (amt, None)
-        else:
-            weth_leg, leg1_fee = (0, 500)
-            for f in (100, 500, 3000):
-                q = self._jq_v3(w3, self._JUSDC, self._JWETH, amt, f)
-                if q > weth_leg:
-                    weth_leg, leg1_fee = (q, f)
-        if not weth_leg:
-            return None
+        _dr5 = ex = fut = proxy = None
 
-        def _dr1():
-            nonlocal ex, fut
-            hooks = [eth] + list(self._james_hooks())
-            combos = [(fee, tick, hook) for fee, tick in self._JV4_COMBOS for hook in hooks]
-            best_out, best_combo = (0, None)
+        def _lr13():
+            nonlocal _dr5, ex, fut, proxy
+            if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())):
+                return (1, None)
+            w3 = self._james_w3()
+            eth = self._J_ETH
+            if tin == self._JWETH.lower():
+                weth_leg, leg1_fee = (amt, None)
+            else:
+                weth_leg, leg1_fee = (0, 500)
+                for f in (100, 500, 3000):
+                    q = self._jq_v3(w3, self._JUSDC, self._JWETH, amt, f)
+                    if q > weth_leg:
+                        weth_leg, leg1_fee = (q, f)
+            if not weth_leg:
+                return (1, None)
+
+            def _dr1():
+                nonlocal ex, fut
+                hooks = [eth] + list(self._james_hooks())
+                combos = [(fee, tick, hook) for fee, tick in self._JV4_COMBOS for hook in hooks]
+                best_out, best_combo = (0, None)
+                with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
+                    futs = {ex.submit(self._jq_v4, w3, eth, tout, weth_leg, fee, tick, hook): (fee, tick, hook) for fee, tick, hook in combos}
+                    for fut in concurrent.futures.as_completed(futs):
+                        try:
+                            out = int(fut.result())
+                        except Exception:
+                            out = 0
+                        if out > best_out:
+                            best_out, best_combo = (out, futs[fut])
+                return (best_combo, best_out)
+            best_combo, best_out = _dr1()
+            if not best_combo:
+                return (1, None)
+            fee, tick, hook = best_combo
+
+            def _dr3():
+                nonlocal proxy
+                c0, c1 = (eth, tout) if int(eth, 16) < int(tout, 16) else (tout, eth)
+                best_spec = {'pool': (c0, c1, fee, tick, hook), 'settle': eth, 'zero_for_one': c0.lower() == eth.lower(), 'unwrap_weth': True}
+                if tin == self._JUSDC.lower():
+                    best_spec['v3_tokens'] = (self._JUSDC, self._JWETH)
+                    best_spec['v3_fees'] = (leg1_fee,)
+                proxy = 0
+
+                def _pv3(a, b, q, f):
+                    return self._jq_v3(w3, a, b, q, f)
+                return (_pv3, best_spec)
+            _pv3, best_spec = _dr3()
+            pjobs = []
             with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
-                futs = {ex.submit(self._jq_v4, w3, eth, tout, weth_leg, fee, tick, hook): (fee, tick, hook) for fee, tick, hook in combos}
-                for fut in concurrent.futures.as_completed(futs):
-                    try:
-                        out = int(fut.result())
-                    except Exception:
-                        out = 0
-                    if out > best_out:
-                        best_out, best_combo = (out, futs[fut])
-            return (best_combo, best_out)
-        best_combo, best_out = _dr1()
-        if not best_combo:
-            return None
-        fee, tick, hook = best_combo
+                for f in (100, 500, 3000, 10000):
+                    pjobs.append(ex.submit(_pv3, tin, tout, amt, f))
+                    if weth_leg and tin != self._JWETH.lower():
+                        pjobs.append(ex.submit(_pv3, self._JWETH, tout, weth_leg, f))
 
-        def _dr3():
-            nonlocal proxy
-            c0, c1 = (eth, tout) if int(eth, 16) < int(tout, 16) else (tout, eth)
-            best_spec = {'pool': (c0, c1, fee, tick, hook), 'settle': eth, 'zero_for_one': c0.lower() == eth.lower(), 'unwrap_weth': True}
-            if tin == self._JUSDC.lower():
-                best_spec['v3_tokens'] = (self._JUSDC, self._JWETH)
-                best_spec['v3_fees'] = (leg1_fee,)
-            proxy = 0
-
-            def _pv3(a, b, q, f):
-                return self._jq_v3(w3, a, b, q, f)
-            return (_pv3, best_spec)
-        _pv3, best_spec = _dr3()
-        pjobs = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
-            for f in (100, 500, 3000, 10000):
-                pjobs.append(ex.submit(_pv3, tin, tout, amt, f))
-                if weth_leg and tin != self._JWETH.lower():
-                    pjobs.append(ex.submit(_pv3, self._JWETH, tout, weth_leg, f))
-
-            def _dr2():
-                for router in (self._JUNIV2, self._JPANCV2):
-                    pjobs.append(ex.submit(self._jq_v2, w3, router, [tin, tout], amt))
+                def _dr2():
+                    for router in (self._JUNIV2, self._JPANCV2):
+                        pjobs.append(ex.submit(self._jq_v2, w3, router, [tin, tout], amt))
+                        if tin != self._JWETH.lower():
+                            pjobs.append(ex.submit(self._jq_v2, w3, router, [tin, self._JWETH, tout], amt))
+                    pjobs.append(ex.submit(self._jq_aero, w3, [(tin, tout)], amt))
                     if tin != self._JWETH.lower():
-                        pjobs.append(ex.submit(self._jq_v2, w3, router, [tin, self._JWETH, tout], amt))
-                pjobs.append(ex.submit(self._jq_aero, w3, [(tin, tout)], amt))
-                if tin != self._JWETH.lower():
-                    pjobs.append(ex.submit(self._jq_aero, w3, [(tin, self._JWETH), (self._JWETH, tout)], amt))
-            _dr2()
-            for fut in concurrent.futures.as_completed(pjobs):
+                        pjobs.append(ex.submit(self._jq_aero, w3, [(tin, self._JWETH), (self._JWETH, tout)], amt))
+                _dr2()
+                for fut in concurrent.futures.as_completed(pjobs):
+                    try:
+                        proxy = max(proxy, int(fut.result() or 0))
+                    except Exception:
+                        pass
+
+            def _dr4():
+                if best_out < min_out or best_out <= max(proxy, 1):
+                    return None
+                logger.info('[james] V4 edge fires %s->%s: v4=%d proxy=%d (x%.3f) fee=%d tick=%d hook=%s', tin[:8], tout[:8], best_out, proxy, best_out / max(proxy, 1), fee, tick, str(hook)[:10])
+                table[tin, tout] = ('uniswap_v4_ur', best_spec)
                 try:
-                    proxy = max(proxy, int(fut.result() or 0))
+                    self.__dict__.get('_plan_cache', {}).clear()
                 except Exception:
                     pass
-
-        def _dr4():
-            if best_out < min_out or best_out <= max(proxy, 1):
-                return None
-            logger.info('[james] V4 edge fires %s->%s: v4=%d proxy=%d (x%.3f) fee=%d tick=%d hook=%s', tin[:8], tout[:8], best_out, proxy, best_out / max(proxy, 1), fee, tick, str(hook)[:10])
-            table[tin, tout] = ('uniswap_v4_ur', best_spec)
-            try:
-                self.__dict__.get('_plan_cache', {}).clear()
-            except Exception:
-                pass
-            return _DR_UNSET
-        _dr5 = _dr4()
+                return _DR_UNSET
+            _dr5 = _dr4()
+            return (0, None)
+        _lrt14 = _lr13()
+        if _lrt14[0]:
+            return _lrt14[1]
         if _dr5 is not _DR_UNSET:
             return _dr5
         return super().generate_plan(intent, state, snapshot)
