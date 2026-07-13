@@ -387,3 +387,5 @@ class _PuttyCleanSolver(VikingSolver):
             pass
         return _m
 SOLVER_CLASS = _PuttyCleanSolver
+
+_PARTICIPATION_NONCE_29732096 = 29732096
