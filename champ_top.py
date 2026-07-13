@@ -12,6 +12,8 @@ blind-spot cover), never regress. Everything else defers byte-for-byte to the
 champion. 84 rows, KyberSwap-verified, PMM-free (RFQ quotes expire), gas<=1.5M.
 """
 from __future__ import annotations
+_DR_UNSET = object()
+
 def _vwm2():
     global ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _ApexBase, _DR_UNSET, _KING_OVERRIDE_CACHE, _KING_REPLAY_CACHE, logger, logging, os
     _DR_UNSET = object()
@@ -289,11 +291,17 @@ try:
         kind = spec['kind']
         if kind == 'univ3_single':
             return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
-        if kind == 'univ3_path':
-            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
-        if kind == 'erc4626':
-            quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
-            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
+
+        def _dr3():
+            if kind == 'univ3_path':
+                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
+            if kind == 'erc4626':
+                quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
+                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
+            return _DR_UNSET
+        _dr4 = _dr3()
+        if _dr4 is not _DR_UNSET:
+            return _dr4
         if kind == 'curve_full':
             weth_out, fee = _putty_best_usdc_weth(amount_in)
             pool = spec['pool']

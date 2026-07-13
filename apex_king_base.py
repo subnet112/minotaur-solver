@@ -34,6 +34,7 @@ try:
     _kb._STATIC_EXOTIC_ROUTES[_WETH_, _T182] = ('uniswap_v4_ur', {'unwrap_weth': True, 'pool': (_ZERO_ADDR_, _T182, 10000, 200, _NO_HOOK), 'settle': _ZERO_ADDR_, 'zero_for_one': True, 'sweep_settle': True})
 except Exception:
     logging.getLogger(__name__).exception('[botz-v4] static-exotic patch failed')
+
 def _vgm3():
     global SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_MARGIN, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _VIRTUAL, _WETH, _ZERO_ADDR
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'joeknight')
@@ -255,8 +256,10 @@ class MinerSolver(_Base):
         tin = None
         tout = None
         try:
+
             def _vgq9():
                 nonlocal deadline, kind, recipient, w3
+
                 def _vgri1():
                     nonlocal amount_in, chain_id, encode_approve, tin, tout
                     from common.abi_utils import encode_approve
@@ -597,6 +600,7 @@ class MinerSolver(_Base):
             tasks.append(('E', ('sushi_v3_direct', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
         for t in (1, 50, 100, 200, 2000):
             tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, tin, tout, amount_in)))
+
         def _vgaf1():
             nonlocal rtr
             for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
@@ -636,6 +640,7 @@ class MinerSolver(_Base):
             return None
         amount_in = None
         chain_id = None
+
         def _vg7():
             nonlocal amount_in, chain_id
             chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
@@ -651,6 +656,7 @@ class MinerSolver(_Base):
         wethL = _WETH.lower()
         via_weth = tin.lower() != wethL and tout.lower() != wethL
         weth_fee, weth_out = (500, 0)
+
         def _vg7b():
             nonlocal ex, fut, weth_fee, weth_out
             if via_weth:
@@ -665,6 +671,7 @@ class MinerSolver(_Base):
         tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
         reachable, extra = (0, (0, None))
         with ThreadPoolExecutor(max_workers=16) as ex:
+
             def _vw_a1():
                 nonlocal extra, fut, out, reachable, spec
                 futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
@@ -891,11 +898,17 @@ try:
             kind = spec['kind']
             if kind == 'univ3_single':
                 return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
-            if kind == 'univ3_path':
-                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
-            if kind == 'erc4626':
-                quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
-                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
+
+            def _dr9():
+                if kind == 'univ3_path':
+                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
+                if kind == 'erc4626':
+                    quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
+                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
+                return _DR_UNSET
+            _dr10 = _dr9()
+            if _dr10 is not _DR_UNSET:
+                return _dr10
             if kind == 'curve_full':
                 weth_out, fee = _putty_best_usdc_weth(amount_in)
                 pool = spec['pool']
