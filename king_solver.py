@@ -491,73 +491,78 @@ class MinerSolver(_MinerSolverDR41):
         def _dr41():
             nonlocal _dr8, amount_in, chain_id, min_out
             amount_in, chain_id, min_out = _dr4()
-            if chain_id != _BASE or amount_in <= 0:
-                return None
-            w3 = self._get_web3(chain_id)
-            if w3 is None:
-                return None
+            ex = extra = fut = reachable = weth_fee = weth_out = None
 
-            def _dr15():
-                nonlocal weth_fee, weth_out
-                wethL = _WETH.lower()
-                via_weth = tin.lower() != wethL and tout.lower() != wethL
-                weth_fee, weth_out = (500, 0)
-                return via_weth
-            via_weth = _dr15()
-            if via_weth:
-                with ThreadPoolExecutor(max_workers=6) as ex:
+            def _lr3():
+                nonlocal _dr8, ex, extra, fut, reachable, weth_fee, weth_out
+                if chain_id != _BASE or amount_in <= 0:
+                    return None
+                w3 = self._get_web3(chain_id)
+                if w3 is None:
+                    return None
 
-                    def _dr16():
-                        fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
-                        return fs
-                    fs = _dr16()
-                    for fut, f in fs.items():
-                        o = fut.result()
-                        if o > weth_out:
-                            weth_out, weth_fee = (o, f)
-            wi = weth_out * 995 // 1000 if weth_out > 0 else 0
-            tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
-            reachable, extra = (0, (0, None))
+                def _dr15():
+                    nonlocal weth_fee, weth_out
+                    wethL = _WETH.lower()
+                    via_weth = tin.lower() != wethL and tout.lower() != wethL
+                    weth_fee, weth_out = (500, 0)
+                    return via_weth
+                via_weth = _dr15()
+                if via_weth:
+                    with ThreadPoolExecutor(max_workers=6) as ex:
 
-            def _dr7():
+                        def _dr16():
+                            fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+                            return fs
+                        fs = _dr16()
+                        for fut, f in fs.items():
+                            o = fut.result()
+                            if o > weth_out:
+                                weth_out, weth_fee = (o, f)
+                wi = weth_out * 995 // 1000 if weth_out > 0 else 0
+                tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
+                reachable, extra = (0, (0, None))
 
-                def _dr1():
-                    nonlocal ex, extra, fut, reachable
-                    with ThreadPoolExecutor(max_workers=16) as ex:
-                        futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
-                        for tag, spec, fut in futs:
-                            try:
-                                out = int(fut.result(timeout=6))
-                            except Exception:
-                                out = 0
-                            if tag == 'R':
-                                reachable = max(reachable, out)
-                            elif out > extra[0]:
-                                extra = (out, spec)
+                def _dr7():
 
-                    def _dr30():
-                        nonlocal out, spec
-                        if reachable > 0:
-                            return None
-                        out, spec = extra
-                        if out > 0 and spec is not None and (min_out <= 0 or out >= min_out):
-                            return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec)
+                    def _dr1():
+                        nonlocal ex, extra, fut, reachable
+                        with ThreadPoolExecutor(max_workers=16) as ex:
+                            futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
+                            for tag, spec, fut in futs:
+                                try:
+                                    out = int(fut.result(timeout=6))
+                                except Exception:
+                                    out = 0
+                                if tag == 'R':
+                                    reachable = max(reachable, out)
+                                elif out > extra[0]:
+                                    extra = (out, spec)
+
+                        def _dr30():
+                            nonlocal out, spec
+                            if reachable > 0:
+                                return None
+                            out, spec = extra
+                            if out > 0 and spec is not None and (min_out <= 0 or out >= min_out):
+                                return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, spec)
+                            return _DR_UNSET
+                            return _DR_UNSET
+                        _dr31 = _dr30()
+                        if _dr31 is not _DR_UNSET:
+                            return _dr31
                         return _DR_UNSET
-                        return _DR_UNSET
-                    _dr31 = _dr30()
-                    if _dr31 is not _DR_UNSET:
-                        return _dr31
+                    _dr2 = _dr1()
+                    if _dr2 is not _DR_UNSET:
+                        return _dr2
+                    qs = self._apex_qs_candidate(w3, tin, tout, wi)
+                    if qs is not None:
+                        return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, qs)
+                    return None
                     return _DR_UNSET
-                _dr2 = _dr1()
-                if _dr2 is not _DR_UNSET:
-                    return _dr2
-                qs = self._apex_qs_candidate(w3, tin, tout, wi)
-                if qs is not None:
-                    return self._apex_build_frontier(intent, state, snapshot, params, tin, tout, amount_in, wi, chain_id, qs)
-                return None
+                _dr8 = _dr7()
                 return _DR_UNSET
-            _dr8 = _dr7()
-            return _DR_UNSET
+            return _lr3()
         _dr55 = _dr41()
         if _dr55 is not _DR_UNSET:
             return _dr55

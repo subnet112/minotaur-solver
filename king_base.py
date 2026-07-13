@@ -295,68 +295,73 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
             def _dr373():
                 nonlocal _dr84, _stage_t0, cands
                 _stage_t0 = _dr135()
-                cands = cands + _major_hub_cands(self, chain_id, tin, tout, amount_in)
-                if not cands:
-                    return base_plan
+                best = usable = None
 
-                def _dr43():
-                    nonlocal cands, usable
-                    cands = self._sas_crossvenue_waves(cands, chain_id, tin, tout, amount_in, _stage_t0)
-                    best_out = max((c['out'] for c in cands))
-                    bp_out = 0
-                    if base_plan is not None:
-                        try:
-                            bp_out = int((base_plan.metadata or {}).get('expected_output', 0) or 0)
-                        except (TypeError, ValueError):
-                            bp_out = 0
-                    ref = max(best_out, bp_out, 1)
+                def _lr1():
+                    nonlocal _dr84, best, cands, usable
+                    cands = cands + _major_hub_cands(self, chain_id, tin, tout, amount_in)
+                    if not cands:
+                        return base_plan
 
-                    def score(out, gas_model):
-                        return 0.4 * (out / ref) - _GAS_WEIGHT * (gas_model / 1000000.0)
-                    usable = [c for c in cands if min_out <= 0 or c['out'] >= min_out]
-                    return (bp_out, score)
-                bp_out, score = _dr43()
-                if not usable:
-                    return base_plan
-                core_usable = [c for c in usable if not c.get('extra_route')]
-                if core_usable:
-                    core_best_out = max((c['out'] for c in core_usable))
-                    usable = core_usable + [c for c in usable if c.get('extra_route') and c['out'] * 10000 > core_best_out * 10010]
-                best = max(usable, key=lambda c: (round(score(c['out'], c['gas_model']), 9), -c['gas_est']))
+                    def _dr43():
+                        nonlocal cands, usable
+                        cands = self._sas_crossvenue_waves(cands, chain_id, tin, tout, amount_in, _stage_t0)
+                        best_out = max((c['out'] for c in cands))
+                        bp_out = 0
+                        if base_plan is not None:
+                            try:
+                                bp_out = int((base_plan.metadata or {}).get('expected_output', 0) or 0)
+                            except (TypeError, ValueError):
+                                bp_out = 0
+                        ref = max(best_out, bp_out, 1)
 
-                def _dr84():
+                        def score(out, gas_model):
+                            return 0.4 * (out / ref) - _GAS_WEIGHT * (gas_model / 1000000.0)
+                        usable = [c for c in cands if min_out <= 0 or c['out'] >= min_out]
+                        return (bp_out, score)
+                    bp_out, score = _dr43()
+                    if not usable:
+                        return base_plan
+                    core_usable = [c for c in usable if not c.get('extra_route')]
+                    if core_usable:
+                        core_best_out = max((c['out'] for c in core_usable))
+                        usable = core_usable + [c for c in usable if c.get('extra_route') and c['out'] * 10000 > core_best_out * 10010]
+                    best = max(usable, key=lambda c: (round(score(c['out'], c['gas_model']), 9), -c['gas_est']))
 
-                    def _dr25():
-                        nonlocal best
-                        raw_output_pair = (tin.lower(), tout.lower()) in _RAW_OUTPUT_PAIRS
-                        if raw_output_pair:
-                            raw_best = max(usable, key=lambda c: (c['out'], -c['gas_est']))
-                            if raw_best['out'] * 10000 > best['out'] * (10000 + _RAW_OUTPUT_EDGE_BPS):
-                                best = raw_best
+                    def _dr84():
 
-                        def _dr217():
-                            _hb = self._sas_honor_baseline(base_plan, best, bp_out, min_out, raw_output_pair, tin, tout, score)
-                            if _hb is not None:
-                                return _hb
-                            if best.get('venue') == 'crossvenue_2hop':
-                                return self._build_2hop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
-                            if best.get('venue') == 'crossvenue_2hop_proxy':
-                                return self._build_2hop_proxy_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                        def _dr25():
+                            nonlocal best
+                            raw_output_pair = (tin.lower(), tout.lower()) in _RAW_OUTPUT_PAIRS
+                            if raw_output_pair:
+                                raw_best = max(usable, key=lambda c: (c['out'], -c['gas_est']))
+                                if raw_best['out'] * 10000 > best['out'] * (10000 + _RAW_OUTPUT_EDGE_BPS):
+                                    best = raw_best
+
+                            def _dr217():
+                                _hb = self._sas_honor_baseline(base_plan, best, bp_out, min_out, raw_output_pair, tin, tout, score)
+                                if _hb is not None:
+                                    return _hb
+                                if best.get('venue') == 'crossvenue_2hop':
+                                    return self._build_2hop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                                if best.get('venue') == 'crossvenue_2hop_proxy':
+                                    return self._build_2hop_proxy_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                                return _DR_UNSET
+                                return _DR_UNSET
+                            _dr218 = _dr217()
+                            if _dr218 is not _DR_UNSET:
+                                return _dr218
                             return _DR_UNSET
-                            return _DR_UNSET
-                        _dr218 = _dr217()
-                        if _dr218 is not _DR_UNSET:
-                            return _dr218
+                        _dr26 = _dr25()
+                        if _dr26 is not _DR_UNSET:
+                            return _dr26
+                        split_plan = self._try_split_plan(intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
+                        if split_plan is not None:
+                            return split_plan
+                        return self._build_singlehop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
                         return _DR_UNSET
-                    _dr26 = _dr25()
-                    if _dr26 is not _DR_UNSET:
-                        return _dr26
-                    split_plan = self._try_split_plan(intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
-                    if split_plan is not None:
-                        return split_plan
-                    return self._build_singlehop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
                     return _DR_UNSET
-                return _DR_UNSET
+                return _lr1()
             _dr374 = _dr373()
             if _dr374 is not _DR_UNSET:
                 return _dr374
@@ -1083,40 +1088,45 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
 
         def _dr379():
             _extras = []
-            mav_pools = []
-            for (tgt, cd, kind, tag, route), (ok, ret) in zip(jobs, results):
-                if not ok or not ret:
-                    continue
-                out = 0
-                try:
-                    if kind == 'v3':
-                        out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], ret)[0])
-                    elif kind == 'path':
-                        out = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], ret)[0])
-                    elif kind == 'v2':
+            out = None
 
-                        def _dr161():
-                            nonlocal out
-                            out = int(_dec(['uint256[]'], ret)[0][-1])
-                        _dr161()
-                    elif kind == 'mavlk':
-                        mav_pools = list(_dec(['address[]'], ret)[0])[:3]
+            def _lr2():
+                nonlocal out
+                mav_pools = []
+                for (tgt, cd, kind, tag, route), (ok, ret) in zip(jobs, results):
+                    if not ok or not ret:
                         continue
-                except Exception:
-                    continue
+                    out = 0
+                    try:
+                        if kind == 'v3':
+                            out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], ret)[0])
+                        elif kind == 'path':
+                            out = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], ret)[0])
+                        elif kind == 'v2':
 
-                def _dr129():
-                    nonlocal extra_best, extra_route, extra_tag, reach_best
-                    if tag == 'reach':
-                        reach_best = max(reach_best, out)
-                    else:
-                        if route is not None and out > 0:
-                            _extras.append((out, tag, route))
-                        if out > extra_best:
-                            extra_best, extra_tag, extra_route = (out, tag, route)
-                _dr129()
-            return (reach_best, extra_best, extra_tag, extra_route, _extras, mav_pools)
-            return _DR_UNSET
+                            def _dr161():
+                                nonlocal out
+                                out = int(_dec(['uint256[]'], ret)[0][-1])
+                            _dr161()
+                        elif kind == 'mavlk':
+                            mav_pools = list(_dec(['address[]'], ret)[0])[:3]
+                            continue
+                    except Exception:
+                        continue
+
+                    def _dr129():
+                        nonlocal extra_best, extra_route, extra_tag, reach_best
+                        if tag == 'reach':
+                            reach_best = max(reach_best, out)
+                        else:
+                            if route is not None and out > 0:
+                                _extras.append((out, tag, route))
+                            if out > extra_best:
+                                extra_best, extra_tag, extra_route = (out, tag, route)
+                    _dr129()
+                return (reach_best, extra_best, extra_tag, extra_route, _extras, mav_pools)
+                return _DR_UNSET
+            return _lr2()
         _dr380 = _dr379()
         if _dr380 is not _DR_UNSET:
             return _dr380
