@@ -31,7 +31,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-clean-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "20.0.0-V520c")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "22.0.0-G358")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "martindev0207")
 
 _BANK_CACHE = None
@@ -173,7 +173,7 @@ import os as _gos
 from minotaur_subnet.shared.types import Interaction as _GIx, ExecutionPlan as _GPlan
 
 _GORAN_BASE = SOLVER_CLASS  # wrap whatever class the champion exported above
-_GORAN_NAME = _gos.environ.get("GORAN_SOLVER_NAME", "goran-router")  # OUR name, not the forked base's
+_GORAN_NAME = _gos.environ.get("GORAN_SOLVER_NAME", "putty-clean-solver")  # OUR name, not the forked base's
 _GORAN_AUTHOR = "goran-h-key"
 try:
     _GORAN_OVERRIDES = _gjson.load(
@@ -226,3 +226,23 @@ class GoranSolver(_GORAN_BASE):
 
 
 SOLVER_CLASS = GoranSolver
+
+
+# == putty-clean outermost brand (retake: name-only override, behavior-safe) ===
+# goran's tree brands the crown as 'goran-router'; this outermost wrapper forces
+# metadata().name = 'putty-clean-solver' and NOTHING ELSE (author, plans, routing
+# all inherited byte-identical from GoranSolver). Name is permissionless on-subnet.
+_PUTTY_CLEAN_BASE = SOLVER_CLASS
+
+
+class _PUTTY_FINAL_BRAND(_PUTTY_CLEAN_BASE):
+    def metadata(self):
+        md = super().metadata()
+        try:
+            md.name = 'putty-clean-solver'
+        except Exception:
+            pass
+        return md
+
+
+SOLVER_CLASS = _PUTTY_FINAL_BRAND
