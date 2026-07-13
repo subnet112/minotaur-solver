@@ -26,6 +26,8 @@ blind-spot win, a miss simulates to 0 = parity. The instant return also
 run budget.
 """
 from __future__ import annotations
+_DR_UNSET = object()
+
 def _vgm2():
     global SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _ChampBase, _DAI, _DR_UNSET, _HW_DATA, _HYDRA_FLAKE_PREEMPT, _HYDRA_QUALITY_OVERRIDES, _HYDRA_STATIC_COVERS, _PCS_INFINITY_UR, _T00000E, _USDBC, _USDC, _USDC_L, _WETH, _hw_ast, logger, logging, os
     _DR_UNSET = object()
@@ -334,11 +336,11 @@ class MinerSolver(_ChampBase):
         return None
 
     def _hydra_serve_quality(self, intent, state, snapshot, p, qkey, qcand, chain_id):
-
         _EP = None
         ix = None
         recipient = None
         _EP = None
+
         def _dr2():
             nonlocal _EP, ix
             if qcand.get('venue') == 'two_leg':
@@ -386,6 +388,7 @@ class MinerSolver(_ChampBase):
             spec = qcand['spec']
             mid_amount = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
             if mid_amount:
+
                 def _vw_j1():
                     nonlocal _EP, ix, recipient
                     recipient = state.contract_address or p.get('receiver') or state.owner
@@ -418,6 +421,7 @@ class MinerSolver(_ChampBase):
             logger.info('[hydra] QUALITY v3-path02 %s->%s amt=%s', qkey[0][:8], qkey[1][:8], qkey[2])
             return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-v3-path02', 'chain_id': chain_id})
         if qcand.get('venue') == 'pancake_infinity_cl':
+
             def _vgj51():
                 nonlocal _EP, ix, recipient
                 recipient = state.contract_address or p.get('receiver') or state.owner
@@ -427,13 +431,19 @@ class MinerSolver(_ChampBase):
             _vgj51()
             return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-infinity', 'chain_id': chain_id})
         qplan = None
+
         def _vg13():
             nonlocal qplan
             qplan = self._build_singlehop_plan(intent, state, snapshot, qcand, qkey[0], qkey[1], qkey[2], chain_id)
+
         def _vghq5():
+
             def _vghq4():
+
                 def _vghq3():
+
                     def _vghq2():
+
                         def _vghq1():
                             _vg13()
                             if qplan is not None:
@@ -771,11 +781,17 @@ try:
         kind = spec['kind']
         if kind == 'univ3_single':
             return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
-        if kind == 'univ3_path':
-            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
-        if kind == 'erc4626':
-            quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
-            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
+
+        def _dr9():
+            if kind == 'univ3_path':
+                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
+            if kind == 'erc4626':
+                quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
+                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
+            return _DR_UNSET
+        _dr10 = _dr9()
+        if _dr10 is not _DR_UNSET:
+            return _dr10
         if kind == 'curve_full':
             weth_out, fee = _putty_best_usdc_weth(amount_in)
             pool = spec['pool']

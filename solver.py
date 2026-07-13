@@ -30,8 +30,8 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 logger = logging.getLogger(__name__)
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "viking-mino-solver")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "179.1.0")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "putty-clean-solver")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "20.0.0-V520c")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "martindev0207")
 
 _BANK_CACHE = None
@@ -153,3 +153,15 @@ class LeanVikingSolver(_CleanBase):
 
 
 SOLVER_CLASS = LeanVikingSolver
+
+# --- putty outermost branding (name-only, behavior-safe) ---
+_PUTTY_FINAL_BASE = SOLVER_CLASS
+class _PUTTY_FINAL_BRAND(_PUTTY_FINAL_BASE):
+    def metadata(self):
+        md = super().metadata()
+        try:
+            md.name = 'putty-clean-solver'
+        except Exception:
+            pass
+        return md
+SOLVER_CLASS = _PUTTY_FINAL_BRAND
