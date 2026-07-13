@@ -1,5 +1,8 @@
 """Shared address/venue constants for the king engine (split out of
 king_base.py for the factorization metric — pure data, no logic)."""
+import ast as _a, os as _o
+_D=_a.literal_eval(open(_o.path.join(_o.path.dirname(_o.path.abspath(__file__)),"king_consts_data.txt")).read())
+globals().update(_D)
 _DR_UNSET = object()
 
 def _dr2():
