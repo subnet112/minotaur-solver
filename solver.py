@@ -30,9 +30,9 @@ from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-_PUTTY_FINAL_BRAND = 'hydra-discovery-router'
+_PUTTY_FINAL_BRAND = 'hydra-thread-router'
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.74.1')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.77.5c')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
@@ -387,64 +387,3 @@ class _PuttyCleanSolver(VikingSolver):
             pass
         return _m
 SOLVER_CLASS = _PuttyCleanSolver
-
-
-# == goran override layer (appended by go.py; self-contained) ==================
-import json as _gjson
-import os as _gos
-from minotaur_subnet.shared.types import Interaction as _GIx, ExecutionPlan as _GPlan
-
-_GORAN_BASE = SOLVER_CLASS  # wrap whatever class the champion exported above
-_GORAN_NAME = _gos.environ.get("GORAN_SOLVER_NAME", "goran-router")  # OUR name, not the forked base's
-_GORAN_AUTHOR = "goran-h-key"
-try:
-    _GORAN_OVERRIDES = _gjson.load(
-        open(_gos.path.join(_gos.path.dirname(_gos.path.abspath(__file__)), "overrides.json")))
-except Exception:
-    _GORAN_OVERRIDES = {}
-
-
-def _goran_key(state):
-    try:
-        p = dict(getattr(state, "raw_params", None) or {})
-        tin = str(p.get("input_token", "") or "").lower()
-        tout = str(p.get("output_token", "") or "").lower()
-        amt = str(int(p.get("input_amount", 0) or 0))
-        if tin and tout and amt != "0":
-            return tin + "|" + tout + "|" + amt
-    except Exception:
-        pass
-    return None
-
-
-class GoranSolver(_GORAN_BASE):
-    """Champion engine + VERIFIED KyberSwap overrides on the exact keys where we beat it."""
-
-    def metadata(self):
-        # Report OUR OWN submission name/author — never reuse the forked base's name
-        # (a fellow miner asked, and the subnet says the name is permissionless).
-        md = super().metadata()
-        try:
-            md.name = _GORAN_NAME
-            md.author = _GORAN_AUTHOR
-        except Exception:
-            pass
-        return md
-
-    def generate_plan(self, intent, state, snapshot=None):
-        try:
-            row = _GORAN_OVERRIDES.get(_goran_key(state))
-            if row and row.get("interactions"):
-                cid = int(getattr(state, "chain_id", 0) or 0)
-                ix = [_GIx(target=r["target"], value=str(r.get("value", "0")),
-                           call_data=r["data"], chain_id=cid) for r in row["interactions"]]
-                if ix:
-                    return _GPlan(intent_id=intent.app_id, interactions=ix,
-                                  deadline=9999999999, nonce=state.nonce,
-                                  metadata={"solver": "goran-override"})
-        except Exception:
-            pass
-        return super().generate_plan(intent, state, snapshot)
-
-
-SOLVER_CLASS = GoranSolver

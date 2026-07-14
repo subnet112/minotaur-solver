@@ -154,7 +154,15 @@ def _dr20():
             from minotaur_subnet.shared.types import Interaction as _IX
             mid = spec['mid']
             fee = int(spec['leg1_fee'])
-            if spec['leg1_router'] == 'pancake':
+            if spec['leg1_router'] == 'slip':
+
+                def _dr58():
+                    nonlocal call, router
+                    from strategies.dex_aggregator import aerodrome as _aero
+                    router = spec.get('slip1_router') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+                    call = _aero.encode_exact_input_single(token_in=tin, token_out=mid, tick_spacing=fee, recipient=land_at, deadline=9999999999, amount_in=int(amount_in), amount_out_minimum=0)
+                _dr58()
+            elif spec['leg1_router'] == 'pancake':
 
                 def _dr57():
                     nonlocal call, router
@@ -210,7 +218,16 @@ def _dr20():
                     plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
                     exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
                     ix.append(_IX(target=ur, value='0', call_data=exec_call, chain_id=chain_id))
-                _dr35()
+
+                def _dr37():
+                    # native-mid variant: UNWRAP_WETH(0x0c) at the router, then a
+                    # V4 plan settling currency-0 from router balance (no sweep —
+                    # SETTLE CONTRACT_BALANCE consumes the full unwrapped mid).
+                    plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14]), [settle, swap, take]])
+                    unwrap_in = _abi_encode(['address', 'uint256'], ['0x0000000000000000000000000000000000000002', 0])
+                    exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([12, 16]), [unwrap_in, plan], 9999999999])).hex()
+                    ix.append(_IX(target=ur, value='0', call_data=exec_call, chain_id=chain_id))
+                _dr37() if spec.get('unwrap') else _dr35()
             _dr91()
             return ix
 
@@ -270,6 +287,80 @@ def _dr20():
             swap, transfer = _dr86()
             return [_IX(target=tin, value='0', call_data=transfer, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=swap, chain_id=chain_id)]
 
+        def _build_curve_x_ix(spec, tin, amount_in, recipient, chain_id):
+            """Direct Curve StableNg exchange at the pool: approve, then
+    exchange(i,j,dx,0,receiver) with receiver = the APP. Interactions run
+    from the EXECUTOR in the live flow, so the msg.sender default would
+    strand the output there — the 5-arg overload delivers to the app.
+    Emitted only when the pool's own fee-inclusive get_dy beats the
+    alternative V3 quote at the plan block."""
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            from minotaur_subnet.shared.types import Interaction as _IX
+            from common.abi_utils import encode_approve
+
+            def _dr240():
+                xchg = '0x' + (_keccak(text='exchange(int128,int128,uint256,uint256,address)')[:4] + _abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(amount_in), 0, _ck(recipient)])).hex()
+                return [_IX(target=tin, value='0', call_data=encode_approve(_ck(spec['pool']), int(amount_in)), chain_id=chain_id), _IX(target=spec['pool'], value='0', call_data=xchg, chain_id=chain_id)]
+            return _dr240()
+
+        def _build_cvx_chain_ix(spec, tin, tout, amount_in, mid_amount, recipient, chain_id):
+            """2-leg chain mixing a pancake V3 leg with a Curve StableNg exchange,
+    both landing at the app (msg.sender), each leg sized to the same-block
+    quote of the previous. shape 'v3c': pancake tin->mid then curve mid->tout;
+    shape 'cv3': curve tin->mid then pancake mid->tout."""
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            from minotaur_subnet.shared.types import Interaction as _IX
+            from common.abi_utils import encode_approve
+            def _enc_p(pin, pout, amt, rcv):
+                # pancake 8-field (final leg only: pancake's router treats
+                # address(1) as a LITERAL, so it never takes an inner leg).
+                sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))')[:4]
+                return '0x' + (sel + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(pin), _ck(pout), int(spec['v3_fee']), _ck(rcv), 9999999999, int(amt), 0, 0)])).hex()
+
+            def _enc_u(pin, pout, amt):
+                # uni SwapRouter02 7-field with the MSG_SENDER sentinel
+                # address(1): funds land at the EXECUTOR so the next leg can
+                # spend them (the app cannot) — bench-proven leg1 shape.
+                sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4]
+                return '0x' + (sel + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(pin), _ck(pout), int(spec['v3_fee']), '0x0000000000000000000000000000000000000001', int(amt), 0, 0)])).hex()
+
+            def _enc_x(amt, rcv):
+                # rcv None -> 4-arg overload (output to msg.sender = executor,
+                # inner leg); rcv set -> 5-arg overload delivering to the app.
+                if rcv is None:
+                    return '0x' + (_keccak(text='exchange(int128,int128,uint256,uint256)')[:4] + _abi_encode(['int128', 'int128', 'uint256', 'uint256'], [int(spec['i']), int(spec['j']), int(amt), 0])).hex()
+                return '0x' + (_keccak(text='exchange(int128,int128,uint256,uint256,address)')[:4] + _abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(amt), 0, _ck(rcv)])).hex()
+
+            def _dr245():
+                return [_IX(target=tin, value='0', call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id), _IX(target=_UNI_ROUTER02, value='0', call_data=_enc_u(tin, spec['mid'], amount_in), chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(_ck(spec['pool']), int(mid_amount)), chain_id=chain_id), _IX(target=spec['pool'], value='0', call_data=_enc_x(mid_amount, recipient), chain_id=chain_id)]
+
+            def _dr246():
+                return [_IX(target=tin, value='0', call_data=encode_approve(_ck(spec['pool']), int(amount_in)), chain_id=chain_id), _IX(target=spec['pool'], value='0', call_data=_enc_x(amount_in, None), chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(_PANCAKE_SMART_ROUTER, int(mid_amount)), chain_id=chain_id), _IX(target=_PANCAKE_SMART_ROUTER, value='0', call_data=_enc_p(spec['mid'], tout, mid_amount, recipient), chain_id=chain_id)]
+            return _dr245() if spec.get('shape') == 'v3c' else _dr246()
+
+        def _build_cvx_fb_ix(spec, tin, tout, amount_in, recipient, chain_id):
+            """Fail-closed fallback for guarded curve-family rows: a STATIC
+    single-hop on the champion's own venue (alt_router uni or pancake),
+    built with zero further RPC — a guard loss or quote failure can never
+    strand the order with the (budget-exposed) engine re-run."""
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            from minotaur_subnet.shared.types import Interaction as _IX
+            from common.abi_utils import encode_approve
+
+            def _dr255():
+                sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))')[:4]
+                call = '0x' + (sel + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(spec['alt_fee']), _ck(recipient), 9999999999, int(amount_in), 0, 0)])).hex()
+                return [_IX(target=tin, value='0', call_data=encode_approve(_PANCAKE_SMART_ROUTER, int(amount_in)), chain_id=chain_id), _IX(target=_PANCAKE_SMART_ROUTER, value='0', call_data=call, chain_id=chain_id)]
+
+            def _dr253():
+                sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4]
+                call = '0x' + (sel + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(spec['alt_fee']), _ck(recipient), int(amount_in), 0, 0)])).hex()
+                return [_IX(target=tin, value='0', call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id), _IX(target=_UNI_ROUTER02, value='0', call_data=call, chain_id=chain_id)]
+            return _dr255() if spec.get('alt_router') == 'pancake' else _dr253()
+
         def _build_v3_slip_chain_ix(spec, tin, tout, amount_in, mid_amount, recipient, chain_id):
             """2-leg chain through the EXECUTOR: uni-V3 leg1 (tin->mid) with the
     SwapRouter02 MSG_SENDER sentinel address(1) as recipient (funds land at
@@ -291,13 +382,58 @@ def _dr20():
             _dr56 = _dr55()
             if _dr56 is not _DR_UNSET:
                 return _dr56
+        def _build_v3_v3_chain_ix(spec, tin, tout, amount_in, mid_amount, recipient, chain_id):
+            """2-leg V3 chain through the EXECUTOR: SwapRouter02 leg1 (tin->mid)
+    with the MSG_SENDER sentinel address(1) as recipient, then a second
+    SwapRouter02-style leg (mid->tout, uni or pancake) sized to exactly the
+    same-block leg1 quote, output -> the app."""
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            from minotaur_subnet.shared.types import Interaction as _IX
+            from common.abi_utils import encode_approve
+            sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4]
+
+            def _dr210():
+                return '0x' + (sel + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['leg1_fee']), '0x0000000000000000000000000000000000000001', int(amount_in), 0, 0)])).hex()
+
+            def _dr211():
+                if spec.get('leg2_router') == 'pancake':
+                    return (_PANCAKE_SMART_ROUTER, '0x' + (_keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))')[:4] + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(spec['mid']), _ck(tout), int(spec['leg2_fee']), _ck(recipient), 9999999999, int(mid_amount), 0, 0)])).hex())
+                return (_UNI_ROUTER02, '0x' + (sel + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(spec['mid']), _ck(tout), int(spec['leg2_fee']), _ck(recipient), int(mid_amount), 0, 0)])).hex())
+            leg1 = _dr210()
+            leg2_router, leg2 = _dr211()
+
+            def _dr212():
+                return [_IX(target=tin, value='0', call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id), _IX(target=_UNI_ROUTER02, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(leg2_router, int(mid_amount)), chain_id=chain_id), _IX(target=leg2_router, value='0', call_data=leg2, chain_id=chain_id)]
+            return _dr212()
+        def _build_slip_v3path_ix(spec, tin, tout, amount_in, recipient, chain_id):
+            """slip leg1 lands mid AT the Universal Router, then a UR
+    V3_SWAP_EXACT_IN with amountIn=CONTRACT_BALANCE(0), payerIsUser=False —
+    the UR spends its own just-landed balance. Fully dynamic by construction."""
+            from eth_abi import encode as _abi_encode
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            from minotaur_subnet.shared.types import Interaction as _IX
+            ur = '0x6fF5693b99212Da76ad316178A184AB56D299b43'
+            ix = _leg1_swap_ix(spec, tin, amount_in, ur, chain_id)
+
+            def _dr220():
+                path = b''
+                toks = list(spec['tokens'])
+                for t, f in zip(toks[:-1], list(spec['fees'])):
+                    path += bytes.fromhex(_ck(t)[2:]) + int(f).to_bytes(3, 'big')
+                path += bytes.fromhex(_ck(toks[-1])[2:])
+                v3in = _abi_encode(['address', 'uint256', 'uint256', 'bytes', 'bool'], [_ck(recipient), 1 << 255, 0, path, False])
+                call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([0]), [v3in], 9999999999])).hex()
+                ix.append(_IX(target=ur, value='0', call_data=call, chain_id=chain_id))
+            _dr220()
+            return ix
         _HYDRA_V1_APP = '0x0cde9a7e60a0df4b86c81490d0496ab3a8e104f1'
-        return (SOLVER_AUTHOR, _HYDRA_FLAKE_PREEMPT, _HYDRA_QUALITY_OVERRIDES, _HYDRA_STATIC_COVERS, _HYDRA_V1_APP, _USDC, _WETH, _build_infinity_cl_ix, _build_infinity_v4_chain_ix, _build_maverick_push_ix, _build_univ4_push_ix, _build_v2_direct_ix, _build_v2_push_ix, _build_v3_path02_ix, _build_v3_slip_chain_ix)
+        return (SOLVER_AUTHOR, _HYDRA_FLAKE_PREEMPT, _HYDRA_QUALITY_OVERRIDES, _HYDRA_STATIC_COVERS, _HYDRA_V1_APP, _USDC, _WETH, _build_curve_x_ix, _build_cvx_chain_ix, _build_cvx_fb_ix, _build_infinity_cl_ix, _build_infinity_v4_chain_ix, _build_maverick_push_ix, _build_slip_v3path_ix, _build_univ4_push_ix, _build_v2_direct_ix, _build_v2_push_ix, _build_v3_path02_ix, _build_v3_slip_chain_ix, _build_v3_v3_chain_ix)
         return _DR_UNSET
     _dr49 = _dr48()
     if _dr49 is not _DR_UNSET:
         return _dr49
-SOLVER_AUTHOR, _HYDRA_FLAKE_PREEMPT, _HYDRA_QUALITY_OVERRIDES, _HYDRA_STATIC_COVERS, _HYDRA_V1_APP, _USDC, _WETH, _build_infinity_cl_ix, _build_infinity_v4_chain_ix, _build_maverick_push_ix, _build_univ4_push_ix, _build_v2_direct_ix, _build_v2_push_ix, _build_v3_path02_ix, _build_v3_slip_chain_ix = _dr20()
+SOLVER_AUTHOR, _HYDRA_FLAKE_PREEMPT, _HYDRA_QUALITY_OVERRIDES, _HYDRA_STATIC_COVERS, _HYDRA_V1_APP, _USDC, _WETH, _build_curve_x_ix, _build_cvx_chain_ix, _build_cvx_fb_ix, _build_infinity_cl_ix, _build_infinity_v4_chain_ix, _build_maverick_push_ix, _build_slip_v3path_ix, _build_univ4_push_ix, _build_v2_direct_ix, _build_v2_push_ix, _build_v3_path02_ix, _build_v3_slip_chain_ix, _build_v3_v3_chain_ix = _dr20()
 
 def _hydra_frozen_ok(state):
     """Frozen replay/mirror plans hardcode the V1 app as recipient. Serve them
@@ -556,6 +692,15 @@ class MinerSolver(_ChampBase):
         _dr24 = _dr23()
         if _dr24 is not _DR_UNSET:
             return _dr24
+        if qcand.get('venue') == 'slip_v3path_chain':
+
+            def _dr221():
+                recipient = state.contract_address or p.get('receiver') or state.owner
+                ix = _build_slip_v3path_ix(qcand['spec'], qkey[0], qkey[1], qkey[2], recipient, chain_id)
+                from minotaur_subnet.shared.types import ExecutionPlan as _EP4
+                logger.info('[hydra] QUALITY slip-v3path %s->%s amt=%s', qkey[0][:8], qkey[1][:8], qkey[2])
+                return _EP4(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-slip-v3path', 'chain_id': chain_id})
+            return _dr221()
         if qcand.get('venue') == 'v3_slip_chain':
             spec = qcand['spec']
 
@@ -576,6 +721,72 @@ class MinerSolver(_ChampBase):
                 if _dr65 is not _DR_UNSET:
                     return _dr65
             return None
+        def _dr251():
+            # curve family (curve_x direct + cvx_chain 2-leg), one region off
+            # the method body: _DR_UNSET = not ours, None = fall through to
+            # the engine (champion-symmetric).
+            if qcand.get('venue') not in ('curve_x', 'cvx_chain'):
+                return _DR_UNSET
+            spec = qcand['spec']
+
+            def _dr256(rcpt, dy, alt):
+                if not dy or (alt and alt >= dy):
+                    if not spec.get('fb'):
+                        return None
+                    return _dr254(_build_cvx_fb_ix(spec, qkey[0], qkey[1], qkey[2], rcpt, chain_id), 'hydra-cvx-fb')
+                return _dr254(_build_curve_x_ix(spec, qkey[0], qkey[2], rcpt, chain_id), 'hydra-curve-x')
+
+            def _dr241():
+                # curve-vs-default guard: emit the Curve exchange only when the
+                # pool's fee-inclusive get_dy beats the default V3 route quote
+                # at this block; otherwise _dr256 serves the fail-closed static
+                # fallback (fb keys) or defers to the engine.
+                try:
+                    dy = self._hydra_curve_dy(spec, qkey[2], chain_id)
+                    alt = self._hydra_quote_leg1({'leg1_router': spec.get('alt_router'), 'leg1_fee': spec['alt_fee'], 'mid': qkey[1]}, qkey[0], qkey[2], chain_id)
+                except Exception:
+                    dy, alt = None, None
+                return _dr256(state.contract_address or p.get('receiver') or state.owner, dy, alt)
+
+            def _dr248():
+                # quote the chain same-block: (mid_amt, chain estimate).
+                # v3c leg1 quotes UNI (the built route); cv3 leg2 quotes pancake.
+                if spec.get('shape') == 'v3c':
+                    mid_amt = self._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['v3_fee'], 'mid': spec['mid']}, qkey[0], qkey[2], chain_id)
+                    return (mid_amt, self._hydra_curve_dy(spec, mid_amt, chain_id) if mid_amt else None)
+                mid_amt = self._hydra_curve_dy(spec, qkey[2], chain_id)
+                return (mid_amt, self._hydra_quote_leg1({'leg1_router': 'pancake', 'leg1_fee': spec['v3_fee'], 'mid': qkey[1]}, spec['mid'], mid_amt, chain_id) if mid_amt else None)
+
+            def _dr254(ixp, tag):
+                from minotaur_subnet.shared.types import ExecutionPlan as _EP6
+                logger.info('[hydra] QUALITY %s %s->%s', tag, qkey[0][:8], qkey[1][:8])
+                return _EP6(intent_id=intent.app_id, interactions=ixp, deadline=9999999999, nonce=state.nonce, metadata={'solver': tag, 'chain_id': chain_id})
+
+            def _dr249(rcpt, mid_amt, est, alt):
+                if not est or not mid_amt or (alt and alt >= est):
+                    if not spec.get('fb'):
+                        return None
+                    # this key replaced a static uni-alt_fee override: serve
+                    # that exact single-hop on guard loss/failure, so the
+                    # floor is champion wei-parity (never the engine's whim).
+                    return _dr254(_build_cvx_fb_ix(spec, qkey[0], qkey[1], qkey[2], rcpt, chain_id), 'hydra-cvx-fb')
+                return _dr254(_build_cvx_chain_ix(spec, qkey[0], qkey[1], qkey[2], mid_amt, rcpt, chain_id), 'hydra-cvx-chain')
+
+            def _dr247():
+                # chain-vs-default guard: emit the chain only when it beats the
+                # champion-route quote at this block; otherwise _dr249 serves
+                # the wei-parity fallback (fb keys) or defers to the engine.
+                try:
+                    mid_amt, est = _dr248()
+                    alt = self._hydra_quote_leg1({'leg1_router': spec.get('alt_router'), 'leg1_fee': spec['alt_fee'], 'mid': qkey[1]}, qkey[0], qkey[2], chain_id)
+                except Exception:
+                    mid_amt, est, alt = None, None, None
+                rcpt = state.contract_address or p.get('receiver') or state.owner
+                return _dr249(rcpt, mid_amt, est, alt)
+            return _dr241() if qcand.get('venue') == 'curve_x' else _dr247()
+        _dr252 = _dr251()
+        if _dr252 is not _DR_UNSET:
+            return _dr252
 
         def _dr36():
 
@@ -587,6 +798,42 @@ class MinerSolver(_ChampBase):
 
                     def _dr4():
                         nonlocal _EP, ix, recipient
+                        if qcand.get('venue') == 'v2_or_v3chain':
+
+                            def _dr200():
+                                # live best-of-both: V2 pair truth vs a 2-leg V3
+                                # chain, quoted same-block; emit the higher payer.
+                                spec = qcand['spec']
+
+                                def _dr201():
+                                    try:
+                                        return self._hydra_v2_reserves_out(spec, qkey[2], chain_id)
+                                    except Exception:
+                                        return None
+
+                                def _dr202():
+                                    try:
+                                        mid = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
+                                        if not mid:
+                                            return (None, None)
+                                        return (mid, self._hydra_quote_leg1({'leg1_router': spec.get('leg2_router'), 'leg1_fee': spec['leg2_fee'], 'mid': qkey[1]}, spec['mid'], mid, chain_id))
+                                    except Exception:
+                                        return (None, None)
+                                out_pair = _dr201()
+                                mid_amount, out_chain = _dr202()
+                                if not out_pair and not out_chain:
+                                    return None
+                                rcpt = state.contract_address or p.get('receiver') or state.owner
+
+                                def _dr203():
+                                    if out_chain and (not out_pair or out_chain > out_pair):
+                                        return _build_v3_v3_chain_ix(spec, qkey[0], qkey[1], qkey[2], mid_amount, rcpt, chain_id)
+                                    return _build_v2_direct_ix(spec, qkey[0], qkey[2], rcpt, chain_id, out_pair)
+                                ix2 = _dr203()
+                                logger.info('[hydra] QUALITY v2ovc chain=%s pair=%s', out_chain, out_pair)
+                                from minotaur_subnet.shared.types import ExecutionPlan as _EP2
+                                return _EP2(intent_id=intent.app_id, interactions=ix2, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-v2ovc', 'chain_id': chain_id})
+                            return _dr200()
                         if qcand.get('venue') == 'v2_direct':
                             out = self._hydra_v2_reserves_out(qcand['spec'], qkey[2], chain_id)
                             if out:
@@ -668,7 +915,7 @@ class MinerSolver(_ChampBase):
         from eth_abi import decode as _dec
         from eth_abi import encode as _enc
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from king_consts import _PANCAKE_QUOTER, _UNI_QUOTER
+        from king_consts import _AERO_QUOTER, _PANCAKE_QUOTER, _UNI_QUOTER
         w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return None
@@ -679,7 +926,7 @@ class MinerSolver(_ChampBase):
                 w3 = _W3(HTTPProvider(url, request_kwargs={'timeout': 8}))
         except Exception:
             pass
-        quoter = _PANCAKE_QUOTER if spec.get('leg1_router') == 'pancake' else _UNI_QUOTER
+        quoter = {'pancake': _PANCAKE_QUOTER, 'slip': _AERO_QUOTER}.get(spec.get('leg1_router'), _UNI_QUOTER)
         sel = _keccak(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
 
         def _dr50():
@@ -697,6 +944,40 @@ class MinerSolver(_ChampBase):
         _dr51 = _dr50()
         if _dr51 is not _DR_UNSET:
             return _dr51
+
+    def _hydra_curve_dy(self, spec, amount_in, chain_id):
+        """Same-block Curve StableNg get_dy(i,j,dx): fee-inclusive, so it is
+        wei-comparable to what exchange() delivers at this block."""
+        from eth_abi import decode as _dec
+        from eth_abi import encode as _enc
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        w3 = self._get_web3(int(chain_id))
+        if w3 is None:
+            return None
+        try:
+            from web3 import HTTPProvider, Web3 as _W3
+            url = getattr(w3.provider, 'endpoint_uri', None)
+            if url:
+                w3 = _W3(HTTPProvider(url, request_kwargs={'timeout': 8}))
+        except Exception:
+            pass
+
+        def _dr243():
+            sel = _keccak(text='get_dy(int128,int128,uint256)')[:4]
+            params = _enc(['int128', 'int128', 'uint256'], [int(spec['i']), int(spec['j']), int(amount_in)])
+            for attempt in (1, 2):
+                try:
+                    r = w3.eth.call({'to': _ck(spec['pool']), 'data': '0x' + (sel + params).hex()})
+                    out = int(_dec(['uint256'], r)[0])
+                    return out if out > 0 else None
+                except Exception:
+                    if attempt == 2:
+                        return None
+            return None
+            return _DR_UNSET
+        _dr244 = _dr243()
+        if _dr244 is not _DR_UNSET:
+            return _dr244
 
     def _hydra_v2_reserves_out(self, spec, amount_in, chain_id):
         """Same-block pair.getReserves -> the V2 router's own amountOut
