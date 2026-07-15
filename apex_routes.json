@@ -1,10 +1,12 @@
 {
+"0x4200000000000000000000000000000000000006:0x00000e7efa313f4e11bfff432471ed9423ac6b30": {
+"_oid": "ord_45a3a32b2d9a4ab7",
+"kind": "univ3_single",
+"fee": 10000,
+"nogate": true
+},
 "0x4200000000000000000000000000000000000006:0x01facc69ec7360640aa5898e852326752801674a": {
-"_flakes": 0,
-"_oid": "ord_0bbd7876f0944f6a",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_oid": "ord_1584b640341b43b1",
 "kind": "aero_v2",
 "routes": [
 [
@@ -18,36 +20,36 @@ false,
 "0x4200000000000000000000000000000000000006:0x10f434b3d1cc13a4a79b062dcc25706f64d10d47": {
 "_flakes": 0,
 "_oid": "ord_5198721916be4a7f",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_our_delivers": 10,
+"_our_drops": 6,
+"_serves": 16,
 "fee": 10000,
 "kind": "univ3_single"
 },
 "0x4200000000000000000000000000000000000006:0x3124678d62d2aa1f615b54525310fbfda6dcf7ae": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_12336a83425d4c16",
-"_our_delivers": 25,
+"_our_delivers": 11,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 8,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x4200000000000000000000000000000000000006:0x3597194c3b8a9481141fb9c628fc398c120a58a9": {
 "_flakes": 0,
 "_oid": "ord_80d56cdd6b084f10",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_our_delivers": 19,
+"_our_drops": 5,
+"_serves": 24,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x4200000000000000000000000000000000000006:0x3e31966d4f81c72d2a55310a6365a56a4393e98d": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_3020dabfbcf641c8",
-"_our_delivers": 25,
+"_our_delivers": 11,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 8,
 "kind": "aero_v2",
 "routes": [
 [
@@ -59,11 +61,11 @@ false,
 ]
 },
 "0x4200000000000000000000000000000000000006:0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_4d8bfa5dd8564d4b",
-"_our_delivers": 25,
+"_our_delivers": 10,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 8,
 "kind": "aero_v2",
 "routes": [
 [
@@ -75,46 +77,54 @@ false,
 ]
 },
 "0x4200000000000000000000000000000000000006:0x614747c53cb1636b4b962e15e1d66d3214621100": {
-"_flakes": 0,
-"_oid": "ord_37cca44548924d01",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_flakes": 2,
+"_oid": "ord_2291d0d5382d489b",
+"_our_delivers": 12,
+"_our_drops": 0,
+"_serves": 10,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x4200000000000000000000000000000000000006:0x61fd8d4ad84bf7a20e12f00b7e33cb698977dc7d": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_04a224a76e254668",
-"_our_delivers": 25,
+"_our_delivers": 14,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 11,
 "fee": 3000,
 "kind": "univ3_single"
 },
-"0x4200000000000000000000000000000000000006:0x6e0090dbecf3b4f0f9429637756cadd8fc468c54": {
+"0x4200000000000000000000000000000000000006:0x66bed9c31e52cc941338b6b39f5f7b9c212e4177": {
+"_flakes": 1,
+"_oid": "ord_5b83643a054c43dd",
+"_our_delivers": 11,
+"_our_drops": 0,
+"_serves": 10,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x4200000000000000000000000000000000000006:0x767a739d1a152639e9ea1d8c1bd55fdc5b217d7f": {
 "_flakes": 0,
-"_oid": "ord_7aa67f25c25749c6",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
-"fees": [
-100,
-3000
-],
-"kind": "univ3_path",
-"tokens": [
+"_oid": "ord_12beab276a1e442a",
+"_our_delivers": 13,
+"_our_drops": 5,
+"_serves": 18,
+"kind": "aero_v2",
+"routes": [
+[
 "0x4200000000000000000000000000000000000006",
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-"0x6e0090dbecf3b4f0f9429637756cadd8fc468c54"
+"0x767a739d1a152639e9ea1d8c1bd55fdc5b217d7f",
+false,
+"0x0000000000000000000000000000000000000000"
+]
 ]
 },
 "0x4200000000000000000000000000000000000006:0x800822d361335b4d5f352dac293ca4128b5b605f": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_48a5e7e216a740a4",
-"_our_delivers": 25,
+"_our_delivers": 14,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 11,
 "kind": "aero_v2",
 "routes": [
 [
@@ -126,21 +136,20 @@ false,
 ]
 },
 "0x4200000000000000000000000000000000000006:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_a9b501705b724632",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"fee": 10000,
-"kind": "pancake_v3"
+"_flakes": 2,
+"_oid": "ord_be146df01baf432a",
+"_our_delivers": 12,
+"_our_drops": 0,
+"_serves": 10,
+"fee": 3000,
+"kind": "univ3_single"
 },
 "0x4200000000000000000000000000000000000006:0x8c0d3adcf8ce094e1ae437557ec90a6374dc9bdd": {
-"_flakes": 1,
+"_flakes": 2,
 "_oid": "ord_a4cda07c6ec04213",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 13,
+"_our_drops": 0,
+"_serves": 11,
 "kind": "aero_v2",
 "routes": [
 [
@@ -154,9 +163,9 @@ false,
 "0x4200000000000000000000000000000000000006:0x93dc5cb35627a759848c7a7f0079ea7b49e435a5": {
 "_flakes": 0,
 "_oid": "ord_c8ca7e175805446b",
-"_our_delivers": 25,
+"_our_delivers": 7,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 7,
 "kind": "aero_v2",
 "routes": [
 [
@@ -173,32 +182,26 @@ false,
 ]
 ]
 },
-"0x4200000000000000000000000000000000000006:0x940181a94a35a4569e4529a3cdfb74e38fd98631": {
-"_computed": true,
-"_flakes": 25,
-"_oid": "ord_a17ba77bc1a74de0",
-"_our_delivers": 0,
-"_our_drops": 25,
-"_override": true,
-"_serves": 0,
-"fee": 100,
-"kind": "pancake_v3"
-},
 "0x4200000000000000000000000000000000000006:0xa3109f24185ce81b89b9ceead7f81e3b07a61b07": {
-"_flakes": 1,
+"_flakes": 6,
 "_oid": "ord_e151f776a5334352",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 15,
+"_our_drops": 0,
+"_serves": 9,
 "fee": 10000,
 "kind": "univ3_single"
 },
+"0x4200000000000000000000000000000000000006:0xa70feecba1eea2660559b268cd034f1df00ed6fa": {
+"_oid": "ord_650c88e545f64dc7",
+"fee": 3000,
+"kind": "univ3_single"
+},
 "0x4200000000000000000000000000000000000006:0xc48823ec67720a04a9dfd8c7d109b2c3d6622094": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_9badd4ffe9704491",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 13,
+"_our_drops": 0,
+"_serves": 10,
 "kind": "aero_v2",
 "routes": [
 [
@@ -209,12 +212,21 @@ false,
 ]
 ]
 },
-"0x4200000000000000000000000000000000000006:0xecff4d80f54cf55c626e52f304a8891645961e72": {
+"0x4200000000000000000000000000000000000006:0xcb785ef86212edaac9ecd40a83c71cc038a12b07": {
 "_flakes": 1,
+"_oid": "ord_12c93436025a4f58",
+"_our_delivers": 9,
+"_our_drops": 0,
+"_serves": 8,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x4200000000000000000000000000000000000006:0xecff4d80f54cf55c626e52f304a8891645961e72": {
+"_flakes": 4,
 "_oid": "ord_c13191ca5f934fb0",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 10,
+"_our_drops": 0,
+"_serves": 6,
 "kind": "aero_v2",
 "routes": [
 [
@@ -225,28 +237,12 @@ false,
 ]
 ]
 },
-"0x4200000000000000000000000000000000000006:0xed9ae3def8d6f052971bb8b6d1975ff267cf9aad": {
-"_flakes": 0,
-"_oid": "ord_fc6159d438574143",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"kind": "aero_v2",
-"routes": [
-[
-"0x4200000000000000000000000000000000000006",
-"0xed9ae3def8d6f052971bb8b6d1975ff267cf9aad",
-false,
-"0x0000000000000000000000000000000000000000"
-]
-]
-},
 "0x4200000000000000000000000000000000000006:0xeff2a458e464b07088bdb441c21a42ab4b61e07e": {
-"_flakes": 1,
+"_flakes": 0,
 "_oid": "ord_076940b313514c78",
-"_our_delivers": 25,
+"_our_delivers": 9,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 9,
 "kind": "aero_v2",
 "routes": [
 [
@@ -257,22 +253,12 @@ false,
 ]
 ]
 },
-"0x4200000000000000000000000000000000000006:0xfac77f01957ed1b3dd1cbea992199b8f85b6e886": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_136a318297684b83",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"fee": 2500,
-"kind": "pancake_v3"
-},
 "0x4200000000000000000000000000000000000006:0xfb31f85a8367210b2e4ed2360d2da9dc2d2ccc95": {
-"_flakes": 1,
+"_flakes": 0,
 "_oid": "ord_5795b1d0b8a248b6",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 12,
+"_our_drops": 5,
+"_serves": 17,
 "kind": "aero_v2",
 "routes": [
 [
@@ -284,56 +270,74 @@ false,
 ]
 },
 "0x4200000000000000000000000000000000000006:0xfca9fc2cb2dde04732ad07e4bb73db8cc8bfed1d": {
-"_flakes": 0,
+"_flakes": 1,
 "_oid": "ord_ec2311a28896453f",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 12,
+"_our_drops": 0,
+"_serves": 11,
 "fee": 10000,
 "kind": "univ3_single"
 },
 "0x4ed4e862860bed51a9570b96d89af5e1b0efefed:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
-"_flakes": 25,
+"_flakes": 3,
 "_oid": "ord_bcdd351413474dbd",
-"_our_delivers": 4,
-"_our_drops": 25,
-"_override": true,
-"_serves": 11,
+"_our_delivers": 11,
+"_our_drops": 0,
+"_serves": 8,
 "fee": 10000,
 "kind": "univ3_single"
 },
 "0x50c5725949a6f0c72e6c4a641f24049a917db0cb:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
 "_flakes": 1,
-"_oid": "ord_1814e899015a47b3",
-"_our_delivers": 25,
+"_oid": "ord_191628f050424283",
+"_our_delivers": 17,
 "_our_drops": 0,
-"_serves": 25,
-"fee": 3000,
+"_serves": 16,
+"fee": 100,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x00000e7efa313f4e11bfff432471ed9423ac6b30": {
-"_flakes": 12,
 "_oid": "ord_af80ab303b00424d",
-"_our_delivers": 25,
-"_our_drops": 15,
-"_serves": 25,
-"fees": [
-100,
-10000
-],
 "kind": "univ3_path",
 "tokens": [
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
 "0x4200000000000000000000000000000000000006",
 "0x00000e7efa313f4e11bfff432471ed9423ac6b30"
+],
+"fees": [
+100,
+10000
+],
+"nogate": true
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x01facc69ec7360640aa5898e852326752801674a": {
+"_flakes": 3,
+"_oid": "ord_31839d6ff01c455d",
+"_our_delivers": 14,
+"_our_drops": 0,
+"_serves": 11,
+"kind": "aero_v2",
+"routes": [
+[
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x4200000000000000000000000000000000000006",
+true,
+"0x0000000000000000000000000000000000000000"
+],
+[
+"0x4200000000000000000000000000000000000006",
+"0x01facc69ec7360640aa5898e852326752801674a",
+false,
+"0x0000000000000000000000000000000000000000"
+]
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x04c0599ae5a44757c0af6f9ec3b93da8976c150a": {
 "_flakes": 0,
 "_oid": "ord_0c53c501cb354ec8",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_our_delivers": 11,
+"_our_drops": 7,
+"_serves": 18,
 "kind": "aero_v2",
 "routes": [
 [
@@ -350,58 +354,83 @@ false,
 ]
 ]
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_e2c675771c6b41e7",
-"_our_delivers": 25,
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x05af98aebec91aef2bd893614a2c333c58855012": {
+"_flakes": 1,
+"_oid": "ord_3135aafc5c504569",
+"_our_delivers": 10,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 9,
 "fees": [
 100,
-500
+10000
 ],
 "kind": "univ3_path",
 "tokens": [
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
 "0x4200000000000000000000000000000000000006",
-"0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b"
+"0x05af98aebec91aef2bd893614a2c333c58855012"
+]
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x06fc3d5d2369561e28f261148576520f5e49d6ea": {
+"_flakes": 0,
+"_oid": "ord_7f9925d70bd64bbd",
+"_our_delivers": 6,
+"_our_drops": 6,
+"_serves": 12,
+"fees": [
+100,
+10000
+],
+"kind": "univ3_path",
+"tokens": [
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x4200000000000000000000000000000000000006",
+"0x06fc3d5d2369561e28f261148576520f5e49d6ea"
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x0dca08cf89ae194bb5feb466dbf94f74c76062ea": {
-"_flakes": 25,
+"_flakes": 13,
 "_oid": "ord_38fad4cfa61649d1",
 "_our_delivers": 0,
-"_our_drops": 25,
+"_our_drops": 13,
 "_override": true,
 "_serves": 0,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x15b15fa54b629c634958e8bd639b2fc8af654974": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_dec0740219374da1",
-"_our_delivers": 25,
+"_our_delivers": 12,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 10,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x16edb4dfc1d3368d051370699edfb280e9a1b474": {
+"_flakes": 3,
+"_oid": "ord_109e25d29f5044dd",
+"_our_delivers": 8,
+"_our_drops": 0,
+"_serves": 5,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x16f93ebc5320c89efc8701577efe49d14a276a06": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_3eb9bf6574d042f6",
-"_our_delivers": 25,
+"_our_delivers": 12,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 9,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x18dd5b087bca9920562aff7a0199b96b9230438b": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_4932894ba87a4a74",
-"_our_delivers": 25,
+"_our_delivers": 15,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 12,
 "fees": [
 100,
 10000
@@ -414,29 +443,29 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x1a97511d5ee479eb19fa74a1899ac3e6d7ff9b07": {
-"_flakes": 1,
+"_flakes": 3,
 "_oid": "ord_28f537f44d9848dc",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 10,
+"_our_drops": 0,
+"_serves": 7,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x24bc862e4a8aca815facc8d0275b1eb2e266db07": {
 "_flakes": 0,
-"_oid": "ord_49d65791c4864657",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_oid": "ord_024fe238411649e7",
+"_our_delivers": 16,
+"_our_drops": 6,
+"_serves": 22,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x27d7959cf26135d8019d0f1e4a2280a8a355c4f5": {
-"_flakes": 1,
+"_flakes": 3,
 "_oid": "ord_0c1895feed9b4a7c",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
+"_our_delivers": 10,
+"_our_drops": 0,
+"_serves": 7,
 "fees": [
 100,
 10000
@@ -449,11 +478,11 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x2a66d51407b84b82b5aff3dec4d49f72cbcd322a": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_a2027cd687f54eed",
-"_our_delivers": 25,
+"_our_delivers": 5,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 3,
 "fees": [
 100,
 10000
@@ -465,49 +494,39 @@ false,
 "0x2a66d51407b84b82b5aff3dec4d49f72cbcd322a"
 ]
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22": {
-"_computed": true,
-"_flakes": 25,
-"_oid": "ord_eff4debc1a1343cb",
-"_our_delivers": 0,
-"_our_drops": 25,
-"_override": true,
-"_serves": 0,
-"fees": [
-100,
-500
-],
-"kind": "univ3_path",
-"tokens": [
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-"0x4200000000000000000000000000000000000006",
-"0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22"
-]
-},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x2ce1340f1d402ae75afeb55003d7491645db1857": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_3f80ff0ae4894fcc",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 11,
+"_our_drops": 0,
+"_serves": 9,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x2fc3dd4dacfd1b2fabac157de8727b54bade4b07": {
+"_flakes": 0,
+"_oid": "ord_275c4f1ff6224a18",
+"_our_delivers": 8,
+"_our_drops": 8,
+"_serves": 16,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x315b8c9a1123c10228d469551033440441b41f0b": {
 "_flakes": 0,
 "_oid": "ord_a927ba83702a4fc0",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_our_delivers": 16,
+"_our_drops": 6,
+"_serves": 22,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x31d664ebd97a50d5a2cd49b16f7714ab2516ed25": {
-"_flakes": 1,
+"_flakes": 0,
 "_oid": "ord_8b9cf8e058bc4962",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 8,
+"_our_drops": 6,
+"_serves": 14,
 "kind": "aero_v2",
 "routes": [
 [
@@ -524,12 +543,52 @@ false,
 ]
 ]
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x37d3d61a304695619433bc05ef841e889f69debf": {
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x35e7942e91876eb0c24a891128e559a744fe8b07": {
+"_flakes": 1,
+"_oid": "ord_605bc82bb84f48e4",
+"_our_delivers": 11,
+"_our_drops": 0,
+"_serves": 10,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x3639e6f4c224ebd1bf6373c3d97917d33e0492bb": {
+"_flakes": 3,
+"_oid": "ord_c0943c458e394e5a",
+"_our_delivers": 5,
+"_our_drops": 0,
+"_serves": 2,
+"kind": "aero_v2",
+"routes": [
+[
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x4200000000000000000000000000000000000006",
+true,
+"0x0000000000000000000000000000000000000000"
+],
+[
+"0x4200000000000000000000000000000000000006",
+"0x3639e6f4c224ebd1bf6373c3d97917d33e0492bb",
+false,
+"0x0000000000000000000000000000000000000000"
+]
+]
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x368181499736d0c0cc614dbb145e2ec1ac86b8c6": {
 "_flakes": 0,
+"_oid": "ord_52c141d0a54f4b80",
+"_our_delivers": 11,
+"_our_drops": 5,
+"_serves": 16,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x37d3d61a304695619433bc05ef841e889f69debf": {
+"_flakes": 2,
 "_oid": "ord_6b349088e4ae4432",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 10,
+"_our_drops": 0,
+"_serves": 8,
 "fees": [
 100,
 10000
@@ -543,74 +602,106 @@ false,
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x39ce693a45c51c7b5c73af7528547eabe466eb07": {
 "_flakes": 0,
-"_oid": "ord_6fd3250e0572423d",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_oid": "ord_3e13d4b154394ce3",
+"_our_delivers": 9,
+"_our_drops": 7,
+"_serves": 16,
 "fee": 3000,
 "kind": "univ3_single"
 },
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5": {
+"_flakes": 2,
+"_oid": "ord_09038569de18497b",
+"_our_delivers": 8,
+"_our_drops": 0,
+"_serves": 6,
+"kind": "aero_v2",
+"routes": [
+[
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x4200000000000000000000000000000000000006",
+true,
+"0x0000000000000000000000000000000000000000"
+],
+[
+"0x4200000000000000000000000000000000000006",
+"0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5",
+false,
+"0x0000000000000000000000000000000000000000"
+]
+]
+},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x4200000000000000000000000000000000000006": {
-"_flakes": 25,
+"_flakes": 7,
 "_oid": "ord_284f4641a76e48a1",
-"_our_delivers": 25,
-"_our_drops": 25,
-"_serves": 25,
+"_our_delivers": 3,
+"_our_drops": 8,
+"_override": true,
+"_serves": 4,
 "fee": 100,
+"kind": "univ3_single",
+"nogate": true
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x494c4cf6c8f971ddfca95184282b86220fab9b07": {
+"_flakes": 0,
+"_oid": "ord_2cc392e9e58e4f3d",
+"_our_delivers": 4,
+"_our_drops": 7,
+"_serves": 11,
+"fee": 3000,
 "kind": "univ3_single"
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x462f0085cb261ab49ad048a2b35ee77135684308": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_0757e2d9d63d43eb",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"fee": 10000,
-"kind": "pancake_v3"
-},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x4b6bf1d365ea1a8d916da37fafd4ae8c86d061d7": {
-"_flakes": 1,
+"_flakes": 4,
 "_oid": "ord_046b992327854dd1",
-"_our_delivers": 25,
+"_our_delivers": 14,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 10,
 "fee": 500,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x4ed4e862860bed51a9570b96d89af5e1b0efefed": {
-"_flakes": 0,
-"_oid": "ord_400beb673bbb4b5f",
-"_our_delivers": 25,
+"_flakes": 1,
+"_oid": "ord_0fdf7aef87d54862",
+"_our_delivers": 9,
 "_our_drops": 0,
-"_serves": 25,
-"fee": 500,
-"kind": "univ3_single"
+"_serves": 8,
+"fees": [
+100,
+3000
+],
+"kind": "univ3_path",
+"tokens": [
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x4200000000000000000000000000000000000006",
+"0x4ed4e862860bed51a9570b96d89af5e1b0efefed"
+]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x50c5725949a6f0c72e6c4a641f24049a917db0cb": {
 "_flakes": 0,
-"_oid": "ord_6d82387c45964d25",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_oid": "ord_2678de0b52974a23",
+"_our_delivers": 7,
+"_our_drops": 8,
+"_serves": 15,
 "fee": 100,
-"kind": "univ3_single"
+"kind": "univ3_single",
+"nogate": true
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x511ef9ad5e645e533d15df605b4628e3d0d0ff53": {
 "_flakes": 0,
 "_oid": "ord_3fdabac850c340ff",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_our_delivers": 16,
+"_our_drops": 5,
+"_serves": 21,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x55380fe7a1910dff29a47b622057ab4139da42c5": {
-"_flakes": 0,
+"_flakes": 1,
 "_oid": "ord_b0bbcf536dc247b8",
-"_our_delivers": 25,
+"_our_delivers": 8,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 7,
 "fees": [
 100,
 3000
@@ -622,21 +713,26 @@ false,
 "0x55380fe7a1910dff29a47b622057ab4139da42c5"
 ]
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x5875eee11cf8398102fdad704c9e96607675467a": {
-"_flakes": 0,
-"_oid": "ord_002896dc866c41d9",
-"_our_delivers": 25,
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x5682a3ba66eeb60e82d18865849b513ab9c9692d": {
+"_flakes": 4,
+"_oid": "ord_e9eea1155e114fe7",
+"_our_delivers": 10,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 6,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x5875eee11cf8398102fdad704c9e96607675467a": {
+"_oid": "ord_a875abfdc58d40a1",
 "fee": 10000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x58dd173f30ecffdfebcd242c71241fb2f179e9b9": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_6a7ca96e697c4884",
-"_our_delivers": 25,
+"_our_delivers": 11,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 9,
 "kind": "aero_v2",
 "routes": [
 [
@@ -653,12 +749,21 @@ false,
 ]
 ]
 },
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x5cda0e1ca4ce2af96315f7f8963c85399c172204": {
+"_flakes": 0,
+"_oid": "ord_20c5c2469de7478f",
+"_our_delivers": 5,
+"_our_drops": 8,
+"_serves": 13,
+"fee": 3000,
+"kind": "univ3_single"
+},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x5d6cae0422a950dbd7918d1e74434a35156b3ba4": {
 "_flakes": 1,
 "_oid": "ord_086a45494c344c9c",
-"_our_delivers": 25,
+"_our_delivers": 8,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 7,
 "kind": "aero_v2",
 "routes": [
 [
@@ -676,11 +781,11 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x5f980dcfc4c0fa3911554cf5ab288ed0eb13dba3": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_061bd73623bb4040",
-"_our_delivers": 25,
+"_our_delivers": 12,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 10,
 "fees": [
 500,
 10000
@@ -692,58 +797,57 @@ false,
 "0x5f980dcfc4c0fa3911554cf5ab288ed0eb13dba3"
 ]
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x610a5a297fe2135289b8565ef645de2a7c00eba3": {
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x614747c53cb1636b4b962e15e1d66d3214621100": {
 "_flakes": 0,
-"_oid": "ord_ff44152f710642d9",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_oid": "ord_42e967732f2e4a77",
+"_our_delivers": 6,
+"_our_drops": 6,
+"_serves": 12,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x61fd8d4ad84bf7a20e12f00b7e33cb698977dc7d": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_0d3d27159d3949ad",
-"_our_delivers": 25,
+"_our_delivers": 15,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 13,
 "fee": 3000,
 "kind": "univ3_single"
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x66bed9c31e52cc941338b6b39f5f7b9c212e4177": {
-"_flakes": 0,
-"_oid": "ord_0246e99da2324c75",
-"_our_delivers": 25,
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x64b88c73a5dfa78d1713fe1b4c69a22d7e0faaa7": {
+"_flakes": 1,
+"_oid": "ord_06f3adfecaaf43d3",
+"_our_delivers": 9,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 8,
+"fee": 500,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x66bed9c31e52cc941338b6b39f5f7b9c212e4177": {
+"_flakes": 3,
+"_oid": "ord_0246e99da2324c75",
+"_our_delivers": 13,
+"_our_drops": 0,
+"_serves": 10,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x6921c09f2b5cee21a929591a070d4b0354dbee8d": {
-"_flakes": 1,
-"_oid": "ord_6b0208177133440e",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"fee": 3000,
-"kind": "univ3_single"
-},
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x6985884c4392d348587b19cb9eaaf157f13271cd": {
-"_computed": true,
 "_flakes": 0,
-"_oid": "ord_0020527dd11649f5",
-"_our_delivers": 25,
+"_oid": "ord_6b0208177133440e",
+"_our_delivers": 5,
 "_our_drops": 6,
-"_serves": 25,
-"fee": 10000,
+"_serves": 11,
+"fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x7002458b1df59eccb57387bc79ffc7c29e22e6f7": {
 "_flakes": 0,
 "_oid": "ord_77691ab36239482b",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 10,
+"_our_drops": 7,
+"_serves": 17,
 "kind": "aero_v2",
 "routes": [
 [
@@ -760,21 +864,48 @@ false,
 ]
 ]
 },
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979": {
+"_oid": "ord_80203857210f4ee9",
+"kind": "aero_v2",
+"routes": [
+[
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x940181a94a35a4569e4529a3cdfb74e38fd98631",
+false,
+"0x0000000000000000000000000000000000000000"
+],
+[
+"0x940181a94a35a4569e4529a3cdfb74e38fd98631",
+"0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979",
+false,
+"0x0000000000000000000000000000000000000000"
+]
+]
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x753f2af0f46361c9ae6fc347797f99b0c9e82ba3": {
+"_flakes": 2,
+"_oid": "ord_eb16da9810984dcd",
+"_our_delivers": 10,
+"_our_drops": 0,
+"_serves": 8,
+"fee": 3000,
+"kind": "univ3_single"
+},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x76a9a0062ec6712b99b4f63bd2b4270185759dd5": {
-"_flakes": 16,
+"_flakes": 3,
 "_oid": "ord_5af1ecd430f64195",
-"_our_delivers": 25,
-"_our_drops": 16,
-"_serves": 25,
+"_our_delivers": 9,
+"_our_drops": 0,
+"_serves": 6,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x7afe438411ee3959c7de6f7fb76bf9c769320ba3": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_74c4530a81fb4e48",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 7,
+"_our_drops": 0,
+"_serves": 4,
 "fees": [
 100,
 10000
@@ -787,11 +918,11 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x800822d361335b4d5f352dac293ca4128b5b605f": {
-"_flakes": 1,
+"_flakes": 0,
 "_oid": "ord_3c31c2652dfc4653",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 9,
+"_our_drops": 6,
+"_serves": 15,
 "kind": "aero_v2",
 "routes": [
 [
@@ -809,129 +940,120 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x8189910840771050bf9ed268abfc9c0882137029": {
-"_flakes": 0,
+"_flakes": 1,
 "_oid": "ord_6ba442cff3974bd4",
-"_our_delivers": 25,
+"_our_delivers": 9,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 8,
 "fee": 3000,
 "kind": "univ3_single"
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x820c137fa70c8691f0e44dc420a5e53c168921dc": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_15e894fe419f41df",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"fee": 100,
-"kind": "pancake_v3"
-},
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x834df4c1d8f51be24322e39e4766697be015512f": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_0f079a626c6346b2",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"kind": "aero_v2",
-"routes": [
-[
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-"0x834df4c1d8f51be24322e39e4766697be015512f",
-false,
-"0x420dd381b31aef6683db6b902084cb0ffece40da"
-]
-]
-},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x84b9c2be78ad93843c96c106a22f12ccb2cfdb07": {
-"_flakes": 0,
+"_flakes": 4,
 "_oid": "ord_7ae883dd05f34bf0",
-"_our_delivers": 25,
+"_our_delivers": 17,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 13,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x8b7dde054be9d180c1be7fae0874697374a49832": {
-"_flakes": 0,
+"_flakes": 1,
 "_oid": "ord_a06fe59d2d9f478a",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 8,
+"_our_drops": 0,
+"_serves": 7,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x917f39bb33b2483dd19546b1e8d2f09ce481ee44": {
 "_flakes": 0,
 "_oid": "ord_e23f44b3a5b2419f",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
+"_our_delivers": 6,
+"_our_drops": 7,
+"_serves": 13,
 "fee": 3000,
 "kind": "univ3_single"
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x940181a94a35a4569e4529a3cdfb74e38fd98631": {
-"_computed": true,
-"_flakes": 25,
-"_oid": "ord_fd1f6e9b564448aa",
-"_our_delivers": 1,
-"_our_drops": 25,
-"_override": true,
-"_serves": 2,
-"_upgraded": true,
-"fee": 500,
-"kind": "pancake_v3"
-},
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x9dba38e9cadcf67d1959390a8c0c1deee619f0f2": {
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x968d6a288d7b024d5012c0b25d67a889e4e3ec19": {
 "_flakes": 0,
-"_oid": "ord_5b48fd28034a437d",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"kind": "aero_v2",
-"routes": [
-[
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-"0x9dba38e9cadcf67d1959390a8c0c1deee619f0f2",
-false,
-"0x0000000000000000000000000000000000000000"
-]
-]
-},
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xa100000000000d6e18bc155f425685e4badfe11c": {
-"_flakes": 0,
-"_oid": "ord_aa9248efaec14f9c",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"fee": 3000,
-"kind": "univ3_single"
-},
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xa3109f24185ce81b89b9ceead7f81e3b07a61b07": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_04b631dace924c92",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_oid": "ord_ac9d2f368abd43ee",
+"_our_delivers": 9,
+"_our_drops": 7,
+"_serves": 16,
 "fees": [
-500,
+100,
 10000
 ],
 "kind": "univ3_path",
 "tokens": [
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
 "0x4200000000000000000000000000000000000006",
-"0xa3109f24185ce81b89b9ceead7f81e3b07a61b07"
+"0x968d6a288d7b024d5012c0b25d67a889e4e3ec19"
 ]
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xa4e9586c45400241250e7bb7cfb93e0c33388d12": {
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x9886447ff4c350f4600e4bf95db756bdc629b1ca": {
 "_flakes": 2,
+"_oid": "ord_a1ec884069c54a8f",
+"_our_delivers": 16,
+"_our_drops": 0,
+"_serves": 14,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x9b5e262cf9bb04869ab40b19af91d2dc85761722": {
+"_flakes": 3,
+"_oid": "ord_6859513abbcb49c7",
+"_our_delivers": 9,
+"_our_drops": 0,
+"_serves": 6,
+"kind": "aero_v2",
+"routes": [
+[
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x9b5e262cf9bb04869ab40b19af91d2dc85761722",
+false,
+"0x0000000000000000000000000000000000000000"
+]
+]
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x9d0e8f5b25384c7310cb8c6ae32c8fbeb645d083": {
+"_flakes": 2,
+"_oid": "ord_8a373b189be3466b",
+"_our_delivers": 10,
+"_our_drops": 0,
+"_serves": 8,
+"kind": "aero_v2",
+"routes": [
+[
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x4200000000000000000000000000000000000006",
+true,
+"0x0000000000000000000000000000000000000000"
+],
+[
+"0x4200000000000000000000000000000000000006",
+"0x9d0e8f5b25384c7310cb8c6ae32c8fbeb645d083",
+false,
+"0x0000000000000000000000000000000000000000"
+]
+]
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xa100000000000d6e18bc155f425685e4badfe11c": {
+"_flakes": 2,
+"_oid": "ord_aa9248efaec14f9c",
+"_our_delivers": 15,
+"_our_drops": 0,
+"_serves": 13,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xa4e9586c45400241250e7bb7cfb93e0c33388d12": {
+"_flakes": 1,
 "_oid": "ord_09818bfbdda043bd",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
+"_our_delivers": 11,
+"_our_drops": 0,
+"_serves": 10,
 "kind": "aero_v2",
 "routes": [
 [
@@ -949,29 +1071,29 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xa66f68ef2d8091e13585a502464bd11a159cf710": {
-"_flakes": 1,
+"_flakes": 0,
 "_oid": "ord_9187bc56d5a04c8a",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 10,
+"_our_drops": 6,
+"_serves": 16,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xa70feecba1eea2660559b268cd034f1df00ed6fa": {
-"_flakes": 1,
+"_flakes": 0,
 "_oid": "ord_1813fb74411141bf",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
+"_our_delivers": 12,
+"_our_drops": 5,
+"_serves": 17,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xa7d68d155d17cb30e311367c2ef1e82ab6022b67": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_8cbe1a0f84034413",
-"_our_delivers": 25,
+"_our_delivers": 14,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 12,
 "fees": [
 100,
 10000
@@ -986,18 +1108,18 @@ false,
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xa84d5982c070d06cb5ab4a0bd77a810ba0d39b07": {
 "_flakes": 0,
 "_oid": "ord_5760e505d636421c",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_our_delivers": 9,
+"_our_drops": 7,
+"_serves": 16,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xae4a37d554c6d6f3e398546d8566b25052e0169c": {
-"_flakes": 0,
+"_flakes": 4,
 "_oid": "ord_ca937d64596e4da4",
-"_our_delivers": 25,
+"_our_delivers": 16,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 12,
 "fees": [
 100,
 100
@@ -1010,46 +1132,56 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xae7dc6559aeaadd8a3c156fe695a650c7095c9ce": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_e816dbf90eec4133",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 12,
+"_our_drops": 0,
+"_serves": 9,
 "fee": 3000,
 "kind": "univ3_single"
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xb79dd08ea68a908a97220c76d19a6aa9cbde4376": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_0ac7f0446e824e39",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"kind": "aero_v2",
-"routes": [
-[
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-"0xb79dd08ea68a908a97220c76d19a6aa9cbde4376",
-true,
-"0x420dd381b31aef6683db6b902084cb0ffece40da"
-]
-]
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xb18c609796848c723eacadc0be5b71ceb2289a48": {
+"_flakes": 1,
+"_oid": "ord_323c8a9b362c4468",
+"_our_delivers": 7,
+"_our_drops": 0,
+"_serves": 6,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xb338f81331a883bda6e24d3a5b2ce2919eba5b07": {
+"_flakes": 2,
+"_oid": "ord_09dcaa1822d84283",
+"_our_delivers": 8,
+"_our_drops": 0,
+"_serves": 6,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xb58f9704c7a80d2775222f7cb2eed28beb9a06be": {
+"_flakes": 1,
+"_oid": "ord_9409c5a783b1411b",
+"_our_delivers": 9,
+"_our_drops": 0,
+"_serves": 8,
+"fee": 3000,
+"kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xb99b6df96d4d5448cc0a5b3e0ef7896df9507cf5": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_5e743ee6064b4226",
-"_our_delivers": 25,
+"_our_delivers": 8,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 6,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xc0041ef357b183448b235a8ea73ce4e4ec8c265f": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_383785130e7040eb",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_our_delivers": 5,
+"_our_drops": 1,
+"_serves": 3,
 "kind": "aero_v2",
 "routes": [
 [
@@ -1067,20 +1199,20 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_b8ec78e4d7d446f2",
-"_our_delivers": 25,
+"_our_delivers": 15,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 13,
 "fee": 500,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xc3de830ea07524a0761646a6a4e4be0e114a3c83": {
 "_flakes": 0,
 "_oid": "ord_18cce4de8fb54af9",
-"_our_delivers": 25,
+"_our_delivers": 8,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 8,
 "fees": [
 100,
 3000
@@ -1093,11 +1225,11 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xc52aedec3374422d7510e294cfaa90799595cba3": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_0f20b9e4e3254212",
-"_our_delivers": 25,
-"_our_drops": 4,
-"_serves": 25,
+"_our_delivers": 8,
+"_our_drops": 0,
+"_serves": 6,
 "fees": [
 100,
 10000
@@ -1109,12 +1241,39 @@ false,
 "0xc52aedec3374422d7510e294cfaa90799595cba3"
 ]
 },
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe": {
+"_flakes": 0,
+"_oid": "ord_1920e9a51dc34008",
+"_our_delivers": 10,
+"_our_drops": 5,
+"_serves": 15,
+"fees": [
+100,
+10000
+],
+"kind": "univ3_path",
+"tokens": [
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x4200000000000000000000000000000000000006",
+"0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe"
+]
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xca179f3978137f5745e6d731591aaef985ee9d6d": {
+"_flakes": 2,
+"_oid": "ord_0380323d0d054bf4",
+"_our_delivers": 0,
+"_our_drops": 8,
+"_override": true,
+"_serves": 6,
+"fee": 3000,
+"kind": "univ3_single"
+},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xca416d6d3c2b3a8a2c48419b53dd611420ffa776": {
-"_flakes": 1,
+"_flakes": 3,
 "_oid": "ord_47c4ae1c76a5459b",
-"_our_delivers": 25,
+"_our_delivers": 13,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 10,
 "fees": [
 100,
 10000
@@ -1126,12 +1285,29 @@ false,
 "0xca416d6d3c2b3a8a2c48419b53dd611420ffa776"
 ]
 },
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xcaf75598b8b9a6e645b60d882845d361f549f5ec": {
+"_flakes": 0,
+"_oid": "ord_6753388b123f4049",
+"_our_delivers": 10,
+"_our_drops": 7,
+"_serves": 17,
+"fees": [
+100,
+10000
+],
+"kind": "univ3_path",
+"tokens": [
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x4200000000000000000000000000000000000006",
+"0xcaf75598b8b9a6e645b60d882845d361f549f5ec"
+]
+},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xd63aaeec20f9b74d49f8dd8e319b6edd564a7dd0": {
-"_flakes": 1,
+"_flakes": 0,
 "_oid": "ord_2ad957a516b54c1d",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 13,
+"_our_drops": 8,
+"_serves": 21,
 "fees": [
 100,
 10000
@@ -1144,20 +1320,21 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca": {
-"_flakes": 1,
+"_flakes": 0,
 "_oid": "ord_b84cb712d87749ca",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 8,
+"_our_drops": 7,
+"_serves": 15,
 "fee": 100,
-"kind": "univ3_single"
+"kind": "univ3_single",
+"nogate": true
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xd9ea811a51d6fe491d27c2a0442b3f577852874d": {
 "_flakes": 0,
 "_oid": "ord_3befb94777e544e9",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_our_delivers": 9,
+"_our_drops": 5,
+"_serves": 14,
 "fees": [
 100,
 500
@@ -1169,73 +1346,80 @@ false,
 "0xd9ea811a51d6fe491d27c2a0442b3f577852874d"
 ]
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xdbfefd2e8460a6ee4955a68582f85708baea60a3": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_01caa2a5c898406e",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"kind": "aero_v2",
-"routes": [
-[
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-"0xdbfefd2e8460a6ee4955a68582f85708baea60a3",
-false,
-"0x420dd381b31aef6683db6b902084cb0ffece40da"
-]
-]
-},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xe014d2a4da6e450f21b5050120d291e63c8940fd": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_1a996537b3a34bc4",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
+"_our_delivers": 10,
+"_our_drops": 0,
+"_serves": 7,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xe298b938631f750dd409fb18227c4a23dcdaab9b": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_065c6c85e24a4cea",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 13,
+"_our_drops": 0,
+"_serves": 11,
 "fee": 500,
 "kind": "univ3_single"
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xe62bfbe57763ec24c0f130426f34dbce11fc5b06": {
-"_computed": true,
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xe6ab1cc1307b496748753e017f3dbb4d4378ca3f": {
 "_flakes": 0,
-"_oid": "ord_5b592ecba3bb4b2f",
-"_our_delivers": 25,
+"_oid": "ord_ff1a741945b241a6",
+"_our_delivers": 8,
+"_our_drops": 7,
+"_serves": 15,
+"fee": 3000,
+"kind": "univ3_single"
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xe88419a3fc78364cfe3de88080ee4853fab754c6": {
+"_flakes": 3,
+"_oid": "ord_15d76f0bb4b6456e",
+"_our_delivers": 13,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 10,
 "kind": "aero_v2",
 "routes": [
 [
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-"0xe62bfbe57763ec24c0f130426f34dbce11fc5b06",
+"0xe88419a3fc78364cfe3de88080ee4853fab754c6",
 false,
-"0x420dd381b31aef6683db6b902084cb0ffece40da"
+"0x0000000000000000000000000000000000000000"
 ]
 ]
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xe6ab1cc1307b496748753e017f3dbb4d4378ca3f": {
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xe8f802b0cb13adf1a4333b541d4d3f703b8a69fa": {
 "_flakes": 2,
-"_oid": "ord_ff1a741945b241a6",
-"_our_delivers": 25,
+"_oid": "ord_4532d4b5575e4f17",
+"_our_delivers": 12,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 10,
 "fee": 3000,
 "kind": "univ3_single"
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xecc5f868add75f4ff9fd00bbbde12c35ba2c9c89": {
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xeab49138ba2ea6dd776220fe26b7b8e446638956": {
 "_flakes": 0,
+"_oid": "ord_12d58141f41f4fc0",
+"_our_delivers": 5,
+"_our_drops": 9,
+"_serves": 14,
+"kind": "aero_v2",
+"routes": [
+[
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0xeab49138ba2ea6dd776220fe26b7b8e446638956",
+false,
+"0x0000000000000000000000000000000000000000"
+]
+]
+},
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xecc5f868add75f4ff9fd00bbbde12c35ba2c9c89": {
+"_flakes": 1,
 "_oid": "ord_57695fe8269a41db",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 7,
+"_our_drops": 0,
+"_serves": 6,
 "fees": [
 100,
 10000
@@ -1248,11 +1432,11 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xed664536023d8e4b1640c394777d34abaff1df8f": {
-"_flakes": 0,
+"_flakes": 1,
 "_oid": "ord_01476e1179ae43bb",
-"_our_delivers": 25,
+"_our_delivers": 12,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 11,
 "fees": [
 100,
 10000
@@ -1265,11 +1449,11 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xef73611f98da6e57e0776317957af61b59e09ed7": {
-"_flakes": 0,
+"_flakes": 1,
 "_oid": "ord_6943114e99b04dcf",
-"_our_delivers": 25,
+"_our_delivers": 12,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 11,
 "kind": "aero_v2",
 "routes": [
 [
@@ -1286,21 +1470,43 @@ false,
 ]
 ]
 },
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xeff2a458e464b07088bdb441c21a42ab4b61e07e": {
+"_flakes": 4,
+"_oid": "ord_0a2f612261c34125",
+"_our_delivers": 15,
+"_our_drops": 0,
+"_serves": 11,
+"kind": "aero_v2",
+"routes": [
+[
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x4200000000000000000000000000000000000006",
+true,
+"0x0000000000000000000000000000000000000000"
+],
+[
+"0x4200000000000000000000000000000000000006",
+"0xeff2a458e464b07088bdb441c21a42ab4b61e07e",
+false,
+"0x0000000000000000000000000000000000000000"
+]
+]
+},
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xf5de8697232a16a942f7cf706415f553ce53e27f": {
-"_flakes": 0,
+"_flakes": 3,
 "_oid": "ord_8c0651144586481e",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
+"_our_delivers": 11,
+"_our_drops": 0,
+"_serves": 8,
 "fee": 3000,
 "kind": "univ3_single"
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xfac77f01957ed1b3dd1cbea992199b8f85b6e886": {
-"_flakes": 0,
+"_flakes": 2,
 "_oid": "ord_01a01fdb31eb4ac1",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
+"_our_delivers": 10,
+"_our_drops": 0,
+"_serves": 8,
 "kind": "aero_v2",
 "routes": [
 [
@@ -1312,11 +1518,11 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xfad8cb754230dbfd249db0e8eccb5142dd675a0d": {
-"_flakes": 1,
+"_flakes": 0,
 "_oid": "ord_9da63c6fe5aa4a41",
-"_our_delivers": 25,
+"_our_delivers": 11,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 11,
 "kind": "aero_v2",
 "routes": [
 [
@@ -1334,12 +1540,7 @@ false,
 ]
 },
 "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xfca9fc2cb2dde04732ad07e4bb73db8cc8bfed1d": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_24573e0ab4604fa7",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
+"_oid": "ord_c3ed4b35c4e14288",
 "fees": [
 100,
 10000
@@ -1351,467 +1552,82 @@ false,
 "0xfca9fc2cb2dde04732ad07e4bb73db8cc8bfed1d"
 ]
 },
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xfde4c96c8593536e31f229ea8f37b2ada2699bb2": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_08f7705006cf4b4d",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"fees": [
-100,
-500
-],
-"kind": "univ3_path",
-"tokens": [
-"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-"0x4200000000000000000000000000000000000006",
-"0xfde4c96c8593536e31f229ea8f37b2ada2699bb2"
-]
-},
-"0x940181a94a35a4569e4529a3cdfb74e38fd98631:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
-"_computed": true,
-"_flakes": 0,
-"_oid": "ord_a060d4fb15c8457a",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"fee": 500,
+"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+"_flakes": 10,
+"_oid": "ord_35373ba805fa484a",
+"_our_delivers": 0,
+"_our_drops": 10,
+"_override": true,
+"_serves": 0,
+"fee": 3000,
 "kind": "univ3_single"
 },
 "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
-"_flakes": 0,
+"_flakes": 5,
 "_oid": "ord_0e621c8caf004f79",
-"_our_delivers": 25,
+"_our_delivers": 15,
 "_our_drops": 0,
-"_serves": 25,
+"_serves": 10,
 "fee": 10000,
 "kind": "univ3_single"
 },
 "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
-"_computed": true,
-"_flakes": 25,
+"_flakes": 15,
 "_oid": "ord_de1b8014331f4189",
 "_our_delivers": 0,
-"_our_drops": 25,
+"_our_drops": 15,
 "_override": true,
 "_serves": 0,
-"_upgraded": true,
 "fee": 100,
-"kind": "pancake_v3"
+"kind": "univ3_single",
+"nogate": true
 },
-"agg:0x4200000000000000000000000000000000000006:0x511ef9ad5e645e533d15df605b4628e3d0d0ff53:1500000000000000": {
-"_baked_at": 1784074679,
-"_champ": "8503637113179477223844",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0038,
-"_oid": "ord_bc9fc042c3d14e22",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"amt": 1500000000000000,
-"calldata": "0xa94e78ef000000000000000000000000000000000000000000000000000000000000002000000000000000000000000042000000000000000000000000000000000000060000000000000000000000000000000000000000000000000005543df729c0000000000000000000000000000000000000000000000001ccfbabe43c82f1a9a40000000000000000000000000000000000000000000001ceb8bd29b1f954a6dc0000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000760000000000000000000000000000000000000000000000000000000006a572617dc648b5ffeff45f88a9b3879f6a00879000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000003200000000000000000000000000b3e328455c4059eeb9e3f84b5543f74e24e7e1b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b2b6ce813b99b840fe632c63bca5394938ef01e000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c37000000000000000000000000000000000000000000000000000000000000002b42000000000000000000000000000000000000060000640b3e328455c4059eeb9e3f84b5543f74e24e7e1b000000000000000000000000000000000000000000000000000000000000000000511ef9ad5e645e533d15df605b4628e3d0d0ff530000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c00000000000000000000000000000000000000000000000000000000000027100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000600000000000000000000000075d199efb540e47d27d52c62da3e7dac2b9e834f000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000004de4fa65a76655f3c0641b79e89de3f51459c37278230000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 8535707603971758925532,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
+"0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
+"kind": "univ3_path",
+"tokens": [
+"0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22",
+"0x4200000000000000000000000000000000000006",
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+],
+"fees": [
+500,
+500
+]
 },
-"agg:0x4200000000000000000000000000000000000006:0x6e0090dbecf3b4f0f9429637756cadd8fc468c54:50000000000000000": {
-"_baked_at": 1784074678,
-"_champ": "84716778441925837837",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0122,
-"_oid": "ord_7aa67f25c25749c6",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
-"amt": 50000000000000000,
-"calldata": "0xa94e78ef0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000420000000000000000000000000000000000000600000000000000000000000000000000000000000000000000b1a2bc2ec5000000000000000000000000000000000000000000000000000497ae7524ea75c40d000000000000000000000000000000000000000000000004a6070559a98a109d0000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000e20000000000000000000000000000000000000000000000000000000006a5726167d3d0d3a8c61498d9d7e1dba86b23e5f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000820000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000002389726b55948d8d8944b0145204761215aaec710000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000040000000000000000000000004f37a9d177470499a2dd084621020b023fcffc1f000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042000000000000000000000000000000000000060000000000000000000000004b0574ca7775a09d39ffed885e7230953805c795000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b1a2bc2ec5000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000004b0574ca7775a09d39ffed885e7230953805c795000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a520000000000000000000000006e0090dbecf3b4f0f9429637756cadd8fc468c540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001c0000000000000000000000000000000000000000000000000000000000000000100000000000000000000000033a47a122de0b5c429ba79e6d17965b0e841c60e000000000000000000000000000000000000000000000000000000000000258000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c36000000000000000000000000000000000000000000000000000000000000002b833589fcd6edb6e08f4c7c32d4f71b54bda029130000646e0090dbecf3b4f0f9429637756cadd8fc468c540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000aee2b8d4a154e36f479daece3fb3e6c3c03d396e000000000000000000000000000000000000000000000000000000000000019000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c36000000000000000000000000000000000000000000000000000000000000002b833589fcd6edb6e08f4c7c32d4f71b54bda02913000bb86e0090dbecf3b4f0f9429637756cadd8fc468c540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 85750513112625844381,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22": {
+"kind": "univ3_path",
+"tokens": [
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+"0x4200000000000000000000000000000000000006",
+"0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22"
+],
+"fees": [
+500,
+500
+]
 },
-"agg:0x4200000000000000000000000000000000000006:0x767a739d1a152639e9ea1d8c1bd55fdc5b217d7f:50000000000000000": {
-"_baked_at": 1784074680,
-"_champ": "5043592950491918764812",
-"_flakes": 1,
-"_gated": true,
-"_margin": 0.0069,
-"_oid": "ord_12beab276a1e442a",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
-"amt": 50000000000000000,
-"calldata": "0x46c67b6d0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000420000000000000000000000000000000000000600000000000000000000000000000000000000000000000000b1a2bc2ec5000000000000000000000000000000000000000000000000011169e9aa5f27220b0c0000000000000000000000000000000000000000000001134ea853ad530c19e20000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000b80000000000000000000000000000000000000000000000000000000006a5726193d7dec94330649ca8c4166df1e580c1f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000003a00000000000000000000000000000000000000000000000000000000000002260000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000767a739d1a152639e9ea1d8c1bd55fdc5b217d7f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000dcf4ee5b700e2a5fec458e06b763a4a3e3004494000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000004d80f207d02becd4417aaa3383804b6b87b17602c86d00000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000003200000000000000000000000007300b37dfdfab110d83290a29dfb31b1740219fe0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b2b6ce813b99b840fe632c63bca5394938ef01e000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c38000000000000000000000000000000000000000000000000000000000000002b42000000000000000000000000000000000000060000c87300b37dfdfab110d83290a29dfb31b1740219fe000000000000000000000000000000000000000000000000000000000000000000767a739d1a152639e9ea1d8c1bd55fdc5b217d7f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b2b6ce813b99b840fe632c63bca5394938ef01e000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c38000000000000000000000000000000000000000000000000000000000000002b7300b37dfdfab110d83290a29dfb31b1740219fe0000c8767a739d1a152639e9ea1d8c1bd55fdc5b217d7f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 5078522492405060213218,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
+"0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22:0x4200000000000000000000000000000000000006": {
+"kind": "univ3_single"
 },
-"agg:0x4200000000000000000000000000000000000006:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:13190172564343920": {
-"_baked_at": 1784074682,
-"_champ": "24755879",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.007,
-"_oid": "ord_26ead859b8684cd6",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"amt": 13190172564343920,
-"calldata": "0xa94e78ef00000000000000000000000000000000000000000000000000000000000000200000000000000000000000004200000000000000000000000000000000000006000000000000000000000000000000000000000000000000002edc645e394c70000000000000000000000000000000000000000000000000000000000179bea700000000000000000000000000000000000000000000000000000000017c66ac0000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000c80000000000000000000000000000000000000000000000000000000006a57261acaef5d67f5cb4d5d9451326259b5d53300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000320000000000000000000000000cbb7c0000ab88b473b1f5afd9ef808440eed33bf0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b81d678ffb9c0263b24a97847620c99d213eb14000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c3a000000000000000000000000000000000000000000000000000000000000002b4200000000000000000000000000000000000006000064cbb7c0000ab88b473b1f5afd9ef808440eed33bf000000000000000000000000000000000000000000000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000002389726b55948d8d8944b0145204761215aaec710000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000040000000000000000000000004f37a9d177470499a2dd084621020b023fcffc1f000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cbb7c0000ab88b473b1f5afd9ef808440eed33bf0000000000000000000000002608737c8d277d485fbd13465f2e15a63ab025f4000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000095c100000000000000000000000000000000000000000000000000000000000000010000000000000000000000002608737c8d277d485fbd13465f2e15a63ab025f4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a520000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 24929964,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
+"0x4200000000000000000000000000000000000006:0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22": {
+"kind": "univ3_single"
 },
-"agg:0x4200000000000000000000000000000000000006:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:278954355413855": {
-"_baked_at": 1784074702,
-"_champ": "524349",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0038,
-"_oid": "ord_4638c5d1498b472b",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"amt": 278954355413855,
-"calldata": "0x54e3f31b00000000000000000000000000000000000000000000000000000000000000200000000000000000000000004200000000000000000000000000000000000006000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda029130000000000000000000000000000000000000000000000000000fdb51f43535f000000000000000000000000000000000000000000000000000000000008003d000000000000000000000000000000000000000000000000000000000008081a00000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000000000000000000000000000038000000000000000000000000000000000000000000000000000000000000003e00000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000420000000000000000000000000000000000000000000000000000000006a57262e3cd91c8767824d4b9358aa1a40035ef7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000aee2b8d4a154e36f479daece3fb3e6c3c03d396e0000000000000000000000000000000000000000000000000000000000000124c04b8d59000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a52000000000000000000000000000000000000000000000000000000006a600c4d0000000000000000000000000000000000000000000000000000fdb51f43535f0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002b420000000000000000000000000000000000000600012c833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000124000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 526362,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
+"0x4200000000000000000000000000000000000006:0x50c5725949a6f0c72e6c4a641f24049a917db0cb": {
+"kind": "univ3_single"
 },
-"agg:0x4200000000000000000000000000000000000006:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:300000000000000": {
-"_baked_at": 1784074695,
-"_champ": "562520",
-"_flakes": 15,
-"_gated": true,
-"_margin": 0.0064,
-"_oid": "ord_cc652a3956f8430d",
-"_our_delivers": 25,
-"_our_drops": 15,
-"_serves": 25,
-"amt": 300000000000000,
-"calldata": "0x54e3f31b00000000000000000000000000000000000000000000000000000000000000200000000000000000000000004200000000000000000000000000000000000006000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000000000000000000000000000000110d9316ec0000000000000000000000000000000000000000000000000000000000000089558000000000000000000000000000000000000000000000000000000000008a38100000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000000000000000000000000000038000000000000000000000000000000000000000000000000000000000000003e00000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000420000000000000000000000000000000000000000000000000000000006a5726277fde12ffe5134731b1c1c250241c42980000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b2b6ce813b99b840fe632c63bca5394938ef01e0000000000000000000000000000000000000000000000000000000000000124c04b8d59000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a52000000000000000000000000000000000000000000000000000000006a600c47000000000000000000000000000000000000000000000000000110d9316ec0000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002b420000000000000000000000000000000000000600000a833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000124000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 566145,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
+"0x50c5725949a6f0c72e6c4a641f24049a917db0cb:0x4200000000000000000000000000000000000006": {
+"kind": "univ3_single"
 },
-"agg:0x4200000000000000000000000000000000000006:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:3136974530394814": {
-"_baked_at": 1784074683,
-"_champ": "5887610",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.007,
-"_oid": "ord_57a707d11dcc4933",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
-"amt": 3136974530394814,
-"calldata": "0xa94e78ef00000000000000000000000000000000000000000000000000000000000000200000000000000000000000004200000000000000000000000000000000000006000000000000000000000000000000000000000000000000000b250fcc8dbabe000000000000000000000000000000000000000000000000000000000059d67a00000000000000000000000000000000000000000000000000000000005a76c90000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000c80000000000000000000000000000000000000000000000000000000006a57261c18344f637c9b4cd8b4bc4043046b8bdc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000320000000000000000000000000cbb7c0000ab88b473b1f5afd9ef808440eed33bf0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b81d678ffb9c0263b24a97847620c99d213eb14000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c3b000000000000000000000000000000000000000000000000000000000000002b4200000000000000000000000000000000000006000064cbb7c0000ab88b473b1f5afd9ef808440eed33bf000000000000000000000000000000000000000000000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000002389726b55948d8d8944b0145204761215aaec710000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000040000000000000000000000004f37a9d177470499a2dd084621020b023fcffc1f000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cbb7c0000ab88b473b1f5afd9ef808440eed33bf0000000000000000000000002608737c8d277d485fbd13465f2e15a63ab025f4000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000239d00000000000000000000000000000000000000000000000000000000000000010000000000000000000000002608737c8d277d485fbd13465f2e15a63ab025f4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a520000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 5928649,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
+"0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf:0x4200000000000000000000000000000000000006": {
+"kind": "univ3_single"
 },
-"agg:0x4200000000000000000000000000000000000006:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:4225852262722113": {
-"_baked_at": 1784074688,
-"_champ": "7935586",
-"_flakes": 1,
-"_gated": true,
-"_margin": 0.0062,
-"_oid": "ord_ce7f9212a5ab4bc5",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
-"amt": 4225852262722113,
-"calldata": "0xa94e78ef00000000000000000000000000000000000000000000000000000000000000200000000000000000000000004200000000000000000000000000000000000006000000000000000000000000000000000000000000000000000f0363e6fe2a410000000000000000000000000000000000000000000000000000000000791662000000000000000000000000000000000000000000000000000000000079d63f0000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000c80000000000000000000000000000000000000000000000000000000006a572620ffacf49d770f4531879c13d267ed3e0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000320000000000000000000000000cbb7c0000ab88b473b1f5afd9ef808440eed33bf0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b81d678ffb9c0263b24a97847620c99d213eb14000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c40000000000000000000000000000000000000000000000000000000000000002b4200000000000000000000000000000000000006000064cbb7c0000ab88b473b1f5afd9ef808440eed33bf000000000000000000000000000000000000000000000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000002389726b55948d8d8944b0145204761215aaec710000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000040000000000000000000000004f37a9d177470499a2dd084621020b023fcffc1f000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cbb7c0000ab88b473b1f5afd9ef808440eed33bf0000000000000000000000002608737c8d277d485fbd13465f2e15a63ab025f4000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002ff800000000000000000000000000000000000000000000000000000000000000010000000000000000000000002608737c8d277d485fbd13465f2e15a63ab025f4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a520000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 7984703,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
+"0x4200000000000000000000000000000000000006:0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf": {
+"kind": "univ3_single"
 },
-"agg:0x4200000000000000000000000000000000000006:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:591855568221904": {
-"_baked_at": 1784074684,
-"_champ": "1111120",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.005,
-"_oid": "ord_caccfd2ffcd946ba",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"amt": 591855568221904,
-"calldata": "0x54e3f31b00000000000000000000000000000000000000000000000000000000000000200000000000000000000000004200000000000000000000000000000000000006000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000021a4a1ce6f6d0000000000000000000000000000000000000000000000000000000000010f4500000000000000000000000000000000000000000000000000000000000110a2e00000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000000000000000000000000000038000000000000000000000000000000000000000000000000000000000000003e0000000000000000000000000111111111111111111111111111111111111111100000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000420000000000000000000000000000000000000000000000000000000006a57261d285b69a63eea444796fbf158c5649e7b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b2b6ce813b99b840fe632c63bca5394938ef01e0000000000000000000000000000000000000000000000000000000000000124c04b8d59000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a52000000000000000000000000000000000000000000000000000000006a600c3c00000000000000000000000000000000000000000000000000021a4a1ce6f6d00000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002b420000000000000000000000000000000000000600000a833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000124000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 1116718,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
+"0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
+"kind": "univ3_single"
 },
-"agg:0x4200000000000000000000000000000000000006:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:933291141908863": {
-"_baked_at": 1784074692,
-"_champ": "1754067",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0052,
-"_oid": "ord_a9b501705b724632",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"amt": 933291141908863,
-"calldata": "0xa94e78ef00000000000000000000000000000000000000000000000000000000000000200000000000000000000000004200000000000000000000000000000000000006000000000000000000000000000000000000000000000000000350d2c6fc497f00000000000000000000000000000000000000000000000000000000001ac3d300000000000000000000000000000000000000000000000000000000001ae74d0000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000c80000000000000000000000000000000000000000000000000000000006a572625d4076ab7f60d4b3fbabafb6de694b1c700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000320000000000000000000000000cbb7c0000ab88b473b1f5afd9ef808440eed33bf0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b81d678ffb9c0263b24a97847620c99d213eb14000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c44000000000000000000000000000000000000000000000000000000000000002b4200000000000000000000000000000000000006000064cbb7c0000ab88b473b1f5afd9ef808440eed33bf000000000000000000000000000000000000000000000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000002389726b55948d8d8944b0145204761215aaec710000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000040000000000000000000000004f37a9d177470499a2dd084621020b023fcffc1f000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cbb7c0000ab88b473b1f5afd9ef808440eed33bf0000000000000000000000002608737c8d277d485fbd13465f2e15a63ab025f4000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a9800000000000000000000000000000000000000000000000000000000000000010000000000000000000000002608737c8d277d485fbd13465f2e15a63ab025f4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a520000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 1763149,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x4200000000000000000000000000000000000006:0xfb31f85a8367210b2e4ed2360d2da9dc2d2ccc95:50000000000000000": {
-"_baked_at": 1784074675,
-"_champ": "9382911224612468524206",
-"_flakes": 1,
-"_gated": true,
-"_margin": 0.0108,
-"_oid": "ord_5795b1d0b8a248b6",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"amt": 50000000000000000,
-"calldata": "0x46c67b6d0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000420000000000000000000000000000000000000600000000000000000000000000000000000000000000000000b1a2bc2ec500000000000000000000000000000000000000000000000001fca60d0dfda39f84ae0000000000000000000000000000000000000000000002022383eb5a9b8b46b50000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000001080000000000000000000000000000000000000000000000000000000006a5726135dab9621ee344f209501cc1f7cba1187000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000003a000000000000000000000000000000000000000000000000000000000000023f0000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000fb31f85a8367210b2e4ed2360d2da9dc2d2ccc950000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000dcf4ee5b700e2a5fec458e06b763a4a3e3004494000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000004d94566bee7ef7b39f29d150ab3be6b6242c17cc5a3100000000000000000000000000000000000000000000000000000000000003200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000820000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000002389726b55948d8d8944b0145204761215aaec710000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000040000000000000000000000004f37a9d177470499a2dd084621020b023fcffc1f000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042000000000000000000000000000000000000060000000000000000000000004b0574ca7775a09d39ffed885e7230953805c795000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e35fa931a000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000004b0574ca7775a09d39ffed885e7230953805c795000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a52000000000000000000000000fb31f85a8367210b2e4ed2360d2da9dc2d2ccc950000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000cbbb8035cac7d4b3ca7abb74cf7bdf900215ce0d000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c33000000000000000000000000000000000000000000000000000000000000002b833589fcd6edb6e08f4c7c32d4f71b54bda029130000c8fb31f85a8367210b2e4ed2360d2da9dc2d2ccc950000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 9484185601674375284405,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x368181499736d0c0cc614dbb145e2ec1ac86b8c6:2000000": {
-"_baked_at": 1784074693,
-"_champ": "1981825646751062569",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0028,
-"_oid": "ord_52c141d0a54f4b80",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"amt": 2000000,
-"calldata": "0x46c67b6d0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000001e84800000000000000000000000000000000000000000000000001b80dbecf15b1a290000000000000000000000000000000000000000000000001b949854a964dfd80000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000b80000000000000000000000000000000000000000000000000000000006a572626aa358ba8d69245dbba934582df667401000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000003a00000000000000000000000000000000000000000000000000000000000002008000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000368181499736d0c0cc614dbb145e2ec1ac86b8c60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000aee2b8d4a154e36f479daece3fb3e6c3c03d396e000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c45000000000000000000000000000000000000000000000000000000000000002b833589fcd6edb6e08f4c7c32d4f71b54bda02913000bb8368181499736d0c0cc614dbb145e2ec1ac86b8c600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007080000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000320000000000000000000000000087c440f251ff6cfe62b86dde1be558b95b4bb9b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000dcf4ee5b700e2a5fec458e06b763a4a3e3004494000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000004e17eb754f9750e1d2cd87835592d37ee9f15c217b50000000000000000000000000368181499736d0c0cc614dbb145e2ec1ac86b8c60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000dcf4ee5b700e2a5fec458e06b763a4a3e3004494000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000004e16285de0b9fda5dc3f3704b1c1510a5d7a1a28d3550000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 1987380824963866584,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x4ed4e862860bed51a9570b96d89af5e1b0efefed:850210": {
-"_baked_at": 1784074689,
-"_champ": "645247693931345701542",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0053,
-"_oid": "ord_400beb673bbb4b5f",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"amt": 850210,
-"calldata": "0xa94e78ef0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000cf922000000000000000000000000000000000000000000000022fa9c4ef635d56aa60000000000000000000000000000000000000000000000232a1df0d3c3bbbcba00000000000000000000000011111111111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000160000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000780000000000000000000000000000000000000000000000000000000006a5726222c630f5543314b8bbe6df4fbd54623bc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000032000000000000000000000000042000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c00000000000000000000000000000000000000000000000000000000000027100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000100000000000000000000000033a47a122de0b5c429ba79e6d17965b0e841c60e000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c41000000000000000000000000000000000000000000000000000000000000002b833589fcd6edb6e08f4c7c32d4f71b54bda0291300000142000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000004ed4e862860bed51a9570b96d89af5e1b0efefed0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b81d678ffb9c0263b24a97847620c99d213eb14000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c41000000000000000000000000000000000000000000000000000000000000002b42000000000000000000000000000000000000060001f44ed4e862860bed51a9570b96d89af5e1b0efefed0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 648670889096064515258,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x50c5725949a6f0c72e6c4a641f24049a917db0cb:1000000": {
-"_baked_at": 1784074700,
-"_champ": "1000435332185300414",
-"_flakes": 1,
-"_gated": true,
-"_margin": -0.0,
-"_oid": "ord_292fe6f9202646d4",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"amt": 1000000,
-"calldata": "0x54e3f31b0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000050c5725949a6f0c72e6c4a641f24049a917db0cb00000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000ddeb361f2db1fd50000000000000000000000000000000000000000000000000de241459a2d9a1a00000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000000000000000000000000000038000000000000000000000000000000000000000000000000000000000000003e00000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000420000000000000000000000000000000000000000000000000000000006a57262dd02c0ba5689143e7bc60ecbc03864ddc000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000aee2b8d4a154e36f479daece3fb3e6c3c03d396e0000000000000000000000000000000000000000000000000000000000000124c04b8d59000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a52000000000000000000000000000000000000000000000000000000006a600c4c00000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002b833589fcd6edb6e08f4c7c32d4f71b54bda0291300006450c5725949a6f0c72e6c4a641f24049a917db0cb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000124000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 1000433834424900122,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x50c5725949a6f0c72e6c4a641f24049a917db0cb:500000": {
-"_baked_at": 1784074699,
-"_champ": "500260580350597606",
-"_flakes": 0,
-"_gated": true,
-"_margin": -0.0001,
-"_oid": "ord_2678de0b52974a23",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"amt": 500000,
-"calldata": "0x54e3f31b0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000050c5725949a6f0c72e6c4a641f24049a917db0cb000000000000000000000000000000000000000000000000000000000007a12000000000000000000000000000000000000000000000000006ef59b3e0164e1900000000000000000000000000000000000000000000000006f120a5b47ddadd00000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000000000000000000000000000038000000000000000000000000000000000000000000000000000000000000003e00000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000420000000000000000000000000000000000000000000000000000000006a57262b184908b289aa418ebea3f740df4cf401000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000aee2b8d4a154e36f479daece3fb3e6c3c03d396e0000000000000000000000000000000000000000000000000000000000000124c04b8d59000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a52000000000000000000000000000000000000000000000000000000006a600c4b000000000000000000000000000000000000000000000000000000000007a1200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002b833589fcd6edb6e08f4c7c32d4f71b54bda0291300006450c5725949a6f0c72e6c4a641f24049a917db0cb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000124000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 500216929684675293,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0x7002458b1df59eccb57387bc79ffc7c29e22e6f7:2000000": {
-"_baked_at": 1784074674,
-"_champ": "115554108426568398463",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0168,
-"_oid": "ord_77691ab36239482b",
-"_our_delivers": 25,
-"_our_drops": 1,
-"_serves": 25,
-"amt": 2000000,
-"calldata": "0xa94e78ef0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000001e848000000000000000000000000000000000000000000000000643a2a961ce94f67f0000000000000000000000000000000000000000000000065e9f52b5c29bd32f0000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000a80000000000000000000000000000000000000000000000000000000006a572612a8b0373defa6482c937eb938422d98e300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000340000000000000000000000000000000000000000000000000000000000000062000000000000000000000000042000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b2b6ce813b99b840fe632c63bca5394938ef01e000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c32000000000000000000000000000000000000000000000000000000000000002b833589fcd6edb6e08f4c7c32d4f71b54bda029130000014200000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000dbfefd2e8460a6ee4955a68582f85708baea60a30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b2b6ce813b99b840fe632c63bca5394938ef01e000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c32000000000000000000000000000000000000000000000000000000000000002b4200000000000000000000000000000000000006000001dbfefd2e8460a6ee4955a68582f85708baea60a30000000000000000000000000000000000000000000000000000000000000000007002458b1df59eccb57387bc79ffc7c29e22e6f70000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000dcf4ee5b700e2a5fec458e06b763a4a3e3004494000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000004d596fb655476fdcfb9712dd200308d941a1c6d1119e0000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 117498723743727080239,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xc3de830ea07524a0761646a6a4e4be0e114a3c83:2000000": {
-"_baked_at": 1784074703,
-"_champ": "543030409526318430",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0017,
-"_oid": "ord_18cce4de8fb54af9",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"amt": 2000000,
-"calldata": "0x54e3f31b0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000c3de830ea07524a0761646a6a4e4be0e114a3c8300000000000000000000000000000000000000000000000000000000001e848000000000000000000000000000000000000000000000000007893b47c60d155e000000000000000000000000000000000000000000000000078c7a7d99d442e500000000000000000000000000000000000000000000000000000000000001e0000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000003a00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000111111111111111111111111111111111111111100000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000440000000000000000000000000000000000000000000000000000000006a57262f7d4464c51bf544a598301b7751b7672d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000aee2b8d4a154e36f479daece3fb3e6c3c03d396e0000000000000000000000000000000000000000000000000000000000000144c04b8d59000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a52000000000000000000000000000000000000000000000000000000006a600c4f00000000000000000000000000000000000000000000000000000000001e848000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000042833589fcd6edb6e08f4c7c32d4f71b54bda029130000644200000000000000000000000000000000000006000bb8c3de830ea07524a0761646a6a4e4be0e114a3c8300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000144000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 543944334875312869,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xe88419a3fc78364cfe3de88080ee4853fab754c6:250000000": {
-"_baked_at": 1784074676,
-"_champ": "327696425091729337474084",
-"_flakes": 1,
-"_gated": true,
-"_margin": 0.0086,
-"_oid": "ord_15d76f0bb4b6456e",
-"_our_delivers": 25,
-"_our_drops": 3,
-"_serves": 25,
-"amt": 250000000,
-"calldata": "0x54e3f31b0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000e88419a3fc78364cfe3de88080ee4853fab754c6000000000000000000000000000000000000000000000000000000000ee6b2800000000000000000000000000000000000000000000045647573eadb6a5ddc240000000000000000000000000000000000000000000045fd2ce42bcedf6bdfe400000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000000000000000000000000000034000000000000000000000000000000000000000000000000000000000000003a0000000000000000000000000111111111111111111111111111111111111111100000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa010000000000000000000000000000000000000000000000000000000000400100000000000000000000000000000000000000000000000000000000000003e0000000000000000000000000000000000000000000000000000000006a57261570d842bb26ca4034938b286e4327dc5f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000dcf4ee5b700e2a5fec458e06b763a4a3e300449400000000000000000000000000000000000000000000000000000000000000e491a32b69000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000000000000000000000000000000000000ee6b2800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000001000000000000000000004de42f816a37b65f99f63e5a04189e24d0dcb256fbb6000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e4000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 330513548327253906808804,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xed664536023d8e4b1640c394777d34abaff1df8f:2000000": {
-"_baked_at": 1784074671,
-"_champ": "4747297420931286728",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0344,
-"_oid": "ord_01476e1179ae43bb",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"amt": 2000000,
-"calldata": "0xa94e78ef0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000001e848000000000000000000000000000000000000000000000000041e1c9da21bcc6c80000000000000000000000000000000000000000000000004425504a4622b44a0000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000780000000000000000000000000000000000000000000000000000000006a57260f8c5b0a39602a4ed2b2fbbd1d546fbd900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000032000000000000000000000000042000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b81d678ffb9c0263b24a97847620c99d213eb14000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c2f000000000000000000000000000000000000000000000000000000000000002b833589fcd6edb6e08f4c7c32d4f71b54bda029130000644200000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000ed664536023d8e4b1640c394777d34abaff1df8f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000dcf4ee5b700e2a5fec458e06b763a4a3e3004494000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000004de4e0de678bdd3773c936f112135af3da8a52253afb0000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 4910419248651875402,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xf5de8697232a16a942f7cf706415f553ce53e27f:2000000": {
-"_baked_at": 1784074672,
-"_champ": "17025476522028291686311",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0201,
-"_oid": "ord_8c0651144586481e",
-"_our_delivers": 25,
-"_our_drops": 2,
-"_serves": 25,
-"amt": 2000000,
-"calldata": "0xa94e78ef0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000001e848000000000000000000000000000000000000000000000039af3f353f1b15d7fa70000000000000000000000000000000000000000000003ad8cc7a7d046ed72e50000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000760000000000000000000000000000000000000000000000000000000006a5726103e2c666c2c6648ab88576b984ef8fc5c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000032000000000000000000000000042000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b81d678ffb9c0263b24a97847620c99d213eb14000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c30000000000000000000000000000000000000000000000000000000000000002b833589fcd6edb6e08f4c7c32d4f71b54bda029130000644200000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000f5de8697232a16a942f7cf706415f553ce53e27f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c00000000000000000000000000000000000000000000000000000000000027100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000600000000000000000000000075d199efb540e47d27d52c62da3e7dac2b9e834f000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000004de4820fe7f8a4d076338928a5444b15c9a68c4639280000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 17368530434559348404965,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0x940181a94a35a4569e4529a3cdfb74e38fd98631:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:1810085037592989043": {
-"_baked_at": 1784074696,
-"_champ": "910689",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0047,
-"_oid": "ord_a060d4fb15c8457a",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"amt": 1810085037592989043,
-"calldata": "0x54e3f31b0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000940181a94a35a4569e4529a3cdfb74e38fd98631000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000000000000000000000000000191eb6c05efacd7300000000000000000000000000000000000000000000000000000000000de56100000000000000000000000000000000000000000000000000000000000df60300000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000000000000000000000000000038000000000000000000000000000000000000000000000000000000000000003e00000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000420000000000000000000000000000000000000000000000000000000006a572629b451dcfeeea94033a919c877ebe30c160000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000001b81d678ffb9c0263b24a97847620c99d213eb140000000000000000000000000000000000000000000000000000000000000124c04b8d59000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a52000000000000000000000000000000000000000000000000000000006a600c48000000000000000000000000000000000000000000000000191eb6c05efacd730000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002b940181a94a35a4569e4529a3cdfb74e38fd986310001f4833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000124000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 914947,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:2000000000000000000": {
-"_baked_at": 1784074697,
-"_champ": "146456",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0036,
-"_oid": "ord_691c046b9fcb4a78",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"amt": 2000000000000000000,
-"calldata": "0xa94e78ef0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000c5fecc3a29fb57b5024eec8a2239d4621e111cbe0000000000000000000000000000000000000000000000001bc16d674ec800000000000000000000000000000000000000000000000000000000000000023c180000000000000000000000000000000000000000000000000000000000023e2700000000000000000000000011111111111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000160000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000720000000000000000000000000000000000000000000000000000000006a57262af5350fcd41f348ad967e8dd3b7ecea850000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000032000000000000000000000000042000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000aee2b8d4a154e36f479daece3fb3e6c3c03d396e000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c49000000000000000000000000000000000000000000000000000000000000002bc5fecc3a29fb57b5024eec8a2239d4621e111cbe0027104200000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000002389726b55948d8d8944b0145204761215aaec71000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000005000000000000000000000000551a0e3d267bea87048f08cc94cc6035ad99221b000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a52000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000001000276a40000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 146983,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
-},
-"agg:0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:73656444901096007760": {
-"_baked_at": 1784074691,
-"_champ": "5374295",
-"_flakes": 0,
-"_gated": true,
-"_margin": 0.0055,
-"_oid": "ord_0e621c8caf004f79",
-"_our_delivers": 25,
-"_our_drops": 0,
-"_serves": 25,
-"amt": 73656444901096007760,
-"calldata": "0xa94e78ef0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000c5fecc3a29fb57b5024eec8a2239d4621e111cbe000000000000000000000000000000000000000000000003fe30426393f5a850000000000000000000000000000000000000000000000000000000000052015700000000000000000000000000000000000000000000000000000000005274640000000000000000000000001111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000c80000000000000000000000000000000000000000000000000000000006a572623ebe90cbb20cc4078b1b6c422739426e60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000032000000000000000000000000042000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000e53d24cd81cc81bbf271ad7b02d0d67f851d727c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000aee2b8d4a154e36f479daece3fb3e6c3c03d396e000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a600c43000000000000000000000000000000000000000000000000000000000000002bc5fecc3a29fb57b5024eec8a2239d4621e111cbe0027104200000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000002389726b55948d8d8944b0145204761215aaec710000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000040000000000000000000000004f37a9d177470499a2dd084621020b023fcffc1f000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042000000000000000000000000000000000000060000000000000000000000004b0574ca7775a09d39ffed885e7230953805c795000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda0291300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a2d001b70cbeb00000000000000000000000000000000000000000000000000000000000000010000000000000000000000004b0574ca7775a09d39ffed885e7230953805c795000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000059c7c832e96d2568bea6db468c1aadcbbda08a520000000000000000000000000000000000000000000000000000000000000000",
-"kind": "agg",
-"out": 5403748,
-"recip": "0x1111111111111111111111111111111111111111",
-"spender": "0x93aaae79a53759cd164340e4c8766e4db5331cd7",
-"to": "0x59c7c832e96d2568bea6db468c1aadcbbda08a52"
+"0x833589fcd6edb6e08f4c7c32d4f71b54bda02913:0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf": {
+"kind": "univ3_single"
 }
 }
