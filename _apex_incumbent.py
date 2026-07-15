@@ -30,14 +30,14 @@ from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-_PUTTY_FINAL_BRAND = 'hydra-discovery-router'
+_PUTTY_FINAL_BRAND = 'hydra-thread-router'
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.73.6')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.77.5c')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
 _VIKING_REPLAY_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
 
-def _viking_override():
+def _viking_override() -> set:
     """Lazy viking_override.json — exact keys where THIS champion tree is
     scorecard-PROVEN to deliver 0 ALWAYS (structural miss), so the replay row
     is served unconditionally: our delivery vs their 0 = a win; a stale row
@@ -65,7 +65,7 @@ def _viking_cached_bar(key):
         def _dr22():
             import json as _json
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_cached.json')
-            bars = {}
+            bars: dict = {}
             try:
                 data = _json.load(open(path)) or {}
                 for k, v in data.items() if isinstance(data, dict) else []:
@@ -82,7 +82,7 @@ def _viking_cached_bar(key):
         _VIKING_CACHED_BARS = bars
     return _VIKING_CACHED_BARS.get(key) if key else None
 
-def _viking_frozen_index():
+def _viking_frozen_index() -> dict:
     """Lazy byte-index of the lineage's frozen replay rows (the tables the BASE
     stack can serve verbatim): key -> [frozenset of (target, data) pairs per
     row]. Used to recognize a base serve that wei-ties the champion by
@@ -90,7 +90,7 @@ def _viking_frozen_index():
     global _VIKING_FROZEN_INDEX
     if _VIKING_FROZEN_INDEX is None:
         import json as _json
-        idx = {}
+        idx: dict = {}
         here = os.path.dirname(os.path.abspath(__file__))
         for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
             try:
@@ -109,7 +109,7 @@ def _viking_frozen_index():
         _VIKING_FROZEN_INDEX = idx
     return _VIKING_FROZEN_INDEX
 
-def _viking_replay():
+def _viking_replay() -> dict:
     """Lazy, memoized viking_replay.json — key -> {"ix": [raw interaction
     dicts], "out": stamped build-time quote, "at": build unix time}. Parse
     deferred past the Stage-2 init budget; a broken file just disables the
@@ -122,7 +122,7 @@ def _viking_replay():
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_replay.json')
 
         def _dr19():
-            out = {}
+            out: dict = {}
             try:
                 data = _json.load(open(path)) or {}
                 for key, spec in data.items() if isinstance(data, dict) else []:
@@ -157,7 +157,7 @@ class VikingSolver(_HydraBase):
         return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
 
     @staticmethod
-    def _v_is_empty(plan):
+    def _v_is_empty(plan) -> bool:
         try:
             return plan is None or not getattr(plan, 'interactions', None)
         except Exception:
@@ -363,7 +363,6 @@ class VikingSolver(_HydraBase):
         _dr11 = _dr10()
         if _dr11 is not _DR_UNSET:
             return _dr11
-
 class _PuttyCleanSolver(VikingSolver):
     """Outermost brand wrapper: forces metadata().name to the clean brand
     (name-only; every routing/quoting/plan path is inherited unchanged)."""
