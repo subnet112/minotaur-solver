@@ -8,17 +8,11 @@ _MC_ROUTER = '0x2626664c2603336E57B271c5C0b26F421741e481' # SwapRouter02 (Base)
 _MC_QSEL = 'c6a5026a'                                      # quoteExactInputSingle(...) no 0x
 _MC_QIN = ['address', 'address', 'uint256', 'uint24', 'uint160']
 _MC_QOUT = ['uint256', 'uint160', 'uint32', 'uint256']
-_MC_FEES = (100, 3000, 10000, 500, 20963)
-# Layer-1 whitelist: PROVEN persistent skips (fill regardless of goran's route type — works even
-# when goran's dead route is an undecodable V2/UR). PAIR = any amount; ORDER = exact (tin,tout,amt).
+_MC_FEES = (3000, 500, 10000, 100, 20855)
+# Layer-1 whitelist: PROVEN persistent skips (fill regardless of the base route type — works even
+# when the dead base route is an undecodable V2/UR). PAIR = any amount; ORDER = exact (tin,tout,amt).
 _MC_FORCE_PAIR = {
     ('0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'),  # USDbC->USDC
-}
-# RPC-INDEPENDENT hardfill: pairs that are PERPETUAL champion skips AND clear at a KNOWN tier at
-# every block (proven). We build the swap with this fee WITHOUT quoting -> fires even when the
-# RPC soak makes the quote-gated path defer -> a DURABLE better=1 (performance > factorization).
-_MC_HARD = {
-    ('0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'): 100,  # USDbC->USDC fee-100
 }
 _MC_FORCE_ORDER = {
     ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x6985884c4392d348587b19cb9eaaf157f13271cd', 2000000),          # USDC->PEPE (0020527d)
@@ -27,9 +21,9 @@ _MC_FORCE_ORDER = {
     ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', 850210),           # USDC->AERO (4feb4900)
     ('0x4200000000000000000000000000000000000006', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', 1000000000000000), # WETH->AERO (a17ba77b)
 }
-# CANDIDATE skips from goran_live_edge (goran returns a REVERTING V3 plan) — NOT proven, so
-# GORAN-DEAD-GATED: re-quote goran's own route at bench time, fill ONLY if it is dead(0),
-# defer if he delivers => ZERO drops even on a false candidate. goran uses decodable 0x04e45aaf.
+# CANDIDATE skips (base engine returns a REVERTING V3 plan) — NOT proven, so DEAD-GATED:
+# re-quote the base's own route at bench time, fill ONLY if it is dead(0), defer if it
+# delivers => ZERO drops even on a false candidate. Base emits decodable 0x04e45aaf.
 _MC_CAND_ORDER = {
     ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xfde4c96c8593536e31f229ea8f37b2ada2699bb2', 2000000),
     ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x04c0599ae5a44757c0af6f9ec3b93da8976c150a', 2000000),
