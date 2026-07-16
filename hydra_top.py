@@ -422,14 +422,13 @@ def _dr20():
                 for t, f in zip(toks[:-1], list(spec['fees'])):
                     path += bytes.fromhex(_ck(t)[2:]) + int(f).to_bytes(3, 'big')
                 path += bytes.fromhex(_ck(toks[-1])[2:])
-                v3in = _abi_encode(['address', 'uint256', 'uint256', 'bytes', 'bool'], [_ck(recipient), 1 << 255, 0, path, False])
-                call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([0]), [v3in], 9999999999])).hex()
+                v3in = _abi_encode(['address', 'uint256', 'uint256', 'bytes', 'bool'], [_ck(recipient), 57896044618658097711785492504343953926634992332820282019728792003956564819968, 0, path, False])
+                call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [b'\x00', [v3in], 9999999999])).hex()
                 ix.append(_IX(target=ur, value='0', call_data=call, chain_id=chain_id))
             _dr220()
             return ix
         _HYDRA_V1_APP = '0x0cde9a7e60a0df4b86c81490d0496ab3a8e104f1'
         return (SOLVER_AUTHOR, _HYDRA_FLAKE_PREEMPT, _HYDRA_QUALITY_OVERRIDES, _HYDRA_STATIC_COVERS, _HYDRA_V1_APP, _USDC, _WETH, _build_curve_x_ix, _build_cvx_chain_ix, _build_cvx_fb_ix, _build_infinity_cl_ix, _build_infinity_v4_chain_ix, _build_maverick_push_ix, _build_slip_v3path_ix, _build_univ4_push_ix, _build_v2_direct_ix, _build_v2_push_ix, _build_v3_path02_ix, _build_v3_slip_chain_ix, _build_v3_v3_chain_ix)
-        return _DR_UNSET
     _dr49 = _dr48()
     if _dr49 is not _DR_UNSET:
         return _dr49
