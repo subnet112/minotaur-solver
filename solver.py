@@ -210,3 +210,53 @@ class JamesSolver(_ChampBase):
 
 
 SOLVER_CLASS = JamesSolver
+
+
+# SN112 live-gated frontier wrapper
+"""Append this module's wrapper to a current champion solver tree."""
+
+import dataclasses as _sn_dc
+
+from lite_psm_edge import maybe_lite_psm_plan as _sn_lite_psm_plan
+from minotaur_subnet.sdk.intent_solver import SolverMetadata as _SnMetadata
+
+
+_SN_CHAMPION_BASE = SOLVER_CLASS
+
+
+class Sn112FrontierSolver(_SN_CHAMPION_BASE):
+    """Current champion plus one exact, live-gated LitePSM frontier edge."""
+
+    def metadata(self):
+        base = super().metadata()
+        try:
+            return _sn_dc.replace(base, name="northstar-frontier", version="1.0.0")
+        except Exception:
+            return _SnMetadata(
+                name="northstar-frontier",
+                version="1.0.0",
+                author=getattr(base, "author", "sn112"),
+                description="Champion-compatible solver with a live-gated LitePSM edge",
+                supported_chains=getattr(base, "supported_chains", None) or [1, 8453],
+            )
+
+    def generate_plan(self, intent, state, snapshot=None):
+        inherited = super().generate_plan(intent, state, snapshot)
+        edge = _sn_lite_psm_plan(self, intent, state, snapshot, inherited)
+        return edge if edge is not None else inherited
+
+
+SOLVER_CLASS = Sn112FrontierSolver
+
+# --- putty outermost branding (name+version, behavior-safe) ---
+_PUTTY_FINAL_BASE = SOLVER_CLASS
+class _PUTTY_FINAL_BRAND(_PUTTY_FINAL_BASE):
+    def metadata(self):
+        md = super().metadata()
+        try:
+            md.name = 'aurora-router'
+            md.version = '405.0.0'
+        except Exception:
+            pass
+        return md
+SOLVER_CLASS = _PUTTY_FINAL_BRAND
