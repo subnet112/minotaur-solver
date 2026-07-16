@@ -275,6 +275,65 @@ def _is_addr(a):
         return False
 
 
+# ── region-factored helpers (behavior-preserving outlines of _eth_superset_plan;
+#    identity-threaded free vars; inline back to the champion AST-identically) ───
+def _cf_p1(self, intent, state):
+    p = self._normalized_swap_params(intent, state)
+    tin = str(p.get("input_token", "") or "").lower()
+    tout = str(p.get("output_token", "") or "").lower()
+    amt = int(p.get("input_amount", 0) or 0)
+    min_out = int(p.get("min_output_amount", 0) or 0)
+    return (p, tin, tout, amt, min_out)
+
+
+def _cf_h1(self, amt, w3, block, tin, tout, min_out, champ_route, champ_empty, recip, intent, state):
+    # Budget-capped, individually try/excepted quote closure.
+    seen = {}
+    n = [0]
+
+    def quote_fn(route):
+        key = repr(route)
+        if key in seen:
+            return seen[key]
+        if n[0] >= self._MAX_QUOTES:
+            return None
+        n[0] += 1
+        if route[0] == "curve" and not self._CURVE_ENABLED:
+            seen[key] = None
+            return None
+        qc = _quote_calldata(route, amt)
+        if qc is None:
+            seen[key] = None
+            return None
+        to, data = qc
+        ret = _eth_call(w3, to, data, block)
+        q = int.from_bytes(ret[:32], "big") if ret and len(ret) >= 32 else None
+        seen[key] = q
+        return q
+
+    route = _decide(
+        tin, tout, amt, min_out, champ_route, champ_empty,
+        quote_fn, self._STRICT_MARGIN_BPS,
+    )
+    if route is None:
+        return None
+
+    ixs = _build_interactions(route, tin, amt, recip)
+    if not ixs:
+        return None
+    logger.info(
+        "[eth-superset] override %s->%s amt=%s via %s (block=%s)",
+        tin[:8], tout[:8], amt, route, block,
+    )
+    return ExecutionPlan(
+        intent_id=intent.app_id,
+        interactions=ixs,
+        deadline=_FAR_DEADLINE,
+        nonce=state.nonce,
+        metadata={"solver": _route_tag(route), "chain_id": 1, "route": repr(route)},
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  The solver.  Chain-1-only override; everything else is champion-verbatim.
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -295,7 +354,9 @@ class RobustFloorSolver(_ChampFloor):
         import dataclasses as _dc
         base = super().metadata()
         try:
-            return _dc.replace(base, name="robust-floor-eth-1", version="1.0.0")
+            return _dc.replace(
+                base, name='aurora-router', version='fr-fac-0'
+            )
         except Exception:
             return base
 
@@ -333,11 +394,7 @@ class RobustFloorSolver(_ChampFloor):
         return bn if bn and bn > 0 else "latest"
 
     def _eth_superset_plan(self, intent, state, snapshot, champ):
-        p = self._normalized_swap_params(intent, state)
-        tin = str(p.get("input_token", "") or "").lower()
-        tout = str(p.get("output_token", "") or "").lower()
-        amt = int(p.get("input_amount", 0) or 0)
-        min_out = int(p.get("min_output_amount", 0) or 0)
+        (p, tin, tout, amt, min_out) = _cf_p1(self, intent, state)
 
         # Guard: valid single-chain-1 ERC20 swap only.
         if not _is_addr(tin) or not _is_addr(tout) or amt <= 0 or tin == tout:
@@ -366,51 +423,7 @@ class RobustFloorSolver(_ChampFloor):
         champ_empty = champ is None or not getattr(champ, "interactions", None)
         champ_route = _champ_route(tin, tout)
 
-        # Budget-capped, individually try/excepted quote closure.
-        seen = {}
-        n = [0]
-
-        def quote_fn(route):
-            key = repr(route)
-            if key in seen:
-                return seen[key]
-            if n[0] >= self._MAX_QUOTES:
-                return None
-            n[0] += 1
-            if route[0] == "curve" and not self._CURVE_ENABLED:
-                seen[key] = None
-                return None
-            qc = _quote_calldata(route, amt)
-            if qc is None:
-                seen[key] = None
-                return None
-            to, data = qc
-            ret = _eth_call(w3, to, data, block)
-            q = int.from_bytes(ret[:32], "big") if ret and len(ret) >= 32 else None
-            seen[key] = q
-            return q
-
-        route = _decide(
-            tin, tout, amt, min_out, champ_route, champ_empty,
-            quote_fn, self._STRICT_MARGIN_BPS,
-        )
-        if route is None:
-            return None
-
-        ixs = _build_interactions(route, tin, amt, recip)
-        if not ixs:
-            return None
-        logger.info(
-            "[eth-superset] override %s->%s amt=%s via %s (block=%s)",
-            tin[:8], tout[:8], amt, route, block,
-        )
-        return ExecutionPlan(
-            intent_id=intent.app_id,
-            interactions=ixs,
-            deadline=_FAR_DEADLINE,
-            nonce=state.nonce,
-            metadata={"solver": _route_tag(route), "chain_id": 1, "route": repr(route)},
-        )
+        return _cf_h1(self, amt, w3, block, tin, tout, min_out, champ_route, champ_empty, recip, intent, state)
 
 
 SOLVER_CLASS = RobustFloorSolver
