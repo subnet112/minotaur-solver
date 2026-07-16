@@ -146,7 +146,9 @@ class JamesSolver(_JamesSolverDR17):
     outside benchmarks (live mode never calls on_benchmark_start).
     """
     _FAST_BELOW_S = 6.0
-    _RUN_BUDGET_S = 860.0
+    _RUN_BUDGET_S = 520.0  # 2026-07-15: restored from 860 (artic cutover reverted it).
+                           # Effective round lifetime < 900s hard kill during churn;
+                           # 860 orphaned runs on round supersession -> "window elapsed".
 
     def initialize(self, config):
         super().initialize(config)
