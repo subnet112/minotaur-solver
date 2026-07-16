@@ -33,13 +33,13 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger("viking_mino")
 
 _AGG_BANK_CACHE = None
-_AGG_MAX_AGE_S = 2592000.0  # 30d: goran's 3 _validated aggs are FROZEN in its immutable
-                            # champion image (~1d old); we serve the IDENTICAL calldata so we
-                            # deliver in lockstep with goran (match, or joint-skip on a shared
-                            # revert) — never a relative drop/regression. The old 90m gate was
-                            # for OUR self-baked rows vs a fresh champion; N/A when mirroring
-                            # the champion's own frozen agg. Deferring instead = >1% cut (their
-                            # _margin is 1.28-3.62%) = catastrophic veto on 3 orders.
+_AGG_MAX_AGE_S = 2592000.0  # 30d: champ==0 cover rows can never regress (champ delivers
+                            # 0 on the pair) so freshness is not a drop-risk lever for them; a
+                            # long gate maximizes safe-cover uptime. (v403 ships ONLY champ==0
+                            # rows; the out-delivery rows that made a tight gate matter were
+                            # stripped in v403.) If out-delivery rows are ever re-introduced,
+                            # this MUST drop to <=7200s — a 30d gate on a champ-SERVED override
+                            # is what caused the v402 ord_7aa67f25 drop.
 
 # ── champ==0 blind-spot covers via the champion's OWN dynamic-fallback path ────
 # goran's base has `_v_dynamic_fallback` (reached ONLY when the engine returns an
@@ -176,12 +176,12 @@ class JamesSolver(_ChampBase):
     def metadata(self):
         base = super().metadata()
         try:
-            return _dc.replace(base, name="scandinavia-solver-1", version="403.0.1")
+            return _dc.replace(base, name="scandinavia-solver-1", version="404.0.1")
         except Exception:
             try:
                 return SolverMetadata(
                     name="scandinavia-solver-1",
-                    version="403.0.1",
+                    version="404.0.1",
                     author=getattr(base, "author", "viking"),
                     description=getattr(base, "description", "re-fork of certified champion"),
                     supported_chains=getattr(base, "supported_chains", None) or [8453],
@@ -192,9 +192,15 @@ class JamesSolver(_ChampBase):
     def generate_plan(self, intent, state, snapshot=None):
         plan = super().generate_plan(intent, state, snapshot)
         try:
-            if plan is not None and getattr(plan, "interactions", None):
-                spec, p = _agg_lookup(self, intent, state)
-                if spec is not None:
+            spec, p = _agg_lookup(self, intent, state)
+            if spec is not None:
+                served = bool(plan is not None and getattr(plan, "interactions", None))
+                # Two disjoint, fail-closed lanes (v404):
+                #  - regular agg rows fire ONLY on a served plan (upgrade a match);
+                #  - _champ0 cover rows fire ONLY on an EMPTY plan (fill our own
+                #    blind spot: engine==0 ⇒ worst case the cover reverts = skip =
+                #    the tie we'd have anyway ⇒ regression-impossible ▲).
+                if served != bool(spec.get("_champ0")):
                     agg = _agg_build(self, intent, state, snapshot, p, spec)
                     if agg is not None and getattr(agg, "interactions", None):
                         return agg
