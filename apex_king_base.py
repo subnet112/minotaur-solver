@@ -900,7 +900,8 @@ class MinerSolver(_MinerSolverDR77):
                             weth_out, weth_fee = (o, f)
             wi = weth_out * 995 // 1000 if weth_out > 0 else 0
             tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
-            reachable, extra = (0, (0, None))
+            reachable = 0
+            extra = (0, None)
 
             def _dr29():
 
