@@ -689,7 +689,7 @@ class _MinerSolverDR10(_MinerSolverDR10DR170):
         from eth_abi import encode as _abi_encode
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
         spec = cand['spec']
-        ur = _ck(_UNIVERSAL_ROUTER)
+        ur = _ck(_ETH_UNIVERSAL_ROUTER if chain_id == 1 else _UNIVERSAL_ROUTER)
         commands = b''
 
         def _dr201():
@@ -2817,6 +2817,16 @@ class _MinerSolverDR123(_MinerSolverDR77):
                 curve_cand = _quote_eth_curve()
                 if curve_cand is not None:
                     cands.append(curve_cand)
+                try:
+                    def _v4call(to, data):
+                        try:
+                            return w3.eth.call({'to': to, 'data': data})
+                        except Exception:
+                            return None
+                    v4c = DiscoveryEngine(_v4call).v4_candidates(int(chain_id), str(tin).lower(), str(tout).lower(), amount_in)
+                    cands += [c for c in v4c if c.get('out', 0) > 0]
+                except Exception:
+                    logger.exception('[solver] eth v4 candidates failed')
                 return cands
             cands = _dr74()
             return cands

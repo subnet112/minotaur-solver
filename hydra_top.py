@@ -1144,6 +1144,12 @@ class MinerSolver(_ChampBase):
         p = self._normalized_swap_params(intent, state)
         tin = str(p.get('input_token', '') or '').lower()
         tout = str(p.get('output_token', '') or '').lower()
+        # Serve only major-hub pairs here; other pairs defer to the score-aware
+        # engine, which quotes each venue directly.
+        from king_consts import _ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_WBTC, _ETH_DAI
+        _MAJ = {_ETH_WETH.lower(), _ETH_USDC.lower(), _ETH_USDT.lower(), _ETH_WBTC.lower(), _ETH_DAI.lower()}
+        if tin not in _MAJ or tout not in _MAJ:
+            return None
 
         def _dr77():
             amt = int(p.get('input_amount', 0) or 0)

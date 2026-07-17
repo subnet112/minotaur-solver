@@ -67,7 +67,27 @@ def _dr3():
     V4_KEY_GRID, V4_BASES = _fw3()
     return (HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK)
 HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK = _dr3()
+# Ethereum (chain 1) Uniswap V4 venue config. No StateView wired for this chain
+# -> the quoter is the liquidity gate (reverts / returns 0 on an empty pool), so
+# _v4_liquidity is skipped on ETH.
+ETH_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+ETH_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+ETH_DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+ETH_USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+ETH_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
+ETH_V4_QUOTER = '0x52f0e24d1c21c8a0cb1e5a5dd6198556bd9e1203'
+ETH_V4_BASES = (_ZERO, ETH_WETH, ETH_USDC, ETH_DAI, ETH_USDT, ETH_WBTC)
+# hookless fee/tickSpacing grid + the ultra-low-fee stable pools (fee 7/10/100,
+# tick 1) that mainnet uses for stable<->stable; ordered most-liquid first.
+ETH_V4_KEY_GRID = ((3000, 60, _ZERO), (500, 10, _ZERO), (10000, 200, _ZERO), (100, 1, _ZERO), (10, 1, _ZERO), (7, 1, _ZERO))
 MAX_CALLS = 90
+
+
+def _v4_cfg(chain_id):
+    """(bases, grid, weth, quoter, stateview_or_None) for the chain's V4 venue."""
+    if chain_id == 8453:
+        return (V4_BASES, V4_KEY_GRID, WETH, V4_QUOTER, V4_STATE_VIEW)
+    return (ETH_V4_BASES, ETH_V4_KEY_GRID, ETH_WETH, ETH_V4_QUOTER, None)
 
 def _sorted_pair(a: str, b: str) -> tuple[str, str]:
     return (a, b) if int(a, 16) < int(b, 16) else (b, a)
@@ -163,9 +183,14 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
         except Exception:
             return 0
 
-    def _v4_liquidity(self, pool_id: bytes) -> int:
+    def _v4_liquidity(self, pool_id: bytes, state_view=None) -> int:
+        # state_view None (mainnet — no public StateView wired) -> skip the
+        # liquidity gate; the quoter reverts/returns 0 on an empty pool anyway.
+        sv = state_view or V4_STATE_VIEW
+        if state_view is None and sv is None:
+            return 1
         data = _kk(text='getLiquidity(bytes32)')[:4] + pool_id
-        r = self._c(V4_STATE_VIEW, data)
+        r = self._c(sv, data)
         if not r:
             return 0
         try:
@@ -173,13 +198,10 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
         except Exception:
             return 0
 
-    def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int) -> int:
-        def _fw2():
-            c0, c1, fee, tick, hooks = key
-            data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
-            r = self._c(V4_QUOTER, data)
-            return (r,)
-        r, = _fw2()
+    def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int, quoter=None) -> int:
+        c0, c1, fee, tick, hooks = key
+        data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
+        r = self._c(quoter or V4_QUOTER, data)
         if not r or len(r) < 32:
             return 0
         try:
@@ -192,60 +214,47 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
 
         Emits ``uniswap_v4_ur`` specs matching the solver's existing builder:
         base == tin -> single v4 leg; base != tin -> UR v3 leg (tin->WETH/USDC)
-        chained into the v4 leg via CONTRACT_BALANCE.
+        chained into the v4 leg via CONTRACT_BALANCE. Base + Ethereum (chain 1)
+        via chain-selected quoter/bases/grid (see ``_v4_cfg``).
         """
-        if chain_id != 8453:
+        if chain_id not in (8453, 1):
             return []
+        bases, grid, weth, quoter, state_view = _v4_cfg(chain_id)
+        # ETH (state_view None): skip the on-chain liquidity gate, let the quoter
+        # decide; Base keeps its StateView getLiquidity() pre-filter.
+        skip_liq = state_view is None
         out: list[dict] = []
-        for base in V4_BASES:
+        for base in bases:
             if base.lower() == tout.lower():
                 continue
-            for fee, tick, hooks in V4_KEY_GRID:
-
-                def _fw1():
-                    def _dr11():
-                        c0, c1 = _sorted_pair(base, tout)
-                        pid = v4_pool_id(c0, c1, fee, tick, hooks)
-                        return (c0, c1, pid)
-                    c0, c1, pid = _dr11()
-                    if self._v4_liquidity(pid) <= 0:
-                        return ('c',)
-                    zero_for_one = c0.lower() == base.lower()
-                    leg_in = amount_in
-
-                    def _dr5():
-                        spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else WETH, 'zero_for_one': zero_for_one}
-                        return spec
-                    spec = _dr5()
-                    if base.lower() != tin.lower():
-
-                        def _dr1():
-                            nonlocal leg_in
-                            settle = WETH if base == _ZERO else base
-                            spec['v3_tokens'] = (tin, settle)
-                            spec['v3_fees'] = (500,) if settle.lower() == WETH.lower() else (3000,)
-                            if base == _ZERO:
-                                spec['native_eth'] = True
-                            leg_in = 0
-                            return settle
-                        settle = _dr1()
-
-                    def _dr7():
-                        q = self._v4_quote((c0, c1, fee, tick, hooks), zero_for_one, leg_in) if leg_in else 1
-                        return q
-                    q = _dr7()
-                    if q <= 0:
-                        return ('c',)
-
-                    def _dr4():
-                        out.append({'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'})
-                    _dr4()
-                    return ('b',)
-                _fwr1 = _fw1()
-                if _fwr1 is not None:
-                    if _fwr1[0] == 'b':
-                        break
+            for fee, tick, hooks in grid:
+                c0, c1 = _sorted_pair(base, tout)
+                pid = v4_pool_id(c0, c1, fee, tick, hooks)
+                if not skip_liq and self._v4_liquidity(pid, state_view) <= 0:
                     continue
+                zero_for_one = c0.lower() == base.lower()
+                leg_in = amount_in
+                spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else weth, 'zero_for_one': zero_for_one}
+                if base.lower() != tin.lower():
+                    settle = weth if base == _ZERO else base
+                    spec['v3_tokens'] = (tin, settle)
+                    spec['v3_fees'] = (500,) if settle.lower() == weth.lower() else (3000,)
+                    if base == _ZERO:
+                        spec['native_eth'] = True
+                    leg_in = 0
+                key = (c0, c1, fee, tick, hooks)
+                if leg_in:
+                    q = self._v4_quote(key, zero_for_one, leg_in, quoter)
+                elif skip_liq:
+                    # ETH has no StateView gate above -> confirm the pool exists
+                    # with a nominal probe quote (an empty pool reverts -> 0).
+                    q = 1 if self._v4_quote(key, zero_for_one, 10 ** 6, quoter) > 0 else 0
+                else:
+                    q = 1  # Base: liquidity already gated by _v4_liquidity
+                if q <= 0:
+                    continue
+                out.append({'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'})
+                break
             if out:
                 break
         return out
