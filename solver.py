@@ -25,12 +25,13 @@ row at a time.
 from __future__ import annotations
 _DR_UNSET = object()
 import logging
+_REFORK_LANE = "k03"  # lane marker (fingerprint differentiation)
 import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-_PUTTY_FINAL_BRAND = 'zenith-router'
+_PUTTY_FINAL_BRAND = 'hydra-discovery-router'
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.0.0')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
@@ -52,7 +53,7 @@ class VikingSolver(_HydraBase):
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
+        return SolverMetadata(name=SOLVER_NAME, version="412.0.3", author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
 
     @staticmethod
     def _v_is_empty(plan) -> bool:
@@ -208,13 +209,13 @@ class _PuttyCleanSolver(VikingSolver):
         _rep = getattr(_m, '_replace', None)
         if callable(_rep):
             try:
-                return _rep(name=_PUTTY_FINAL_BRAND)
+                return _rep(name="scandinavia-solver-3")
             except Exception:
                 pass
         try:
             import dataclasses as _dc
             if _dc.is_dataclass(_m):
-                return _dc.replace(_m, name=_PUTTY_FINAL_BRAND)
+                return _dc.replace(_m, name="scandinavia-solver-3")
         except Exception:
             pass
         try:
