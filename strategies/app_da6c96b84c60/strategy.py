@@ -112,94 +112,99 @@ class DexAggregatorStrategy(Strategy):
     INTENT_FUNCTIONS = ['swap']
 
     def generate_plan(self, intent: AppIntentDefinition, state: IntentState, snapshot: MarketSnapshot | None=None) -> ExecutionPlan:
+        Web3 = _dr8 = fee = multihop_path = w3 = None
 
-        def _dr4():
-            typed = getattr(state, 'typed_context', None)
+        def _lr1():
+            nonlocal Web3, _dr8, fee, multihop_path, w3
 
-            def _dr11():
-                raw = getattr(state, 'raw_params', {}) or {}
-                input_token = getattr(typed, 'input_token', '') or raw.get('input_token', '')
-                output_token = getattr(typed, 'output_token', '') or raw.get('output_token', '')
-                input_amount = int(getattr(typed, 'input_amount', 0) or raw.get('input_amount', '0') or 0)
-                min_output_amount = int(getattr(typed, 'min_output_amount', 0) or getattr(typed, 'suggested_min_output', 0) or raw.get('min_output_amount', '0') or raw.get('suggested_min_output', '0') or 0)
-                return (input_amount, input_token, min_output_amount, output_token)
-            input_amount, input_token, min_output_amount, output_token = _dr11()
-            chain_id = state.chain_id or 8453
-            amount_out_minimum = min_output_amount if min_output_amount > 0 else 1
+            def _dr4():
+                typed = getattr(state, 'typed_context', None)
 
-            def _dr2():
-                nonlocal Web3, fee, w3
-                fee = None
-                multihop_path: bytes | None = None
-                rpc_url = self.rpc_for(chain_id)
+                def _dr11():
+                    raw = getattr(state, 'raw_params', {}) or {}
+                    input_token = getattr(typed, 'input_token', '') or raw.get('input_token', '')
+                    output_token = getattr(typed, 'output_token', '') or raw.get('output_token', '')
+                    input_amount = int(getattr(typed, 'input_amount', 0) or raw.get('input_amount', '0') or 0)
+                    min_output_amount = int(getattr(typed, 'min_output_amount', 0) or getattr(typed, 'suggested_min_output', 0) or raw.get('min_output_amount', '0') or raw.get('suggested_min_output', '0') or 0)
+                    return (input_amount, input_token, min_output_amount, output_token)
+                input_amount, input_token, min_output_amount, output_token = _dr11()
+                chain_id = state.chain_id or 8453
+                amount_out_minimum = min_output_amount if min_output_amount > 0 else 1
+
+                def _dr2():
+                    nonlocal Web3, fee, w3
+                    fee = None
+                    multihop_path: bytes | None = None
+                    rpc_url = self.rpc_for(chain_id)
+                    if rpc_url:
+                        try:
+                            from web3 import Web3
+                            w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': 3}))
+
+                            def _dr9():
+                                nonlocal fee, multihop_path
+                                fee = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token)
+                                if fee is None:
+                                    for bridge in (WETH, USDC):
+                                        if input_token.lower() == bridge.lower() or output_token.lower() == bridge.lower():
+                                            continue
+                                        fee_in = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, bridge)
+                                        fee_out = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, bridge, output_token)
+                                        if fee_in is not None and fee_out is not None:
+                                            multihop_path = _encode_path(input_token, fee_in, bridge, fee_out, output_token)
+                                            break
+                            _dr9()
+                        except Exception:
+                            fee = None
+                            multihop_path = None
+                    return (multihop_path, rpc_url)
+                multihop_path, rpc_url = _dr2()
+                return (amount_out_minimum, chain_id, input_amount, input_token, multihop_path, output_token, rpc_url)
+            amount_out_minimum, chain_id, input_amount, input_token, multihop_path, output_token, rpc_url = _dr4()
+            if fee is None and multihop_path is None:
                 if rpc_url:
                     try:
                         from web3 import Web3
                         w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': 3}))
-
-                        def _dr9():
-                            nonlocal fee, multihop_path
-                            fee = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token)
-                            if fee is None:
-                                for bridge in (WETH, USDC):
-                                    if input_token.lower() == bridge.lower() or output_token.lower() == bridge.lower():
-                                        continue
-                                    fee_in = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, bridge)
-                                    fee_out = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, bridge, output_token)
-                                    if fee_in is not None and fee_out is not None:
-                                        multihop_path = _encode_path(input_token, fee_in, bridge, fee_out, output_token)
-                                        break
-                        _dr9()
+                        for candidate_fee in _FEE_TIER_PROBE_ORDER:
+                            pool = _get_pool(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token, candidate_fee)
+                            if pool is not None:
+                                fee = candidate_fee
+                                break
                     except Exception:
-                        fee = None
-                        multihop_path = None
-                return (multihop_path, rpc_url)
-            multihop_path, rpc_url = _dr2()
-            return (amount_out_minimum, chain_id, input_amount, input_token, multihop_path, output_token, rpc_url)
-        amount_out_minimum, chain_id, input_amount, input_token, multihop_path, output_token, rpc_url = _dr4()
-        if fee is None and multihop_path is None:
-            if rpc_url:
-                try:
-                    from web3 import Web3
-                    w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': 3}))
-                    for candidate_fee in _FEE_TIER_PROBE_ORDER:
-                        pool = _get_pool(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token, candidate_fee)
-                        if pool is not None:
-                            fee = candidate_fee
-                            break
-                except Exception:
-                    pass
-            if fee is None:
-                fee = _fee_for_pair(input_token, output_token)
+                        pass
+                if fee is None:
+                    fee = _fee_for_pair(input_token, output_token)
 
-        def _dr7():
+            def _dr7():
 
-            def _dr1():
-                approve_calldata = _encode_approve(SWAP_ROUTER02_BASE, input_amount)
-                if multihop_path is not None:
-                    deadline_param = int(time.time()) + 300
-                    swap_calldata = _encode_exact_input_v1(path=multihop_path, recipient=APP_CONTRACT_ADDRESS, deadline=deadline_param, amount_in=input_amount, amount_out_minimum=amount_out_minimum)
-                else:
+                def _dr1():
+                    approve_calldata = _encode_approve(SWAP_ROUTER02_BASE, input_amount)
+                    if multihop_path is not None:
+                        deadline_param = int(time.time()) + 300
+                        swap_calldata = _encode_exact_input_v1(path=multihop_path, recipient=APP_CONTRACT_ADDRESS, deadline=deadline_param, amount_in=input_amount, amount_out_minimum=amount_out_minimum)
+                    else:
 
-                    def _dr10():
-                        nonlocal deadline_param, swap_calldata
-                        if chain_id in SWAP_ROUTER_V2_CHAINS:
-                            swap_calldata = _encode_exact_input_single_v2(token_in=input_token, token_out=output_token, fee=fee, recipient=APP_CONTRACT_ADDRESS, amount_in=input_amount, amount_out_minimum=amount_out_minimum, sqrt_price_limit_x96=0)
-                        else:
-                            from minotaur_subnet.sdk.selectors import EXACT_INPUT_SINGLE_SELECTOR_V1
-                            deadline_param = int(time.time()) + 300
-                            encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(input_token, output_token, fee, APP_CONTRACT_ADDRESS, deadline_param, input_amount, amount_out_minimum, 0)])
-                            swap_calldata = '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex()
-                    _dr10()
-                interactions = [Interaction(target=input_token, value='0', call_data=approve_calldata, chain_id=chain_id), Interaction(target=SWAP_ROUTER02_BASE, value='0', call_data=swap_calldata, chain_id=chain_id)]
-                return interactions
-            interactions = _dr1()
-            deadline = int(time.time()) + 300
-            if snapshot is not None and getattr(snapshot, 'timestamp', None):
-                deadline = int(snapshot.timestamp) + 300
-            return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce)
-            return _DR_UNSET
-        _dr8 = _dr7()
+                        def _dr10():
+                            nonlocal deadline_param, swap_calldata
+                            if chain_id in SWAP_ROUTER_V2_CHAINS:
+                                swap_calldata = _encode_exact_input_single_v2(token_in=input_token, token_out=output_token, fee=fee, recipient=APP_CONTRACT_ADDRESS, amount_in=input_amount, amount_out_minimum=amount_out_minimum, sqrt_price_limit_x96=0)
+                            else:
+                                from minotaur_subnet.sdk.selectors import EXACT_INPUT_SINGLE_SELECTOR_V1
+                                deadline_param = int(time.time()) + 300
+                                encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(input_token, output_token, fee, APP_CONTRACT_ADDRESS, deadline_param, input_amount, amount_out_minimum, 0)])
+                                swap_calldata = '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex()
+                        _dr10()
+                    interactions = [Interaction(target=input_token, value='0', call_data=approve_calldata, chain_id=chain_id), Interaction(target=SWAP_ROUTER02_BASE, value='0', call_data=swap_calldata, chain_id=chain_id)]
+                    return interactions
+                interactions = _dr1()
+                deadline = int(time.time()) + 300
+                if snapshot is not None and getattr(snapshot, 'timestamp', None):
+                    deadline = int(snapshot.timestamp) + 300
+                return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce)
+                return _DR_UNSET
+            _dr8 = _dr7()
+        _lr1()
         if _dr8 is not _DR_UNSET:
             return _dr8
 STRATEGY_CLASS = DexAggregatorStrategy

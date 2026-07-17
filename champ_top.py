@@ -12,52 +12,56 @@ blind-spot cover), never regress. Everything else defers byte-for-byte to the
 champion. 84 rows, KyberSwap-verified, PMM-free (RFQ quotes expire), gas<=1.5M.
 """
 from __future__ import annotations
-_DR_UNSET = object()
 
-def _dr21():
+def _lr9():
+    global ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _ApexBase, _DR_UNSET, _KING_REPLAY_CACHE, _dr21, _king_replay, logger, logging, os
     _DR_UNSET = object()
-    import logging
-    import os
-    from apex_king_base import SOLVER_CLASS as _ApexBase
-    from minotaur_subnet.sdk.intent_solver import SolverMetadata
-    from minotaur_subnet.shared.types import ExecutionPlan, Interaction
-    logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
-    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.87.5-edge')
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
-    _KING_REPLAY_CACHE = None
-    _KING_OVERRIDE_CACHE = None
 
-    def _king_replay() -> dict:
-        """Lazy, memoized king_replay.json {"tin|tout|amt": {"interactions": [...]}}.
+    def _dr21():
+        _DR_UNSET = object()
+        import logging
+        import os
+        from apex_king_base import SOLVER_CLASS as _ApexBase
+        from minotaur_subnet.sdk.intent_solver import SolverMetadata
+        from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+        logger = logging.getLogger(__name__)
+        SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
+        SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.87.5-edge')
+        SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
+        _KING_REPLAY_CACHE = None
+        _KING_OVERRIDE_CACHE = None
+
+        def _king_replay() -> dict:
+            """Lazy, memoized king_replay.json {"tin|tout|amt": {"interactions": [...]}}.
     Deferred out of module import so the Stage-2 init check (60s budget on a
     CPU-starved screening box) never pays the parse. Never raises — a broken
     file just disables the layer."""
-        global _KING_REPLAY_CACHE
-        if _KING_REPLAY_CACHE is None:
-            import json as _json
-            import os as _os
-            path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'king_replay.json')
+            global _KING_REPLAY_CACHE
+            if _KING_REPLAY_CACHE is None:
+                import json as _json
+                import os as _os
+                path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'king_replay.json')
 
-            def _dr35():
-                out: dict = {}
-                try:
-                    data = _json.load(open(path)) or {}
-                    for key, spec in data.items() if isinstance(data, dict) else []:
-                        try:
-                            ix = (spec or {}).get('interactions')
-                            if ix and str(key).count('|') == 2:
-                                out[str(key).lower()] = ix
-                        except Exception:
-                            continue
-                except Exception:
-                    out = {}
-                return out
-            out = _dr35()
-            _KING_REPLAY_CACHE = out
-        return _KING_REPLAY_CACHE
-    return (ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _ApexBase, _DR_UNSET, _KING_REPLAY_CACHE, _king_replay, logger, logging, os)
-ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _ApexBase, _DR_UNSET, _KING_REPLAY_CACHE, _king_replay, logger, logging, os = _dr21()
+                def _dr35():
+                    out: dict = {}
+                    try:
+                        data = _json.load(open(path)) or {}
+                        for key, spec in data.items() if isinstance(data, dict) else []:
+                            try:
+                                ix = (spec or {}).get('interactions')
+                                if ix and str(key).count('|') == 2:
+                                    out[str(key).lower()] = ix
+                            except Exception:
+                                continue
+                    except Exception:
+                        out = {}
+                    return out
+                out = _dr35()
+                _KING_REPLAY_CACHE = out
+            return _KING_REPLAY_CACHE
+        return (ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _ApexBase, _DR_UNSET, _KING_REPLAY_CACHE, _king_replay, logger, logging, os)
+    ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _ApexBase, _DR_UNSET, _KING_REPLAY_CACHE, _king_replay, logger, logging, os = _dr21()
+_lr9()
 
 class JamesSolver(_ApexBase):
     """Champion base + exact-key raw-replay cover for its structural drops."""
@@ -256,12 +260,17 @@ try:
                     return '0x' + (_PUTTY_R02_SINGLE_SEL + enc).hex()
 
                 def _putty_r02_path(mids, token_out, fees, recipient, amount_in):
-                    toks = [_PUTTY_USDC] + list(mids) + [token_out]
-                    path = b''
-                    for i, f in enumerate(fees):
-                        path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
-                    path += bytes.fromhex(toks[-1][2:])
-                    enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
+                    enc = None
+
+                    def _lr10():
+                        nonlocal enc
+                        toks = [_PUTTY_USDC] + list(mids) + [token_out]
+                        path = b''
+                        for i, f in enumerate(fees):
+                            path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
+                        path += bytes.fromhex(toks[-1][2:])
+                        enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
+                    _lr10()
                     return '0x' + (_PUTTY_R02_PATH_SEL + enc).hex()
 
                 def _putty_quote_usdc_weth(fee, amount_in):
@@ -416,6 +425,7 @@ try:
             return super().initialize(*args, **kwargs)
 
         def generate_plan(self, *args, **kwargs):
+            _dr23 = plan = None
             try:
 
                 def _dr14():
@@ -425,51 +435,58 @@ try:
                 intent, state = _dr14()
                 if state is not None:
 
-                    def _dr10():
-                        get = _putty_state_getter(state)
-                        tin = str(get('input_token') or '').strip()
-                        tout = str(get('output_token') or '').strip()
-                        amount_in = int(get('input_amount') or 0)
-                        route = _PUTTY_ROUTES.get(tout.lower())
-                        return (amount_in, route, tin, tout)
-                    amount_in, route, tin, tout = _dr10()
-                    if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
-                        router, tick_spacing = route
-                        plan = _putty_build_alt_plan(intent, state, tout, amount_in, router, tick_spacing)
-                        if plan is not None and plan.interactions:
-                            _putty_log.info('[putty] alt-CL substitution for %s router=%s tick=%s', tout, router, tick_spacing)
-                            return plan
+                    def _lr7():
+                        nonlocal _dr23, plan
 
-                    def _dr22():
-                        spec = _PUTTY_SUBS.get(tout.lower())
+                        def _dr10():
+                            get = _putty_state_getter(state)
+                            tin = str(get('input_token') or '').strip()
+                            tout = str(get('output_token') or '').strip()
+                            amount_in = int(get('input_amount') or 0)
+                            route = _PUTTY_ROUTES.get(tout.lower())
+                            return (amount_in, route, tin, tout)
+                        amount_in, route, tin, tout = _dr10()
+                        if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
+                            router, tick_spacing = route
+                            plan = _putty_build_alt_plan(intent, state, tout, amount_in, router, tick_spacing)
+                            if plan is not None and plan.interactions:
+                                _putty_log.info('[putty] alt-CL substitution for %s router=%s tick=%s', tout, router, tick_spacing)
+                                return (1, plan)
 
-                        def _dr6():
-                            nonlocal plan
-                            if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
-                                plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
-                                if plan is not None and plan.interactions:
-                                    _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
-                                    return plan
+                        def _dr22():
+                            spec = _PUTTY_SUBS.get(tout.lower())
 
-                            def _dr18():
+                            def _dr6():
                                 nonlocal plan
-                                spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
-                                if spec_w is not None and tin.lower() == _PUTTY_WETH.lower() and (spec_w['lo'] <= amount_in <= spec_w['hi']):
-                                    plan = _putty_build_sub_plan(intent, state, spec_w, tout, amount_in)
+                                if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
+                                    plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
                                     if plan is not None and plan.interactions:
-                                        _putty_log.info('[putty] eps WETH substitution %s for %s amt=%s', spec_w['kind'], tout, amount_in)
+                                        _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
                                         return plan
+
+                                def _dr18():
+                                    nonlocal plan
+                                    spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
+                                    if spec_w is not None and tin.lower() == _PUTTY_WETH.lower() and (spec_w['lo'] <= amount_in <= spec_w['hi']):
+                                        plan = _putty_build_sub_plan(intent, state, spec_w, tout, amount_in)
+                                        if plan is not None and plan.interactions:
+                                            _putty_log.info('[putty] eps WETH substitution %s for %s amt=%s', spec_w['kind'], tout, amount_in)
+                                            return plan
+                                    return _DR_UNSET
+                                    return _DR_UNSET
+                                _dr19 = _dr18()
+                                if _dr19 is not _DR_UNSET:
+                                    return _dr19
                                 return _DR_UNSET
-                                return _DR_UNSET
-                            _dr19 = _dr18()
-                            if _dr19 is not _DR_UNSET:
-                                return _dr19
+                            _dr7 = _dr6()
+                            if _dr7 is not _DR_UNSET:
+                                return _dr7
                             return _DR_UNSET
-                        _dr7 = _dr6()
-                        if _dr7 is not _DR_UNSET:
-                            return _dr7
-                        return _DR_UNSET
-                    _dr23 = _dr22()
+                        _dr23 = _dr22()
+                        return (0, None)
+                    _lrt8 = _lr7()
+                    if _lrt8[0]:
+                        return _lrt8[1]
                     if _dr23 is not _DR_UNSET:
                         return _dr23
             except Exception:

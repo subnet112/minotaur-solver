@@ -24,194 +24,362 @@ row at a time.
 """
 from __future__ import annotations
 _DR_UNSET = object()
-import logging
-import os
-from hydra_top import SOLVER_CLASS as _HydraBase
-from minotaur_subnet.sdk.intent_solver import SolverMetadata
-from minotaur_subnet.shared.types import ExecutionPlan, Interaction
-logger = logging.getLogger(__name__)
-_PUTTY_FINAL_BRAND = 'hydra-pathfinder-router'
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.82.0b')
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
-_VIKING_REPLAY_CACHE = None
-_VIKING_OVERRIDE_CACHE = None
-_V_GATED_CACHE = None
 
+def _lr2():
+    global ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _HydraBase, _PUTTY_FINAL_BRAND, _VIKING_CACHED_BARS, _VIKING_FROZEN_INDEX, _VIKING_OVERRIDE_CACHE, _VIKING_REPLAY_CACHE, _V_GATED_CACHE, _v_build_p2, _v_build_ss, _v_gated_table, _v_v2_out, _viking_cached_bar, _viking_frozen_index, _viking_override, _viking_replay, logger, logging, os
+    import logging
+    import os
+    from hydra_top import SOLVER_CLASS as _HydraBase
+    from minotaur_subnet.sdk.intent_solver import SolverMetadata
+    from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+    logger = logging.getLogger(__name__)
+    _PUTTY_FINAL_BRAND = 'hydra-pathfinder-router'
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.82.0b')
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
+    _VIKING_REPLAY_CACHE = None
+    _VIKING_OVERRIDE_CACHE = None
+    _V_GATED_CACHE = None
 
-def _v_gated_table():
-    """Lazy gated_rows.json — 'tin|tout|amt' -> champion-route-gated row spec
+    def _v_gated_table():
+        """Lazy gated_rows.json — 'tin|tout|amt' -> champion-route-gated row spec
     (own-built routes only; pool params machine-extracted from oracle route
     hops). Inert when the file is absent."""
-    global _V_GATED_CACHE
-    if _V_GATED_CACHE is None:
-        import json as _json
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gated_rows.json')
-        try:
-            _V_GATED_CACHE = {str(k).lower(): v for k, v in (_json.load(open(path)) or {}).items()}
-        except Exception:
-            _V_GATED_CACHE = {}
-    return _V_GATED_CACHE
+        global _V_GATED_CACHE
+        if _V_GATED_CACHE is None:
+            import json as _json
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gated_rows.json')
+            try:
+                _V_GATED_CACHE = {str(k).lower(): v for k, v in (_json.load(open(path)) or {}).items()}
+            except Exception:
+                _V_GATED_CACHE = {}
+        return _V_GATED_CACHE
 
-def _viking_override() -> set:
-    """Lazy viking_override.json — exact keys where THIS champion tree is
+    def _viking_override() -> set:
+        """Lazy viking_override.json — exact keys where THIS champion tree is
     scorecard-PROVEN to deliver 0 ALWAYS (structural miss), so the replay row
     is served unconditionally: our delivery vs their 0 = a win; a stale row
     reverts to 0 = the tie we already had. Ships empty at re-fork."""
-    global _VIKING_OVERRIDE_CACHE
-    if _VIKING_OVERRIDE_CACHE is None:
-        import json as _json
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_override.json')
-        try:
-            data = _json.load(open(path))
-            _VIKING_OVERRIDE_CACHE = {str(k).lower() for k in data} if isinstance(data, list) else set()
-        except Exception:
-            _VIKING_OVERRIDE_CACHE = set()
-    return _VIKING_OVERRIDE_CACHE
-_VIKING_CACHED_BARS = None
-_VIKING_FROZEN_INDEX = None
+        global _VIKING_OVERRIDE_CACHE
+        if _VIKING_OVERRIDE_CACHE is None:
+            import json as _json
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_override.json')
+            try:
+                data = _json.load(open(path))
+                _VIKING_OVERRIDE_CACHE = {str(k).lower() for k in data} if isinstance(data, list) else set()
+            except Exception:
+                _VIKING_OVERRIDE_CACHE = set()
+        return _VIKING_OVERRIDE_CACHE
+    _VIKING_CACHED_BARS = None
+    _VIKING_FROZEN_INDEX = None
 
-def _viking_cached_bar(key):
-    """Lazy champ_cached.json — key -> the champion's CERT-CACHED delivery for
+    def _viking_cached_bar(key):
+        """Lazy champ_cached.json — key -> the champion's CERT-CACHED delivery for
     that order (int), the exact value the scorer compares every challenger
     against. None when unknown/null. Snapshot rebuilt on each bank refresh."""
-    global _VIKING_CACHED_BARS
-    if _VIKING_CACHED_BARS is None:
+        global _VIKING_CACHED_BARS
+        if _VIKING_CACHED_BARS is None:
 
-        def _dr22():
-            import json as _json
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_cached.json')
-            bars: dict = {}
-            try:
-                data = _json.load(open(path)) or {}
-                for k, v in data.items() if isinstance(data, dict) else []:
-                    try:
-                        iv = int(v)
-                    except (TypeError, ValueError):
-                        continue
-                    if iv > 0:
-                        bars[str(k).lower()] = iv
-            except Exception:
-                bars = {}
-            return bars
-        bars = _dr22()
-        _VIKING_CACHED_BARS = bars
-    return _VIKING_CACHED_BARS.get(key) if key else None
+            def _dr22():
+                import json as _json
+                path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_cached.json')
+                bars: dict = {}
+                try:
+                    data = _json.load(open(path)) or {}
+                    for k, v in data.items() if isinstance(data, dict) else []:
+                        try:
+                            iv = int(v)
+                        except (TypeError, ValueError):
+                            continue
+                        if iv > 0:
+                            bars[str(k).lower()] = iv
+                except Exception:
+                    bars = {}
+                return bars
+            bars = _dr22()
+            _VIKING_CACHED_BARS = bars
+        return _VIKING_CACHED_BARS.get(key) if key else None
 
-def _viking_frozen_index() -> dict:
-    """Lazy byte-index of the lineage's frozen replay rows (the tables the BASE
+    def _viking_frozen_index() -> dict:
+        """Lazy byte-index of the lineage's frozen replay rows (the tables the BASE
     stack can serve verbatim): key -> [frozenset of (target, data) pairs per
     row]. Used to recognize a base serve that wei-ties the champion by
     construction — those are never overridden."""
-    global _VIKING_FROZEN_INDEX
-    if _VIKING_FROZEN_INDEX is None:
-        import json as _json
-        idx: dict = {}
-        here = os.path.dirname(os.path.abspath(__file__))
-        for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
-            try:
-                data = _json.load(open(os.path.join(here, fname))) or {}
-            except Exception:
-                continue
-            for k, spec in data.items() if isinstance(data, dict) else []:
+        global _VIKING_FROZEN_INDEX
+        if _VIKING_FROZEN_INDEX is None:
+            import json as _json
+            idx: dict = {}
+            here = os.path.dirname(os.path.abspath(__file__))
+            for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
+                try:
+                    data = _json.load(open(os.path.join(here, fname))) or {}
+                except Exception:
+                    continue
+                for k, spec in data.items() if isinstance(data, dict) else []:
 
-                def _dr12():
-                    rows = (spec or {}).get('interactions') or []
-                    sig = frozenset(((str(r.get('target', '')).lower(), str(r.get('data', '')).lower()) for r in rows))
-                    if sig:
-                        idx.setdefault(str(k).lower(), []).append(sig)
-                    return (rows, sig)
-                rows, sig = _dr12()
-        _VIKING_FROZEN_INDEX = idx
-    return _VIKING_FROZEN_INDEX
+                    def _dr12():
+                        rows = (spec or {}).get('interactions') or []
+                        sig = frozenset(((str(r.get('target', '')).lower(), str(r.get('data', '')).lower()) for r in rows))
+                        if sig:
+                            idx.setdefault(str(k).lower(), []).append(sig)
+                        return (rows, sig)
+                    rows, sig = _dr12()
+            _VIKING_FROZEN_INDEX = idx
+        return _VIKING_FROZEN_INDEX
 
-def _viking_replay() -> dict:
-    """Lazy, memoized viking_replay.json — key -> {"ix": [raw interaction
+    def _viking_replay() -> dict:
+        """Lazy, memoized viking_replay.json — key -> {"ix": [raw interaction
     dicts], "out": stamped build-time quote, "at": build unix time}. Parse
     deferred past the Stage-2 init budget; a broken file just disables the
     layer (never raises)."""
-    global _VIKING_REPLAY_CACHE
-    if _VIKING_REPLAY_CACHE is None:
-        import json as _json
-        import calendar as _cal
-        import time as _time
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_replay.json')
+        global _VIKING_REPLAY_CACHE
+        if _VIKING_REPLAY_CACHE is None:
+            import json as _json
+            import calendar as _cal
+            import time as _time
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_replay.json')
 
-        def _dr19():
-            out: dict = {}
-            try:
-                data = _json.load(open(path)) or {}
-                for key, spec in data.items() if isinstance(data, dict) else []:
-                    rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
-                    if not rows:
-                        continue
+            def _dr19():
+                out: dict = {}
+                try:
+                    data = _json.load(open(path)) or {}
+                    for key, spec in data.items() if isinstance(data, dict) else []:
+                        rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
+                        if not rows:
+                            continue
 
-                    def _dr7():
-                        try:
-                            at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
-                        except Exception:
-                            at = 0
-                        try:
-                            bout = int((spec or {}).get('built_out', 0) or 0)
-                        except (TypeError, ValueError):
-                            bout = 0
-                        out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
-                        return (at, bout)
-                    at, bout = _dr7()
-            except Exception:
-                out = {}
-            return out
-        out = _dr19()
-        _VIKING_REPLAY_CACHE = out
-    return _VIKING_REPLAY_CACHE
+                        def _dr7():
+                            try:
+                                at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
+                            except Exception:
+                                at = 0
+                            try:
+                                bout = int((spec or {}).get('built_out', 0) or 0)
+                            except (TypeError, ValueError):
+                                bout = 0
+                            out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
+                            return (at, bout)
+                        at, bout = _dr7()
+                except Exception:
+                    out = {}
+                return out
+            out = _dr19()
+            _VIKING_REPLAY_CACHE = out
+        return _VIKING_REPLAY_CACHE
 
-def _v_v2_out(s, pair, amt_in, in_is_t0, chain_id):
-    """UniswapV2-style pair forward quote from getReserves (997/1000 fee)."""
-    try:
-        from eth_abi import decode as _dec
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        w3 = s._get_web3(int(chain_id))
-        if w3 is None:
+    def _v_v2_out(s, pair, amt_in, in_is_t0, chain_id):
+        """UniswapV2-style pair forward quote from getReserves (997/1000 fee)."""
+        rin = rout = None
+        try:
+
+            def _lr11():
+                nonlocal rin, rout
+                from eth_abi import decode as _dec
+                from eth_utils import keccak as _keccak, to_checksum_address as _ck
+                w3 = s._get_web3(int(chain_id))
+                if w3 is None:
+                    return (1, None)
+                res = _dec(['uint112', 'uint112', 'uint32'], w3.eth.call({'to': _ck(pair), 'data': '0x' + _keccak(text='getReserves()')[:4].hex()}))
+                rin, rout = (int(res[0]), int(res[1])) if in_is_t0 else (int(res[1]), int(res[0]))
+                return (0, None)
+            _lrt12 = _lr11()
+            if _lrt12[0]:
+                return _lrt12[1]
+            ai = int(amt_in) * 997
+            return ai * rout // (rin * 1000 + ai) or None
+        except Exception:
             return None
-        res = _dec(['uint112', 'uint112', 'uint32'], w3.eth.call({'to': _ck(pair), 'data': '0x' + _keccak(text='getReserves()')[:4].hex()}))
-        rin, rout = (int(res[0]), int(res[1])) if in_is_t0 else (int(res[1]), int(res[0]))
-        ai = int(amt_in) * 997
-        return ((ai * rout) // (rin * 1000 + ai)) or None
-    except Exception:
-        return None
 
-def _v_build_ss(spec, tin, tout, amt, chain_id):
-    """Slipstream single-hop: approve + exactInputSingle straight to rcpt."""
-    from eth_utils import to_checksum_address as _ck
-    from strategies.dex_aggregator import aerodrome as _aero
-    from common.abi_utils import encode_approve
-    from minotaur_subnet.shared.types import Interaction as _IX
-    slip_router = _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+    def _v_build_ss(spec, tin, tout, amt, chain_id):
+        """Slipstream single-hop: approve + exactInputSingle straight to rcpt."""
+        from eth_utils import to_checksum_address as _ck
+        from strategies.dex_aggregator import aerodrome as _aero
+        from common.abi_utils import encode_approve
+        from minotaur_subnet.shared.types import Interaction as _IX
+        slip_router = _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
 
-    def _dr339(rcpt):
-        leg = _aero.encode_exact_input_single(token_in=tin, token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=rcpt, deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
-        return [_IX(target=tin, value='0', call_data=encode_approve(_ck(slip_router), int(amt)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg, chain_id=chain_id)]
-    return _dr339
+        def _dr339(rcpt):
+            leg = _aero.encode_exact_input_single(token_in=tin, token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=rcpt, deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
+            return [_IX(target=tin, value='0', call_data=encode_approve(_ck(slip_router), int(amt)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg, chain_id=chain_id)]
+        return _dr339
 
-def _v_build_p2(spec, tin, tout, amt, est, chain_id):
-    """2-leg: pancake v3 leg paid DIRECTLY to the V2 pair, then
+    def _v_build_p2(spec, tin, tout, amt, est, chain_id):
+        """2-leg: pancake v3 leg paid DIRECTLY to the V2 pair, then
     pair.swap(out -> rcpt) sized by the pair's reserves (fork-deterministic)."""
-    import hydra_top as _ht
-    from eth_abi import encode as _enc
-    from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    from common.abi_utils import encode_approve
-    from minotaur_subnet.shared.types import Interaction as _IX
-    pan_router = '0x1b81D678ffb9C0263b24A97847620C99d213eB14'
-    sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))')[:4]
-    leg1 = '0x' + (sel + _enc(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['l1_fee']), _ck(spec['pair']), 9999999999, int(amt), 0, 0)])).hex()
-    a0, a1 = (int(est), 0) if int(spec['out_index']) == 0 else (0, int(est))
+        import hydra_top as _ht
+        from eth_abi import encode as _enc
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
 
-    def _dr340(rcpt):
-        swap = '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _enc(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(rcpt), b''])).hex()
-        return [_IX(target=tin, value='0', call_data=encode_approve(_ck(pan_router), int(amt)), chain_id=chain_id), _IX(target=pan_router, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=swap, chain_id=chain_id)]
-    return _dr340
+        def _lr38():
+            from common.abi_utils import encode_approve
+            from minotaur_subnet.shared.types import Interaction as _IX
+            pan_router = '0x1b81D678ffb9C0263b24A97847620C99d213eB14'
+            sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))')[:4]
+            leg1 = '0x' + (sel + _enc(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['l1_fee']), _ck(spec['pair']), 9999999999, int(amt), 0, 0)])).hex()
+            a0, a1 = (int(est), 0) if int(spec['out_index']) == 0 else (0, int(est))
 
-class VikingSolver(_HydraBase):
+            def _dr340(rcpt):
+                swap = '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _enc(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(rcpt), b''])).hex()
+                return [_IX(target=tin, value='0', call_data=encode_approve(_ck(pan_router), int(amt)), chain_id=chain_id), _IX(target=pan_router, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=swap, chain_id=chain_id)]
+            return _dr340
+        return _lr38()
+_lr2()
+
+class _VikingSolverLR3(_HydraBase):
+
+    def _v_base_out(self, plan, chain_id):
+        """Re-quote the BASE plan's OWN single-venue route live (uni router02
+    7-field / pancake smart-router 8-field exactInputSingle). None for splits,
+    multi-leg or unknown venues (a healthy base) -> the caller DEFERS. This is
+    the champion-route gate: overrides compare against what the base plan
+    actually delivers at this block, never a guessed alternative."""
+        try:
+
+            def _dr300():
+                swaps = []
+                for it in getattr(plan, 'interactions', None) or []:
+                    cd = str(getattr(it, 'call_data', '') or '')
+                    body = cd[2:] if cd.startswith('0x') else cd
+                    if len(body) < 8 or body[:8].lower() == '095ea7b3':
+                        continue
+                    swaps.append((str(getattr(it, 'target', '') or '').lower(), body[:8].lower(), body[8:]))
+                return swaps
+            swaps = _dr300()
+            if len(swaps) != 1:
+                return None
+            target, sel, args = swaps[0]
+
+            def _dr301():
+
+                def _w(i):
+                    return int(args[i * 64:(i + 1) * 64], 16)
+
+                def _a(i):
+                    return '0x' + args[i * 64 + 24:(i + 1) * 64]
+                if sel == '04e45aaf':
+                    return self._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': _w(2), 'mid': _a(1)}, _a(0), _w(4), chain_id)
+                if sel == '414bf389':
+                    rtr = 'pancake' if target == '0x1b81d678ffb9c0263b24a97847620c99d213eb14' else 'uni'
+                    return self._hydra_quote_leg1({'leg1_router': rtr, 'leg1_fee': _w(2), 'mid': _a(1)}, _a(0), _w(5), chain_id)
+                return None
+            return _dr301()
+        except Exception:
+            return None
+
+    def _v_slip_quote(self, ts, tin, tout, amt, chain_id):
+        """Slipstream quoter exact-in single — int24 tickSpacing selector (the
+    lineage's uint24 variant reverts on every pool)."""
+        try:
+            from eth_abi import decode as _dec
+            from eth_abi import encode as _enc
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            from king_consts import _AERO_QUOTER
+            w3 = self._get_web3(int(chain_id))
+            if w3 is None:
+                return None
+
+            def _lr27():
+                sel = _keccak(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
+                params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amt), int(ts), 0)])
+                r = w3.eth.call({'to': _ck(_AERO_QUOTER), 'data': '0x' + (sel + params).hex()})
+                out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], r)[0])
+                return (1, out if out > 0 else None)
+                return (0, None)
+            _lrt28 = _lr27()
+            if _lrt28[0]:
+                return _lrt28[1]
+        except Exception:
+            return None
+
+    def _v_pair_out(self, pair, amt, tok_in, chain_id):
+        """Aerodrome/V2 pair getAmountOut(uint256,address) — the pair's own
+    fee-exact forward quote."""
+        try:
+            from eth_abi import decode as _dec
+            from eth_abi import encode as _enc
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            w3 = self._get_web3(int(chain_id))
+            if w3 is None:
+                return None
+            d = '0x' + (_keccak(text='getAmountOut(uint256,address)')[:4] + _enc(['uint256', 'address'], [int(amt), _ck(tok_in)])).hex()
+            out = int(_dec(['uint256'], w3.eth.call({'to': _ck(pair), 'data': d}))[0])
+            return out if out > 0 else None
+        except Exception:
+            return None
+
+    def _v_gated_est(self, spec, tin, amt, chain_id):
+        """Same-block estimate of the GATED row's own route: v3s = one quoter
+    call; v3c = uni leg quote chained into the curve pool's get_dy; a3 = uni
+    leg -> slip leg -> pair.getAmountOut, all same-block."""
+        if spec.get('shape') == 'v3s':
+            return (self._hydra_quote_leg1({'leg1_router': spec.get('router'), 'leg1_fee': spec['fee'], 'mid': spec['tout']}, tin, amt, chain_id), None)
+
+        def _lr4():
+            if spec.get('shape') == 'a3':
+                return self._v_est_a3(spec, tin, amt, chain_id)
+            if spec.get('shape') == 's2':
+
+                def _dr337():
+                    q1 = self._v_slip_quote(spec['slip_ts'], tin, spec['mid'], amt, chain_id)
+                    q2 = self._v_pair_out(spec['pair'], q1, spec['mid'], chain_id) if q1 else None
+                    return (q2, q1) if q2 else (None, None)
+                return _dr337()
+            if spec.get('shape') in ('ss', 'p2'):
+
+                def _dr338():
+                    if spec['shape'] == 'ss':
+                        q = self._v_slip_quote(spec['slip_ts'], tin, spec['tout'], amt, chain_id)
+                        return (q, None) if q else (None, None)
+                    q1 = self._hydra_quote_leg1({'leg1_router': 'pancake', 'leg1_fee': spec['l1_fee'], 'mid': spec['mid']}, tin, amt, chain_id)
+                    q2 = _v_v2_out(self, spec['pair'], q1, bool(spec.get('mid_is_t0')), chain_id) if q1 else None
+                    return (q2, q1) if q2 else (None, None)
+                return _dr338()
+            mid_q = self._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['v3_fee'], 'mid': spec['mid']}, tin, amt, chain_id)
+            if not mid_q:
+                return (None, None)
+            return (self._hydra_curve_dy(spec, mid_q, chain_id), mid_q)
+        return _lr4()
+
+    def _v_est_a3(self, spec, tin, amt, chain_id):
+        q1 = self._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['l1_fee'], 'mid': spec['mid1']}, tin, amt, chain_id)
+        q2 = self._v_slip_quote(spec['slip_ts'], spec['mid1'], spec['mid2'], q1, chain_id) if q1 else None
+        q3 = self._v_pair_out(spec['pair'], q2, spec['mid2'], chain_id) if q2 else None
+        return (q3, (q1, q2)) if q3 else (None, None)
+
+    def _v_build_a3(self, spec, tin, tout, amt, q1, q2, est, chain_id):
+        """3-leg chain: uni sentinel leg1 (funds at executor), slip leg2 paid
+    DIRECTLY to the V2 pair, pair.swap(out -> app) sized by getAmountOut."""
+        import hydra_top as _ht
+        from eth_abi import encode as _enc
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        from strategies.dex_aggregator import aerodrome as _aero
+        from common.abi_utils import encode_approve
+
+        def _dr310():
+            leg1 = leg2 = slip_router = None
+
+            def _lr1():
+                nonlocal leg1, leg2, slip_router
+                sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4]
+                leg1 = '0x' + (sel + _enc(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid1']), int(spec['l1_fee']), '0x0000000000000000000000000000000000000001', int(amt), 0, 0)])).hex()
+                slip_router = _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+                leg2 = _aero.encode_exact_input_single(token_in=spec['mid1'], token_out=spec['mid2'], tick_spacing=int(spec['slip_ts']), recipient=spec['pair'], deadline=9999999999, amount_in=int(q1), amount_out_minimum=0)
+            _lr1()
+            a0, a1 = (int(est), 0) if int(spec['out_index']) == 0 else (0, int(est))
+            rcpt = None
+            return (leg1, slip_router, leg2, a0, a1)
+        leg1, slip_router, leg2, a0, a1 = _dr310()
+
+        def _dr311(rcpt):
+            swap = '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _enc(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(rcpt), b''])).hex()
+
+            def _lr35():
+                from minotaur_subnet.shared.types import Interaction as _IX
+                return [_IX(target=tin, value='0', call_data=encode_approve(_ck('0x2626664c2603336E57B271c5C0b26F421741e481'), int(amt)), chain_id=chain_id), _IX(target='0x2626664c2603336E57B271c5C0b26F421741e481', value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid1'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=swap, chain_id=chain_id)]
+            return _lr35()
+        return _dr311
+
+class VikingSolver(_VikingSolverLR3):
     """Champion stack + viking delta (override-precedence, then fill-only-empty)."""
 
     def metadata(self):
@@ -253,141 +421,6 @@ class VikingSolver(_HydraBase):
             pass
         return None
 
-    def _v_base_out(self, plan, chain_id):
-        """Re-quote the BASE plan's OWN single-venue route live (uni router02
-    7-field / pancake smart-router 8-field exactInputSingle). None for splits,
-    multi-leg or unknown venues (a healthy base) -> the caller DEFERS. This is
-    the champion-route gate: overrides compare against what the base plan
-    actually delivers at this block, never a guessed alternative."""
-        try:
-
-            def _dr300():
-                swaps = []
-                for it in (getattr(plan, 'interactions', None) or []):
-                    cd = str(getattr(it, 'call_data', '') or '')
-                    body = cd[2:] if cd.startswith('0x') else cd
-                    if len(body) < 8 or body[:8].lower() == '095ea7b3':
-                        continue
-                    swaps.append((str(getattr(it, 'target', '') or '').lower(), body[:8].lower(), body[8:]))
-                return swaps
-            swaps = _dr300()
-            if len(swaps) != 1:
-                return None
-            target, sel, args = swaps[0]
-
-            def _dr301():
-                def _w(i):
-                    return int(args[i * 64:(i + 1) * 64], 16)
-                def _a(i):
-                    return '0x' + args[i * 64 + 24:(i + 1) * 64]
-                if sel == '04e45aaf':
-                    return self._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': _w(2), 'mid': _a(1)}, _a(0), _w(4), chain_id)
-                if sel == '414bf389':
-                    # 8-field-with-deadline shape is shared by classic-uni AND
-                    # pancake routers — quoter chosen by the TARGET router.
-                    rtr = 'pancake' if target == '0x1b81d678ffb9c0263b24a97847620c99d213eb14' else 'uni'
-                    return self._hydra_quote_leg1({'leg1_router': rtr, 'leg1_fee': _w(2), 'mid': _a(1)}, _a(0), _w(5), chain_id)
-                return None
-            return _dr301()
-        except Exception:
-            return None
-
-    def _v_slip_quote(self, ts, tin, tout, amt, chain_id):
-        """Slipstream quoter exact-in single — int24 tickSpacing selector (the
-    lineage's uint24 variant reverts on every pool)."""
-        try:
-            from eth_abi import decode as _dec
-            from eth_abi import encode as _enc
-            from eth_utils import keccak as _keccak, to_checksum_address as _ck
-            from king_consts import _AERO_QUOTER
-            w3 = self._get_web3(int(chain_id))
-            if w3 is None:
-                return None
-            sel = _keccak(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
-            params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amt), int(ts), 0)])
-            r = w3.eth.call({'to': _ck(_AERO_QUOTER), 'data': '0x' + (sel + params).hex()})
-            out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], r)[0])
-            return out if out > 0 else None
-        except Exception:
-            return None
-
-    def _v_pair_out(self, pair, amt, tok_in, chain_id):
-        """Aerodrome/V2 pair getAmountOut(uint256,address) — the pair's own
-    fee-exact forward quote."""
-        try:
-            from eth_abi import decode as _dec
-            from eth_abi import encode as _enc
-            from eth_utils import keccak as _keccak, to_checksum_address as _ck
-            w3 = self._get_web3(int(chain_id))
-            if w3 is None:
-                return None
-            d = '0x' + (_keccak(text='getAmountOut(uint256,address)')[:4] + _enc(['uint256', 'address'], [int(amt), _ck(tok_in)])).hex()
-            out = int(_dec(['uint256'], w3.eth.call({'to': _ck(pair), 'data': d}))[0])
-            return out if out > 0 else None
-        except Exception:
-            return None
-
-    def _v_gated_est(self, spec, tin, amt, chain_id):
-        """Same-block estimate of the GATED row's own route: v3s = one quoter
-    call; v3c = uni leg quote chained into the curve pool's get_dy; a3 = uni
-    leg -> slip leg -> pair.getAmountOut, all same-block."""
-        if spec.get('shape') == 'v3s':
-            return (self._hydra_quote_leg1({'leg1_router': spec.get('router'), 'leg1_fee': spec['fee'], 'mid': spec['tout']}, tin, amt, chain_id), None)
-        if spec.get('shape') == 'a3':
-            return self._v_est_a3(spec, tin, amt, chain_id)
-        if spec.get('shape') == 's2':
-
-            def _dr337():
-                q1 = self._v_slip_quote(spec['slip_ts'], tin, spec['mid'], amt, chain_id)
-                q2 = self._v_pair_out(spec['pair'], q1, spec['mid'], chain_id) if q1 else None
-                return (q2, q1) if q2 else (None, None)
-            return _dr337()
-        if spec.get('shape') in ('ss', 'p2'):
-
-            def _dr338():
-                if spec['shape'] == 'ss':
-                    q = self._v_slip_quote(spec['slip_ts'], tin, spec['tout'], amt, chain_id)
-                    return (q, None) if q else (None, None)
-                q1 = self._hydra_quote_leg1({'leg1_router': 'pancake', 'leg1_fee': spec['l1_fee'], 'mid': spec['mid']}, tin, amt, chain_id)
-                q2 = _v_v2_out(self, spec['pair'], q1, bool(spec.get('mid_is_t0')), chain_id) if q1 else None
-                return (q2, q1) if q2 else (None, None)
-            return _dr338()
-        mid_q = self._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['v3_fee'], 'mid': spec['mid']}, tin, amt, chain_id)
-        if not mid_q:
-            return (None, None)
-        return (self._hydra_curve_dy(spec, mid_q, chain_id), mid_q)
-
-    def _v_est_a3(self, spec, tin, amt, chain_id):
-        q1 = self._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['l1_fee'], 'mid': spec['mid1']}, tin, amt, chain_id)
-        q2 = self._v_slip_quote(spec['slip_ts'], spec['mid1'], spec['mid2'], q1, chain_id) if q1 else None
-        q3 = self._v_pair_out(spec['pair'], q2, spec['mid2'], chain_id) if q2 else None
-        return (q3, (q1, q2)) if q3 else (None, None)
-
-    def _v_build_a3(self, spec, tin, tout, amt, q1, q2, est, chain_id):
-        """3-leg chain: uni sentinel leg1 (funds at executor), slip leg2 paid
-    DIRECTLY to the V2 pair, pair.swap(out -> app) sized by getAmountOut."""
-        import hydra_top as _ht
-        from eth_abi import encode as _enc
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        from strategies.dex_aggregator import aerodrome as _aero
-        from common.abi_utils import encode_approve
-
-        def _dr310():
-            sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4]
-            leg1 = '0x' + (sel + _enc(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid1']), int(spec['l1_fee']), '0x0000000000000000000000000000000000000001', int(amt), 0, 0)])).hex()
-            slip_router = _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
-            leg2 = _aero.encode_exact_input_single(token_in=spec['mid1'], token_out=spec['mid2'], tick_spacing=int(spec['slip_ts']), recipient=spec['pair'], deadline=9999999999, amount_in=int(q1), amount_out_minimum=0)
-            a0, a1 = (int(est), 0) if int(spec['out_index']) == 0 else (0, int(est))
-            rcpt = None
-            return (leg1, slip_router, leg2, a0, a1)
-        leg1, slip_router, leg2, a0, a1 = _dr310()
-
-        def _dr311(rcpt):
-            swap = '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _enc(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(rcpt), b''])).hex()
-            from minotaur_subnet.shared.types import Interaction as _IX
-            return [_IX(target=tin, value='0', call_data=encode_approve(_ck('0x2626664c2603336E57B271c5C0b26F421741e481'), int(amt)), chain_id=chain_id), _IX(target='0x2626664c2603336E57B271c5C0b26F421741e481', value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid1'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=swap, chain_id=chain_id)]
-        return _dr311
-
     def _v_build_s2(self, spec, tin, tout, amt, q1, est, chain_id):
         """2-leg: slip leg paid DIRECTLY to the V2/aero pair, then
     pair.swap(out -> app) sized by the pair's own getAmountOut (fork-block
@@ -422,7 +455,7 @@ class VikingSolver(_HydraBase):
 
             def _dr332(cd1):
                 amt_in, _mo, routes, _to, _dl = _dec(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], bytes.fromhex(cd1[10:]))
-                if len(routes) != 1 or routes[0][0].lower() != tin.lower() or routes[0][1].lower() != spec['base_mid'] or int(amt_in) != int(amt) or routes[0][2]:
+                if len(routes) != 1 or routes[0][0].lower() != tin.lower() or routes[0][1].lower() != spec['base_mid'] or (int(amt_in) != int(amt)) or routes[0][2]:
                     return False
                 return True
 
@@ -439,14 +472,19 @@ class VikingSolver(_HydraBase):
                 return _dec(['uint256[]'], w3.eth.call({'to': _ck(aero_router), 'data': '0x' + (gao + pay).hex()}))[0][-1]
 
             def _dr335(w3, q1):
-                res = _dec(['uint112', 'uint112', 'uint32'], w3.eth.call({'to': _ck(spec['base_pair']), 'data': '0x' + _keccak(text='getReserves()')[:4].hex()}))
-                rin, rout = (int(res[0]), int(res[1])) if spec.get('base_mid_is_t0') else (int(res[1]), int(res[0]))
-                ai = int(q1) * 997
-                return ((ai * rout) // (rin * 1000 + ai)) or None
+                ai = rin = rout = None
+
+                def _lr39():
+                    nonlocal ai, rin, rout
+                    res = _dec(['uint112', 'uint112', 'uint32'], w3.eth.call({'to': _ck(spec['base_pair']), 'data': '0x' + _keccak(text='getReserves()')[:4].hex()}))
+                    rin, rout = (int(res[0]), int(res[1])) if spec.get('base_mid_is_t0') else (int(res[1]), int(res[0]))
+                    ai = int(q1) * 997
+                _lr39()
+                return ai * rout // (rin * 1000 + ai) or None
 
             def _dr336():
                 ixs = _dr331()
-                if not ixs or not _dr332(ixs[0].call_data) or not _dr333(ixs[1].call_data):
+                if not ixs or not _dr332(ixs[0].call_data) or (not _dr333(ixs[1].call_data)):
                     return None
                 w3 = self._get_web3(int(chain_id))
                 if w3 is None:
@@ -494,20 +532,26 @@ class VikingSolver(_HydraBase):
             def _dr302():
                 import hydra_top as _ht
                 rcpt = state.contract_address or getattr(state, 'owner', None)
-                if spec.get('shape') == 'v3s':
-                    return _ht._build_cvx_fb_ix({'alt_router': spec.get('router'), 'alt_fee': spec['fee']}, tin, tout, amt, rcpt, chain_id)
-                if spec.get('shape') == 'a3':
-                    q1, q2 = mid_q
-                    return self._v_build_a3(spec, tin, tout, amt, q1, q2, est, chain_id)(rcpt)
-                if spec.get('shape') in ('s2', 'ss', 'p2'):
 
-                    def _dr341():
-                        if spec['shape'] == 's2':
-                            return self._v_build_s2(spec, tin, tout, amt, mid_q, est, chain_id)(rcpt)
-                        if spec['shape'] == 'ss':
-                            return _v_build_ss(spec, tin, tout, amt, chain_id)(rcpt)
-                        return _v_build_p2(spec, tin, tout, amt, est, chain_id)(rcpt)
-                    return _dr341()
+                def _lr17():
+                    if spec.get('shape') == 'v3s':
+                        return (1, _ht._build_cvx_fb_ix({'alt_router': spec.get('router'), 'alt_fee': spec['fee']}, tin, tout, amt, rcpt, chain_id))
+                    if spec.get('shape') == 'a3':
+                        q1, q2 = mid_q
+                        return (1, self._v_build_a3(spec, tin, tout, amt, q1, q2, est, chain_id)(rcpt))
+                    if spec.get('shape') in ('s2', 'ss', 'p2'):
+
+                        def _dr341():
+                            if spec['shape'] == 's2':
+                                return self._v_build_s2(spec, tin, tout, amt, mid_q, est, chain_id)(rcpt)
+                            if spec['shape'] == 'ss':
+                                return _v_build_ss(spec, tin, tout, amt, chain_id)(rcpt)
+                            return _v_build_p2(spec, tin, tout, amt, est, chain_id)(rcpt)
+                        return (1, _dr341())
+                    return (0, None)
+                _lrt18 = _lr17()
+                if _lrt18[0]:
+                    return _lrt18[1]
                 return _ht._build_cvx_chain_ix(dict(spec), tin, tout, amt, mid_q, rcpt, chain_id)
             return ExecutionPlan(intent_id=intent.app_id, interactions=_dr302(), deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-gated', 'chain_id': chain_id})
         except Exception:
@@ -620,75 +664,81 @@ class VikingSolver(_HydraBase):
         if _dr9 is not _DR_UNSET:
             return _dr9
         plan = super().generate_plan(intent, state, snapshot)
-        _gp = self._v_gated(intent, state, snapshot, plan, key)
-        if _gp is not None:
-            return _gp
+        _time = rp = None
 
-        def _dr17():
-            if not self._v_is_empty(plan):
-                bar = _viking_cached_bar(key)
+        def _lr37():
+            nonlocal _time, rp
+            _gp = self._v_gated(intent, state, snapshot, plan, key)
+            if _gp is not None:
+                return _gp
 
-                def _dr1():
-                    nonlocal _time, rp
-                    if bar and row:
-                        import time as _time
+            def _dr17():
+                if not self._v_is_empty(plan):
+                    bar = _viking_cached_bar(key)
 
-                        def _dr24():
-                            fresh_row = _time.time() - float(row.get('at') or 0) <= self._V_ROW_FRESH_S
-                            return fresh_row
-                        fresh_row = _dr24()
-                        if fresh_row and int(row.get('out') or 0) >= bar:
+                    def _dr1():
+                        nonlocal _time, rp
+                        if bar and row:
+                            import time as _time
 
-                            def _dr13():
-                                sig = None
-                                try:
-                                    sig = frozenset(((str(getattr(i, 'target', '')).lower(), str(getattr(i, 'call_data', '')).lower()) for i in plan.interactions))
-                                except Exception:
-                                    pass
-                                return sig
-                            sig = _dr13()
-                            if sig is None or sig not in _viking_frozen_index().get(key, []):
-                                rp = self._v_replay_plan(key, intent, state, snapshot)
-                                if rp is not None:
-                                    logger.info('[viking] cached-bar serve %s (stamp %s >= bar %s)', key[:64], row.get('out'), bar)
-                                    return rp
-                    return _DR_UNSET
-                _dr2 = _dr1()
-                if _dr2 is not _DR_UNSET:
-                    return _dr2
-                return plan
-            return _DR_UNSET
-        _dr18 = _dr17()
-        if _dr18 is not _DR_UNSET:
-            return _dr18
-        if row:
-            import time as _time
+                            def _dr24():
+                                fresh_row = _time.time() - float(row.get('at') or 0) <= self._V_ROW_FRESH_S
+                                return fresh_row
+                            fresh_row = _dr24()
+                            if fresh_row and int(row.get('out') or 0) >= bar:
 
-            def _dr5():
-                age = _time.time() - float(row.get('at') or 0)
-                if age > self._V_ROW_FRESH_S:
-                    fresh = self._v_engine_fresh(intent, state, snapshot)
-                    if fresh is not None:
-                        logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
-                        return fresh
+                                def _dr13():
+                                    sig = None
+                                    try:
+                                        sig = frozenset(((str(getattr(i, 'target', '')).lower(), str(getattr(i, 'call_data', '')).lower()) for i in plan.interactions))
+                                    except Exception:
+                                        pass
+                                    return sig
+                                sig = _dr13()
+                                if sig is None or sig not in _viking_frozen_index().get(key, []):
+                                    rp = self._v_replay_plan(key, intent, state, snapshot)
+                                    if rp is not None:
+                                        logger.info('[viking] cached-bar serve %s (stamp %s >= bar %s)', key[:64], row.get('out'), bar)
+                                        return rp
+                        return _DR_UNSET
+                    _dr2 = _dr1()
+                    if _dr2 is not _DR_UNSET:
+                        return _dr2
+                    return plan
                 return _DR_UNSET
-            _dr6 = _dr5()
-            if _dr6 is not _DR_UNSET:
-                return _dr6
-        rp = self._v_replay_plan(key, intent, state, snapshot)
+            _dr18 = _dr17()
+            if _dr18 is not _DR_UNSET:
+                return _dr18
+            if row:
+                import time as _time
 
-        def _dr10():
-            if rp is not None:
-                logger.info('[viking] fill-empty serve %s', key[:64])
-                return rp
-            dyn = self._v_dynamic_fallback(intent, state, snapshot)
-            if dyn is not None:
-                return dyn
-            return plan
-            return _DR_UNSET
-        _dr11 = _dr10()
-        if _dr11 is not _DR_UNSET:
-            return _dr11
+                def _dr5():
+                    age = _time.time() - float(row.get('at') or 0)
+                    if age > self._V_ROW_FRESH_S:
+                        fresh = self._v_engine_fresh(intent, state, snapshot)
+                        if fresh is not None:
+                            logger.info('[viking] stale-row engine serve %s (age %.0fs)', key[:64], age)
+                            return fresh
+                    return _DR_UNSET
+                _dr6 = _dr5()
+                if _dr6 is not _DR_UNSET:
+                    return _dr6
+            rp = self._v_replay_plan(key, intent, state, snapshot)
+
+            def _dr10():
+                if rp is not None:
+                    logger.info('[viking] fill-empty serve %s', key[:64])
+                    return rp
+                dyn = self._v_dynamic_fallback(intent, state, snapshot)
+                if dyn is not None:
+                    return dyn
+                return plan
+                return _DR_UNSET
+            _dr11 = _dr10()
+            if _dr11 is not _DR_UNSET:
+                return _dr11
+        return _lr37()
+
 class _PuttyCleanSolver(VikingSolver):
     """Outermost brand wrapper: forces metadata().name to the clean brand
     (name-only; every routing/quoting/plan path is inherited unchanged)."""
@@ -712,7 +762,6 @@ class _PuttyCleanSolver(VikingSolver):
         except Exception:
             pass
         return _m
-
 from mc_data import _MC_ADDR, _MC_AGG3, _MC_QUOTER, _MC_PANCAKE_Q, _MC_ROUTER, _MC_QSEL, _MC_QIN, _MC_QOUT, _MC_FEES, _MC_FORCE_PAIR, _MC_FORCE_ORDER, _MC_CAND_ORDER
 _MC_DEAD_FILL_CACHE = None
 
@@ -738,6 +787,7 @@ class _McSolver(_PuttyCleanSolver):
     route in ONE aggregate3 eth_call and serve the best live single-hop >= min_out.
     FORCE keys fill unconditionally (proven-dead); CAND keys fill only when the
     base route re-quotes to 0 => can lift a 0 to a delivery, never regress."""
+
     def _mc_qdata(self, tin, tout, amt, fee):
         from eth_abi import encode as _e
         from eth_utils import to_checksum_address as _ck
@@ -757,14 +807,20 @@ class _McSolver(_PuttyCleanSolver):
         try:
             ix = base_plan.interactions[-1]
             cd = ix.call_data if ix.call_data.startswith('0x') else '0x' + ix.call_data
-            sel = cd[:10]
-            body = bytes.fromhex(cd[10:])
-            if sel in ('0x04e45aaf', '0x414bf389'):
-                fee = int.from_bytes(body[64:96], 'big')
-                q = _MC_QUOTER if sel == '0x04e45aaf' else _MC_PANCAKE_Q
-                return (q, self._mc_qdata(tin, tout, amt, fee))
-            if sel == '0xb858183f':
-                return (_MC_QUOTER, self._mc_path_qdata(body, amt))
+
+            def _lr33():
+                sel = cd[:10]
+                body = bytes.fromhex(cd[10:])
+                if sel in ('0x04e45aaf', '0x414bf389'):
+                    fee = int.from_bytes(body[64:96], 'big')
+                    q = _MC_QUOTER if sel == '0x04e45aaf' else _MC_PANCAKE_Q
+                    return (1, (q, self._mc_qdata(tin, tout, amt, fee)))
+                if sel == '0xb858183f':
+                    return (1, (_MC_QUOTER, self._mc_path_qdata(body, amt)))
+                return (0, None)
+            _lrt34 = _lr33()
+            if _lrt34[0]:
+                return _lrt34[1]
         except Exception:
             return None
         return None
@@ -785,7 +841,7 @@ class _McSolver(_PuttyCleanSolver):
         k3 = (tin.lower(), tout.lower(), amt)
         if (tin.lower(), tout.lower()) in _MC_FORCE_PAIR or k3 in _MC_FORCE_ORDER:
             return 'wl'
-        if (k3[0] + '|' + k3[1] + '|' + str(amt)) in _mc_dead_fill():
+        if k3[0] + '|' + k3[1] + '|' + str(amt) in _mc_dead_fill():
             return 'wl'
         if k3 in _MC_CAND_ORDER:
             return 'cand'
@@ -845,20 +901,23 @@ class _McSolver(_PuttyCleanSolver):
         """One gate: chain + params + target-class + w3 + Multicall list. None to defer."""
         if int(getattr(state, 'chain_id', 0) or 0) != 8453:
             return None
-        pr = self._mc_params(intent, state)
-        if pr is None:
-            return None
-        tin, tout, amt, mino = pr
-        cls = self._mc_class(tin, tout, amt)
-        if cls is None:
-            return None
-        w3 = self._get_web3(8453)
-        if w3 is None:
-            return None
-        calls, base_call = self._mc_calls(base_plan, tin, tout, amt, cls)
-        if calls is None:
-            return None
-        return (w3, tin, tout, amt, mino, cls, calls, base_call)
+
+        def _lr36():
+            pr = self._mc_params(intent, state)
+            if pr is None:
+                return None
+            tin, tout, amt, mino = pr
+            cls = self._mc_class(tin, tout, amt)
+            if cls is None:
+                return None
+            w3 = self._get_web3(8453)
+            if w3 is None:
+                return None
+            calls, base_call = self._mc_calls(base_plan, tin, tout, amt, cls)
+            if calls is None:
+                return None
+            return (w3, tin, tout, amt, mino, cls, calls, base_call)
+        return _lr36()
 
     def _mc_skip_sub(self, intent, state, snapshot, base_plan):
         s = self._mc_setup(intent, state, base_plan)

@@ -53,110 +53,114 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 from king_consts import *
 
-def _dr142():
-    from king_tables1 import _STATIC_EXOTIC_ROUTES
-    from king_tables2 import _HOLE_ROUTES
-    logger = logging.getLogger(__name__)
+def _lr16():
+    global SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, _AERO_KG_TWOHOP_TICKS, _AERO_TICK_SPACINGS, _AERO_TWOHOP_TICKS, _FAST_DIRECT_INPUTS, _GAS_WEIGHT, _HOLE_ROUTES, _HOLE_SPEND_CAPS, _KG_SET, _NET_WETH_PLATFORM_FEE, _PANCAKE_FEES, _RAW_OUTPUT_EDGE_BPS, _RAW_OUTPUT_PAIRS, _STATIC_EXOTIC_HIGH_MIN_OK, _STATIC_EXOTIC_ROUTES, _UNI_FEES, _UNI_KG_TWOHOP_FEES, _UNI_TWOHOP_FEES, _UNI_WETH_DAI_PATH_FEES, _UR_CONTRACT_BALANCE, _dr142, _dr21, _dr383, _dr82, logger
 
-    def _dr31():
-        SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
-        SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.1.2')
-        SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'top')
-        _FAST_DIRECT_INPUTS = frozenset({_USDBC})
-        _HOLE_SPEND_CAPS = {'0x0963a1abaf36ca88c21032b82e479353126a1c4b': 1000000}
-        _UR_CONTRACT_BALANCE = 1 << 255
-        _STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC), (_USDC, _DAI), (_USDC, _T_USDS), (_USDC, _T_SUSDS), (_T_USDS, _USDC), (_T_SUSDS, _USDC)})
+    def _dr142():
+        from king_tables1 import _STATIC_EXOTIC_ROUTES
+        from king_tables2 import _HOLE_ROUTES
+        logger = logging.getLogger(__name__)
 
-        def _dr162():
-            _GAS_WEIGHT = float(os.environ.get('SOLVER_GAS_WEIGHT', '0.0'))
-            _NET_WETH_PLATFORM_FEE = os.environ.get('SOLVER_NET_WETH_PLATFORM_FEE', '0').lower() in {'1', 'true', 'yes'}
-            _PANCAKE_FEES = (100, 500, 2500, 10000)
-            _UNI_FEES = (100, 500, 3000, 10000)
-            _UNI_WETH_DAI_PATH_FEES = ((3000, 100), (500, 100), (100, 100), (10000, 100))
-            return (SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, _FAST_DIRECT_INPUTS, _GAS_WEIGHT, _HOLE_SPEND_CAPS, _NET_WETH_PLATFORM_FEE, _PANCAKE_FEES, _STATIC_EXOTIC_HIGH_MIN_OK, _UNI_FEES, _UNI_WETH_DAI_PATH_FEES, _UR_CONTRACT_BALANCE)
-            return _DR_UNSET
-        _dr163 = _dr162()
-        if _dr163 is not _DR_UNSET:
-            return _dr163
-    SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, _FAST_DIRECT_INPUTS, _GAS_WEIGHT, _HOLE_SPEND_CAPS, _NET_WETH_PLATFORM_FEE, _PANCAKE_FEES, _STATIC_EXOTIC_HIGH_MIN_OK, _UNI_FEES, _UNI_WETH_DAI_PATH_FEES, _UR_CONTRACT_BALANCE = _dr31()
-    _RAW_OUTPUT_PAIRS = frozenset({(_USDC, _WETH), (_WETH, _USDC)})
-    _RAW_OUTPUT_EDGE_BPS = int(os.environ.get('SOLVER_RAW_OUTPUT_EDGE_BPS', '4'))
-    return (SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, _FAST_DIRECT_INPUTS, _GAS_WEIGHT, _HOLE_ROUTES, _HOLE_SPEND_CAPS, _NET_WETH_PLATFORM_FEE, _PANCAKE_FEES, _RAW_OUTPUT_EDGE_BPS, _RAW_OUTPUT_PAIRS, _STATIC_EXOTIC_HIGH_MIN_OK, _STATIC_EXOTIC_ROUTES, _UNI_FEES, _UNI_WETH_DAI_PATH_FEES, _UR_CONTRACT_BALANCE, logger)
-SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, _FAST_DIRECT_INPUTS, _GAS_WEIGHT, _HOLE_ROUTES, _HOLE_SPEND_CAPS, _NET_WETH_PLATFORM_FEE, _PANCAKE_FEES, _RAW_OUTPUT_EDGE_BPS, _RAW_OUTPUT_PAIRS, _STATIC_EXOTIC_HIGH_MIN_OK, _STATIC_EXOTIC_ROUTES, _UNI_FEES, _UNI_WETH_DAI_PATH_FEES, _UR_CONTRACT_BALANCE, logger = _dr142()
+        def _dr31():
+            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
+            SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.1.2')
+            SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'top')
+            _FAST_DIRECT_INPUTS = frozenset({_USDBC})
+            _HOLE_SPEND_CAPS = {'0x0963a1abaf36ca88c21032b82e479353126a1c4b': 1000000}
+            _UR_CONTRACT_BALANCE = 1 << 255
+            _STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC), (_USDC, _DAI), (_USDC, _T_USDS), (_USDC, _T_SUSDS), (_T_USDS, _USDC), (_T_SUSDS, _USDC)})
 
-def _dr21():
-    _UNI_TWOHOP_FEES = ((500, 500), (100, 100), (500, 100), (100, 500), (100, 10000), (500, 10000), (3000, 10000), (10000, 100), (10000, 500), (10000, 3000), (100, 3000), (3000, 100))
-    _AERO_TICK_SPACINGS = (1, 50, 100, 200, 2000)
-
-    def _dr187():
-        _AERO_TWOHOP_TICKS = ((100, 1), (1, 100), (100, 100), (1, 1))
-        _KG_SET = frozenset({_WETH, _USDC, _DAI, _CBBTC, _AERO})
-        _UNI_KG_TWOHOP_FEES = ((100, 100), (500, 100), (100, 500), (500, 500), (3000, 100), (100, 3000), (3000, 500), (500, 3000))
-        _AERO_KG_TWOHOP_TICKS = ((1, 1), (100, 1), (1, 100), (100, 100), (200, 100), (100, 200), (200, 1), (1, 200))
-        return (_AERO_KG_TWOHOP_TICKS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES)
-    _AERO_KG_TWOHOP_TICKS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES = _dr187()
-    return (_AERO_KG_TWOHOP_TICKS, _AERO_TICK_SPACINGS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES, _UNI_TWOHOP_FEES)
-_AERO_KG_TWOHOP_TICKS, _AERO_TICK_SPACINGS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES, _UNI_TWOHOP_FEES = _dr21()
-
-def _dr82():
-    _UNI_QUOTER_BY_CHAIN = {_ETH: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e'}
-
-    def _dr330():
-        _ETH_HUBS = (_ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_DAI, _ETH_WBTC)
-        _ETH_UNI_FEES = (100, 500, 3000, 10000)
-        _ETH_UNI_FEES_TWOHOP = ((500, 500), (500, 3000), (3000, 500), (3000, 3000), (100, 500), (500, 100), (100, 3000), (3000, 100))
-
-        def _dr50():
-            _ETH_3POOL_IDX = {_ETH_DAI: 0, _ETH_USDC: 1, _ETH_USDT: 2}
-            _OFFSET_UNI = int(os.environ.get('SOLVER_OFFSET_UNI', '285000'))
-            _OFFSET_AERO = int(os.environ.get('SOLVER_OFFSET_AERO', '318000'))
-            _GAS_MULTIHOP = int(os.environ.get('SOLVER_GAS_MULTIHOP', '490000'))
-            _RPC_TIMEOUT_S = float(os.environ.get('SOLVER_RPC_TIMEOUT_S', '2.0'))
-            _FAST_DIRECT_TIMEOUT_S = float(os.environ.get('SOLVER_FAST_DIRECT_TIMEOUT_S', '8.0'))
-
-            def _dr164():
-                _QUOTE_BUDGET_S = float(os.environ.get('SOLVER_QUOTE_BUDGET_S', '14.0'))
-                _BASELINE_BUDGET_S = float(os.environ.get('SOLVER_BASELINE_BUDGET_S', '14.0'))
-                _SELECT_BUDGET_S = float(os.environ.get('SOLVER_SELECT_BUDGET_S', '12.0'))
-                _QUOTER_MAX_WORKERS = int(os.environ.get('SOLVER_QUOTER_MAX_WORKERS', '48'))
-                _QUOTER_TIMEOUT_S = float(os.environ.get('SOLVER_QUOTER_TIMEOUT_S', '5.0'))
-                _SWEEP_KG = frozenset({'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'})
-                return (_BASELINE_BUDGET_S, _ETH_3POOL_IDX, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG)
+            def _dr162():
+                _GAS_WEIGHT = float(os.environ.get('SOLVER_GAS_WEIGHT', '0.0'))
+                _NET_WETH_PLATFORM_FEE = os.environ.get('SOLVER_NET_WETH_PLATFORM_FEE', '0').lower() in {'1', 'true', 'yes'}
+                _PANCAKE_FEES = (100, 500, 2500, 10000)
+                _UNI_FEES = (100, 500, 3000, 10000)
+                _UNI_WETH_DAI_PATH_FEES = ((3000, 100), (500, 100), (100, 100), (10000, 100))
+                return (SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, _FAST_DIRECT_INPUTS, _GAS_WEIGHT, _HOLE_SPEND_CAPS, _NET_WETH_PLATFORM_FEE, _PANCAKE_FEES, _STATIC_EXOTIC_HIGH_MIN_OK, _UNI_FEES, _UNI_WETH_DAI_PATH_FEES, _UR_CONTRACT_BALANCE)
                 return _DR_UNSET
-            _dr165 = _dr164()
-            if _dr165 is not _DR_UNSET:
-                return _dr165
-        _BASELINE_BUDGET_S, _ETH_3POOL_IDX, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG = _dr50()
-        _SWEEP_V2_ROUTERS = (('uniV2', '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24'), ('pancakeV2', '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'), ('sushiV2', '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891'), ('baseswapV2', '0x327Df1E6de05895d2ab08513aaDD9313Fe505d86'), ('alienV2', '0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7'))
+            _dr163 = _dr162()
+            if _dr163 is not _DR_UNSET:
+                return _dr163
+        SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, _FAST_DIRECT_INPUTS, _GAS_WEIGHT, _HOLE_SPEND_CAPS, _NET_WETH_PLATFORM_FEE, _PANCAKE_FEES, _STATIC_EXOTIC_HIGH_MIN_OK, _UNI_FEES, _UNI_WETH_DAI_PATH_FEES, _UR_CONTRACT_BALANCE = _dr31()
+        _RAW_OUTPUT_PAIRS = frozenset({(_USDC, _WETH), (_WETH, _USDC)})
+        _RAW_OUTPUT_EDGE_BPS = int(os.environ.get('SOLVER_RAW_OUTPUT_EDGE_BPS', '4'))
+        return (SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, _FAST_DIRECT_INPUTS, _GAS_WEIGHT, _HOLE_ROUTES, _HOLE_SPEND_CAPS, _NET_WETH_PLATFORM_FEE, _PANCAKE_FEES, _RAW_OUTPUT_EDGE_BPS, _RAW_OUTPUT_PAIRS, _STATIC_EXOTIC_HIGH_MIN_OK, _STATIC_EXOTIC_ROUTES, _UNI_FEES, _UNI_WETH_DAI_PATH_FEES, _UR_CONTRACT_BALANCE, logger)
+    SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, _FAST_DIRECT_INPUTS, _GAS_WEIGHT, _HOLE_ROUTES, _HOLE_SPEND_CAPS, _NET_WETH_PLATFORM_FEE, _PANCAKE_FEES, _RAW_OUTPUT_EDGE_BPS, _RAW_OUTPUT_PAIRS, _STATIC_EXOTIC_HIGH_MIN_OK, _STATIC_EXOTIC_ROUTES, _UNI_FEES, _UNI_WETH_DAI_PATH_FEES, _UR_CONTRACT_BALANCE, logger = _dr142()
 
-        def _dr147():
-            _SWEEP_VERIFY_MIN_S = float(os.environ.get('SOLVER_SWEEP_VERIFY_MIN_S', '8.0'))
-            _SWEEP_MIN_BUDGET_S = float(os.environ.get('SOLVER_SWEEP_MIN_BUDGET_S', '8.0'))
-            _DISCOVERY_MIN_BUDGET_S = float(os.environ.get('SOLVER_DISCOVERY_MIN_BUDGET_S', '8.0'))
+    def _dr21():
+        _UNI_TWOHOP_FEES = ((500, 500), (100, 100), (500, 100), (100, 500), (100, 10000), (500, 10000), (3000, 10000), (10000, 100), (10000, 500), (10000, 3000), (100, 3000), (3000, 100))
+        _AERO_TICK_SPACINGS = (1, 50, 100, 200, 2000)
 
-            def _sweep_known_tokens():
-                """Every 0x-address literal in THIS file: if a token is mentioned anywhere,
+        def _dr187():
+            _AERO_TWOHOP_TICKS = ((100, 1), (1, 100), (100, 100), (1, 1))
+            _KG_SET = frozenset({_WETH, _USDC, _DAI, _CBBTC, _AERO})
+            _UNI_KG_TWOHOP_FEES = ((100, 100), (500, 100), (100, 500), (500, 500), (3000, 100), (100, 3000), (3000, 500), (500, 3000))
+            _AERO_KG_TWOHOP_TICKS = ((1, 1), (100, 1), (1, 100), (100, 100), (200, 100), (100, 200), (200, 1), (1, 200))
+            return (_AERO_KG_TWOHOP_TICKS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES)
+        _AERO_KG_TWOHOP_TICKS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES = _dr187()
+        return (_AERO_KG_TWOHOP_TICKS, _AERO_TICK_SPACINGS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES, _UNI_TWOHOP_FEES)
+    _AERO_KG_TWOHOP_TICKS, _AERO_TICK_SPACINGS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES, _UNI_TWOHOP_FEES = _dr21()
+
+    def _dr82():
+        _UNI_QUOTER_BY_CHAIN = {_ETH: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e'}
+
+        def _dr330():
+            _ETH_HUBS = (_ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_DAI, _ETH_WBTC)
+            _ETH_UNI_FEES = (100, 500, 3000, 10000)
+            _ETH_UNI_FEES_TWOHOP = ((500, 500), (500, 3000), (3000, 500), (3000, 3000), (100, 500), (500, 100), (100, 3000), (3000, 100))
+
+            def _dr50():
+                _ETH_3POOL_IDX = {_ETH_DAI: 0, _ETH_USDC: 1, _ETH_USDT: 2}
+                _OFFSET_UNI = int(os.environ.get('SOLVER_OFFSET_UNI', '285000'))
+                _OFFSET_AERO = int(os.environ.get('SOLVER_OFFSET_AERO', '318000'))
+                _GAS_MULTIHOP = int(os.environ.get('SOLVER_GAS_MULTIHOP', '490000'))
+                _RPC_TIMEOUT_S = float(os.environ.get('SOLVER_RPC_TIMEOUT_S', '2.0'))
+                _FAST_DIRECT_TIMEOUT_S = float(os.environ.get('SOLVER_FAST_DIRECT_TIMEOUT_S', '8.0'))
+
+                def _dr164():
+                    _QUOTE_BUDGET_S = float(os.environ.get('SOLVER_QUOTE_BUDGET_S', '14.0'))
+                    _BASELINE_BUDGET_S = float(os.environ.get('SOLVER_BASELINE_BUDGET_S', '14.0'))
+                    _SELECT_BUDGET_S = float(os.environ.get('SOLVER_SELECT_BUDGET_S', '12.0'))
+                    _QUOTER_MAX_WORKERS = int(os.environ.get('SOLVER_QUOTER_MAX_WORKERS', '48'))
+                    _QUOTER_TIMEOUT_S = float(os.environ.get('SOLVER_QUOTER_TIMEOUT_S', '5.0'))
+                    _SWEEP_KG = frozenset({'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'})
+                    return (_BASELINE_BUDGET_S, _ETH_3POOL_IDX, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG)
+                    return _DR_UNSET
+                _dr165 = _dr164()
+                if _dr165 is not _DR_UNSET:
+                    return _dr165
+            _BASELINE_BUDGET_S, _ETH_3POOL_IDX, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG = _dr50()
+            _SWEEP_V2_ROUTERS = (('uniV2', '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24'), ('pancakeV2', '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'), ('sushiV2', '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891'), ('baseswapV2', '0x327Df1E6de05895d2ab08513aaDD9313Fe505d86'), ('alienV2', '0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7'))
+
+            def _dr147():
+                _SWEEP_VERIFY_MIN_S = float(os.environ.get('SOLVER_SWEEP_VERIFY_MIN_S', '8.0'))
+                _SWEEP_MIN_BUDGET_S = float(os.environ.get('SOLVER_SWEEP_MIN_BUDGET_S', '8.0'))
+                _DISCOVERY_MIN_BUDGET_S = float(os.environ.get('SOLVER_DISCOVERY_MIN_BUDGET_S', '8.0'))
+
+                def _sweep_known_tokens():
+                    """Every 0x-address literal in THIS file: if a token is mentioned anywhere,
     the incumbent may have a bespoke route — the sweep defers. Fresh rotation
     tokens are never mentioned, so they sweep."""
-                import re as _re
-                try:
-                    src = open(os.path.abspath(__file__)).read().lower()
-                    return frozenset(_re.findall('0x[0-9a-f]{40}', src))
-                except Exception:
-                    return frozenset()
-            _SWEEP_KNOWN = _sweep_known_tokens()
-            return (_BASELINE_BUDGET_S, _DISCOVERY_MIN_BUDGET_S, _ETH_3POOL_IDX, _ETH_HUBS, _ETH_UNI_FEES, _ETH_UNI_FEES_TWOHOP, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG, _SWEEP_KNOWN, _SWEEP_MIN_BUDGET_S, _SWEEP_V2_ROUTERS, _SWEEP_VERIFY_MIN_S, _UNI_QUOTER_BY_CHAIN)
-            return _DR_UNSET
-        return _dr147
-    _dr147 = _dr330()
-    _dr148 = _dr147()
-    if _dr148 is not _DR_UNSET:
-        return _dr148
+                    import re as _re
+                    try:
+                        src = open(os.path.abspath(__file__)).read().lower()
+                        return frozenset(_re.findall('0x[0-9a-f]{40}', src))
+                    except Exception:
+                        return frozenset()
+                _SWEEP_KNOWN = _sweep_known_tokens()
+                return (_BASELINE_BUDGET_S, _DISCOVERY_MIN_BUDGET_S, _ETH_3POOL_IDX, _ETH_HUBS, _ETH_UNI_FEES, _ETH_UNI_FEES_TWOHOP, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG, _SWEEP_KNOWN, _SWEEP_MIN_BUDGET_S, _SWEEP_V2_ROUTERS, _SWEEP_VERIFY_MIN_S, _UNI_QUOTER_BY_CHAIN)
+                return _DR_UNSET
+            return _dr147
+        _dr147 = _dr330()
+        _dr148 = _dr147()
+        if _dr148 is not _DR_UNSET:
+            return _dr148
 
-def _dr383():
-    global _BASELINE_BUDGET_S, _DISCOVERY_MIN_BUDGET_S, _ETH_3POOL_IDX, _ETH_HUBS, _ETH_UNI_FEES, _ETH_UNI_FEES_TWOHOP, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG, _SWEEP_KNOWN, _SWEEP_MIN_BUDGET_S, _SWEEP_V2_ROUTERS, _SWEEP_VERIFY_MIN_S, _UNI_QUOTER_BY_CHAIN
-    _BASELINE_BUDGET_S, _DISCOVERY_MIN_BUDGET_S, _ETH_3POOL_IDX, _ETH_HUBS, _ETH_UNI_FEES, _ETH_UNI_FEES_TWOHOP, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG, _SWEEP_KNOWN, _SWEEP_MIN_BUDGET_S, _SWEEP_V2_ROUTERS, _SWEEP_VERIFY_MIN_S, _UNI_QUOTER_BY_CHAIN = _dr82()
-_dr383()
+    def _dr383():
+        global _BASELINE_BUDGET_S, _DISCOVERY_MIN_BUDGET_S, _ETH_3POOL_IDX, _ETH_HUBS, _ETH_UNI_FEES, _ETH_UNI_FEES_TWOHOP, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG, _SWEEP_KNOWN, _SWEEP_MIN_BUDGET_S, _SWEEP_V2_ROUTERS, _SWEEP_VERIFY_MIN_S, _UNI_QUOTER_BY_CHAIN
+        _BASELINE_BUDGET_S, _DISCOVERY_MIN_BUDGET_S, _ETH_3POOL_IDX, _ETH_HUBS, _ETH_UNI_FEES, _ETH_UNI_FEES_TWOHOP, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG, _SWEEP_KNOWN, _SWEEP_MIN_BUDGET_S, _SWEEP_V2_ROUTERS, _SWEEP_VERIFY_MIN_S, _UNI_QUOTER_BY_CHAIN = _dr82()
+    _dr383()
+_lr16()
 
 class _MinerSolverDR10DR170(BaselineSwapSolver):
 
@@ -302,61 +306,70 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
                 def _dr43():
                     nonlocal cands, usable
                     cands = self._sas_crossvenue_waves(cands, chain_id, tin, tout, amount_in, _stage_t0)
-                    best_out = max((c['out'] for c in cands))
-                    bp_out = 0
-                    if base_plan is not None:
-                        try:
-                            bp_out = int((base_plan.metadata or {}).get('expected_output', 0) or 0)
-                        except (TypeError, ValueError):
-                            bp_out = 0
-                    ref = max(best_out, bp_out, 1)
 
-                    def score(out, gas_model):
-                        return 0.4 * (out / ref) - _GAS_WEIGHT * (gas_model / 1000000.0)
-                    usable = [c for c in cands if min_out <= 0 or c['out'] >= min_out]
-                    return (bp_out, score)
+                    def _lr20():
+                        nonlocal usable
+                        best_out = max((c['out'] for c in cands))
+                        bp_out = 0
+                        if base_plan is not None:
+                            try:
+                                bp_out = int((base_plan.metadata or {}).get('expected_output', 0) or 0)
+                            except (TypeError, ValueError):
+                                bp_out = 0
+                        ref = max(best_out, bp_out, 1)
+
+                        def score(out, gas_model):
+                            return 0.4 * (out / ref) - _GAS_WEIGHT * (gas_model / 1000000.0)
+                        usable = [c for c in cands if min_out <= 0 or c['out'] >= min_out]
+                        return (bp_out, score)
+                    return _lr20()
                 bp_out, score = _dr43()
                 if not usable:
                     return base_plan
-                core_usable = [c for c in usable if not c.get('extra_route')]
-                if core_usable:
-                    core_best_out = max((c['out'] for c in core_usable))
-                    usable = core_usable + [c for c in usable if c.get('extra_route') and c['out'] * 10000 > core_best_out * 10010]
-                best = max(usable, key=lambda c: (round(score(c['out'], c['gas_model']), 9), -c['gas_est']))
+                best = usable = None
 
-                def _dr84():
+                def _lr1():
+                    nonlocal _dr84, best, usable
+                    core_usable = [c for c in usable if not c.get('extra_route')]
+                    if core_usable:
+                        core_best_out = max((c['out'] for c in core_usable))
+                        usable = core_usable + [c for c in usable if c.get('extra_route') and c['out'] * 10000 > core_best_out * 10010]
+                    best = max(usable, key=lambda c: (round(score(c['out'], c['gas_model']), 9), -c['gas_est']))
 
-                    def _dr25():
-                        nonlocal best
-                        raw_output_pair = (tin.lower(), tout.lower()) in _RAW_OUTPUT_PAIRS
-                        if raw_output_pair:
-                            raw_best = max(usable, key=lambda c: (c['out'], -c['gas_est']))
-                            if raw_best['out'] * 10000 > best['out'] * (10000 + _RAW_OUTPUT_EDGE_BPS):
-                                best = raw_best
+                    def _dr84():
 
-                        def _dr217():
-                            _hb = self._sas_honor_baseline(base_plan, best, bp_out, min_out, raw_output_pair, tin, tout, score)
-                            if _hb is not None:
-                                return _hb
-                            if best.get('venue') == 'crossvenue_2hop':
-                                return self._build_2hop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
-                            if best.get('venue') == 'crossvenue_2hop_proxy':
-                                return self._build_2hop_proxy_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                        def _dr25():
+                            nonlocal best
+                            raw_output_pair = (tin.lower(), tout.lower()) in _RAW_OUTPUT_PAIRS
+                            if raw_output_pair:
+                                raw_best = max(usable, key=lambda c: (c['out'], -c['gas_est']))
+                                if raw_best['out'] * 10000 > best['out'] * (10000 + _RAW_OUTPUT_EDGE_BPS):
+                                    best = raw_best
+
+                            def _dr217():
+                                _hb = self._sas_honor_baseline(base_plan, best, bp_out, min_out, raw_output_pair, tin, tout, score)
+                                if _hb is not None:
+                                    return _hb
+                                if best.get('venue') == 'crossvenue_2hop':
+                                    return self._build_2hop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                                if best.get('venue') == 'crossvenue_2hop_proxy':
+                                    return self._build_2hop_proxy_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                                return _DR_UNSET
+                                return _DR_UNSET
+                            _dr218 = _dr217()
+                            if _dr218 is not _DR_UNSET:
+                                return _dr218
                             return _DR_UNSET
-                            return _DR_UNSET
-                        _dr218 = _dr217()
-                        if _dr218 is not _DR_UNSET:
-                            return _dr218
+                        _dr26 = _dr25()
+                        if _dr26 is not _DR_UNSET:
+                            return _dr26
+                        split_plan = self._try_split_plan(intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
+                        if split_plan is not None:
+                            return split_plan
+                        return self._build_singlehop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
                         return _DR_UNSET
-                    _dr26 = _dr25()
-                    if _dr26 is not _DR_UNSET:
-                        return _dr26
-                    split_plan = self._try_split_plan(intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
-                    if split_plan is not None:
-                        return split_plan
-                    return self._build_singlehop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
                     return _DR_UNSET
-                return _DR_UNSET
+                return _lr1()
             _dr374 = _dr373()
             if _dr374 is not _DR_UNSET:
                 return _dr374
@@ -388,13 +401,16 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
 
         def _dr335():
             from eth_utils import keccak as _keccak, to_checksum_address as _ck
-            router = _AERO_V2_ROUTER
-            routes = [(_ck(a), _ck(b), bool(stable), _ck(factory)) for a, b, stable, factory in cand.get('routes', ())]
-            if not routes:
-                raise ValueError('no aerodrome v2 routes')
-            selector = _keccak(text='swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)')[:4]
-            call = '0x' + (selector + _abi_encode(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amount_in), 0, routes, _ck(recipient), int(deadline)])).hex()
-            return (call, router)
+
+            def _lr30():
+                router = _AERO_V2_ROUTER
+                routes = [(_ck(a), _ck(b), bool(stable), _ck(factory)) for a, b, stable, factory in cand.get('routes', ())]
+                if not routes:
+                    raise ValueError('no aerodrome v2 routes')
+                selector = _keccak(text='swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)')[:4]
+                call = '0x' + (selector + _abi_encode(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amount_in), 0, routes, _ck(recipient), int(deadline)])).hex()
+                return (call, router)
+            return _lr30()
         call, router = _dr335()
         route_tag = 'aerodrome_v2'
         return (router, call, route_tag)
@@ -502,105 +518,110 @@ class _MinerSolverDR10(_MinerSolverDR10DR170):
             _dr77()
 
         def _dr381():
+            extra_best = extra_route = extra_tag = reach_best = None
 
-            def _dr29():
-                for stf in (False, True):
-                    jobs.append(('reach', None, lambda stf=stf: q_av2([(_ck(tin), _ck(tout), stf, _ck(zero))], amount_in)))
+            def _lr18():
+                nonlocal extra_best, extra_route, extra_tag, reach_best
 
-                def _dr246():
-                    for name, router in _SWEEP_V2_ROUTERS:
-                        jobs.append((f'{name}-direct', ('v2', router, [tin, tout]), lambda r=router: q_v2(r, [tin, tout], amount_in)))
-                        if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
-                            jobs.append((f'{name}-viaWETH', ('v2', router, [tin, _SWEEP_WETH, tout]), lambda r=router: q_v2(r, [tin, _SWEEP_WETH, tout], amount_in)))
+                def _dr29():
+                    for stf in (False, True):
+                        jobs.append(('reach', None, lambda stf=stf: q_av2([(_ck(tin), _ck(tout), stf, _ck(zero))], amount_in)))
 
-                    def _dr14():
-                        nonlocal f, reach_best
-                        for f in (100, 500, 3000, 10000):
-                            jobs.append((f'sushiV3-{f}', ('sushi_v3', f, [tin, tout]), lambda f=f: q_v3(_SWEEP_SUSHI_Q, tin, tout, amount_in, f)))
+                    def _dr246():
+                        for name, router in _SWEEP_V2_ROUTERS:
+                            jobs.append((f'{name}-direct', ('v2', router, [tin, tout]), lambda r=router: q_v2(r, [tin, tout], amount_in)))
+                            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                                jobs.append((f'{name}-viaWETH', ('v2', router, [tin, _SWEEP_WETH, tout]), lambda r=router: q_v2(r, [tin, _SWEEP_WETH, tout], amount_in)))
 
-                        def _dr204():
-                            uni_v2 = _SWEEP_V2_ROUTERS[0][1]
-                            if _SWEEP_VIRTUAL not in (tin, tout):
-                                jobs.append(('uniV2-viaVIRTUAL', ('v2', uni_v2, [tin, _SWEEP_VIRTUAL, tout]), lambda: q_v2(uni_v2, [tin, _SWEEP_VIRTUAL, tout], amount_in)))
-                                if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
-                                    jobs.append(('uniV2-WETH-VIRTUAL', ('v2', uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout]), lambda: q_v2(uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout], amount_in)))
-                        _dr204()
+                        def _dr14():
+                            nonlocal f, reach_best
+                            for f in (100, 500, 3000, 10000):
+                                jobs.append((f'sushiV3-{f}', ('sushi_v3', f, [tin, tout]), lambda f=f: q_v3(_SWEEP_SUSHI_Q, tin, tout, amount_in, f)))
 
-                        def q_mav():
-                            lk = _kk(text='lookup(address,address,uint256,uint256)')[:4]
-                            calc = _kk(text='calculateSwap(address,uint128,bool,bool,int32)')[:4]
-                            lo, hi = sorted([tin, tout])
-                            r = _call(_SWEEP_MAV_F, lk + _enc(['address', 'address', 'uint256', 'uint256'], [_ck(lo), _ck(hi), 0, 5]))
+                            def _dr204():
+                                uni_v2 = _SWEEP_V2_ROUTERS[0][1]
+                                if _SWEEP_VIRTUAL not in (tin, tout):
+                                    jobs.append(('uniV2-viaVIRTUAL', ('v2', uni_v2, [tin, _SWEEP_VIRTUAL, tout]), lambda: q_v2(uni_v2, [tin, _SWEEP_VIRTUAL, tout], amount_in)))
+                                    if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                                        jobs.append(('uniV2-WETH-VIRTUAL', ('v2', uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout]), lambda: q_v2(uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout], amount_in)))
+                            _dr204()
 
-                            def _dr223():
-                                if not r:
-                                    return (0, None)
-                                try:
-                                    pools = _dec(['address[]'], r)[0]
-                                except Exception:
-                                    return (0, None)
-                                token_a_in = tin.lower() == lo.lower()
-                                tick = 2147483647 if token_a_in else -2147483648
+                            def q_mav():
+                                lk = _kk(text='lookup(address,address,uint256,uint256)')[:4]
+                                calc = _kk(text='calculateSwap(address,uint128,bool,bool,int32)')[:4]
+                                lo, hi = sorted([tin, tout])
+                                r = _call(_SWEEP_MAV_F, lk + _enc(['address', 'address', 'uint256', 'uint256'], [_ck(lo), _ck(hi), 0, 5]))
 
-                                def _dr128():
-                                    best, best_pool = (0, None)
-                                    for pool in list(pools)[:3]:
-                                        rr = _call(_SWEEP_MAV_Q, calc + _enc(['address', 'uint128', 'bool', 'bool', 'int32'], [_ck(pool), int(amount_in), token_a_in, False, tick]))
-                                        if rr:
-                                            try:
-                                                out = int(_dec(['uint256', 'uint256', 'uint256'], rr)[1])
-                                            except Exception:
-                                                out = 0
-                                            if out > best:
-                                                best, best_pool = (out, pool)
-                                    return (best, best_pool)
-                                best, best_pool = _dr128()
-                                if best_pool is None:
-                                    return (0, None)
-                                return (best, ('maverick', (best_pool, token_a_in), [tin, tout]))
-                                return _DR_UNSET
-                            _dr224 = _dr223()
-                            if _dr224 is not _DR_UNSET:
-                                return _dr224
-                        reach_best = 0
+                                def _dr223():
+                                    if not r:
+                                        return (0, None)
+                                    try:
+                                        pools = _dec(['address[]'], r)[0]
+                                    except Exception:
+                                        return (0, None)
+                                    token_a_in = tin.lower() == lo.lower()
+                                    tick = 2147483647 if token_a_in else -2147483648
+
+                                    def _dr128():
+                                        best, best_pool = (0, None)
+                                        for pool in list(pools)[:3]:
+                                            rr = _call(_SWEEP_MAV_Q, calc + _enc(['address', 'uint128', 'bool', 'bool', 'int32'], [_ck(pool), int(amount_in), token_a_in, False, tick]))
+                                            if rr:
+                                                try:
+                                                    out = int(_dec(['uint256', 'uint256', 'uint256'], rr)[1])
+                                                except Exception:
+                                                    out = 0
+                                                if out > best:
+                                                    best, best_pool = (out, pool)
+                                        return (best, best_pool)
+                                    best, best_pool = _dr128()
+                                    if best_pool is None:
+                                        return (0, None)
+                                    return (best, ('maverick', (best_pool, token_a_in), [tin, tout]))
+                                    return _DR_UNSET
+                                _dr224 = _dr223()
+                                if _dr224 is not _DR_UNSET:
+                                    return _dr224
+                            reach_best = 0
+                            return q_mav
+                        q_mav = _dr14()
                         return q_mav
-                    q_mav = _dr14()
+                    q_mav = _dr246()
                     return q_mav
-                q_mav = _dr246()
-                return q_mav
-            q_mav = _dr29()
-            extra_best, extra_tag, extra_route = (0, '', None)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
-                mav_fut = ex.submit(q_mav)
+                q_mav = _dr29()
+                extra_best, extra_tag, extra_route = (0, '', None)
+                with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+                    mav_fut = ex.submit(q_mav)
 
-                def _dr143():
-                    futs = [(tag, route, ex.submit(fn)) for tag, route, fn in jobs]
-                    return futs
-                futs = _dr143()
-                for tag, route, fut in futs:
-                    try:
-                        out = int(fut.result(timeout=8) or 0)
-                    except Exception:
-                        out = 0
-                    if tag == 'reach':
-                        reach_best = max(reach_best, out)
-                    else:
+                    def _dr143():
+                        futs = [(tag, route, ex.submit(fn)) for tag, route, fn in jobs]
+                        return futs
+                    futs = _dr143()
+                    for tag, route, fut in futs:
+                        try:
+                            out = int(fut.result(timeout=8) or 0)
+                        except Exception:
+                            out = 0
+                        if tag == 'reach':
+                            reach_best = max(reach_best, out)
+                        else:
 
-                        def _dr154():
-                            nonlocal extra_best, extra_route, extra_tag
-                            if out > extra_best:
-                                extra_best, extra_tag, extra_route = (out, tag, route)
-                        _dr154()
+                            def _dr154():
+                                nonlocal extra_best, extra_route, extra_tag
+                                if out > extra_best:
+                                    extra_best, extra_tag, extra_route = (out, tag, route)
+                            _dr154()
 
-                def _dr87():
-                    nonlocal extra_best, extra_route, extra_tag
-                    try:
-                        mout, mroute = mav_fut.result(timeout=8)
-                    except Exception:
-                        mout, mroute = (0, None)
-                    if mroute is not None and int(mout) > extra_best:
-                        extra_best, extra_tag, extra_route = (int(mout), 'maverick-direct', mroute)
-                _dr87()
+                    def _dr87():
+                        nonlocal extra_best, extra_route, extra_tag
+                        try:
+                            mout, mroute = mav_fut.result(timeout=8)
+                        except Exception:
+                            mout, mroute = (0, None)
+                        if mroute is not None and int(mout) > extra_best:
+                            extra_best, extra_tag, extra_route = (int(mout), 'maverick-direct', mroute)
+                    _dr87()
+            _lr18()
             return (reach_best, (extra_best, extra_tag, extra_route))
             return _DR_UNSET
         _dr382 = _dr381()
@@ -643,10 +664,15 @@ class _MinerSolverDR10(_MinerSolverDR10DR170):
         params = self._normalized_swap_params(intent, state)
 
         def _dr286():
-            recipient = self._sweep_recipient(state, params)
-            deadline = self._sweep_deadline(snapshot)
-            call = '0x414bf389' + _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint256', 'uint160'], [_ck(tin), _ck(tout), int(fee), _ck(recipient), int(deadline), int(amount_in), 0, 0]).hex()
-            ix = [Interaction(target=tin, value='0', call_data=self._sweep_approve(_SWEEP_SUSHI_R, amount_in), chain_id=chain_id), Interaction(target=_SWEEP_SUSHI_R, value='0', call_data=call, chain_id=chain_id)]
+            deadline = ix = None
+
+            def _lr31():
+                nonlocal deadline, ix
+                recipient = self._sweep_recipient(state, params)
+                deadline = self._sweep_deadline(snapshot)
+                call = '0x414bf389' + _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint256', 'uint160'], [_ck(tin), _ck(tout), int(fee), _ck(recipient), int(deadline), int(amount_in), 0, 0]).hex()
+                ix = [Interaction(target=tin, value='0', call_data=self._sweep_approve(_SWEEP_SUSHI_R, amount_in), chain_id=chain_id), Interaction(target=_SWEEP_SUSHI_R, value='0', call_data=call, chain_id=chain_id)]
+            _lr31()
             return (deadline, ix)
         deadline, ix = _dr286()
         return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'sweep-sushi-v3', 'chain_id': chain_id})
@@ -949,35 +975,40 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
             cands = [c for c in getattr(self, '_sweep_topk', []) if c[0] >= max(min_out, 1) and c[0] > max(reach, 1) * _SWEEP_MIN_EDGE]
             return (app, cands, slot_idx)
         app, cands, slot_idx = _dr153()
-        if slot_idx is None or not app or (not cands):
-            return None
-        import concurrent.futures
-        results = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(cands)) as ex:
-            futs = {ex.submit(self._sweep_simulate_one, w3, app, tin, tout, amount_in, slot_idx, c): c for c in cands}
-            for fut, c in futs.items():
+        c = None
 
-                def _dr295():
-                    try:
-                        delivered = int(fut.result(timeout=6) or 0)
-                    except Exception:
-                        delivered = -1
-                    results.append((delivered, c))
-                    return delivered
-                delivered = _dr295()
+        def _lr21():
+            nonlocal c
+            if slot_idx is None or not app or (not cands):
+                return None
+            import concurrent.futures
+            results = []
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(cands)) as ex:
+                futs = {ex.submit(self._sweep_simulate_one, w3, app, tin, tout, amount_in, slot_idx, c): c for c in cands}
+                for fut, c in futs.items():
 
-        def _dr113():
-            if all((d < 0 for d, _ in results)):
-                return None
-            ok = [(d, c) for d, c in results if d >= max(min_out, 1)]
-            if not ok:
-                return None
-            d, (q_out, tag, route) = max(ok, key=lambda x: x[0])
-            return (d, tag + '+sim', route)
-            return _DR_UNSET
-        _dr114 = _dr113()
-        if _dr114 is not _DR_UNSET:
-            return _dr114
+                    def _dr295():
+                        try:
+                            delivered = int(fut.result(timeout=6) or 0)
+                        except Exception:
+                            delivered = -1
+                        results.append((delivered, c))
+                        return delivered
+                    delivered = _dr295()
+
+            def _dr113():
+                if all((d < 0 for d, _ in results)):
+                    return None
+                ok = [(d, c) for d, c in results if d >= max(min_out, 1)]
+                if not ok:
+                    return None
+                d, (q_out, tag, route) = max(ok, key=lambda x: x[0])
+                return (d, tag + '+sim', route)
+                return _DR_UNSET
+            _dr114 = _dr113()
+            if _dr114 is not _DR_UNSET:
+                return _dr114
+        return _lr21()
 
     def _sweep_simulate_one(self, w3, app, tin, tout, amount_in, slot_idx, cand):
         """eth_simulateV1 one candidate: [approve, swap] from the app with an
@@ -1084,37 +1115,42 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
         def _dr379():
             _extras = []
             mav_pools = []
+            _dr161 = out = None
             for (tgt, cd, kind, tag, route), (ok, ret) in zip(jobs, results):
-                if not ok or not ret:
-                    continue
-                out = 0
-                try:
-                    if kind == 'v3':
-                        out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], ret)[0])
-                    elif kind == 'path':
-                        out = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], ret)[0])
-                    elif kind == 'v2':
 
-                        def _dr161():
-                            nonlocal out
-                            out = int(_dec(['uint256[]'], ret)[0][-1])
-                        _dr161()
-                    elif kind == 'mavlk':
-                        mav_pools = list(_dec(['address[]'], ret)[0])[:3]
-                        continue
-                except Exception:
-                    continue
+                def _lr2():
+                    nonlocal _dr161, mav_pools, out
+                    if not ok or not ret:
+                        return
+                    out = 0
+                    try:
+                        if kind == 'v3':
+                            out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], ret)[0])
+                        elif kind == 'path':
+                            out = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], ret)[0])
+                        elif kind == 'v2':
 
-                def _dr129():
-                    nonlocal extra_best, extra_route, extra_tag, reach_best
-                    if tag == 'reach':
-                        reach_best = max(reach_best, out)
-                    else:
-                        if route is not None and out > 0:
-                            _extras.append((out, tag, route))
-                        if out > extra_best:
-                            extra_best, extra_tag, extra_route = (out, tag, route)
-                _dr129()
+                            def _dr161():
+                                nonlocal out
+                                out = int(_dec(['uint256[]'], ret)[0][-1])
+                            _dr161()
+                        elif kind == 'mavlk':
+                            mav_pools = list(_dec(['address[]'], ret)[0])[:3]
+                            return
+                    except Exception:
+                        return
+
+                    def _dr129():
+                        nonlocal extra_best, extra_route, extra_tag, reach_best
+                        if tag == 'reach':
+                            reach_best = max(reach_best, out)
+                        else:
+                            if route is not None and out > 0:
+                                _extras.append((out, tag, route))
+                            if out > extra_best:
+                                extra_best, extra_tag, extra_route = (out, tag, route)
+                    _dr129()
+                _lr2()
             return (reach_best, extra_best, extra_tag, extra_route, _extras, mav_pools)
             return _DR_UNSET
         _dr380 = _dr379()
@@ -1157,35 +1193,39 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
             def _dr108():
                 nonlocal f
                 sp = _kk(text='quoteExactInput(bytes,uint256)')[:4]
-                av2 = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
-                lk = _kk(text='lookup(address,address,uint256,uint256)')[:4]
-                calc = _kk(text='calculateSwap(address,uint128,bool,bool,int32)')[:4]
-                agg3 = _kk(text='aggregate3((address,bool,bytes)[])')[:4]
-                zero = '0x' + '0' * 40
 
-                def enc_v3(a, b, amt, p, tick=False):
-                    s, typ = (st, 'int24') if tick else (sf, 'uint24')
-                    return s + _enc([f'(address,address,uint256,{typ},uint160)'], [(_ck(a), _ck(b), int(amt), int(p), 0)])
+                def _lr27():
+                    nonlocal f
+                    av2 = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
+                    lk = _kk(text='lookup(address,address,uint256,uint256)')[:4]
+                    calc = _kk(text='calculateSwap(address,uint128,bool,bool,int32)')[:4]
+                    agg3 = _kk(text='aggregate3((address,bool,bytes)[])')[:4]
+                    zero = '0x' + '0' * 40
 
-                def enc_path(tokens, fees, amt):
-                    pb = b''
-                    for i, tk in enumerate(tokens):
-                        pb += bytes.fromhex(tk[2:])
-                        if i < len(fees):
-                            pb += int(fees[i]).to_bytes(3, 'big')
-                    return sp + _enc(['bytes', 'uint256'], [pb, int(amt)])
+                    def enc_v3(a, b, amt, p, tick=False):
+                        s, typ = (st, 'int24') if tick else (sf, 'uint24')
+                        return s + _enc([f'(address,address,uint256,{typ},uint160)'], [(_ck(a), _ck(b), int(amt), int(p), 0)])
 
-                def enc_v2(path, amt):
-                    return gsel + _enc(['uint256', 'address[]'], [int(amt), [_ck(x) for x in path]])
-                jobs = []
-                for f in (100, 500, 3000, 10000):
+                    def enc_path(tokens, fees, amt):
+                        pb = b''
+                        for i, tk in enumerate(tokens):
+                            pb += bytes.fromhex(tk[2:])
+                            if i < len(fees):
+                                pb += int(fees[i]).to_bytes(3, 'big')
+                        return sp + _enc(['bytes', 'uint256'], [pb, int(amt)])
 
-                    def _dr184():
-                        jobs.append((_SWEEP_UNI_Q, enc_v3(tin, tout, amount_in, f), 'v3', 'reach', None))
-                        if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
-                            jobs.append((_SWEEP_UNI_Q, enc_path([tin, _SWEEP_WETH, tout], [500, f], amount_in), 'path', 'reach', None))
-                    _dr184()
-                return (agg3, av2, calc, enc_v2, enc_v3, jobs, lk, zero)
+                    def enc_v2(path, amt):
+                        return gsel + _enc(['uint256', 'address[]'], [int(amt), [_ck(x) for x in path]])
+                    jobs = []
+                    for f in (100, 500, 3000, 10000):
+
+                        def _dr184():
+                            jobs.append((_SWEEP_UNI_Q, enc_v3(tin, tout, amount_in, f), 'v3', 'reach', None))
+                            if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
+                                jobs.append((_SWEEP_UNI_Q, enc_path([tin, _SWEEP_WETH, tout], [500, f], amount_in), 'path', 'reach', None))
+                        _dr184()
+                    return (agg3, av2, calc, enc_v2, enc_v3, jobs, lk, zero)
+                return _lr27()
             agg3, av2, calc, enc_v2, enc_v3, jobs, lk, zero = _dr108()
             return (_ck, agg3, av2, calc, enc_v2, enc_v3, jobs, lk, zero)
         _ck, agg3, av2, calc, enc_v2, enc_v3, jobs, lk, zero = _dr305()
@@ -1574,137 +1614,142 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
                     return None
                 route = _HOLE_ROUTES.get(tout.lower())
-                if route is None:
-                    return None
-                kind, param = route
-                if kind == 'uni_mh':
+                cand = None
 
-                    def _dr88():
-                        nonlocal cand
-                        cand = {'venue': 'uniswap_v3_multihop', 'tokens': (tin, _WETH, tout), 'fees': param, 'param': param, 'out': max(min_out, 1), 'gas_est': 220000, 'gas_model': _GAS_MULTIHOP + 220000}
-                    _dr88()
-                elif kind == 'pancake':
+                def _lr3():
+                    nonlocal cand
+                    if route is None:
+                        return None
+                    kind, param = route
+                    if kind == 'uni_mh':
 
-                    def _dr100():
-                        nonlocal cand
-                        cand = {'venue': 'pancake_v3', 'param': int(param), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
-                    _dr100()
-                elif kind == 'sushi_v3':
-                    cand = {'venue': 'sushi_v3', 'param': int(param), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
-                else:
+                        def _dr88():
+                            nonlocal cand
+                            cand = {'venue': 'uniswap_v3_multihop', 'tokens': (tin, _WETH, tout), 'fees': param, 'param': param, 'out': max(min_out, 1), 'gas_est': 220000, 'gas_model': _GAS_MULTIHOP + 220000}
+                        _dr88()
+                    elif kind == 'pancake':
 
-                    def _dr123():
-                        if kind == 'maverick':
+                        def _dr100():
+                            nonlocal cand
+                            cand = {'venue': 'pancake_v3', 'param': int(param), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
+                        _dr100()
+                    elif kind == 'sushi_v3':
+                        cand = {'venue': 'sushi_v3', 'param': int(param), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
+                    else:
 
-                            def _dr54():
-                                nonlocal cand
-                                pool, token_a_in = param
-                                cand = {'venue': 'maverick_v2', 'pool': pool, 'tokenAIn': bool(token_a_in), 'param': pool, 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
-                                cap = _HOLE_SPEND_CAPS.get(tout.lower())
-                                if cap and amount_in > cap and (min_out <= 1):
-                                    cand['spend_amount'] = int(cap)
-                            _dr54()
-                        elif kind == 'hydrex':
+                        def _dr123():
+                            if kind == 'maverick':
 
-                            def _dr68():
-                                nonlocal cand
-                                if param is not None and tin.lower() not in {a.lower() for a in param}:
-                                    return None
-                                cand = {'venue': 'hydrex_algebra', 'param': 'hydrex', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
-                                return _DR_UNSET
-                            _dr69 = _dr68()
-                            if _dr69 is not _DR_UNSET:
-                                return _dr69
-                        elif kind == 'quickswap':
+                                def _dr54():
+                                    nonlocal cand
+                                    pool, token_a_in = param
+                                    cand = {'venue': 'maverick_v2', 'pool': pool, 'tokenAIn': bool(token_a_in), 'param': pool, 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
+                                    cap = _HOLE_SPEND_CAPS.get(tout.lower())
+                                    if cap and amount_in > cap and (min_out <= 1):
+                                        cand['spend_amount'] = int(cap)
+                                _dr54()
+                            elif kind == 'hydrex':
 
-                            def _dr78():
-                                nonlocal cand
-                                if param is not None and tin.lower() not in {a.lower() for a in param}:
-                                    return None
-                                cand = {'venue': 'quickswap_algebra', 'param': 'quickswap', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
-                                return _DR_UNSET
-                            _dr79 = _dr78()
-                            if _dr79 is not _DR_UNSET:
-                                return _dr79
-                        elif kind == 'v2_router':
-                            router_addr, verified_input = (param[0], param[1])
+                                def _dr68():
+                                    nonlocal cand
+                                    if param is not None and tin.lower() not in {a.lower() for a in param}:
+                                        return None
+                                    cand = {'venue': 'hydrex_algebra', 'param': 'hydrex', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
+                                    return _DR_UNSET
+                                _dr69 = _dr68()
+                                if _dr69 is not _DR_UNSET:
+                                    return _dr69
+                            elif kind == 'quickswap':
 
-                            def _dr44():
-                                nonlocal cand
-                                if tin.lower() != verified_input.lower():
-                                    return None
-                                tokens = (tin, param[2], tout) if len(param) > 2 else (tin, tout)
-                                cand = {'venue': 'v2_fork', 'router': router_addr, 'tokens': tokens, 'param': router_addr, 'out': max(min_out, 1), 'gas_est': 150000 * (len(tokens) - 1), 'gas_model': 350000 + 150000 * (len(tokens) - 1)}
-                                return _DR_UNSET
-                            _dr45 = _dr44()
-                            if _dr45 is not _DR_UNSET:
-                                return _dr45
-                        else:
+                                def _dr78():
+                                    nonlocal cand
+                                    if param is not None and tin.lower() not in {a.lower() for a in param}:
+                                        return None
+                                    cand = {'venue': 'quickswap_algebra', 'param': 'quickswap', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
+                                    return _DR_UNSET
+                                _dr79 = _dr78()
+                                if _dr79 is not _DR_UNSET:
+                                    return _dr79
+                            elif kind == 'v2_router':
+                                router_addr, verified_input = (param[0], param[1])
 
-                            def _dr19():
-                                nonlocal cand, verified_input
-                                if kind == 'alien_v3':
-                                    fee_tier, verified_input = param
+                                def _dr44():
+                                    nonlocal cand
                                     if tin.lower() != verified_input.lower():
                                         return None
-                                    cand = {'venue': 'alien_v3', 'param': int(fee_tier), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
-                                else:
+                                    tokens = (tin, param[2], tout) if len(param) > 2 else (tin, tout)
+                                    cand = {'venue': 'v2_fork', 'router': router_addr, 'tokens': tokens, 'param': router_addr, 'out': max(min_out, 1), 'gas_est': 150000 * (len(tokens) - 1), 'gas_model': 350000 + 150000 * (len(tokens) - 1)}
+                                    return _DR_UNSET
+                                _dr45 = _dr44()
+                                if _dr45 is not _DR_UNSET:
+                                    return _dr45
+                            else:
 
-                                    def _dr338():
-                                        nonlocal cand
-                                        if kind == 'equalizer':
-                                            if param is not None and tin.lower() not in {a.lower() for a in param}:
-                                                return None
-                                            cand = {'venue': 'equalizer', 'param': 'equalizer', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': 350000 + 200000}
-                                        else:
+                                def _dr19():
+                                    nonlocal cand, verified_input
+                                    if kind == 'alien_v3':
+                                        fee_tier, verified_input = param
+                                        if tin.lower() != verified_input.lower():
+                                            return None
+                                        cand = {'venue': 'alien_v3', 'param': int(fee_tier), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
+                                    else:
 
-                                            def _dr5():
-                                                nonlocal cand, verified_input
-                                                if kind == 'aero_v2':
-                                                    hub = None
-                                                    leg1_stable = False
-                                                    if len(param) == 4:
-                                                        factory_addr, verified_input, hub, leg1_stable = param
-                                                    else:
-
-                                                        def _dr357():
-                                                            nonlocal factory_addr, hub, verified_input
-                                                            if len(param) == 3:
-                                                                factory_addr, verified_input, hub = param
-                                                            else:
-                                                                factory_addr, verified_input = param
-                                                        _dr357()
-                                                    if tin.lower() != verified_input.lower():
-                                                        return None
-
-                                                    def _dr242():
-                                                        if hub is not None:
-                                                            routes = ((tin, hub, bool(leg1_stable), factory_addr), (hub, tout, False, factory_addr))
-                                                        else:
-                                                            routes = ((tin, tout, False, factory_addr),)
-                                                        return routes
-                                                    routes = _dr242()
-                                                    cand = {'venue': 'aerodrome_v2', 'routes': routes, 'param': factory_addr, 'out': max(min_out, 1), 'gas_est': 180000 * len(routes), 'gas_model': 350000 + 180000 * len(routes)}
-                                                else:
+                                        def _dr338():
+                                            nonlocal cand
+                                            if kind == 'equalizer':
+                                                if param is not None and tin.lower() not in {a.lower() for a in param}:
                                                     return None
-                                                return _DR_UNSET
-                                            _dr6 = _dr5()
-                                            if _dr6 is not _DR_UNSET:
-                                                return _dr6
-                                        return _DR_UNSET
-                                    _dr339 = _dr338()
-                                    if _dr339 is not _DR_UNSET:
-                                        return _dr339
-                                return _DR_UNSET
-                            _dr20 = _dr19()
-                            if _dr20 is not _DR_UNSET:
-                                return _dr20
-                        return _DR_UNSET
-                    _dr170 = _dr123()
-                    if _dr170 is not _DR_UNSET:
-                        return _dr170
-                return self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
-                return _DR_UNSET
+                                                cand = {'venue': 'equalizer', 'param': 'equalizer', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': 350000 + 200000}
+                                            else:
+
+                                                def _dr5():
+                                                    nonlocal cand, verified_input
+                                                    if kind == 'aero_v2':
+                                                        hub = None
+                                                        leg1_stable = False
+                                                        if len(param) == 4:
+                                                            factory_addr, verified_input, hub, leg1_stable = param
+                                                        else:
+
+                                                            def _dr357():
+                                                                nonlocal factory_addr, hub, verified_input
+                                                                if len(param) == 3:
+                                                                    factory_addr, verified_input, hub = param
+                                                                else:
+                                                                    factory_addr, verified_input = param
+                                                            _dr357()
+                                                        if tin.lower() != verified_input.lower():
+                                                            return None
+
+                                                        def _dr242():
+                                                            if hub is not None:
+                                                                routes = ((tin, hub, bool(leg1_stable), factory_addr), (hub, tout, False, factory_addr))
+                                                            else:
+                                                                routes = ((tin, tout, False, factory_addr),)
+                                                            return routes
+                                                        routes = _dr242()
+                                                        cand = {'venue': 'aerodrome_v2', 'routes': routes, 'param': factory_addr, 'out': max(min_out, 1), 'gas_est': 180000 * len(routes), 'gas_model': 350000 + 180000 * len(routes)}
+                                                    else:
+                                                        return None
+                                                    return _DR_UNSET
+                                                _dr6 = _dr5()
+                                                if _dr6 is not _DR_UNSET:
+                                                    return _dr6
+                                            return _DR_UNSET
+                                        _dr339 = _dr338()
+                                        if _dr339 is not _DR_UNSET:
+                                            return _dr339
+                                    return _DR_UNSET
+                                _dr20 = _dr19()
+                                if _dr20 is not _DR_UNSET:
+                                    return _dr20
+                            return _DR_UNSET
+                        _dr170 = _dr123()
+                        if _dr170 is not _DR_UNSET:
+                            return _dr170
+                    return self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id)
+                    return _DR_UNSET
+                return _lr3()
             _dr176 = _dr171()
             if _dr176 is not _DR_UNSET:
                 return _dr176
@@ -1790,107 +1835,118 @@ class _MinerSolverDR56(_MinerSolverDR11):
                     _dr366 = _dr365()
                     if _dr366 is not _DR_UNSET:
                         return _dr366
-                elif kind == 'aero_v2':
-
-                    def _dr1():
-                        nonlocal cand, verified_input
-                        hub = None
-                        leg1_stable = False
-                        if len(param) == 4:
-                            factory_addr, verified_input, hub, leg1_stable = param
-                        elif len(param) == 3:
-                            factory_addr, verified_input, hub = param
-                        else:
-                            factory_addr, verified_input = param
-                        if tin.lower() != verified_input.lower():
-                            return None
-
-                        def _dr269():
-                            if hub is not None:
-                                routes = ((tin, hub, bool(leg1_stable), factory_addr), (hub, tout, False, factory_addr))
-                            else:
-                                routes = ((tin, tout, False, factory_addr),)
-                            return routes
-                        routes = _dr269()
-                        cand = {'venue': 'aerodrome_v2', 'routes': routes, 'param': factory_addr, 'out': max(min_out, 1), 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes)}
-                        return _DR_UNSET
-                    _dr2 = _dr1()
-                    if _dr2 is not _DR_UNSET:
-                        return _dr2
-                elif kind == 'alien_v3_path':
-
-                    def _dr27():
-                        nonlocal cand, fees, tokens
-                        tokens, fees = param
-                        if tin.lower() != str(tokens[0]).lower():
-                            return None
-                        cand = {'venue': 'alien_v3_path', 'tokens': tuple(tokens), 'fees': tuple((int(f) for f in fees)), 'param': tuple((int(f) for f in fees)), 'out': max(min_out, 1), 'gas_est': 260000, 'gas_model': 350000 + 260000}
-                        return _DR_UNSET
-                    _dr28 = _dr27()
-                    if _dr28 is not _DR_UNSET:
-                        return _dr28
-                elif kind == 'uni_v3_path':
-
-                    def _dr369():
-                        nonlocal fees, tokens
-                        tokens, fees = param
-
-                        def _dr33():
-                            nonlocal cand
-                            if tin.lower() != str(tokens[0]).lower():
-                                return None
-                            cand = {'venue': 'uni_v3_path', 'tokens': tuple(tokens), 'fees': tuple((int(f) for f in fees)), 'param': tuple((int(f) for f in fees)), 'out': max(min_out, 1), 'gas_est': 260000, 'gas_model': 350000 + 260000}
-                            return _DR_UNSET
-                        _dr34 = _dr33()
-                        if _dr34 is not _DR_UNSET:
-                            return _dr34
-                        return _DR_UNSET
-                    _dr370 = _dr369()
-                    if _dr370 is not _DR_UNSET:
-                        return _dr370
                 else:
 
-                    def _dr363():
-                        if kind == 'uni_mav':
-                            pool_addr, token_a_in = param
+                    def _lr8():
+                        if kind == 'aero_v2':
 
-                            def _dr111():
-                                return self._uni_mav_plan(intent, state, snapshot, str(pool_addr), bool(token_a_in), tin, tout, amount_in, chain_id, min_out)
+                            def _dr1():
+                                nonlocal cand, verified_input
+                                hub = None
+
+                                def _lr29():
+                                    nonlocal cand, hub, verified_input
+                                    leg1_stable = False
+                                    if len(param) == 4:
+                                        factory_addr, verified_input, hub, leg1_stable = param
+                                    elif len(param) == 3:
+                                        factory_addr, verified_input, hub = param
+                                    else:
+                                        factory_addr, verified_input = param
+                                    if tin.lower() != verified_input.lower():
+                                        return None
+
+                                    def _dr269():
+                                        if hub is not None:
+                                            routes = ((tin, hub, bool(leg1_stable), factory_addr), (hub, tout, False, factory_addr))
+                                        else:
+                                            routes = ((tin, tout, False, factory_addr),)
+                                        return routes
+                                    routes = _dr269()
+                                    cand = {'venue': 'aerodrome_v2', 'routes': routes, 'param': factory_addr, 'out': max(min_out, 1), 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes)}
+                                    return _DR_UNSET
+                                return _lr29()
+                            _dr2 = _dr1()
+                            if _dr2 is not _DR_UNSET:
+                                return (1, _dr2)
+                        elif kind == 'alien_v3_path':
+
+                            def _dr27():
+                                nonlocal cand, fees, tokens
+                                tokens, fees = param
+                                if tin.lower() != str(tokens[0]).lower():
+                                    return None
+                                cand = {'venue': 'alien_v3_path', 'tokens': tuple(tokens), 'fees': tuple((int(f) for f in fees)), 'param': tuple((int(f) for f in fees)), 'out': max(min_out, 1), 'gas_est': 260000, 'gas_model': 350000 + 260000}
                                 return _DR_UNSET
-                            _dr112 = _dr111()
-                            if _dr112 is not _DR_UNSET:
-                                return _dr112
+                            _dr28 = _dr27()
+                            if _dr28 is not _DR_UNSET:
+                                return (1, _dr28)
+                        elif kind == 'uni_v3_path':
+
+                            def _dr369():
+                                nonlocal fees, tokens
+                                tokens, fees = param
+
+                                def _dr33():
+                                    nonlocal cand
+                                    if tin.lower() != str(tokens[0]).lower():
+                                        return None
+                                    cand = {'venue': 'uni_v3_path', 'tokens': tuple(tokens), 'fees': tuple((int(f) for f in fees)), 'param': tuple((int(f) for f in fees)), 'out': max(min_out, 1), 'gas_est': 260000, 'gas_model': 350000 + 260000}
+                                    return _DR_UNSET
+                                _dr34 = _dr33()
+                                if _dr34 is not _DR_UNSET:
+                                    return _dr34
+                                return _DR_UNSET
+                            _dr370 = _dr369()
+                            if _dr370 is not _DR_UNSET:
+                                return (1, _dr370)
                         else:
 
-                            def _dr7():
-                                nonlocal pool_addr, token_a_in
-                                if kind == 'mav_direct':
+                            def _dr363():
+                                if kind == 'uni_mav':
                                     pool_addr, token_a_in = param
-                                    return self._mav_direct_plan(intent, state, snapshot, str(pool_addr), bool(token_a_in), tin, tout, amount_in, chain_id)
+
+                                    def _dr111():
+                                        return self._uni_mav_plan(intent, state, snapshot, str(pool_addr), bool(token_a_in), tin, tout, amount_in, chain_id, min_out)
+                                        return _DR_UNSET
+                                    _dr112 = _dr111()
+                                    if _dr112 is not _DR_UNSET:
+                                        return _dr112
                                 else:
 
-                                    def _dr306():
-                                        if kind == 'erc4626_wrap':
-                                            return self._erc4626_wrap_plan(intent, state, snapshot, tin, tout, amount_in, chain_id)
-                                        elif kind == 'sky_psm':
-                                            return self._sky_psm_plan(intent, state, tin, tout, amount_in, chain_id)
-                                        elif kind == 'curve_ng_weth':
-                                            pool, i, j = param
-                                            return self._curve_ng_weth_plan(intent, state, snapshot, tin, tout, amount_in, chain_id, str(pool), int(i), int(j))
+                                    def _dr7():
+                                        nonlocal pool_addr, token_a_in
+                                        if kind == 'mav_direct':
+                                            pool_addr, token_a_in = param
+                                            return self._mav_direct_plan(intent, state, snapshot, str(pool_addr), bool(token_a_in), tin, tout, amount_in, chain_id)
                                         else:
-                                            return None
+
+                                            def _dr306():
+                                                if kind == 'erc4626_wrap':
+                                                    return self._erc4626_wrap_plan(intent, state, snapshot, tin, tout, amount_in, chain_id)
+                                                elif kind == 'sky_psm':
+                                                    return self._sky_psm_plan(intent, state, tin, tout, amount_in, chain_id)
+                                                elif kind == 'curve_ng_weth':
+                                                    pool, i, j = param
+                                                    return self._curve_ng_weth_plan(intent, state, snapshot, tin, tout, amount_in, chain_id, str(pool), int(i), int(j))
+                                                else:
+                                                    return None
+                                                return _DR_UNSET
+                                            _dr307 = _dr306()
+                                            if _dr307 is not _DR_UNSET:
+                                                return _dr307
                                         return _DR_UNSET
-                                    _dr307 = _dr306()
-                                    if _dr307 is not _DR_UNSET:
-                                        return _dr307
+                                    _dr8 = _dr7()
+                                    if _dr8 is not _DR_UNSET:
+                                        return _dr8
                                 return _DR_UNSET
-                            _dr8 = _dr7()
-                            if _dr8 is not _DR_UNSET:
-                                return _dr8
-                        return _DR_UNSET
-                    _dr364 = _dr363()
-                    if _dr364 is not _DR_UNSET:
-                        return _dr364
+                            _dr364 = _dr363()
+                            if _dr364 is not _DR_UNSET:
+                                return (1, _dr364)
+                        return (0, None)
+                    _lrt9 = _lr8()
+                    if _lrt9[0]:
+                        return _lrt9[1]
                 return _DR_UNSET
             _dr372 = _dr371()
             if _dr372 is not _DR_UNSET:
@@ -1993,10 +2049,14 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 sel = _dr207()
                 for fee in (500, 3000):
                     try:
-                        path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
-                        d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
-                        r = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + d.hex()})
-                        q = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0])
+
+                        def _lr11():
+                            nonlocal q
+                            path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
+                            d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
+                            r = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + d.hex()})
+                            q = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0])
+                        _lr11()
                     except Exception:
                         q = 0
                     if q > weth_out:
@@ -2064,10 +2124,14 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 sel = _dr210()
                 for fee in (500, 3000):
                     try:
-                        path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
-                        d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
-                        r = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + d.hex()})
-                        q = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0])
+
+                        def _lr13():
+                            nonlocal q
+                            path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
+                            d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
+                            r = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + d.hex()})
+                            q = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0])
+                        _lr13()
                     except Exception:
                         q = 0
                     if q > weth_out:
@@ -2375,58 +2439,63 @@ class _MinerSolverDR77(_MinerSolverDR56):
 
     def _fast_edge_candidate(self, chain_id, tin, tout, amount_in, min_out, bp_out):
         tin_l, tout_l = (str(tin).lower(), str(tout).lower())
-        route = None
+        cand = route = None
 
-        def _dr138():
-            nonlocal route
-            if tin_l == _USDC and tout_l == _EDGE_TOKEN:
-                route = ((tin, _WETH, tout), (100, 10000))
-            elif tin_l == _EDGE_TOKEN and tout_l == _USDC:
-                route = ((tin, _WETH, tout), (10000, 100))
+        def _lr24():
+            nonlocal cand, route
+            route = None
+
+            def _dr138():
+                nonlocal route
+                if tin_l == _USDC and tout_l == _EDGE_TOKEN:
+                    route = ((tin, _WETH, tout), (100, 10000))
+                elif tin_l == _EDGE_TOKEN and tout_l == _USDC:
+                    route = ((tin, _WETH, tout), (10000, 100))
+                else:
+
+                    def _dr75():
+                        nonlocal cand, route
+                        if tin_l == _USDC and tout_l == _DEGEN_TOKEN:
+                            route = ((tin, _WETH, tout), (100, 500), 'pancake')
+                        elif tin_l == _TAX_EDGE_TOKEN and tout_l == _USDC and (int(amount_in) == 476284355112818):
+                            spend = int(amount_in) * 9900 // 10000
+                            cand = self._quote_aero_path_candidate(chain_id, (tin, _WETH, tout), (1, 2000), spend)
+
+                            def _dr293():
+                                nonlocal cand
+                                if cand is None:
+                                    cand = {'venue': 'aerodrome_slipstream_multihop', 'param': (1, 2000), 'tokens': (tin, _WETH, tout), 'tick_spacings': (1, 2000), 'out': int(min_out or 1), 'gas_est': 220000, 'gas_model': _GAS_MULTIHOP + 220000, 'fast_edge': True}
+                                cand['amount_in'] = spend
+                            _dr293()
+                            return cand
+                        return _DR_UNSET
+                    _dr76 = _dr75()
+                    if _dr76 is not _DR_UNSET:
+                        return _dr76
+                if route is None:
+                    return None
+                return _DR_UNSET
+            _dr139 = _dr138()
+            if _dr139 is not _DR_UNSET:
+                return _dr139
+            if len(route) >= 3 and route[2] == 'pancake':
+                cand = self._quote_pancake_path_candidate(chain_id, route[0], route[1], amount_in)
             else:
+                cand = self._quote_uni_path_candidate(chain_id, route[0], route[1], amount_in)
 
-                def _dr75():
-                    nonlocal cand, route
-                    if tin_l == _USDC and tout_l == _DEGEN_TOKEN:
-                        route = ((tin, _WETH, tout), (100, 500), 'pancake')
-                    elif tin_l == _TAX_EDGE_TOKEN and tout_l == _USDC and (int(amount_in) == 476284355112818):
-                        spend = int(amount_in) * 9900 // 10000
-                        cand = self._quote_aero_path_candidate(chain_id, (tin, _WETH, tout), (1, 2000), spend)
-
-                        def _dr293():
-                            nonlocal cand
-                            if cand is None:
-                                cand = {'venue': 'aerodrome_slipstream_multihop', 'param': (1, 2000), 'tokens': (tin, _WETH, tout), 'tick_spacings': (1, 2000), 'out': int(min_out or 1), 'gas_est': 220000, 'gas_model': _GAS_MULTIHOP + 220000, 'fast_edge': True}
-                            cand['amount_in'] = spend
-                        _dr293()
-                        return cand
-                    return _DR_UNSET
-                _dr76 = _dr75()
-                if _dr76 is not _DR_UNSET:
-                    return _dr76
-            if route is None:
-                return None
-            return _DR_UNSET
-        _dr139 = _dr138()
-        if _dr139 is not _DR_UNSET:
-            return _dr139
-        if len(route) >= 3 and route[2] == 'pancake':
-            cand = self._quote_pancake_path_candidate(chain_id, route[0], route[1], amount_in)
-        else:
-            cand = self._quote_uni_path_candidate(chain_id, route[0], route[1], amount_in)
-
-        def _dr237():
-            if cand is None:
-                return None
-            if min_out > 0 and int(cand['out']) < int(min_out):
-                return None
-            if bp_out and int(cand['out']) * 10000 <= int(bp_out) * 10010:
-                return None
-            return cand
-            return _DR_UNSET
-        _dr238 = _dr237()
-        if _dr238 is not _DR_UNSET:
-            return _dr238
+            def _dr237():
+                if cand is None:
+                    return None
+                if min_out > 0 and int(cand['out']) < int(min_out):
+                    return None
+                if bp_out and int(cand['out']) * 10000 <= int(bp_out) * 10010:
+                    return None
+                return cand
+                return _DR_UNSET
+            _dr238 = _dr237()
+            if _dr238 is not _DR_UNSET:
+                return _dr238
+        return _lr24()
 
     @staticmethod
     def _fee_params(state, params: dict[str, Any]) -> dict[str, Any]:
@@ -2451,25 +2520,28 @@ class _MinerSolverDR123(_MinerSolverDR77):
         def _dr303():
             if tl not in self._XHOP_STABLES:
                 return cands
-            w3 = self._get_quoter_web3(int(chain_id))
-            if w3 is None:
-                return cands
-            for hub in self._XHOP_STABLES:
-                if hub in (tl, ol):
-                    continue
-                l1 = self._best_leg(w3, chain_id, tin, hub, amount_in)
-                if not l1:
-                    continue
-                l2 = self._best_leg(w3, chain_id, hub, tout, l1['out'])
-                if not l2 or l2['venue'] == 'uniswap_v3':
-                    continue
 
-                def _dr150():
-                    buffered = int(l2['out']) * (10000 - self._XHOP_PROXY_BUFFER_BPS) // 10000
-                    cands.append({'venue': 'crossvenue_2hop_proxy', 'param': (l1['venue'], l1['param'], l2['venue'], l2['param']), 'out': buffered, 'hub': hub, 'leg1': l1, 'leg2': l2, 'gas_est': 320000, 'gas_model': _GAS_MULTIHOP + 200000})
-                    return buffered
-                buffered = _dr150()
-            return _DR_UNSET
+            def _lr34():
+                w3 = self._get_quoter_web3(int(chain_id))
+                if w3 is None:
+                    return cands
+                for hub in self._XHOP_STABLES:
+                    if hub in (tl, ol):
+                        continue
+                    l1 = self._best_leg(w3, chain_id, tin, hub, amount_in)
+                    if not l1:
+                        continue
+                    l2 = self._best_leg(w3, chain_id, hub, tout, l1['out'])
+                    if not l2 or l2['venue'] == 'uniswap_v3':
+                        continue
+
+                    def _dr150():
+                        buffered = int(l2['out']) * (10000 - self._XHOP_PROXY_BUFFER_BPS) // 10000
+                        cands.append({'venue': 'crossvenue_2hop_proxy', 'param': (l1['venue'], l1['param'], l2['venue'], l2['param']), 'out': buffered, 'hub': hub, 'leg1': l1, 'leg2': l2, 'gas_est': 320000, 'gas_model': _GAS_MULTIHOP + 200000})
+                        return buffered
+                    buffered = _dr150()
+                return _DR_UNSET
+            return _lr34()
         _dr304 = _dr303()
         if _dr304 is not _DR_UNSET:
             return _dr304
@@ -2595,156 +2667,165 @@ class _MinerSolverDR123(_MinerSolverDR77):
         from common.abi_utils import encode_approve
         params = self._normalized_swap_params(intent, state)
 
-        def _dr146():
-            recipient = state.contract_address or params.get('receiver') or state.owner
-            deadline = 9999999999
-            interactions = []
-            for venue, param, amt in legs:
-                router, call = self._encode_v3_leg(venue, param, tin, tout, amt, recipient, deadline, chain_id)
-                interactions.append(Interaction(target=tin, value='0', call_data=encode_approve(router, amt), chain_id=chain_id))
-                interactions.append(Interaction(target=router, value='0', call_data=call, chain_id=chain_id))
-            return (deadline, interactions)
-        deadline, interactions = _dr146()
-        gain_bps = (exp_out - ref_out) * 10000 // max(1, ref_out)
-        logger.info('[solver] SPLIT %d legs out=%d (+%d bps vs single) legs=%s', len(legs), exp_out, gain_bps, [(v, a) for v, _p, a in legs])
-        return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'score-aware-router', 'route': 'split', 'legs': len(legs), 'expected_output': str(exp_out), 'single_output': str(ref_out), 'chain_id': chain_id})
+        def _lr28():
+
+            def _dr146():
+                recipient = state.contract_address or params.get('receiver') or state.owner
+                deadline = 9999999999
+                interactions = []
+                for venue, param, amt in legs:
+                    router, call = self._encode_v3_leg(venue, param, tin, tout, amt, recipient, deadline, chain_id)
+                    interactions.append(Interaction(target=tin, value='0', call_data=encode_approve(router, amt), chain_id=chain_id))
+                    interactions.append(Interaction(target=router, value='0', call_data=call, chain_id=chain_id))
+                return (deadline, interactions)
+            deadline, interactions = _dr146()
+            gain_bps = (exp_out - ref_out) * 10000 // max(1, ref_out)
+            logger.info('[solver] SPLIT %d legs out=%d (+%d bps vs single) legs=%s', len(legs), exp_out, gain_bps, [(v, a) for v, _p, a in legs])
+            return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'score-aware-router', 'route': 'split', 'legs': len(legs), 'expected_output': str(exp_out), 'single_output': str(ref_out), 'chain_id': chain_id})
+        return _lr28()
 
     def _enumerate_eth_quotes(self, chain_id, tin, tout, amount_in):
         """Concurrent ETH-mainnet quotes: Uni V3 + PancakeSwap V3 + Curve (registry)."""
         w3 = self._get_web3(int(chain_id))
-        if w3 is None:
-            return []
-        _eth_uni_quoter = _UNI_QUOTER_BY_CHAIN.get(int(chain_id))
-        if not _eth_uni_quoter:
-            return []
-        import concurrent.futures
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _kk, to_checksum_address as _ck
-        uni_sel = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
-        uni_exact_sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
 
-        def _eth_uni_path(tokens, fees):
-            path = b''
-            for i, token in enumerate(tokens):
-                addr = str(token)
-                path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
-                if i < len(fees):
-                    path += int(fees[i]).to_bytes(3, byteorder='big')
-            return path
+        def _lr25():
+            if w3 is None:
+                return []
+            _eth_uni_quoter = _UNI_QUOTER_BY_CHAIN.get(int(chain_id))
+            if not _eth_uni_quoter:
+                return []
+            import concurrent.futures
+            from eth_abi import encode as _enc, decode as _dec
+            from eth_utils import keccak as _kk, to_checksum_address as _ck
+            uni_sel = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
+            uni_exact_sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
 
-        def _quote_eth_uni(fee):
-            try:
-                p = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
+            def _eth_uni_path(tokens, fees):
+                path = b''
+                for i, token in enumerate(tokens):
+                    addr = str(token)
+                    path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
+                    if i < len(fees):
+                        path += int(fees[i]).to_bytes(3, byteorder='big')
+                return path
 
-                def _dr340():
-                    r = w3.eth.call({'to': _ck(_eth_uni_quoter), 'data': '0x' + (uni_sel + p).hex()})
-                    out, _a, _t, gas_est = _dec(['uint256', 'uint160', 'uint32', 'uint256'], r)
-                    if int(out) > 0:
-                        return {'venue': 'uniswap_v3', 'param': int(fee), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _OFFSET_UNI + int(gas_est)}
-                    return _DR_UNSET
-                _dr341 = _dr340()
-                if _dr341 is not _DR_UNSET:
-                    return _dr341
-            except Exception:
-                return None
-            return None
-
-        def _quote_eth_pancake(fee):
-            try:
-                p = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
-
-                def _dr342():
-                    r = w3.eth.call({'to': _ck(_PANCAKE_QUOTER), 'data': '0x' + (uni_sel + p).hex()})
-                    out, _a, _t, gas_est = _dec(['uint256', 'uint160', 'uint32', 'uint256'], r)
-                    if int(out) > 0:
-                        return {'venue': 'pancake_v3', 'param': int(fee), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _OFFSET_UNI + int(gas_est)}
-                    return _DR_UNSET
-                _dr343 = _dr342()
-                if _dr343 is not _DR_UNSET:
-                    return _dr343
-            except Exception:
-                return None
-            return None
-
-        def _quote_eth_uni_multihop(route):
-            try:
-                tokens, fees = route
-                path = _eth_uni_path(tokens, fees)
-                p = _enc(['bytes', 'uint256'], [path, int(amount_in)])
-                r = w3.eth.call({'to': _ck(_eth_uni_quoter), 'data': '0x' + (uni_exact_sel + p).hex()})
-
-                def _dr249():
-                    out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)
-                    if int(out) > 0:
-                        return {'venue': 'uniswap_v3_multihop', 'param': tuple((int(f) for f in fees)), 'tokens': tuple(tokens), 'fees': tuple((int(f) for f in fees)), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _GAS_MULTIHOP + int(gas_est)}
-                    return _DR_UNSET
-                _dr250 = _dr249()
-                if _dr250 is not _DR_UNSET:
-                    return _dr250
-            except Exception:
-                return None
-            return None
-
-        def _quote_eth_curve():
-            ti = _ETH_3POOL_IDX.get(tin_l)
-            tj = _ETH_3POOL_IDX.get(tout_l)
-            if ti is None or tj is None or ti == tj:
-                return None
-            try:
-                Z = '0x' + '0' * 40
-                route = [_ck(tin), _ck(_ETH_3POOL), _ck(tout)] + [Z] * 8
-
-                def _dr152():
-                    swap = [[ti, tj, 1, 1, 3]] + [[0, 0, 0, 0, 0]] * 4
-                    sel = _kk(text='get_dy(address[11],uint256[5][5],uint256)')[:4]
-                    p = _enc(['address[11]', 'uint256[5][5]', 'uint256'], [route, swap, int(amount_in)])
-                    r = w3.eth.call({'to': _ck(_ETH_CURVE_ROUTER), 'data': '0x' + (sel + p).hex()})
-                    out = int(_dec(['uint256'], r)[0])
-                    return (out, swap)
-                out, swap = _dr152()
-                if out > 0:
-                    return {'venue': 'curve_ng', 'param': '3pool', 'out': out, 'gas_est': 200000, 'gas_model': 430000, 'curve_route': route, 'curve_swap': swap}
-            except Exception:
-                return None
-            return None
-        tin_l, tout_l = (str(tin).lower(), str(tout).lower())
-
-        def _dr151():
-            eth_mids = [h for h in _ETH_HUBS if h not in (tin_l, tout_l)]
-            uni_routes = [((tin, mid, tout), fees) for mid in eth_mids[:3] for fees in _ETH_UNI_FEES_TWOHOP]
-            jobs = [(_quote_eth_uni, f) for f in _ETH_UNI_FEES] + [(_quote_eth_pancake, f) for f in _ETH_UNI_FEES] + [(_quote_eth_uni_multihop, r) for r in uni_routes]
-
-            def _dr74():
-                cands: list[dict[str, Any]] = []
+            def _quote_eth_uni(fee):
                 try:
+                    p = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
 
-                    def _dr225():
-                        nonlocal c
-                        workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
-                        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
-                            futs = [ex.submit(fn, arg) for fn, arg in jobs]
-                            for fu in concurrent.futures.as_completed(futs):
-                                try:
-                                    c = fu.result()
-                                    if c is not None:
-                                        cands.append(c)
-                                except Exception:
-                                    pass
-                    _dr225()
+                    def _dr340():
+                        r = w3.eth.call({'to': _ck(_eth_uni_quoter), 'data': '0x' + (uni_sel + p).hex()})
+                        out, _a, _t, gas_est = _dec(['uint256', 'uint160', 'uint32', 'uint256'], r)
+                        if int(out) > 0:
+                            return {'venue': 'uniswap_v3', 'param': int(fee), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _OFFSET_UNI + int(gas_est)}
+                        return _DR_UNSET
+                    _dr341 = _dr340()
+                    if _dr341 is not _DR_UNSET:
+                        return _dr341
                 except Exception:
-                    logger.exception('[solver] eth enumerate concurrent failed; sequential fallback')
-                    for fn, arg in jobs:
-                        c = fn(arg)
-                        if c is not None:
-                            cands.append(c)
-                curve_cand = _quote_eth_curve()
-                if curve_cand is not None:
-                    cands.append(curve_cand)
+                    return None
+                return None
+
+            def _quote_eth_pancake(fee):
+                try:
+                    p = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
+
+                    def _dr342():
+                        r = w3.eth.call({'to': _ck(_PANCAKE_QUOTER), 'data': '0x' + (uni_sel + p).hex()})
+                        out, _a, _t, gas_est = _dec(['uint256', 'uint160', 'uint32', 'uint256'], r)
+                        if int(out) > 0:
+                            return {'venue': 'pancake_v3', 'param': int(fee), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _OFFSET_UNI + int(gas_est)}
+                        return _DR_UNSET
+                    _dr343 = _dr342()
+                    if _dr343 is not _DR_UNSET:
+                        return _dr343
+                except Exception:
+                    return None
+                return None
+
+            def _quote_eth_uni_multihop(route):
+                try:
+                    tokens, fees = route
+                    path = _eth_uni_path(tokens, fees)
+                    p = _enc(['bytes', 'uint256'], [path, int(amount_in)])
+                    r = w3.eth.call({'to': _ck(_eth_uni_quoter), 'data': '0x' + (uni_exact_sel + p).hex()})
+
+                    def _dr249():
+                        out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)
+                        if int(out) > 0:
+                            return {'venue': 'uniswap_v3_multihop', 'param': tuple((int(f) for f in fees)), 'tokens': tuple(tokens), 'fees': tuple((int(f) for f in fees)), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _GAS_MULTIHOP + int(gas_est)}
+                        return _DR_UNSET
+                    _dr250 = _dr249()
+                    if _dr250 is not _DR_UNSET:
+                        return _dr250
+                except Exception:
+                    return None
+                return None
+
+            def _quote_eth_curve():
+                ti = _ETH_3POOL_IDX.get(tin_l)
+
+                def _lr35():
+                    tj = _ETH_3POOL_IDX.get(tout_l)
+                    if ti is None or tj is None or ti == tj:
+                        return None
+                    try:
+                        Z = '0x' + '0' * 40
+                        route = [_ck(tin), _ck(_ETH_3POOL), _ck(tout)] + [Z] * 8
+
+                        def _dr152():
+                            swap = [[ti, tj, 1, 1, 3]] + [[0, 0, 0, 0, 0]] * 4
+                            sel = _kk(text='get_dy(address[11],uint256[5][5],uint256)')[:4]
+                            p = _enc(['address[11]', 'uint256[5][5]', 'uint256'], [route, swap, int(amount_in)])
+                            r = w3.eth.call({'to': _ck(_ETH_CURVE_ROUTER), 'data': '0x' + (sel + p).hex()})
+                            out = int(_dec(['uint256'], r)[0])
+                            return (out, swap)
+                        out, swap = _dr152()
+                        if out > 0:
+                            return {'venue': 'curve_ng', 'param': '3pool', 'out': out, 'gas_est': 200000, 'gas_model': 430000, 'curve_route': route, 'curve_swap': swap}
+                    except Exception:
+                        return None
+                    return None
+                return _lr35()
+            tin_l, tout_l = (str(tin).lower(), str(tout).lower())
+
+            def _dr151():
+                eth_mids = [h for h in _ETH_HUBS if h not in (tin_l, tout_l)]
+                uni_routes = [((tin, mid, tout), fees) for mid in eth_mids[:3] for fees in _ETH_UNI_FEES_TWOHOP]
+                jobs = [(_quote_eth_uni, f) for f in _ETH_UNI_FEES] + [(_quote_eth_pancake, f) for f in _ETH_UNI_FEES] + [(_quote_eth_uni_multihop, r) for r in uni_routes]
+
+                def _dr74():
+                    cands: list[dict[str, Any]] = []
+                    try:
+
+                        def _dr225():
+                            nonlocal c
+                            workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
+                            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+                                futs = [ex.submit(fn, arg) for fn, arg in jobs]
+                                for fu in concurrent.futures.as_completed(futs):
+                                    try:
+                                        c = fu.result()
+                                        if c is not None:
+                                            cands.append(c)
+                                    except Exception:
+                                        pass
+                        _dr225()
+                    except Exception:
+                        logger.exception('[solver] eth enumerate concurrent failed; sequential fallback')
+                        for fn, arg in jobs:
+                            c = fn(arg)
+                            if c is not None:
+                                cands.append(c)
+                    curve_cand = _quote_eth_curve()
+                    if curve_cand is not None:
+                        cands.append(curve_cand)
+                    return cands
+                cands = _dr74()
                 return cands
-            cands = _dr74()
+            cands = _dr151()
             return cands
-        cands = _dr151()
-        return cands
+        return _lr25()
 
     def _score_aware_eth(self, intent, state, snapshot, base_plan, tin, tout, amount_in, min_out, chain_id):
         """Score-optimal routing for Ethereum mainnet: Uni V3 + PancakeSwap V3 + Curve."""
@@ -2830,62 +2911,65 @@ class _MinerSolverDR123(_MinerSolverDR77):
 
             def _dr279():
                 tout = str(params.get('output_token', '') or '')
-                amount_in = int(params.get('input_amount', 0) or 0)
-                amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-                if not tin or not tout or amount_in <= 0 or tin.startswith('eip155:') or tout.startswith('eip155:'):
-                    return None
-                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
 
-                def _dr106():
-                    from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                    router = UNISWAP_V3_ROUTERS.get(chain_id)
-                    if not router:
+                def _lr38():
+                    amount_in = int(params.get('input_amount', 0) or 0)
+                    amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+                    if not tin or not tout or amount_in <= 0 or tin.startswith('eip155:') or tout.startswith('eip155:'):
                         return None
+                    chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
 
-                    def _dr55():
-                        pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
-                        a, b = (tin.lower(), tout.lower())
-                        best = None
+                    def _dr106():
+                        from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+                        router = UNISWAP_V3_ROUTERS.get(chain_id)
+                        if not router:
+                            return None
 
-                        def _dr319():
-                            for p in pool_states.values():
-                                if {str(p.get('token0', '')).lower(), str(p.get('token1', '')).lower()} != {a, b}:
-                                    continue
-                                dex = str(p.get('dex') or '').lower()
-                                if dex and 'uniswap' not in dex:
-                                    continue
-                                liq = int(p.get('liquidity', '0') or 0)
-                                if liq <= 0:
-                                    continue
+                        def _dr55():
+                            pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
+                            a, b = (tin.lower(), tout.lower())
+                            best = None
 
-                                def _dr211():
-                                    nonlocal best
-                                    if best is None or liq > best[0]:
-                                        best = (liq, int(p.get('fee', 3000) or 3000))
-                                _dr211()
-                        _dr319()
-                        return best
-                    best = _dr55()
-                    if best is None:
-                        return None
-                    recipient = state.contract_address or params.get('receiver') or state.owner
+                            def _dr319():
+                                for p in pool_states.values():
+                                    if {str(p.get('token0', '')).lower(), str(p.get('token1', '')).lower()} != {a, b}:
+                                        continue
+                                    dex = str(p.get('dex') or '').lower()
+                                    if dex and 'uniswap' not in dex:
+                                        continue
+                                    liq = int(p.get('liquidity', '0') or 0)
+                                    if liq <= 0:
+                                        continue
 
-                    def _dr281():
-                        deadline = 9999999999
-                        from common.abi_utils import encode_approve
-                        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-                        interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=best[1], recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
-                        return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'offline-fallback', 'route': 'uniswap_v3', 'fee_tier': best[1]})
+                                    def _dr211():
+                                        nonlocal best
+                                        if best is None or liq > best[0]:
+                                            best = (liq, int(p.get('fee', 3000) or 3000))
+                                    _dr211()
+                            _dr319()
+                            return best
+                        best = _dr55()
+                        if best is None:
+                            return None
+                        recipient = state.contract_address or params.get('receiver') or state.owner
+
+                        def _dr281():
+                            deadline = 9999999999
+                            from common.abi_utils import encode_approve
+                            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+                            interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=best[1], recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
+                            return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'offline-fallback', 'route': 'uniswap_v3', 'fee_tier': best[1]})
+                            return _DR_UNSET
+                            return _DR_UNSET
+                        _dr282 = _dr281()
+                        if _dr282 is not _DR_UNSET:
+                            return _dr282
                         return _DR_UNSET
-                        return _DR_UNSET
-                    _dr282 = _dr281()
-                    if _dr282 is not _DR_UNSET:
-                        return _dr282
+                    _dr107 = _dr106()
+                    if _dr107 is not _DR_UNSET:
+                        return _dr107
                     return _DR_UNSET
-                _dr107 = _dr106()
-                if _dr107 is not _DR_UNSET:
-                    return _dr107
-                return _DR_UNSET
+                return _lr38()
             _dr280 = _dr279()
             if _dr280 is not _DR_UNSET:
                 return _dr280
@@ -2913,16 +2997,22 @@ class _MinerSolverDR123(_MinerSolverDR77):
         def _dr375():
             nonlocal changed
             changed = False
+            raw = None
             for ix in plan.interactions or []:
                 try:
-                    if int(getattr(ix, 'chain_id', 0) or 0) not in SWAP_ROUTER_V2_CHAINS:
-                        continue
-                    uni_router = str(UNISWAP_V3_ROUTERS.get(int(ix.chain_id)) or '').lower()
-                    if uni_router and str(getattr(ix, 'target', '') or '').lower() != uni_router:
-                        continue
-                    cd = ix.call_data or ''
-                    raw = bytes.fromhex(cd[2:] if cd.startswith('0x') else cd)
-                    if raw[:4] != v1:
+
+                    def _lr4():
+                        nonlocal raw
+                        if int(getattr(ix, 'chain_id', 0) or 0) not in SWAP_ROUTER_V2_CHAINS:
+                            return True
+                        uni_router = str(UNISWAP_V3_ROUTERS.get(int(ix.chain_id)) or '').lower()
+                        if uni_router and str(getattr(ix, 'target', '') or '').lower() != uni_router:
+                            return True
+                        cd = ix.call_data or ''
+                        raw = bytes.fromhex(cd[2:] if cd.startswith('0x') else cd)
+                        if raw[:4] != v1:
+                            return True
+                    if _lr4():
                         continue
                     path, recipient, _deadline, amt_in, amt_min = _abi_decode(['(bytes,address,uint256,uint256,uint256)'], raw[4:])[0]
 
@@ -2972,10 +3062,14 @@ class _MinerSolverDR176(_MinerSolverDR123):
                 sel = _dr212()
                 for fee in (500, 3000):
                     try:
-                        path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
-                        d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
-                        r = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + d.hex()})
-                        q = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0])
+
+                        def _lr15():
+                            nonlocal q
+                            path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
+                            d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
+                            r = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + d.hex()})
+                            q = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0])
+                        _lr15()
                     except Exception:
                         q = 0
                     if q > weth_out:
@@ -3146,109 +3240,114 @@ class _MinerSolverDR176(_MinerSolverDR123):
                         return _sp
             except Exception:
                 logger.exception('[solver] usdbc static intercept failed; normal path')
+            _empty = None
 
-            def _dr70():
-                nonlocal plan
+            def _lr5():
+                nonlocal _empty
 
-                def _dr317():
-                    try:
-                        _p1 = self._normalized_swap_params(intent, state)
-                        if str(_p1.get('output_token', '') or '').lower() in _HOLE_ROUTES:
-                            _hp = self._hole_plan(intent, state, snapshot, _p1)
-                            if _hp is not None:
-                                return _hp
-                    except Exception:
-                        logger.exception('[solver] hole-token intercept failed; normal path')
-                    try:
-                        _p2 = self._normalized_swap_params(intent, state)
-                        _ep = self._static_exotic_plan(intent, state, snapshot, _p2)
-                        if _ep is not None:
-                            return _ep
-                    except Exception:
-                        logger.exception('[solver] static exotic intercept failed; normal path')
-                    return _DR_UNSET
-                _dr318 = _dr317()
-                if _dr318 is not _DR_UNSET:
-                    return _dr318
+                def _dr70():
+                    nonlocal plan
 
-                def _dr22():
-                    nonlocal _sp, plan
-                    try:
-                        _p3 = self._normalized_swap_params(intent, state)
-                        _sp = self._sweep_plan(intent, state, snapshot, _p3)
-                        if _sp is not None:
-                            return _sp
-                    except Exception:
-                        logger.exception('[sweep] universal sweep failed; normal path')
-
-                    def _dr243():
-                        _dyn = getattr(self, '_dyn_order_budget', None)
-                        _sel_to = _SELECT_BUDGET_S if _dyn is None else min(_SELECT_BUDGET_S, _dyn)
-                        _base_to = _BASELINE_BUDGET_S if _dyn is None else min(_BASELINE_BUDGET_S, _dyn)
-                        enhanced = self._bounded_call(self._score_aware_singlehop, (intent, state, snapshot, None), timeout=_sel_to)
-                        return (_base_to, enhanced)
-                    _base_to, enhanced = _dr243()
-                    if enhanced is not None:
-                        plan = enhanced
-                    else:
-
-                        def _baseline():
-                            return BaselineSwapSolver.generate_plan(self, intent, state, snapshot)
-                        base_plan = self._bounded_call(_baseline, timeout=_base_to)
-                        if base_plan is None:
-                            base_plan = self._offline_fallback_plan(intent, state, snapshot)
-                        plan = base_plan
-                    return _DR_UNSET
-                _dr23 = _dr22()
-                if _dr23 is not _DR_UNSET:
-                    return _dr23
-                plan = self._fix_multihop_v2(plan)
-                return _DR_UNSET
-            _dr71 = _dr70()
-            if _dr71 is not _DR_UNSET:
-                return _dr71
-            try:
-                _md = getattr(plan, 'metadata', None) or {}
-                _empty = plan is None or not getattr(plan, 'interactions', None) or _md.get('route') == 'last_resort_empty' or (_md.get('solver') in ('best-effort', 'offline-fallback'))
-
-                def _dr126():
-                    if not _empty and 'solver' not in _md and (_md.get('route') == 'uniswap_v3'):
+                    def _dr317():
                         try:
-
-                            def _dr38():
-                                nonlocal _empty
-                                _p5 = self._normalized_swap_params(intent, state)
-                                _t0, _t1 = (str(_p5.get('input_token', '')), str(_p5.get('output_token', '')))
-                                _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                                _w3 = self._get_web3(_cid)
-                                if _w3 is not None and _t0 and _t1 and (_cid == _BASE):
-
-                                    def _dr216():
-                                        from eth_abi import encode as _e2
-                                        from eth_utils import to_checksum_address as _c2
-                                        _fee = int(_md.get('fee_tier', 3000) or 3000)
-                                        _r = _w3.eth.call({'to': _c2('0x33128a8fC17869897dcE68Ed026d694621f6FDfD'), 'data': '0x1698ee82' + _e2(['address', 'address', 'uint24'], [_c2(_t0), _c2(_t1), _fee]).hex()})
-                                        return _r
-                                    _r = _dr216()
-                                    if int.from_bytes(_r[-20:], 'big') == 0:
-                                        _empty = True
-                            _dr38()
+                            _p1 = self._normalized_swap_params(intent, state)
+                            if str(_p1.get('output_token', '') or '').lower() in _HOLE_ROUTES:
+                                _hp = self._hole_plan(intent, state, snapshot, _p1)
+                                if _hp is not None:
+                                    return _hp
                         except Exception:
-                            pass
-                    if _empty:
-                        _dyn_dc = getattr(self, '_dyn_order_budget', None)
-                        if _dyn_dc is None or _dyn_dc >= _DISCOVERY_MIN_BUDGET_S:
-                            _p4 = self._normalized_swap_params(intent, state)
-                            _dp = self._dynamic_discovery_plan(intent, state, snapshot, _p4)
-                            if _dp is not None:
-                                return _dp
+                            logger.exception('[solver] hole-token intercept failed; normal path')
+                        try:
+                            _p2 = self._normalized_swap_params(intent, state)
+                            _ep = self._static_exotic_plan(intent, state, snapshot, _p2)
+                            if _ep is not None:
+                                return _ep
+                        except Exception:
+                            logger.exception('[solver] static exotic intercept failed; normal path')
+                        return _DR_UNSET
+                    _dr318 = _dr317()
+                    if _dr318 is not _DR_UNSET:
+                        return _dr318
+
+                    def _dr22():
+                        nonlocal _sp, plan
+                        try:
+                            _p3 = self._normalized_swap_params(intent, state)
+                            _sp = self._sweep_plan(intent, state, snapshot, _p3)
+                            if _sp is not None:
+                                return _sp
+                        except Exception:
+                            logger.exception('[sweep] universal sweep failed; normal path')
+
+                        def _dr243():
+                            _dyn = getattr(self, '_dyn_order_budget', None)
+                            _sel_to = _SELECT_BUDGET_S if _dyn is None else min(_SELECT_BUDGET_S, _dyn)
+                            _base_to = _BASELINE_BUDGET_S if _dyn is None else min(_BASELINE_BUDGET_S, _dyn)
+                            enhanced = self._bounded_call(self._score_aware_singlehop, (intent, state, snapshot, None), timeout=_sel_to)
+                            return (_base_to, enhanced)
+                        _base_to, enhanced = _dr243()
+                        if enhanced is not None:
+                            plan = enhanced
+                        else:
+
+                            def _baseline():
+                                return BaselineSwapSolver.generate_plan(self, intent, state, snapshot)
+                            base_plan = self._bounded_call(_baseline, timeout=_base_to)
+                            if base_plan is None:
+                                base_plan = self._offline_fallback_plan(intent, state, snapshot)
+                            plan = base_plan
+                        return _DR_UNSET
+                    _dr23 = _dr22()
+                    if _dr23 is not _DR_UNSET:
+                        return _dr23
+                    plan = self._fix_multihop_v2(plan)
                     return _DR_UNSET
-                _dr127 = _dr126()
-                if _dr127 is not _DR_UNSET:
-                    return _dr127
-            except Exception:
-                logger.exception('[discovery] rescue failed; normal fallback')
-            return _DR_UNSET
+                _dr71 = _dr70()
+                if _dr71 is not _DR_UNSET:
+                    return _dr71
+                try:
+                    _md = getattr(plan, 'metadata', None) or {}
+                    _empty = plan is None or not getattr(plan, 'interactions', None) or _md.get('route') == 'last_resort_empty' or (_md.get('solver') in ('best-effort', 'offline-fallback'))
+
+                    def _dr126():
+                        if not _empty and 'solver' not in _md and (_md.get('route') == 'uniswap_v3'):
+                            try:
+
+                                def _dr38():
+                                    nonlocal _empty
+                                    _p5 = self._normalized_swap_params(intent, state)
+                                    _t0, _t1 = (str(_p5.get('input_token', '')), str(_p5.get('output_token', '')))
+                                    _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                                    _w3 = self._get_web3(_cid)
+                                    if _w3 is not None and _t0 and _t1 and (_cid == _BASE):
+
+                                        def _dr216():
+                                            from eth_abi import encode as _e2
+                                            from eth_utils import to_checksum_address as _c2
+                                            _fee = int(_md.get('fee_tier', 3000) or 3000)
+                                            _r = _w3.eth.call({'to': _c2('0x33128a8fC17869897dcE68Ed026d694621f6FDfD'), 'data': '0x1698ee82' + _e2(['address', 'address', 'uint24'], [_c2(_t0), _c2(_t1), _fee]).hex()})
+                                            return _r
+                                        _r = _dr216()
+                                        if int.from_bytes(_r[-20:], 'big') == 0:
+                                            _empty = True
+                                _dr38()
+                            except Exception:
+                                pass
+                        if _empty:
+                            _dyn_dc = getattr(self, '_dyn_order_budget', None)
+                            if _dyn_dc is None or _dyn_dc >= _DISCOVERY_MIN_BUDGET_S:
+                                _p4 = self._normalized_swap_params(intent, state)
+                                _dp = self._dynamic_discovery_plan(intent, state, snapshot, _p4)
+                                if _dp is not None:
+                                    return _dp
+                        return _DR_UNSET
+                    _dr127 = _dr126()
+                    if _dr127 is not _DR_UNSET:
+                        return _dr127
+                except Exception:
+                    logger.exception('[discovery] rescue failed; normal fallback')
+                return _DR_UNSET
+            return _lr5()
         _dr378 = _dr377()
         if _dr378 is not _DR_UNSET:
             return _dr378
@@ -3573,10 +3672,13 @@ class _MinerSolverDR176(_MinerSolverDR123):
 
                     def _dr173():
                         tout_l = str(tout).lower()
-                        if str(tin).lower() == _USDC and str(tout).lower() == _DAI and (int(amount_in) <= 10000):
-                            pancake_v2_routes.append((tin, _WETH, tout))
-                        if tin_l == _USDC and tout_l == _WETH:
-                            pancake_routes.extend([((tin, _USDBC, tout), (100, 100)), ((tin, _DAI, tout), (100, 500)), ((tin, _USDBC, tout), (100, 2500))])
+
+                        def _lr39():
+                            if str(tin).lower() == _USDC and str(tout).lower() == _DAI and (int(amount_in) <= 10000):
+                                pancake_v2_routes.append((tin, _WETH, tout))
+                            if tin_l == _USDC and tout_l == _WETH:
+                                pancake_routes.extend([((tin, _USDBC, tout), (100, 100)), ((tin, _DAI, tout), (100, 500)), ((tin, _USDBC, tout), (100, 2500))])
+                        return _lr39()
                     _dr173()
                     return (_quote_aero_v2, _quote_pancake, _quote_pancake_multihop, _quote_pancake_v2_path, core_v2_routes, extra_v2_routes, pancake_routes, pancake_v2_routes, twohop_mids)
                 _quote_aero_v2, _quote_pancake, _quote_pancake_multihop, _quote_pancake_v2_path, core_v2_routes, extra_v2_routes, pancake_routes, pancake_v2_routes, twohop_mids = _dr42()
@@ -3805,98 +3907,109 @@ class _MinerSolverDR176(_MinerSolverDR123):
 
         def _dr90():
             tin = str(params.get('input_token', '') or '').lower()
-            tout = str(params.get('output_token', '') or '').lower()
-            amount_in = int(params.get('input_amount', 0) or 0)
-            amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-            min_out = int(params.get('min_output_amount', 0) or 0)
-            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-            return (amount_in, chain_id, min_out, tin, tout)
+
+            def _lr40():
+                tout = str(params.get('output_token', '') or '').lower()
+                amount_in = int(params.get('input_amount', 0) or 0)
+                amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+                min_out = int(params.get('min_output_amount', 0) or 0)
+                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                return (amount_in, chain_id, min_out, tin, tout)
+            return _lr40()
         amount_in, chain_id, min_out, tin, tout = _dr90()
+        best_x = reach = route = tag = None
 
-        def _dr189():
-            if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
-                return None
-            if tin in _SWEEP_KG and tout in _SWEEP_KG:
-                return None
-            if tout in _SWEEP_KNOWN:
-                return None
-            return _DR_UNSET
-        _dr190 = _dr189()
-        if _dr190 is not _DR_UNSET:
-            return _dr190
-        w3 = self._get_web3(chain_id)
-        if w3 is None:
-            return None
+        def _lr26():
+            nonlocal best_x, reach, route, tag
 
-        def _dr298():
-            _ck_key = (tin, tout, int(amount_in))
-            _cache = getattr(self, '_sweep_run_cache', None)
-            if _cache is None:
-                _cache = {}
-                self._sweep_run_cache = _cache
-            return (_cache, _ck_key)
-        _cache, _ck_key = _dr298()
-        if _ck_key in _cache:
-            reach, (best_x, tag, route) = _cache[_ck_key]
-        else:
-
-            def _dr140():
-                nonlocal best_x, reach, route, tag
-                _dyn_sw = getattr(self, '_dyn_order_budget', None)
-                if _dyn_sw is not None and _dyn_sw < _SWEEP_MIN_BUDGET_S:
+            def _dr189():
+                if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
                     return None
-                reach, (best_x, tag, route) = self._sweep_quotes(w3, tin, tout, amount_in)
-                _cache[_ck_key] = (reach, (best_x, tag, route))
-                return _DR_UNSET
-            _dr141 = _dr140()
-            if _dr141 is not _DR_UNSET:
-                return _dr141
-
-        def _dr63():
-            nonlocal best_x, route, tag
-
-            def _dr359():
-                if best_x <= 0 or best_x < max(min_out, 1) or best_x <= max(reach, 1) * _SWEEP_MIN_EDGE:
+                if tin in _SWEEP_KG and tout in _SWEEP_KG:
+                    return None
+                if tout in _SWEEP_KNOWN:
                     return None
                 return _DR_UNSET
-            _dr360 = _dr359()
-            if _dr360 is not _DR_UNSET:
-                return _dr360
-            _dyn = getattr(self, '_dyn_order_budget', None)
-            if _dyn is None or _dyn >= _SWEEP_VERIFY_MIN_S:
-                try:
-                    _ver = self._sweep_verify_pick(w3, state, params, tin, tout, amount_in, min_out, reach)
-                    if _ver is not None:
-                        best_x, tag, route = _ver
-                except Exception:
-                    logger.exception('[sweep] verify failed; quote-ranked pick')
+            _dr190 = _dr189()
+            if _dr190 is not _DR_UNSET:
+                return _dr190
+            w3 = self._get_web3(chain_id)
+            if w3 is None:
+                return None
 
-            def _dr39():
-                logger.info('[sweep] exotic win %s->%s via %s: %s (reach %s)', tin[:8], tout[:8], tag, best_x, reach)
+            def _dr298():
+                _ck_key = (tin, tout, int(amount_in))
+                _cache = getattr(self, '_sweep_run_cache', None)
+                if _cache is None:
+                    _cache = {}
+                    self._sweep_run_cache = _cache
+                return (_cache, _ck_key)
+            _cache, _ck_key = _dr298()
+            if _ck_key in _cache:
+                reach, (best_x, tag, route) = _cache[_ck_key]
+            else:
 
-                def _dr320():
-                    kind, router, path = route
-                    if kind == 'v2':
-                        return self._sweep_v2_plan(intent, state, snapshot, router, path, amount_in, chain_id)
-                    if kind == 'sushi_v3':
-                        return self._sweep_sushi_plan(intent, state, snapshot, path[0], path[1], int(router), amount_in, chain_id)
-                    if kind == 'maverick':
-                        pool, token_a_in = router
-                        return self._sweep_mav_plan(intent, state, snapshot, path[0], pool, bool(token_a_in), amount_in, chain_id)
-                    return None
+                def _dr140():
+                    nonlocal best_x, reach, route, tag
+                    _dyn_sw = getattr(self, '_dyn_order_budget', None)
+                    if _dyn_sw is not None and _dyn_sw < _SWEEP_MIN_BUDGET_S:
+                        return None
+                    reach, (best_x, tag, route) = self._sweep_quotes(w3, tin, tout, amount_in)
+                    _cache[_ck_key] = (reach, (best_x, tag, route))
                     return _DR_UNSET
+                _dr141 = _dr140()
+                if _dr141 is not _DR_UNSET:
+                    return _dr141
+
+            def _dr63():
+                nonlocal best_x, route, tag
+
+                def _dr359():
+                    if best_x <= 0 or best_x < max(min_out, 1) or best_x <= max(reach, 1) * _SWEEP_MIN_EDGE:
+                        return None
                     return _DR_UNSET
-                _dr321 = _dr320()
-                if _dr321 is not _DR_UNSET:
-                    return _dr321
+                _dr360 = _dr359()
+                if _dr360 is not _DR_UNSET:
+                    return _dr360
+                _dyn = getattr(self, '_dyn_order_budget', None)
+                if _dyn is None or _dyn >= _SWEEP_VERIFY_MIN_S:
+                    try:
+                        _ver = self._sweep_verify_pick(w3, state, params, tin, tout, amount_in, min_out, reach)
+                        if _ver is not None:
+                            best_x, tag, route = _ver
+                    except Exception:
+                        logger.exception('[sweep] verify failed; quote-ranked pick')
+
+                def _dr39():
+                    logger.info('[sweep] exotic win %s->%s via %s: %s (reach %s)', tin[:8], tout[:8], tag, best_x, reach)
+
+                    def _dr320():
+                        kind, router, path = route
+
+                        def _lr43():
+                            if kind == 'v2':
+                                return self._sweep_v2_plan(intent, state, snapshot, router, path, amount_in, chain_id)
+                            if kind == 'sushi_v3':
+                                return self._sweep_sushi_plan(intent, state, snapshot, path[0], path[1], int(router), amount_in, chain_id)
+                            if kind == 'maverick':
+                                pool, token_a_in = router
+                                return self._sweep_mav_plan(intent, state, snapshot, path[0], pool, bool(token_a_in), amount_in, chain_id)
+                            return None
+                            return _DR_UNSET
+                            return _DR_UNSET
+                        return _lr43()
+                    _dr321 = _dr320()
+                    if _dr321 is not _DR_UNSET:
+                        return _dr321
+                    return _DR_UNSET
+                _dr40 = _dr39()
+                if _dr40 is not _DR_UNSET:
+                    return _dr40
                 return _DR_UNSET
-            _dr40 = _dr39()
-            if _dr40 is not _DR_UNSET:
-                return _dr40
-            return _DR_UNSET
-        _dr64 = _dr63()
-        if _dr64 is not _DR_UNSET:
-            return _dr64
+            _dr64 = _dr63()
+            if _dr64 is not _DR_UNSET:
+                return _dr64
+        return _lr26()
 
 class MinerSolver(_MinerSolverDR176):
     """Baseline routing + score-aware multi-venue single-hop selection."""
@@ -3928,42 +4041,45 @@ class MinerSolver(_MinerSolverDR176):
 
             def _dr308():
                 tin = str(params.get('input_token', '') or '')
-                tout = str(params.get('output_token', '') or '')
-                amount_in = int(params.get('input_amount', 0) or 0)
-                amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-                if not tin or not tout or amount_in <= 0:
-                    return None
-                if tin.startswith('eip155:') or tout.startswith('eip155:'):
-                    return None
 
-                def _dr103():
-                    chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                    pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
-                    if not pool_states:
+                def _lr46():
+                    tout = str(params.get('output_token', '') or '')
+                    amount_in = int(params.get('input_amount', 0) or 0)
+                    amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+                    if not tin or not tout or amount_in <= 0:
                         return None
-                    try:
-                        mids = self._intermediaries_for_chain(chain_id) if chain_id else []
-                    except Exception:
-                        mids = []
+                    if tin.startswith('eip155:') or tout.startswith('eip155:'):
+                        return None
 
-                    def _dr233():
-                        route = pool_math.find_best_route(pool_states, tin, tout, amount_in, intermediaries=mids)
-                        if route is None:
+                    def _dr103():
+                        chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                        pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
+                        if not pool_states:
                             return None
-                        output_amount, route_desc, hops = route
-                        if output_amount <= 0:
-                            return None
-                        return QuoteResult(estimated_output=str(output_amount), route_summary=f'{tin[:10]}..->{tout[:10]}.. {route_desc} (offline)', gas_estimate=400000 + 150000 * len(hops), metadata={'hops': len(hops), 'data_source': 'snapshot-offline'})
+                        try:
+                            mids = self._intermediaries_for_chain(chain_id) if chain_id else []
+                        except Exception:
+                            mids = []
+
+                        def _dr233():
+                            route = pool_math.find_best_route(pool_states, tin, tout, amount_in, intermediaries=mids)
+                            if route is None:
+                                return None
+                            output_amount, route_desc, hops = route
+                            if output_amount <= 0:
+                                return None
+                            return QuoteResult(estimated_output=str(output_amount), route_summary=f'{tin[:10]}..->{tout[:10]}.. {route_desc} (offline)', gas_estimate=400000 + 150000 * len(hops), metadata={'hops': len(hops), 'data_source': 'snapshot-offline'})
+                            return _DR_UNSET
+                            return _DR_UNSET
+                        _dr234 = _dr233()
+                        if _dr234 is not _DR_UNSET:
+                            return _dr234
                         return _DR_UNSET
-                        return _DR_UNSET
-                    _dr234 = _dr233()
-                    if _dr234 is not _DR_UNSET:
-                        return _dr234
+                    _dr104 = _dr103()
+                    if _dr104 is not _DR_UNSET:
+                        return _dr104
                     return _DR_UNSET
-                _dr104 = _dr103()
-                if _dr104 is not _DR_UNSET:
-                    return _dr104
-                return _DR_UNSET
+                return _lr46()
             _dr309 = _dr308()
             if _dr309 is not _DR_UNSET:
                 return _dr309
@@ -4009,17 +4125,25 @@ class MinerSolver(_MinerSolverDR176):
 
         def _dr168():
             nonlocal router
-            if venue == 'aerodrome_slipstream':
-                from strategies.dex_aggregator import aerodrome as _aero
-                router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
+            encode_exact_input_single = None
+
+            def _lr49():
+                nonlocal encode_exact_input_single, router
+                if venue == 'aerodrome_slipstream':
+                    from strategies.dex_aggregator import aerodrome as _aero
+                    router = _aero.AERODROME_SLIPSTREAM_ROUTER.get(chain_id)
+                    if not router:
+                        raise ValueError('no aerodrome router')
+                    return (1, (router, _aero.encode_exact_input_single(token_in=tin, token_out=tout, tick_spacing=int(param), recipient=recipient, deadline=deadline, amount_in=amount, amount_out_minimum=0)))
+                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+                from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+                router = UNISWAP_V3_ROUTERS.get(chain_id)
                 if not router:
-                    raise ValueError('no aerodrome router')
-                return (router, _aero.encode_exact_input_single(token_in=tin, token_out=tout, tick_spacing=int(param), recipient=recipient, deadline=deadline, amount_in=amount, amount_out_minimum=0))
-            from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-            from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-            router = UNISWAP_V3_ROUTERS.get(chain_id)
-            if not router:
-                raise ValueError('no uniswap router')
+                    raise ValueError('no uniswap router')
+                return (0, None)
+            _lrt50 = _lr49()
+            if _lrt50[0]:
+                return _lrt50[1]
             return (router, encode_exact_input_single(token_in=tin, token_out=tout, fee=int(param), recipient=recipient, deadline=deadline, amount_in=amount, amount_out_minimum=0, chain_id=chain_id))
             return _DR_UNSET
         _dr169 = _dr168()
@@ -4033,32 +4157,37 @@ class MinerSolver(_MinerSolverDR176):
         whose CONTRACT_BALANCE chaining we use). Returns {venue,param,out} or None."""
         if int(amt) <= 0:
             return None
-        import concurrent.futures
+        best = None
 
-        def _dr137():
+        def _lr17():
             nonlocal best
-            combos = [('uniswap_v3', f) for f in _UNI_FEES] + [('pancake_v3', f) for f in _PANCAKE_FEES] + [('aerodrome_slipstream', t) for t in _AERO_TICK_SPACINGS]
-            if venues is not None:
-                combos = [(v, p) for v, p in combos if v in venues]
-            best = None
-            workers = max(1, min(_QUOTER_MAX_WORKERS, len(combos)))
-            return (combos, workers)
-        combos, workers = _dr137()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+            import concurrent.futures
 
-            def _dr258():
-                futs = {ex.submit(self._quote_one, w3, v, p, a, b, int(amt)): (v, p) for v, p in combos}
-                return futs
-            futs = _dr258()
-            for f in concurrent.futures.as_completed(futs):
-                v, p = futs[f]
-                try:
-                    o = int(f.result())
-                except Exception:
-                    o = 0
-                if o > 0 and (best is None or o > best['out']):
-                    best = {'venue': v, 'param': p, 'out': o}
-        return best
+            def _dr137():
+                nonlocal best
+                combos = [('uniswap_v3', f) for f in _UNI_FEES] + [('pancake_v3', f) for f in _PANCAKE_FEES] + [('aerodrome_slipstream', t) for t in _AERO_TICK_SPACINGS]
+                if venues is not None:
+                    combos = [(v, p) for v, p in combos if v in venues]
+                best = None
+                workers = max(1, min(_QUOTER_MAX_WORKERS, len(combos)))
+                return (combos, workers)
+            combos, workers = _dr137()
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+
+                def _dr258():
+                    futs = {ex.submit(self._quote_one, w3, v, p, a, b, int(amt)): (v, p) for v, p in combos}
+                    return futs
+                futs = _dr258()
+                for f in concurrent.futures.as_completed(futs):
+                    v, p = futs[f]
+                    try:
+                        o = int(f.result())
+                    except Exception:
+                        o = 0
+                    if o > 0 and (best is None or o > best['out']):
+                        best = {'venue': v, 'param': p, 'out': o}
+            return best
+        return _lr17()
 
     def _enumerate_crossvenue_2hop(self, chain_id, tin, tout, amount_in):
         """tin -> hub -> tout, each leg its OWN best venue (legs may differ). leg2

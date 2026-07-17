@@ -96,15 +96,18 @@ def test_cross_dex_plan_emits_sequential_per_hop_with_correct_recipients():
 
             def _dr4():
                 assert amount2 == 175000000
-                swap2 = _decode_aero_swap(plan.interactions[3].call_data)
-                assert _addr_eq(plan.interactions[3].target, aero_router)
-                assert _addr_eq(swap2['token_in'], USDC) and _addr_eq(swap2['token_out'], DAI)
-                assert swap2['amount_in'] == 175000000
-                assert swap2['tick_spacing'] == 100
-                assert _addr_eq(swap2['recipient'], CONTRACT)
-                assert swap2['min_out'] == ORDER_MIN
-                assert plan.metadata['route'] == 'cross_dex_sequential'
-                assert plan.metadata['dexes'] == [DEX_UNISWAP_V3, DEX_AERODROME_SLIPSTREAM]
+
+                def _lr4():
+                    swap2 = _decode_aero_swap(plan.interactions[3].call_data)
+                    assert _addr_eq(plan.interactions[3].target, aero_router)
+                    assert _addr_eq(swap2['token_in'], USDC) and _addr_eq(swap2['token_out'], DAI)
+                    assert swap2['amount_in'] == 175000000
+                    assert swap2['tick_spacing'] == 100
+                    assert _addr_eq(swap2['recipient'], CONTRACT)
+                    assert swap2['min_out'] == ORDER_MIN
+                    assert plan.metadata['route'] == 'cross_dex_sequential'
+                    assert plan.metadata['dexes'] == [DEX_UNISWAP_V3, DEX_AERODROME_SLIPSTREAM]
+                return _lr4()
             _dr4()
         _dr1()
     _dr3()
@@ -136,23 +139,31 @@ def test_uniswap_singlehop_anchors_min_to_exact_output_not_input():
     _dr5()
 
 def test_uniswap_singlehop_uses_order_min_when_present():
-    s = _solver()
-    s._normalized_swap_params = lambda intent, state: {'input_token': WETH, 'output_token': USDC, 'input_amount': 10 ** 18, 'min_output_amount': 170000000, 'receiver': OWNER, 'fee_tier': 500}
-    ctx = ProcessorContext(chain_id=CHAIN, timestamp=1000, block_number=0)
-    hop = {'dex': DEX_UNISWAP_V3, 'pool_state': {'dex': DEX_UNISWAP_V3, 'fee': 500}, 'fee': 500, 'token_in': WETH, 'token_out': USDC, 'amount_in': 10 ** 18, 'amount_out': 175000000}
-    plan = s._build_uniswap_singlehop_plan(_intent(), _state(), ctx, hop, WETH, USDC, 10 ** 18, 175000000, CHAIN)
-    swap = _decode_uni_v2_swap(plan.interactions[1].call_data)
+    swap = None
+
+    def _lr2():
+        nonlocal swap
+        s = _solver()
+        s._normalized_swap_params = lambda intent, state: {'input_token': WETH, 'output_token': USDC, 'input_amount': 10 ** 18, 'min_output_amount': 170000000, 'receiver': OWNER, 'fee_tier': 500}
+        ctx = ProcessorContext(chain_id=CHAIN, timestamp=1000, block_number=0)
+        hop = {'dex': DEX_UNISWAP_V3, 'pool_state': {'dex': DEX_UNISWAP_V3, 'fee': 500}, 'fee': 500, 'token_in': WETH, 'token_out': USDC, 'amount_in': 10 ** 18, 'amount_out': 175000000}
+        plan = s._build_uniswap_singlehop_plan(_intent(), _state(), ctx, hop, WETH, USDC, 10 ** 18, 175000000, CHAIN)
+        swap = _decode_uni_v2_swap(plan.interactions[1].call_data)
+    _lr2()
     assert swap['min_out'] == 170000000
 
 def test_cross_dex_plan_uses_slippage_when_no_order_min():
     s = _solver()
-    s._normalized_swap_params = lambda intent, state: {'input_token': WETH, 'output_token': DAI, 'input_amount': 10 ** 18, 'min_output_amount': 0, 'receiver': OWNER, 'fee_tier': 500}
-    ctx = ProcessorContext(chain_id=CHAIN, timestamp=1000, block_number=0)
-    expected = 174000000
-    plan = s._build_cross_dex_plan(_intent(), _state(), ctx, _uni_then_aero_hops(), WETH, DAI, 10 ** 18, expected, CHAIN)
-    swap2 = _decode_aero_swap(plan.interactions[3].call_data)
-    slippage = s._processor.slippage_bps
-    assert swap2['min_out'] == expected * (10000 - slippage) // 10000
+
+    def _lr3():
+        s._normalized_swap_params = lambda intent, state: {'input_token': WETH, 'output_token': DAI, 'input_amount': 10 ** 18, 'min_output_amount': 0, 'receiver': OWNER, 'fee_tier': 500}
+        ctx = ProcessorContext(chain_id=CHAIN, timestamp=1000, block_number=0)
+        expected = 174000000
+        plan = s._build_cross_dex_plan(_intent(), _state(), ctx, _uni_then_aero_hops(), WETH, DAI, 10 ** 18, expected, CHAIN)
+        swap2 = _decode_aero_swap(plan.interactions[3].call_data)
+        slippage = s._processor.slippage_bps
+        assert swap2['min_out'] == expected * (10000 - slippage) // 10000
+    return _lr3()
 
 def _hop(dex):
     return {'dex': dex, 'pool_state': {'dex': dex}, 'fee': 500}
@@ -206,12 +217,17 @@ def test_dispatch_routes_single_aero_to_aero_builder():
     assert called.get('aero') is True
 
 def test_dispatch_routes_same_dex_multihop_to_uni_builder():
-    h1 = {'dex': DEX_UNISWAP_V3, 'pool_state': {'dex': DEX_UNISWAP_V3, 'token0': WETH, 'token1': USDC}, 'fee': 500, 'token_in': WETH, 'token_out': USDC, 'amount_in': 10 ** 18, 'amount_out': 175000000}
-    h2 = {'dex': DEX_UNISWAP_V3, 'pool_state': {'dex': DEX_UNISWAP_V3, 'token0': USDC, 'token1': DAI}, 'fee': 3000, 'token_in': USDC, 'token_out': DAI, 'amount_in': 175000000, 'amount_out': 174000000}
-    s = _dispatch_solver(lambda *a, **k: (174000000, 'v3 2-hop', [h1, h2]))
-    called = {}
-    s._build_multihop_plan = lambda *a, **k: called.setdefault('uni_mh', True) or _Plan()
-    s.generate_plan(_intent(), _state())
+    called = None
+
+    def _lr1():
+        nonlocal called
+        h1 = {'dex': DEX_UNISWAP_V3, 'pool_state': {'dex': DEX_UNISWAP_V3, 'token0': WETH, 'token1': USDC}, 'fee': 500, 'token_in': WETH, 'token_out': USDC, 'amount_in': 10 ** 18, 'amount_out': 175000000}
+        h2 = {'dex': DEX_UNISWAP_V3, 'pool_state': {'dex': DEX_UNISWAP_V3, 'token0': USDC, 'token1': DAI}, 'fee': 3000, 'token_in': USDC, 'token_out': DAI, 'amount_in': 175000000, 'amount_out': 174000000}
+        s = _dispatch_solver(lambda *a, **k: (174000000, 'v3 2-hop', [h1, h2]))
+        called = {}
+        s._build_multihop_plan = lambda *a, **k: called.setdefault('uni_mh', True) or _Plan()
+        s.generate_plan(_intent(), _state())
+    _lr1()
     assert called.get('uni_mh') is True
 
 class _Plan:

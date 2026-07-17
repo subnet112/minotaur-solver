@@ -54,11 +54,14 @@ CLANKER_HOOK = '0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc'
 
 def _dr3():
     HOOK_BDF9 = '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'
-    ZORA_HOOK = '0xc8d077444625eb300a427a6dfb2b1dbf9b159040'
-    ZORA_CREATOR_HOOK = '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040'
-    V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
-    V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
-    return (HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK)
+
+    def _lr4():
+        ZORA_HOOK = '0xc8d077444625eb300a427a6dfb2b1dbf9b159040'
+        ZORA_CREATOR_HOOK = '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040'
+        V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
+        V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
+        return (HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK)
+    return _lr4()
 HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK = _dr3()
 MAX_CALLS = 90
 
@@ -168,14 +171,17 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
 
     def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int) -> int:
         c0, c1, fee, tick, hooks = key
-        data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
-        r = self._c(V4_QUOTER, data)
-        if not r or len(r) < 32:
-            return 0
-        try:
-            return int(_dec(['uint256', 'uint256'], r)[0])
-        except Exception:
-            return 0
+
+        def _lr3():
+            data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
+            r = self._c(V4_QUOTER, data)
+            if not r or len(r) < 32:
+                return 0
+            try:
+                return int(_dec(['uint256', 'uint256'], r)[0])
+            except Exception:
+                return 0
+        return _lr3()
 
     def v4_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
         """Find a V4 pool holding ``tout`` against a known base currency.
@@ -187,49 +193,54 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
         if chain_id != 8453:
             return []
         out: list[dict] = []
+        _dr1 = _dr11 = _dr4 = _dr5 = _dr7 = c0 = c1 = fee = hooks = leg_in = pid = q = spec = tick = zero_for_one = None
         for base in V4_BASES:
             if base.lower() == tout.lower():
                 continue
-            for fee, tick, hooks in V4_KEY_GRID:
 
-                def _dr11():
-                    c0, c1 = _sorted_pair(base, tout)
-                    pid = v4_pool_id(c0, c1, fee, tick, hooks)
-                    return (c0, c1, pid)
-                c0, c1, pid = _dr11()
-                if self._v4_liquidity(pid) <= 0:
-                    continue
-                zero_for_one = c0.lower() == base.lower()
-                leg_in = amount_in
+            def _lr2():
+                nonlocal _dr1, _dr11, _dr4, _dr5, _dr7, c0, c1, fee, hooks, leg_in, pid, q, spec, tick, zero_for_one
+                for fee, tick, hooks in V4_KEY_GRID:
 
-                def _dr5():
-                    spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else WETH, 'zero_for_one': zero_for_one}
-                    return spec
-                spec = _dr5()
-                if base.lower() != tin.lower():
+                    def _dr11():
+                        c0, c1 = _sorted_pair(base, tout)
+                        pid = v4_pool_id(c0, c1, fee, tick, hooks)
+                        return (c0, c1, pid)
+                    c0, c1, pid = _dr11()
+                    if self._v4_liquidity(pid) <= 0:
+                        continue
+                    zero_for_one = c0.lower() == base.lower()
+                    leg_in = amount_in
 
-                    def _dr1():
-                        nonlocal leg_in
-                        settle = WETH if base == _ZERO else base
-                        spec['v3_tokens'] = (tin, settle)
-                        spec['v3_fees'] = (500,) if settle.lower() == WETH.lower() else (3000,)
-                        if base == _ZERO:
-                            spec['native_eth'] = True
-                        leg_in = 0
-                        return settle
-                    settle = _dr1()
+                    def _dr5():
+                        spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else WETH, 'zero_for_one': zero_for_one}
+                        return spec
+                    spec = _dr5()
+                    if base.lower() != tin.lower():
 
-                def _dr7():
-                    q = self._v4_quote((c0, c1, fee, tick, hooks), zero_for_one, leg_in) if leg_in else 1
-                    return q
-                q = _dr7()
-                if q <= 0:
-                    continue
+                        def _dr1():
+                            nonlocal leg_in
+                            settle = WETH if base == _ZERO else base
+                            spec['v3_tokens'] = (tin, settle)
+                            spec['v3_fees'] = (500,) if settle.lower() == WETH.lower() else (3000,)
+                            if base == _ZERO:
+                                spec['native_eth'] = True
+                            leg_in = 0
+                            return settle
+                        settle = _dr1()
 
-                def _dr4():
-                    out.append({'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'})
-                _dr4()
-                break
+                    def _dr7():
+                        q = self._v4_quote((c0, c1, fee, tick, hooks), zero_for_one, leg_in) if leg_in else 1
+                        return q
+                    q = _dr7()
+                    if q <= 0:
+                        continue
+
+                    def _dr4():
+                        out.append({'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'})
+                    _dr4()
+                    break
+            _lr2()
             if out:
                 break
         return out
