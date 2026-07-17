@@ -26,14 +26,21 @@ AERODROME_SLIPSTREAM_ROUTER: dict[int, str] = {8453: '0xBE6D8f0d05cC4be24d5167a3
 AERODROME_TICK_SPACINGS: tuple[int, ...] = (1, 50, 100, 200, 2000)
 
 def _dr4():
-    _FACTORY_ABI = [{'inputs': [{'internalType': 'address', 'name': 'tokenA', 'type': 'address'}, {'internalType': 'address', 'name': 'tokenB', 'type': 'address'}, {'internalType': 'int24', 'name': 'tickSpacing', 'type': 'int24'}], 'name': 'getPool', 'outputs': [{'internalType': 'address', 'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
+    def _fw2():
+        _FACTORY_ABI = [{'inputs': [{'internalType': 'address', 'name': 'tokenA', 'type': 'address'}, {'internalType': 'address', 'name': 'tokenB', 'type': 'address'}, {'internalType': 'int24', 'name': 'tickSpacing', 'type': 'int24'}], 'name': 'getPool', 'outputs': [{'internalType': 'address', 'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
+        return (_FACTORY_ABI,)
+    _FACTORY_ABI, = _fw2()
 
     def _dr2():
         discover_pools_for_pair = None
 
         def _dr11():
             nonlocal discover_pools_for_pair
-            _POOL_ABI = [{'inputs': [], 'name': 'slot0', 'outputs': [{'internalType': 'uint160', 'name': 'sqrtPriceX96', 'type': 'uint160'}, {'internalType': 'int24', 'name': 'tick', 'type': 'int24'}, {'internalType': 'uint16', 'name': 'observationIndex', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinality', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinalityNext', 'type': 'uint16'}, {'internalType': 'bool', 'name': 'unlocked', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'liquidity', 'outputs': [{'internalType': 'uint128', 'name': '', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'fee', 'outputs': [{'internalType': 'uint24', 'name': '', 'type': 'uint24'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token0', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token1', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'tickSpacing', 'outputs': [{'internalType': 'int24', 'name': '', 'type': 'int24'}], 'stateMutability': 'view', 'type': 'function'}]
+            def _fh1():
+                return [{'inputs': [], 'name': 'slot0', 'outputs': [{'internalType': 'uint160', 'name': 'sqrtPriceX96', 'type': 'uint160'}, {'internalType': 'int24', 'name': 'tick', 'type': 'int24'}, {'internalType': 'uint16', 'name': 'observationIndex', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinality', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinalityNext', 'type': 'uint16'}, {'internalType': 'bool', 'name': 'unlocked', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'liquidity', 'outputs': [{'internalType': 'uint128', 'name': '', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'fee', 'outputs': [{'internalType': 'uint24', 'name': '', 'type': 'uint24'}], 'stateMutability': 'view', 'type': 'function'}]
+            def _fh2():
+                return [{'inputs': [], 'name': 'token0', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token1', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'tickSpacing', 'outputs': [{'internalType': 'int24', 'name': '', 'type': 'int24'}], 'stateMutability': 'view', 'type': 'function'}]
+            _POOL_ABI = _fh1() + _fh2()
 
             def _dr1():
                 _ZERO_ADDRESS = '0x' + '0' * 40
@@ -108,9 +115,12 @@ def _dr4():
                                             logger.debug('Aerodrome factory.getPool(%s, %s, ts=%d) failed: %s', token_a[:10], token_b[:10], ts, exc)
                                             rpc_errors += 1
                                             continue
-                                        if not pool_addr or pool_addr == _ZERO_ADDRESS:
-                                            continue
-                                        if pool_addr in pool_states or pool_addr.lower() in {k.lower() for k in pool_states}:
+                                        def _fw3():
+                                            if not pool_addr or pool_addr == _ZERO_ADDRESS:
+                                                return ('c',)
+                                            if pool_addr in pool_states or pool_addr.lower() in {k.lower() for k in pool_states}:
+                                                return ('c',)
+                                        if _fw3() is not None:
                                             continue
 
                                         def _dr8():
@@ -162,13 +172,16 @@ def _dr4():
     """
         if len(tokens) < 2 or len(tick_spacings) != len(tokens) - 1:
             raise ValueError('encode_path: need len(tokens) == len(tick_spacings) + 1')
-        out = bytearray()
-        for i, tok in enumerate(tokens):
-            addr_hex = tok[2:] if tok.startswith('0x') else tok
-            out.extend(bytes.fromhex(addr_hex.zfill(40)))
-            if i < len(tick_spacings):
-                ts = int(tick_spacings[i])
-                out.extend((ts & 16777215).to_bytes(3, 'big'))
+        def _fw1():
+            out = bytearray()
+            for i, tok in enumerate(tokens):
+                addr_hex = tok[2:] if tok.startswith('0x') else tok
+                out.extend(bytes.fromhex(addr_hex.zfill(40)))
+                if i < len(tick_spacings):
+                    ts = int(tick_spacings[i])
+                    out.extend((ts & 16777215).to_bytes(3, 'big'))
+            return (out,)
+        out, = _fw1()
         return bytes(out)
     return (_EXACT_INPUT_SELECTOR, discover_pools_for_pair, encode_exact_input_single, encode_path)
 _EXACT_INPUT_SELECTOR, discover_pools_for_pair, encode_exact_input_single, encode_path = _dr4()

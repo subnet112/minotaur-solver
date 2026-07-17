@@ -56,8 +56,8 @@ def _dr21():
             out = _dr35()
             _KING_REPLAY_CACHE = out
         return _KING_REPLAY_CACHE
-    return (ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _ApexBase, _DR_UNSET, _KING_REPLAY_CACHE, _king_replay, logger, logging, os)
-ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _ApexBase, _DR_UNSET, _KING_REPLAY_CACHE, _king_replay, logger, logging, os = _dr21()
+    return dict(locals())
+globals().update(_dr21())
 
 class JamesSolver(_ApexBase):
     """Champion base + exact-key raw-replay cover for its structural drops."""
@@ -261,8 +261,12 @@ try:
                     for i, f in enumerate(fees):
                         path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
                     path += bytes.fromhex(toks[-1][2:])
-                    enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
-                    return '0x' + (_PUTTY_R02_PATH_SEL + enc).hex()
+                    def _fw2():
+                        enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
+                        return ('0x' + (_PUTTY_R02_PATH_SEL + enc).hex(),)
+                    _fwr2 = _fw2()
+                    if _fwr2 is not None:
+                        return _fwr2[0]
 
                 def _putty_quote_usdc_weth(fee, amount_in):
                     data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(_PUTTY_WETH), int(amount_in), int(fee), 0)])).hex()
@@ -433,45 +437,49 @@ try:
                         route = _PUTTY_ROUTES.get(tout.lower())
                         return (amount_in, route, tin, tout)
                     amount_in, route, tin, tout = _dr10()
-                    if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
-                        router, tick_spacing = route
-                        plan = _putty_build_alt_plan(intent, state, tout, amount_in, router, tick_spacing)
-                        if plan is not None and plan.interactions:
-                            _putty_log.info('[putty] alt-CL substitution for %s router=%s tick=%s', tout, router, tick_spacing)
-                            return plan
+                    def _fw1():
+                        if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
+                            router, tick_spacing = route
+                            plan = _putty_build_alt_plan(intent, state, tout, amount_in, router, tick_spacing)
+                            if plan is not None and plan.interactions:
+                                _putty_log.info('[putty] alt-CL substitution for %s router=%s tick=%s', tout, router, tick_spacing)
+                                return (plan,)
 
-                    def _dr22():
-                        spec = _PUTTY_SUBS.get(tout.lower())
+                        def _dr22():
+                            spec = _PUTTY_SUBS.get(tout.lower())
 
-                        def _dr6():
-                            nonlocal plan
-                            if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
-                                plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
-                                if plan is not None and plan.interactions:
-                                    _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
-                                    return plan
-
-                            def _dr18():
+                            def _dr6():
                                 nonlocal plan
-                                spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
-                                if spec_w is not None and tin.lower() == _PUTTY_WETH.lower() and (spec_w['lo'] <= amount_in <= spec_w['hi']):
-                                    plan = _putty_build_sub_plan(intent, state, spec_w, tout, amount_in)
+                                if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
+                                    plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
                                     if plan is not None and plan.interactions:
-                                        _putty_log.info('[putty] eps WETH substitution %s for %s amt=%s', spec_w['kind'], tout, amount_in)
+                                        _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
                                         return plan
+
+                                def _dr18():
+                                    nonlocal plan
+                                    spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
+                                    if spec_w is not None and tin.lower() == _PUTTY_WETH.lower() and (spec_w['lo'] <= amount_in <= spec_w['hi']):
+                                        plan = _putty_build_sub_plan(intent, state, spec_w, tout, amount_in)
+                                        if plan is not None and plan.interactions:
+                                            _putty_log.info('[putty] eps WETH substitution %s for %s amt=%s', spec_w['kind'], tout, amount_in)
+                                            return plan
+                                    return _DR_UNSET
+                                    return _DR_UNSET
+                                _dr19 = _dr18()
+                                if _dr19 is not _DR_UNSET:
+                                    return _dr19
                                 return _DR_UNSET
-                                return _DR_UNSET
-                            _dr19 = _dr18()
-                            if _dr19 is not _DR_UNSET:
-                                return _dr19
+                            _dr7 = _dr6()
+                            if _dr7 is not _DR_UNSET:
+                                return _dr7
                             return _DR_UNSET
-                        _dr7 = _dr6()
-                        if _dr7 is not _DR_UNSET:
-                            return _dr7
-                        return _DR_UNSET
-                    _dr23 = _dr22()
-                    if _dr23 is not _DR_UNSET:
-                        return _dr23
+                        _dr23 = _dr22()
+                        if _dr23 is not _DR_UNSET:
+                            return (_dr23,)
+                    _fwr1 = _fw1()
+                    if _fwr1 is not None:
+                        return _fwr1[0]
             except Exception:
                 _putty_log.exception('[putty] edge failed; deferring to champion plan')
             return super().generate_plan(*args, **kwargs)
