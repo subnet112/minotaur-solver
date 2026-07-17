@@ -30,7 +30,7 @@ from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-_PUTTY_FINAL_BRAND = 'hydra-discovery-router'
+_PUTTY_FINAL_BRAND = 'zenith-router'
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.0.0')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
