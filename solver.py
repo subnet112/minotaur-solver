@@ -373,4 +373,30 @@ class _McSolver(_PuttyCleanSolver):
         except Exception:
             pass
         return base
-SOLVER_CLASS = _McSolver
+from baseswap_universal import maybe_q184_plan as _chain_killer_q184
+from mixed_universal import maybe_q87_plan as _chain_killer_q87
+
+
+class ChainKillerSolver(_McSolver):
+    def metadata(self):
+        base = super().metadata()
+        return SolverMetadata(
+            name="chain-killer",
+            version="quote-native-3",
+            author="top",
+            description="current champion plus two proven quote-history routes",
+            supported_chains=base.supported_chains,
+            supported_intent_types=base.supported_intent_types,
+        )
+
+    def generate_plan(self, intent, state, snapshot=None):
+        q87 = _chain_killer_q87(self, intent, state)
+        if q87 is not None:
+            return q87
+        q184 = _chain_killer_q184(self, intent, state)
+        if q184 is not None:
+            return q184
+        return super().generate_plan(intent, state, snapshot)
+
+
+SOLVER_CLASS = ChainKillerSolver
