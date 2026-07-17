@@ -11,14 +11,8 @@ _MC_QOUT = ['uint256', 'uint160', 'uint32', 'uint256']
 _MC_FEES = (3000, 500, 10000, 100, 20855)
 # Layer-1 whitelist: PROVEN persistent skips (fill regardless of the base route type — works even
 # when the dead base route is an undecodable V2/UR). PAIR = any amount; ORDER = exact (tin,tout,amt).
-_MC_FORCE_PAIR = {
-    ('0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'),  # USDbC->USDC
-}
+_MC_FORCE_PAIR = set()
 _MC_FORCE_ORDER = {
-    ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x6985884c4392d348587b19cb9eaaf157f13271cd', 2000000),          # USDC->PEPE (0020527d)
-    ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe', 5000000),          # USDC->exotic (27132ff6)
-    ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', 5000000),          # USDC->WETH (ecb1c00b)
-    ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', 850210),           # USDC->AERO (4feb4900)
     ('0x4200000000000000000000000000000000000006', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', 1000000000000000), # WETH->AERO (a17ba77b)
 }
 # CANDIDATE skips (base engine returns a REVERTING V3 plan) — NOT proven, so DEAD-GATED:

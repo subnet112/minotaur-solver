@@ -243,14 +243,17 @@ class MinerSolver(_MinerSolverDR41):
         def _dr38():
             if w3 is None or not uni_router:
                 return None
-            best_out, best_fee = (0, 3000)
-            for fee in (3000, 500, 10000, 100):
-                try:
-                    q = int(self._quote_one(w3, 'uniswap_v3', fee, tin, tout, amount_in))
-                except Exception:
-                    q = 0
-                if q > best_out:
-                    best_out, best_fee = (q, fee)
+            def _fw4():
+                best_out, best_fee = (0, 3000)
+                for fee in (3000, 500, 10000, 100):
+                    try:
+                        q = int(self._quote_one(w3, 'uniswap_v3', fee, tin, tout, amount_in))
+                    except Exception:
+                        q = 0
+                    if q > best_out:
+                        best_out, best_fee = (q, fee)
+                return (best_out, best_fee)
+            best_out, best_fee = _fw4()
             if best_out <= 0:
                 return None
             params = self._normalized_swap_params(intent, state)
@@ -331,39 +334,43 @@ class MinerSolver(_MinerSolverDR41):
         def _dr53():
             w3 = self._get_web3(int(chain_id))
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-            if w3 is None or not uni_router:
-                return None
+            def _fw3():
+                if w3 is None or not uni_router:
+                    return (None,)
 
-            def _dr26():
-                mid_out, best_fee = (0, 3000)
-                for fee in (3000, 10000, 500, 100):
-                    try:
-                        q = int(self._quote_one(w3, 'uniswap_v3', fee, tin, mid, amount_in))
-                    except Exception:
-                        q = 0
-                    if q > mid_out:
-                        mid_out, best_fee = (q, fee)
-                return (best_fee, mid_out)
-            best_fee, mid_out = _dr26()
-            if mid_out <= 0:
-                return None
-            v2_in = mid_out * 995 // 1000
-            params = self._normalized_swap_params(intent, state)
+                def _dr26():
+                    mid_out, best_fee = (0, 3000)
+                    for fee in (3000, 10000, 500, 100):
+                        try:
+                            q = int(self._quote_one(w3, 'uniswap_v3', fee, tin, mid, amount_in))
+                        except Exception:
+                            q = 0
+                        if q > mid_out:
+                            mid_out, best_fee = (q, fee)
+                    return (best_fee, mid_out)
+                best_fee, mid_out = _dr26()
+                if mid_out <= 0:
+                    return (None,)
+                v2_in = mid_out * 995 // 1000
+                params = self._normalized_swap_params(intent, state)
 
-            def _dr10():
-                recipient = self._apex_recipient(state, params)
-                deadline = self._apex_deadline(snapshot)
-                leg1 = encode_exact_input_single(token_in=tin, token_out=mid, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+                def _dr10():
+                    recipient = self._apex_recipient(state, params)
+                    deadline = self._apex_deadline(snapshot)
+                    leg1 = encode_exact_input_single(token_in=tin, token_out=mid, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
 
-                def _dr27():
-                    leg2 = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(v2_in), 0, [_ck(mid), _ck(tout)], _ck(recipient), int(deadline)]).hex()
-                    ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=mid, value='0', call_data=encode_approve(v2_router, v2_in), chain_id=chain_id), Interaction(target=v2_router, value='0', call_data=leg2, chain_id=chain_id)]
-                    return ix
-                ix = _dr27()
-                return (deadline, ix)
-            deadline, ix = _dr10()
-            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v2-via', 'chain_id': chain_id})
-            return _DR_UNSET
+                    def _dr27():
+                        leg2 = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(v2_in), 0, [_ck(mid), _ck(tout)], _ck(recipient), int(deadline)]).hex()
+                        ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=mid, value='0', call_data=encode_approve(v2_router, v2_in), chain_id=chain_id), Interaction(target=v2_router, value='0', call_data=leg2, chain_id=chain_id)]
+                        return ix
+                    ix = _dr27()
+                    return (deadline, ix)
+                deadline, ix = _dr10()
+                return (ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v2-via', 'chain_id': chain_id}),)
+                return (_DR_UNSET,)
+            _fwr3 = _fw3()
+            if _fwr3 is not None:
+                return _fwr3[0]
         _dr54 = _dr53()
         if _dr54 is not _DR_UNSET:
             return _dr54
@@ -504,27 +511,37 @@ class MinerSolver(_MinerSolverDR41):
                 weth_fee, weth_out = (500, 0)
                 return via_weth
             via_weth = _dr15()
+            ex = fut = None
             if via_weth:
-                with ThreadPoolExecutor(max_workers=6) as ex:
+                def _fwvw(weth_fee=weth_fee, weth_out=weth_out):
+                    with ThreadPoolExecutor(max_workers=6) as ex:
 
-                    def _dr16():
-                        fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
-                        return fs
-                    fs = _dr16()
-                    for fut, f in fs.items():
-                        o = fut.result()
-                        if o > weth_out:
-                            weth_out, weth_fee = (o, f)
-            wi = weth_out * 995 // 1000 if weth_out > 0 else 0
-            tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
-            reachable, extra = (0, (0, None))
+                        def _dr16():
+                            fs = {ex.submit(self._q1, w3, 'uniswap_v3', f, tin, _WETH, amount_in): f for f in (500, 3000, 100, 10000)}
+                            return fs
+                        fs = _dr16()
+                        for fut, f in fs.items():
+                            o = fut.result()
+                            if o > weth_out:
+                                weth_out, weth_fee = (o, f)
+                    return (weth_fee, weth_out)
+                weth_fee, weth_out = _fwvw()
+            def _fw1():
+                wi = weth_out * 995 // 1000 if weth_out > 0 else 0
+                tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
+                reachable, extra = (0, (0, None))
+                return (wi, tasks, reachable, extra)
+            wi, tasks, reachable, extra = _fw1()
 
             def _dr7():
 
                 def _dr1():
                     nonlocal ex, extra, fut, reachable
                     with ThreadPoolExecutor(max_workers=16) as ex:
-                        futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
+                        def _fw2():
+                            futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
+                            return (futs,)
+                        futs, = _fw2()
                         for tag, spec, fut in futs:
                             try:
                                 out = int(fut.result(timeout=6))

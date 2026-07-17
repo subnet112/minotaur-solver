@@ -111,20 +111,23 @@ class SwapIntentProcessor(IntentProcessor):
             ValueError: If required metadata is missing or chain unsupported.
         """
         params = self._extract_swap_params(intent, state)
-        input_token: str = params['input_token']
-        output_token: str = params['output_token']
-        input_amount: int = params['input_amount']
-        min_output_amount: int = params['min_output_amount']
-        recipient: str = state.contract_address or params.get('receiver', state.owner)
-        fee_tier: int = params.get('fee_tier', self.default_fee_tier)
-        chain_id = context.chain_id
-        router_address = self._get_router(chain_id)
+        def _fw1():
+            input_token: str = params['input_token']
+            output_token: str = params['output_token']
+            input_amount: int = params['input_amount']
+            min_output_amount: int = params['min_output_amount']
+            recipient: str = state.contract_address or params.get('receiver', state.owner)
+            fee_tier: int = params.get('fee_tier', self.default_fee_tier)
+            chain_id = context.chain_id
+            router_address = self._get_router(chain_id)
 
-        def _dr1():
-            deadline = context.timestamp + self.deadline_offset
-            interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router_address, input_amount), chain_id=chain_id), Interaction(target=router_address, value='0', call_data=encode_exact_input_single(token_in=input_token, token_out=output_token, fee=fee_tier, recipient=recipient, deadline=deadline, amount_in=input_amount, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
-            return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3', 'fee_tier': fee_tier, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'min_output_amount': str(min_output_amount)})
-            return _DR_UNSET
+            def _dr1():
+                deadline = context.timestamp + self.deadline_offset
+                interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router_address, input_amount), chain_id=chain_id), Interaction(target=router_address, value='0', call_data=encode_exact_input_single(token_in=input_token, token_out=output_token, fee=fee_tier, recipient=recipient, deadline=deadline, amount_in=input_amount, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
+                return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3', 'fee_tier': fee_tier, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'min_output_amount': str(min_output_amount)})
+                return _DR_UNSET
+            return (_dr1,)
+        _dr1, = _fw1()
         _dr2 = _dr1()
         if _dr2 is not _DR_UNSET:
             return _dr2

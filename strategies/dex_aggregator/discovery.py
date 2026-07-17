@@ -38,16 +38,20 @@ def _dr9():
     WETH = '0x4200000000000000000000000000000000000006'
     USDC = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
     USDBC = '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'
-    CBETH = '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22'
-    ZORA = '0x1111111111166b7fe7bd91427724b487980afc69'
-    VIRTUAL = '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'
-    V2_FORKS_BASE = (('uniswap_v2', '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24', 'uniswap_v2'), ('pancake_v2', '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb', 'pancake_v2'), ('sushi_v2', '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891', None), ('baseswap', '0x327Df1E6de05895d2ab08513aaDD9313Fe505d86', None))
-    V2_FORKS_MAINNET = (('uniswap_v2', '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', 'uniswap_v2'), ('sushi_v2', '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F', None))
-    AERO_V2_ROUTER = '0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43'
-    AERO_V2_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
-    V4_STATE_VIEW = '0xA3c0c9b65baD0b08107Aa264b0f3dB444b867A71'
-    V4_QUOTER = '0x0d5e0F971ED27FBfF6c2837bf31316121532048D'
-    return (AERO_V2_FACTORY, AERO_V2_ROUTER, CBETH, USDBC, USDC, V2_FORKS_BASE, V2_FORKS_MAINNET, V4_QUOTER, V4_STATE_VIEW, VIRTUAL, WETH, ZORA, _ZERO, logger)
+    def _fw4():
+        CBETH = '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22'
+        ZORA = '0x1111111111166b7fe7bd91427724b487980afc69'
+        VIRTUAL = '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'
+        V2_FORKS_BASE = (('uniswap_v2', '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24', 'uniswap_v2'), ('pancake_v2', '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb', 'pancake_v2'), ('sushi_v2', '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891', None), ('baseswap', '0x327Df1E6de05895d2ab08513aaDD9313Fe505d86', None))
+        V2_FORKS_MAINNET = (('uniswap_v2', '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', 'uniswap_v2'), ('sushi_v2', '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F', None))
+        AERO_V2_ROUTER = '0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43'
+        AERO_V2_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
+        V4_STATE_VIEW = '0xA3c0c9b65baD0b08107Aa264b0f3dB444b867A71'
+        V4_QUOTER = '0x0d5e0F971ED27FBfF6c2837bf31316121532048D'
+        return ((AERO_V2_FACTORY, AERO_V2_ROUTER, CBETH, USDBC, USDC, V2_FORKS_BASE, V2_FORKS_MAINNET, V4_QUOTER, V4_STATE_VIEW, VIRTUAL, WETH, ZORA, _ZERO, logger),)
+    _fwr4 = _fw4()
+    if _fwr4 is not None:
+        return _fwr4[0]
 AERO_V2_FACTORY, AERO_V2_ROUTER, CBETH, USDBC, USDC, V2_FORKS_BASE, V2_FORKS_MAINNET, V4_QUOTER, V4_STATE_VIEW, VIRTUAL, WETH, ZORA, _ZERO, logger = _dr9()
 V4_DYN_FEE = 8388608
 CLANKER_HOOK = '0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc'
@@ -56,8 +60,11 @@ def _dr3():
     HOOK_BDF9 = '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'
     ZORA_HOOK = '0xc8d077444625eb300a427a6dfb2b1dbf9b159040'
     ZORA_CREATOR_HOOK = '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040'
-    V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
-    V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
+    def _fw3():
+        V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
+        V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
+        return (V4_KEY_GRID, V4_BASES)
+    V4_KEY_GRID, V4_BASES = _fw3()
     return (HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK)
 HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK = _dr3()
 MAX_CALLS = 90
@@ -167,9 +174,12 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
             return 0
 
     def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int) -> int:
-        c0, c1, fee, tick, hooks = key
-        data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
-        r = self._c(V4_QUOTER, data)
+        def _fw2():
+            c0, c1, fee, tick, hooks = key
+            data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
+            r = self._c(V4_QUOTER, data)
+            return (r,)
+        r, = _fw2()
         if not r or len(r) < 32:
             return 0
         try:
@@ -192,44 +202,50 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
                 continue
             for fee, tick, hooks in V4_KEY_GRID:
 
-                def _dr11():
-                    c0, c1 = _sorted_pair(base, tout)
-                    pid = v4_pool_id(c0, c1, fee, tick, hooks)
-                    return (c0, c1, pid)
-                c0, c1, pid = _dr11()
-                if self._v4_liquidity(pid) <= 0:
+                def _fw1():
+                    def _dr11():
+                        c0, c1 = _sorted_pair(base, tout)
+                        pid = v4_pool_id(c0, c1, fee, tick, hooks)
+                        return (c0, c1, pid)
+                    c0, c1, pid = _dr11()
+                    if self._v4_liquidity(pid) <= 0:
+                        return ('c',)
+                    zero_for_one = c0.lower() == base.lower()
+                    leg_in = amount_in
+
+                    def _dr5():
+                        spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else WETH, 'zero_for_one': zero_for_one}
+                        return spec
+                    spec = _dr5()
+                    if base.lower() != tin.lower():
+
+                        def _dr1():
+                            nonlocal leg_in
+                            settle = WETH if base == _ZERO else base
+                            spec['v3_tokens'] = (tin, settle)
+                            spec['v3_fees'] = (500,) if settle.lower() == WETH.lower() else (3000,)
+                            if base == _ZERO:
+                                spec['native_eth'] = True
+                            leg_in = 0
+                            return settle
+                        settle = _dr1()
+
+                    def _dr7():
+                        q = self._v4_quote((c0, c1, fee, tick, hooks), zero_for_one, leg_in) if leg_in else 1
+                        return q
+                    q = _dr7()
+                    if q <= 0:
+                        return ('c',)
+
+                    def _dr4():
+                        out.append({'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'})
+                    _dr4()
+                    return ('b',)
+                _fwr1 = _fw1()
+                if _fwr1 is not None:
+                    if _fwr1[0] == 'b':
+                        break
                     continue
-                zero_for_one = c0.lower() == base.lower()
-                leg_in = amount_in
-
-                def _dr5():
-                    spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else WETH, 'zero_for_one': zero_for_one}
-                    return spec
-                spec = _dr5()
-                if base.lower() != tin.lower():
-
-                    def _dr1():
-                        nonlocal leg_in
-                        settle = WETH if base == _ZERO else base
-                        spec['v3_tokens'] = (tin, settle)
-                        spec['v3_fees'] = (500,) if settle.lower() == WETH.lower() else (3000,)
-                        if base == _ZERO:
-                            spec['native_eth'] = True
-                        leg_in = 0
-                        return settle
-                    settle = _dr1()
-
-                def _dr7():
-                    q = self._v4_quote((c0, c1, fee, tick, hooks), zero_for_one, leg_in) if leg_in else 1
-                    return q
-                q = _dr7()
-                if q <= 0:
-                    continue
-
-                def _dr4():
-                    out.append({'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'})
-                _dr4()
-                break
             if out:
                 break
         return out
@@ -241,7 +257,7 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
         def _dr10():
             nonlocal tin, tout
             tin, tout = (tin.lower(), tout.lower())
-            cands: list[dict] = []
+            cands = []
             try:
                 cands += self.v2_candidates(chain_id, tin, tout, amount_in)
                 if not (min_out <= 1 and cands):

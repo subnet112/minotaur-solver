@@ -92,7 +92,11 @@ def _dr81():
                         return loop.run_until_complete(coro)
                     finally:
                         loop.close()
-            _POOL_ABI = [{'inputs': [], 'name': 'slot0', 'outputs': [{'internalType': 'uint160', 'name': 'sqrtPriceX96', 'type': 'uint160'}, {'internalType': 'int24', 'name': 'tick', 'type': 'int24'}, {'internalType': 'uint16', 'name': 'observationIndex', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinality', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinalityNext', 'type': 'uint16'}, {'internalType': 'uint8', 'name': 'feeProtocol', 'type': 'uint8'}, {'internalType': 'bool', 'name': 'unlocked', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'liquidity', 'outputs': [{'internalType': 'uint128', 'name': '', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'fee', 'outputs': [{'internalType': 'uint24', 'name': '', 'type': 'uint24'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token0', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token1', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
+            def _fh1():
+                return [{'inputs': [], 'name': 'slot0', 'outputs': [{'internalType': 'uint160', 'name': 'sqrtPriceX96', 'type': 'uint160'}, {'internalType': 'int24', 'name': 'tick', 'type': 'int24'}, {'internalType': 'uint16', 'name': 'observationIndex', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinality', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinalityNext', 'type': 'uint16'}, {'internalType': 'uint8', 'name': 'feeProtocol', 'type': 'uint8'}, {'internalType': 'bool', 'name': 'unlocked', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'liquidity', 'outputs': [{'internalType': 'uint128', 'name': '', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}]
+            def _fh2():
+                return [{'inputs': [], 'name': 'fee', 'outputs': [{'internalType': 'uint24', 'name': '', 'type': 'uint24'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token0', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token1', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
+            _POOL_ABI = _fh1() + _fh2()
             return (_POOL_ABI, _cross_chain_compat_params, _intent_function_from_state, _run_coro)
         _POOL_ABI, _cross_chain_compat_params, _intent_function_from_state, _run_coro = _dr9()
         _FACTORY_ABI = [{'inputs': [{'internalType': 'address', 'name': 'tokenA', 'type': 'address'}, {'internalType': 'address', 'name': 'tokenB', 'type': 'address'}, {'internalType': 'uint24', 'name': 'fee', 'type': 'uint24'}], 'name': 'getPool', 'outputs': [{'internalType': 'address', 'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
@@ -100,27 +104,35 @@ def _dr81():
         return (_FACTORY_ABI, _FACTORY_ADDRESSES, _POOL_ABI, _cross_chain_compat_params, _intent_function_from_state, _run_coro, _state_params)
     _FACTORY_ABI, _FACTORY_ADDRESSES, _POOL_ABI, _cross_chain_compat_params, _intent_function_from_state, _run_coro, _state_params = _dr40()
 
-    def _dr1():
-        _FACTORY_ADDRESSES[31337] = _FACTORY_ADDRESSES[1]
-        _FEE_TIERS = [100, 500, 3000, 10000]
-        _ZERO_ADDRESS = '0x' + '0' * 40
+    def _fw5():
+        def _dr1():
+            _FACTORY_ADDRESSES[31337] = _FACTORY_ADDRESSES[1]
+            _FEE_TIERS = [100, 500, 3000, 10000]
+            _ZERO_ADDRESS = '0x' + '0' * 40
 
-        def _dr56():
-            _KNOWN_POOLS: dict[int, list[str]] = {1: ['0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8', '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640', '0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36', '0xCBCdF9626bC03E24f779434178A73a0B4bad62eD', '0x6c6Bc977E13Df9b0de53b251522280BB72383700', '0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8'], 8453: ['0xd0b53D9277642d899DF5C87A3966A349A798F224'], 964: ['0x6647dcbeb030dc8E227D8B1A2Cb6A49F3C887E3c']}
-            _KNOWN_POOLS[31337] = list(_KNOWN_POOLS[1])
-            _DISCOVERY_SEED_TOKENS: dict[int, list[str]] = {8453: ['0x4200000000000000000000000000000000000006', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb', '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', '0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22', '0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452', '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA', '0x78a087d713Be963Bf307b18F2Ff8122EF9A63ae9', '0x0578d8A44db98B23BF096A382e016e29a5Ce0ffe', '0x532f27101965dd16442E59d40670FaF5eBB142E4', '0x940181a94A35A4569E4529A3CDfB74e38FD98631', '0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c', '0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A', '0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b', '0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b', '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44', '0xdC46C1E93B71fF9209A0F8076a9951569DC35855'], 1: ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0xdAC17F958D2ee523a2206206994597C13D831ec7', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', '0x6B175474E89094C44Da98b954EedeAC495271d0F', '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44'], 964: ['0x9Dc08C6e2BF0F1eeD1E00670f80Df39145529F81', '0xB833E8137FEDf80de7E908dc6fea43a029142F20']}
-            _DISCOVERY_SEED_TOKENS[31337] = list(_DISCOVERY_SEED_TOKENS.get(1, []))
-            return (_DISCOVERY_SEED_TOKENS, _KNOWN_POOLS)
-        _DISCOVERY_SEED_TOKENS, _KNOWN_POOLS = _dr56()
-        _TOKEN_SYMBOLS: dict[str, str] = {'0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': 'WETH', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': 'USDC', '0xdac17f958d2ee523a2206206994597c13d831ec7': 'USDT', '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599': 'WBTC', '0x6b175474e89094c44da98b954eedeac495271d0f': 'DAI', '0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44': 'wTAO', '0x9dc08c6e2bf0f1eed1e00670f80df39145529f81': 'WTAO', '0xb833e8137fedf80de7e908dc6fea43a029142f20': 'USDC'}
-        return (_DISCOVERY_SEED_TOKENS, _FEE_TIERS, _KNOWN_POOLS, _TOKEN_SYMBOLS, _ZERO_ADDRESS)
-    _DISCOVERY_SEED_TOKENS, _FEE_TIERS, _KNOWN_POOLS, _TOKEN_SYMBOLS, _ZERO_ADDRESS = _dr1()
-    _GAS_BASE_OVERHEAD = 400000
-    _GAS_PER_HOP = 150000
-    _FALLBACK_GAS_PRICE_WEI: dict[int, int] = {1: 25000000000, 8453: 20000000, 42161: 10000000, 10: 10000000, 964: 25000000000, 31337: 1000000000}
-    _GENERIC_FALLBACK_GAS_PRICE_WEI = 1000000000
-    return (_DISCOVERY_SEED_TOKENS, _FACTORY_ABI, _FACTORY_ADDRESSES, _FALLBACK_GAS_PRICE_WEI, _FEE_TIERS, _GAS_BASE_OVERHEAD, _GAS_PER_HOP, _GENERIC_FALLBACK_GAS_PRICE_WEI, _KNOWN_POOLS, _POOL_ABI, _TOKEN_SYMBOLS, _ZERO_ADDRESS, _cross_chain_compat_params, _intent_function_from_state, _run_coro, _state_params, logger)
-_DISCOVERY_SEED_TOKENS, _FACTORY_ABI, _FACTORY_ADDRESSES, _FALLBACK_GAS_PRICE_WEI, _FEE_TIERS, _GAS_BASE_OVERHEAD, _GAS_PER_HOP, _GENERIC_FALLBACK_GAS_PRICE_WEI, _KNOWN_POOLS, _POOL_ABI, _TOKEN_SYMBOLS, _ZERO_ADDRESS, _cross_chain_compat_params, _intent_function_from_state, _run_coro, _state_params, logger = _dr81()
+            def _dr56():
+                _KNOWN_POOLS: dict[int, list[str]] = {1: ['0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8', '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640', '0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36', '0xCBCdF9626bC03E24f779434178A73a0B4bad62eD', '0x6c6Bc977E13Df9b0de53b251522280BB72383700', '0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8'], 8453: ['0xd0b53D9277642d899DF5C87A3966A349A798F224'], 964: ['0x6647dcbeb030dc8E227D8B1A2Cb6A49F3C887E3c']}
+                def _fw6():
+                    _KNOWN_POOLS[31337] = list(_KNOWN_POOLS[1])
+                    _DISCOVERY_SEED_TOKENS: dict[int, list[str]] = {8453: ['0x4200000000000000000000000000000000000006', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb', '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', '0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22', '0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452', '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA', '0x78a087d713Be963Bf307b18F2Ff8122EF9A63ae9', '0x0578d8A44db98B23BF096A382e016e29a5Ce0ffe', '0x532f27101965dd16442E59d40670FaF5eBB142E4', '0x940181a94A35A4569E4529A3CDfB74e38FD98631', '0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c', '0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A', '0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b', '0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b', '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44', '0xdC46C1E93B71fF9209A0F8076a9951569DC35855'], 1: ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0xdAC17F958D2ee523a2206206994597C13D831ec7', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', '0x6B175474E89094C44Da98b954EedeAC495271d0F', '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44'], 964: ['0x9Dc08C6e2BF0F1eeD1E00670f80Df39145529F81', '0xB833E8137FEDf80de7E908dc6fea43a029142F20']}
+                    _DISCOVERY_SEED_TOKENS[31337] = list(_DISCOVERY_SEED_TOKENS.get(1, []))
+                    return (_DISCOVERY_SEED_TOKENS,)
+                _DISCOVERY_SEED_TOKENS, = _fw6()
+                return (_DISCOVERY_SEED_TOKENS, _KNOWN_POOLS)
+            _DISCOVERY_SEED_TOKENS, _KNOWN_POOLS = _dr56()
+            _TOKEN_SYMBOLS: dict[str, str] = {'0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': 'WETH', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': 'USDC', '0xdac17f958d2ee523a2206206994597c13d831ec7': 'USDT', '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599': 'WBTC', '0x6b175474e89094c44da98b954eedeac495271d0f': 'DAI', '0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44': 'wTAO', '0x9dc08c6e2bf0f1eed1e00670f80df39145529f81': 'WTAO', '0xb833e8137fedf80de7e908dc6fea43a029142f20': 'USDC'}
+            return (_DISCOVERY_SEED_TOKENS, _FEE_TIERS, _KNOWN_POOLS, _TOKEN_SYMBOLS, _ZERO_ADDRESS)
+        _DISCOVERY_SEED_TOKENS, _FEE_TIERS, _KNOWN_POOLS, _TOKEN_SYMBOLS, _ZERO_ADDRESS = _dr1()
+        _GAS_BASE_OVERHEAD = 400000
+        _GAS_PER_HOP = 150000
+        _FALLBACK_GAS_PRICE_WEI: dict[int, int] = {1: 25000000000, 8453: 20000000, 42161: 10000000, 10: 10000000, 964: 25000000000, 31337: 1000000000}
+        _GENERIC_FALLBACK_GAS_PRICE_WEI = 1000000000
+        return (dict(locals()),)
+    _fwr5 = _fw5()
+    d = dict(locals())
+    d.update(_fwr5[0])
+    return d
+globals().update(_dr81())
 _PLATFORM_FEE_MARGIN_BPS = 2000
 
 def _compute_platform_fee_wei(gas_units: int, gas_price_wei: int) -> int:
@@ -292,21 +304,23 @@ class _BaselineSwapSolverDR1(_BaselineSwapSolverDR1DR49):
         _dr80()
         return result
 
-    def _cross_chain_params(self, intent: AppIntentDefinition, state: IntentState) -> dict[str, Any]:
-        swap_params = self._normalized_swap_params(intent, state)
-        extra = _cross_chain_compat_params(state)
-        dest_chain_raw = extra.get('dest_chain_id')
-        dest_chain_id = int(dest_chain_raw) if dest_chain_raw not in (None, '') else 0
-        return {**swap_params, 'dest_chain_id': dest_chain_id, 'bridge_protocol': extra.get('bridge_protocol', 'mock'), 'dest_recipient': extra.get('dest_recipient') or swap_params['receiver'] or state.owner or _ZERO_ADDRESS, 'dest_min_output_amount': int(extra.get('min_output', swap_params.get('min_output_amount', 0)) or 0)}
+    def _fw11():
+        def _cross_chain_params(self, intent: AppIntentDefinition, state: IntentState) -> dict[str, Any]:
+            swap_params = self._normalized_swap_params(intent, state)
+            extra = _cross_chain_compat_params(state)
+            dest_chain_raw = extra.get('dest_chain_id')
+            dest_chain_id = int(dest_chain_raw) if dest_chain_raw not in (None, '') else 0
+            return {**swap_params, 'dest_chain_id': dest_chain_id, 'bridge_protocol': extra.get('bridge_protocol', 'mock'), 'dest_recipient': extra.get('dest_recipient') or swap_params['receiver'] or state.owner or _ZERO_ADDRESS, 'dest_min_output_amount': int(extra.get('min_output', swap_params.get('min_output_amount', 0)) or 0)}
 
-    def _state_with_extra(self, intent: AppIntentDefinition, state: IntentState, *, chain_id: int, extra_updates: dict[str, Any]) -> IntentState:
-        raw_params = {**_cross_chain_compat_params(state), **extra_updates}
-        cloned = IntentState(contract_address=state.contract_address, chain_id=chain_id, nonce=state.nonce, owner=state.owner, raw_params=raw_params, control=state.control_view(), context_version=state.context_version, policy_tier=state.policy_tier)
-        try:
-            cloned.typed_context = build_typed_context(intent, state.control_view().get('_intent_function', _intent_function_from_state(state, 'swap')), cloned)
-        except Exception:
-            cloned.typed_context = None
-        return cloned
+        def _state_with_extra(self, intent: AppIntentDefinition, state: IntentState, *, chain_id: int, extra_updates: dict[str, Any]) -> IntentState:
+            raw_params = {**_cross_chain_compat_params(state), **extra_updates}
+            cloned = IntentState(contract_address=state.contract_address, chain_id=chain_id, nonce=state.nonce, owner=state.owner, raw_params=raw_params, control=state.control_view(), context_version=state.context_version, policy_tier=state.policy_tier)
+            try:
+                cloned.typed_context = build_typed_context(intent, state.control_view().get('_intent_function', _intent_function_from_state(state, 'swap')), cloned)
+            except Exception:
+                cloned.typed_context = None
+            return cloned
+    _fw11()
 
     def _discover_pools_for_pair(self, chain_id: int, token_a: str, token_b: str, pool_states: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
 
@@ -342,9 +356,12 @@ class _BaselineSwapSolverDR1(_BaselineSwapSolverDR1DR49):
                         logger.debug('Factory.getPool(%s, %s, %d) failed: %s', token_a[:10], token_b[:10], fee, exc)
                         rpc_errors += 1
                         continue
-                    if not pool_addr or pool_addr == _ZERO_ADDRESS:
-                        continue
-                    if pool_addr in pool_states or pool_addr.lower() in {k.lower() for k in pool_states}:
+                    def _fw12():
+                        if not pool_addr or pool_addr == _ZERO_ADDRESS:
+                            return ('c',)
+                        if pool_addr in pool_states or pool_addr.lower() in {k.lower() for k in pool_states}:
+                            return ('c',)
+                    if _fw12() is not None:
                         continue
 
                     def _dr79():
@@ -408,12 +425,15 @@ class _BaselineSwapSolverDR2DR30(_BaselineSwapSolverDR1):
             nonlocal chain_id
             swap_params = self._normalized_swap_params(intent, state)
             dest_chain_id = _cross_chain_compat_params(state).get('dest_chain_id')
-            if not dest_chain_id:
-                output_chain = swap_params.get('_output_chain')
-                input_chain = swap_params.get('_input_chain', chain_id)
-                if output_chain and output_chain != input_chain:
-                    dest_chain_id = output_chain
-                    chain_id = input_chain
+            def _fwd(dest_chain_id=dest_chain_id, chain_id=chain_id):
+                if not dest_chain_id:
+                    output_chain = swap_params.get('_output_chain')
+                    input_chain = swap_params.get('_input_chain', chain_id)
+                    if output_chain and output_chain != input_chain:
+                        dest_chain_id = output_chain
+                        chain_id = input_chain
+                return (dest_chain_id, chain_id)
+            dest_chain_id, chain_id = _fwd()
             if dest_chain_id and int(dest_chain_id) != chain_id:
                 return self._generate_cross_chain_plan(intent, state, snapshot, chain_id, int(dest_chain_id))
 
@@ -465,8 +485,11 @@ class _BaselineSwapSolverDR2DR30(_BaselineSwapSolverDR1):
                                     if _dr99 is not _DR_UNSET:
                                         return _dr99
                                     discovered_fee = hops[0].get('fee')
-                                    if discovered_fee and discovered_fee != self._processor.default_fee_tier:
-                                        state = self._state_with_extra(intent, state, chain_id=state.chain_id, extra_updates={'fee_tier': discovered_fee})
+                                    def _fws(state=state):
+                                        if discovered_fee and discovered_fee != self._processor.default_fee_tier:
+                                            state = self._state_with_extra(intent, state, chain_id=state.chain_id, extra_updates={'fee_tier': discovered_fee})
+                                        return state
+                                    state = _fws()
                                 return _DR_UNSET
                             _dr4 = _dr3()
                             if _dr4 is not _DR_UNSET:
@@ -524,14 +547,17 @@ class _BaselineSwapSolverDR2DR31(_BaselineSwapSolverDR2DR30):
 
         def _dr51():
             output_token = params.get('output_token', '')
-            min_output = int(params.get('min_output_amount', 0))
-            dest_chain_id = int(params.get('dest_chain_id', 1))
-            receiver = params.get('recipient', params.get('receiver', state.owner))
-            if amount_rao <= 0:
-                raise ValueError('alpha_amount_rao must be positive')
-            unstake_action = SubstrateAction(action='remove_stake', owner_ss58=owner_ss58, amount_rao=amount_rao, netuid=alpha_netuid, hotkey_ss58=hotkey_ss58)
-            bridge_fee_bps = 10
-            bridge_fee = amount_rao * bridge_fee_bps // 10000
+            def _fw10():
+                min_output = int(params.get('min_output_amount', 0))
+                dest_chain_id = int(params.get('dest_chain_id', 1))
+                receiver = params.get('recipient', params.get('receiver', state.owner))
+                if amount_rao <= 0:
+                    raise ValueError('alpha_amount_rao must be positive')
+                unstake_action = SubstrateAction(action='remove_stake', owner_ss58=owner_ss58, amount_rao=amount_rao, netuid=alpha_netuid, hotkey_ss58=hotkey_ss58)
+                bridge_fee_bps = 10
+                bridge_fee = amount_rao * bridge_fee_bps // 10000
+                return (min_output, dest_chain_id, receiver, unstake_action, bridge_fee)
+            min_output, dest_chain_id, receiver, unstake_action, bridge_fee = _fw10()
             tao_after_bridge = amount_rao - bridge_fee
             from minotaur_subnet.bridge.tensorplex import _TENSORPLEX_LOCK_SS58
 
@@ -593,16 +619,19 @@ class _BaselineSwapSolverDR2DR31(_BaselineSwapSolverDR2DR30):
         fees: list[int] = []
 
         def _dr48():
-            for hop in hops:
-                pool = hop['pool_state']
-                t0 = pool['token0'].lower()
-                t1 = pool['token1'].lower()
-                if tokens[-1].lower() == t0:
-                    tokens.append(pool['token1'])
-                else:
-                    tokens.append(pool['token0'])
-                fees.append(hop['fee'])
-            path = encode_swap_path(tokens, fees)
+            def _fw9():
+                for hop in hops:
+                    pool = hop['pool_state']
+                    t0 = pool['token0'].lower()
+                    t1 = pool['token1'].lower()
+                    if tokens[-1].lower() == t0:
+                        tokens.append(pool['token1'])
+                    else:
+                        tokens.append(pool['token0'])
+                    fees.append(hop['fee'])
+                path = encode_swap_path(tokens, fees)
+                return (path,)
+            path, = _fw9()
             router = UNISWAP_V3_ROUTERS.get(chain_id)
             if not router:
                 raise ValueError(f'No Uniswap V3 router for chain {chain_id}')
@@ -616,9 +645,12 @@ class _BaselineSwapSolverDR2DR31(_BaselineSwapSolverDR2DR30):
         def _dr20():
 
             def _dr76():
-                deadline = context.timestamp + self._processor.deadline_offset
-                recipient = state.contract_address or swap_params.get('receiver', state.owner)
-                interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input(path=path, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0), chain_id=chain_id)]
+                def _fw8():
+                    deadline = context.timestamp + self._processor.deadline_offset
+                    recipient = state.contract_address or swap_params.get('receiver', state.owner)
+                    interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input(path=path, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0), chain_id=chain_id)]
+                    return (deadline, interactions)
+                deadline, interactions = _fw8()
                 logger.info('Multi-hop plan: %d hops, path=%s, fees=%s', len(hops), ' → '.join((t[:10] for t in tokens)), fees)
                 return (deadline, interactions)
             deadline, interactions = _dr76()
@@ -666,27 +698,30 @@ class _BaselineSwapSolverDR2DR88(_BaselineSwapSolverDR2DR31):
                 sqrt_price_raw = state.get('sqrtPriceX96')
                 return (sqrt_price_raw, token0, token1)
             sqrt_price_raw, token0, token1 = _dr82()
-            if not sqrt_price_raw:
-                continue
-            sqrt_price = int(sqrt_price_raw)
-            if sqrt_price == 0:
-                continue
-            price_ratio = sqrt_price ** 2 / 2 ** 192
-            if token0 == usdc_lower:
-                other_token = token1
-                usd_price = 1.0 / price_ratio if price_ratio > 0 else 0
-            elif token1 == usdc_lower:
-                other_token = token0
-                usd_price = price_ratio
-            else:
-                continue
+            def _fw1():
+                if not sqrt_price_raw:
+                    return ('c',)
+                sqrt_price = int(sqrt_price_raw)
+                if sqrt_price == 0:
+                    return ('c',)
+                price_ratio = sqrt_price ** 2 / 2 ** 192
+                if token0 == usdc_lower:
+                    other_token = token1
+                    usd_price = 1.0 / price_ratio if price_ratio > 0 else 0
+                elif token1 == usdc_lower:
+                    other_token = token0
+                    usd_price = price_ratio
+                else:
+                    return ('c',)
 
-            def _dr96():
-                sym = _TOKEN_SYMBOLS.get(other_token, '')
-                if sym:
-                    prices[f'{sym}/USD'] = usd_price
-                return sym
-            sym = _dr96()
+                def _dr96():
+                    sym = _TOKEN_SYMBOLS.get(other_token, '')
+                    if sym:
+                        prices[f'{sym}/USD'] = usd_price
+                    return sym
+                sym = _dr96()
+            if _fw1() is not None:
+                continue
         return prices
 
 class _BaselineSwapSolverDR2(_BaselineSwapSolverDR2DR88):
@@ -762,17 +797,20 @@ class _BaselineSwapSolverDR2(_BaselineSwapSolverDR2DR88):
                 zero_for_one = True
                 return (amount_in, deadline, min_output, recipient)
             amount_in, deadline, min_output, recipient = _dr65()
-            for addr, ps in pool_states.items():
-                t0 = ps.get('token0', '').lower()
-                t1 = ps.get('token1', '').lower()
-                if t0 == input_token.lower() and t1 == output_token.lower():
-                    pool_address = addr
-                    zero_for_one = True
-                    break
-                elif t1 == input_token.lower() and t0 == output_token.lower():
-                    pool_address = addr
-                    zero_for_one = False
-                    break
+            def _fwp(pool_address=pool_address, zero_for_one=zero_for_one):
+                for addr, ps in pool_states.items():
+                    t0 = ps.get('token0', '').lower()
+                    t1 = ps.get('token1', '').lower()
+                    if t0 == input_token.lower() and t1 == output_token.lower():
+                        pool_address = addr
+                        zero_for_one = True
+                        break
+                    elif t1 == input_token.lower() and t0 == output_token.lower():
+                        pool_address = addr
+                        zero_for_one = False
+                        break
+                return (pool_address, zero_for_one)
+            pool_address, zero_for_one = _fwp()
             return (amount_in, deadline, min_output, recipient)
         amount_in, deadline, min_output, recipient = _dr18()
         if not pool_address:
@@ -797,20 +835,23 @@ class _BaselineSwapSolverDR2(_BaselineSwapSolverDR2DR88):
 
             def _dr35():
 
-                def _dr8():
-                    MIN_SQRT_RATIO = 4295128739
-                    MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342
-                    sqrt_price_limit = MIN_SQRT_RATIO + 1 if zero_for_one else MAX_SQRT_RATIO - 1
-                    swap_selector = '128acb08'
-                    callback_data = abi_encode(['address', 'address', 'uint24'], [input_token if input_token.startswith('0x') else '0x' + '0' * 40, output_token if output_token.startswith('0x') else '0x' + '0' * 40, 3000])
+                def _fw4():
+                    def _dr8():
+                        MIN_SQRT_RATIO = 4295128739
+                        MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342
+                        sqrt_price_limit = MIN_SQRT_RATIO + 1 if zero_for_one else MAX_SQRT_RATIO - 1
+                        swap_selector = '128acb08'
+                        callback_data = abi_encode(['address', 'address', 'uint24'], [input_token if input_token.startswith('0x') else '0x' + '0' * 40, output_token if output_token.startswith('0x') else '0x' + '0' * 40, 3000])
 
-                    def _dr64():
-                        swap_calldata = '0x' + swap_selector + recipient.replace('0x', '').lower().zfill(64) + ('01' if zero_for_one else '00').zfill(64) + hex(amount_in)[2:].zfill(64) + hex(sqrt_price_limit)[2:].zfill(64) + hex(160)[2:].zfill(64) + hex(len(callback_data))[2:].zfill(64) + callback_data.hex()
+                        def _dr64():
+                            swap_calldata = '0x' + swap_selector + recipient.replace('0x', '').lower().zfill(64) + ('01' if zero_for_one else '00').zfill(64) + hex(amount_in)[2:].zfill(64) + hex(sqrt_price_limit)[2:].zfill(64) + hex(160)[2:].zfill(64) + hex(len(callback_data))[2:].zfill(64) + callback_data.hex()
+                            return swap_calldata
+                        swap_calldata = _dr64()
                         return swap_calldata
-                    swap_calldata = _dr64()
-                    return swap_calldata
-                swap_calldata = _dr8()
-                interactions = [Interaction(target=input_token, value='0', call_data='0x095ea7b3' + pool_address.replace('0x', '').lower().zfill(64) + hex(amount_in)[2:].zfill(64), chain_id=chain_id), Interaction(target=pool_address, value='0', call_data=swap_calldata, chain_id=chain_id)]
+                    swap_calldata = _dr8()
+                    interactions = [Interaction(target=input_token, value='0', call_data='0x095ea7b3' + pool_address.replace('0x', '').lower().zfill(64) + hex(amount_in)[2:].zfill(64), chain_id=chain_id), Interaction(target=pool_address, value='0', call_data=swap_calldata, chain_id=chain_id)]
+                    return (interactions,)
+                interactions, = _fw4()
                 return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3_direct_pool', 'pool': pool_address, 'zero_for_one': zero_for_one, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(amount_in), 'min_output_amount': str(min_output), 'chain_id': chain_id})
                 return _DR_UNSET
             _dr36 = _dr35()
@@ -965,7 +1006,9 @@ class _BaselineSwapSolverDR34(_BaselineSwapSolverDR31):
                 bridge_requests.append(BridgeRequest(token=bridge_token, amount=bridge_amount, src_chain_id=src_chain, dst_chain_id=dst_chain, recipient=recipient, purpose=f'bridge {bridge_token[:10]}.. for dest action'))
             _dr55()
             dest_interactions = self._build_dest_swap_interactions(intent, state, snapshot, dst_chain, output_token, recipient)
-            chain_legs.append(ChainLeg(chain_id=dst_chain, interactions=dest_interactions, intent_selector=swap_sel, metadata={'type': 'destination_action'}))
+            def _fwc():
+                chain_legs.append(ChainLeg(chain_id=dst_chain, interactions=dest_interactions, intent_selector=swap_sel, metadata={'type': 'destination_action'}))
+            _fwc()
         else:
 
             def _dr17():
@@ -996,9 +1039,12 @@ class _BaselineSwapSolverDR34(_BaselineSwapSolverDR31):
                     if snapshot and snapshot.pool_states and (pool_states is snapshot.pool_states):
                         pool_states = dict(pool_states)
                     self._ensure_pools_for_route(src_chain, pool_states, input_token, output_token)
-                prices = self._derive_prices(pool_states, src_chain) if pool_states else {}
-                context = ProcessorContext(chain_id=src_chain, timestamp=int(time.time()), block_number=0, rpc_url=self._rpc_urls.get(src_chain, ''), prices=prices)
-                source_plan = _run_coro(self._processor.generate_plan(intent, source_state, context))
+                def _fw7():
+                    prices = self._derive_prices(pool_states, src_chain) if pool_states else {}
+                    context = ProcessorContext(chain_id=src_chain, timestamp=int(time.time()), block_number=0, rpc_url=self._rpc_urls.get(src_chain, ''), prices=prices)
+                    source_plan = _run_coro(self._processor.generate_plan(intent, source_state, context))
+                    return (source_plan,)
+                source_plan, = _fw7()
                 return source_plan.interactions
                 return _DR_UNSET
             _dr53 = _dr52()
@@ -1121,32 +1167,37 @@ class _BaselineSwapSolverDR34(_BaselineSwapSolverDR31):
                         break
             return bridgeable_token
         bridgeable_token = _dr16()
+        route = route_desc = hops = bridge_quote_b = None
         if bridgeable_token:
+            def _fwz():
 
-            def _dr87():
-                src_pool_states = self._get_pool_states(src_chain, snapshot)
-                self._ensure_pools_for_route(src_chain, src_pool_states, input_token, bridgeable_token)
-                return src_pool_states
-            src_pool_states = _dr87()
-            route = find_best_route(src_pool_states, input_token, bridgeable_token, amount_in)
-            if route:
-                swap_output, route_desc, hops = route
-                try:
-                    bridge_quote_b = _run_coro(self._bridge_registry.best_quote(bridgeable_token, swap_output, src_chain, dst_chain))
-                except Exception:
-                    pass
+                def _dr87():
+                    src_pool_states = self._get_pool_states(src_chain, snapshot)
+                    self._ensure_pools_for_route(src_chain, src_pool_states, input_token, bridgeable_token)
+                    return src_pool_states
+                src_pool_states = _dr87()
+                route = find_best_route(src_pool_states, input_token, bridgeable_token, amount_in)
+                if route:
+                    swap_output, route_desc, hops = route
+                    try:
+                        bridge_quote_b = _run_coro(self._bridge_registry.best_quote(bridgeable_token, swap_output, src_chain, dst_chain))
+                    except Exception:
+                        pass
 
-                def _dr25():
-                    nonlocal bridge_token_out
-                    if bridge_quote_b:
-                        final_output = bridge_quote_b.estimated_output
-                        bridge_token_out = bridge_quote_b.token_out
-                        if bridge_token_out.lower() == output_token.lower():
-                            return QuoteResult(estimated_output=str(final_output), route_summary=f'Cross-chain: {route_desc} + bridge {src_chain}→{dst_chain}', gas_estimate=_GAS_BASE_OVERHEAD * 2 + _GAS_PER_HOP * len(hops), metadata={'cross_chain': True, 'direction': 'swap_then_bridge', 'src_chain': src_chain, 'dst_chain': dst_chain, 'bridge_fee': bridge_quote_b.fee, 'swap_output': swap_output, 'hops': len(hops), 'protocol': 'UniswapV3 + Hyperlane'}, computed_params={'min_output_amount': str(final_output)})
-                    return _DR_UNSET
-                _dr26 = _dr25()
-                if _dr26 is not _DR_UNSET:
-                    return _dr26
+                    def _dr25():
+                        nonlocal bridge_token_out
+                        if bridge_quote_b:
+                            final_output = bridge_quote_b.estimated_output
+                            bridge_token_out = bridge_quote_b.token_out
+                            if bridge_token_out.lower() == output_token.lower():
+                                return QuoteResult(estimated_output=str(final_output), route_summary=f'Cross-chain: {route_desc} + bridge {src_chain}→{dst_chain}', gas_estimate=_GAS_BASE_OVERHEAD * 2 + _GAS_PER_HOP * len(hops), metadata={'cross_chain': True, 'direction': 'swap_then_bridge', 'src_chain': src_chain, 'dst_chain': dst_chain, 'bridge_fee': bridge_quote_b.fee, 'swap_output': swap_output, 'hops': len(hops), 'protocol': 'UniswapV3 + Hyperlane'}, computed_params={'min_output_amount': str(final_output)})
+                        return _DR_UNSET
+                    _dr26 = _dr25()
+                    if _dr26 is not _DR_UNSET:
+                        return (_dr26,)
+            _fwzr = _fwz()
+            if _fwzr is not None:
+                return _fwzr[0]
 
         def _dr62():
             raise ValueError(f'No cross-chain route found for {input_token[:10]}.. ({src_chain}) → {output_token[:10]}.. ({dst_chain})')
@@ -1306,22 +1357,25 @@ class BaselineSwapSolver(_BaselineSwapSolverDR89):
             min_output = swap_params.get('min_output_amount', 0)
             return (path, tick_spacings)
         path, tick_spacings = _dr43()
-        if not min_output:
-            slippage_bps = self._processor.slippage_bps
-            min_output = expected_output * (10000 - slippage_bps) // 10000
-        deadline = context.timestamp + self._processor.deadline_offset
+        def _fw3(min_output=min_output):
+            if not min_output:
+                slippage_bps = self._processor.slippage_bps
+                min_output = expected_output * (10000 - slippage_bps) // 10000
+            deadline = context.timestamp + self._processor.deadline_offset
 
-        def _dr2():
+            def _dr2():
 
-            def _dr78():
-                recipient = state.contract_address or swap_params.get('receiver', state.owner)
-                interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=_aero.encode_exact_input(path=path, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0), chain_id=chain_id)]
-                logger.info('Aerodrome multi-hop plan: %d hops, path=%s, tickSpacings=%s', len(hops), ' -> '.join((t[:10] for t in tokens)), tick_spacings)
-                return interactions
-            interactions = _dr78()
-            return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'aerodrome_slipstream_multihop', 'dex': 'aerodrome', 'router': router, 'hops': len(hops), 'tokens': tokens, 'tick_spacings': tick_spacings, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(amount_in), 'min_output_amount': str(min_output), 'expected_output': str(expected_output), 'chain_id': chain_id})
-            return _DR_UNSET
-        _dr7 = _dr2()
+                def _dr78():
+                    recipient = state.contract_address or swap_params.get('receiver', state.owner)
+                    interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=_aero.encode_exact_input(path=path, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0), chain_id=chain_id)]
+                    logger.info('Aerodrome multi-hop plan: %d hops, path=%s, tickSpacings=%s', len(hops), ' -> '.join((t[:10] for t in tokens)), tick_spacings)
+                    return interactions
+                interactions = _dr78()
+                return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'aerodrome_slipstream_multihop', 'dex': 'aerodrome', 'router': router, 'hops': len(hops), 'tokens': tokens, 'tick_spacings': tick_spacings, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(amount_in), 'min_output_amount': str(min_output), 'expected_output': str(expected_output), 'chain_id': chain_id})
+                return _DR_UNSET
+            _dr7 = _dr2()
+            return (min_output, _dr7)
+        min_output, _dr7 = _fw3()
         if _dr7 is not _DR_UNSET:
             return _dr7
 
