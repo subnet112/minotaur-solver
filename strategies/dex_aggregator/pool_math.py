@@ -38,38 +38,37 @@ def _dr7():
         amount_after_fee = amount_in * (1000000 - fee_ppm) // 1000000
         if amount_after_fee <= 0:
             return 0
-        MAX_SQRT_PRICE_IMPACT = sqrt_price_x96 // 100
-        if zero_for_one:
+        delta_sqrt_price = output = None
 
-            def _dr4():
-                nonlocal delta_sqrt_price, output
-                numerator = amount_after_fee * sqrt_price_x96
-                denominator = liquidity * Q96 + amount_after_fee * sqrt_price_x96
-                if denominator <= 0:
-                    return 0
-                delta_sqrt_price = numerator * sqrt_price_x96 // denominator
-                if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
-                    return 0
-                output = liquidity * delta_sqrt_price // Q96
-                return _DR_UNSET
-            _dr5 = _dr4()
-            if _dr5 is not _DR_UNSET:
-                return _dr5
-        else:
-            def _fwe():
+        def _lr3():
+            nonlocal delta_sqrt_price, output
+            MAX_SQRT_PRICE_IMPACT = sqrt_price_x96 // 100
+            if zero_for_one:
+
+                def _dr4():
+                    nonlocal delta_sqrt_price, output
+                    numerator = amount_after_fee * sqrt_price_x96
+                    denominator = liquidity * Q96 + amount_after_fee * sqrt_price_x96
+                    if denominator <= 0:
+                        return 0
+                    delta_sqrt_price = numerator * sqrt_price_x96 // denominator
+                    if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
+                        return 0
+                    output = liquidity * delta_sqrt_price // Q96
+                    return _DR_UNSET
+                _dr5 = _dr4()
+                if _dr5 is not _DR_UNSET:
+                    return _dr5
+            else:
                 delta_sqrt_price = amount_after_fee * Q96 // liquidity
                 if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
-                    return (0,)
+                    return 0
                 new_sqrt_price = sqrt_price_x96 + delta_sqrt_price
                 if new_sqrt_price <= 0:
-                    return (0,)
+                    return 0
                 output = liquidity * Q96 * delta_sqrt_price // (sqrt_price_x96 * new_sqrt_price)
-                return (None, delta_sqrt_price, output)
-            _fwer = _fwe()
-            if _fwer[0] is not None:
-                return _fwer[0]
-            delta_sqrt_price, output = _fwer[1], _fwer[2]
-        return max(0, output)
+            return max(0, output)
+        return _lr3()
 
     def find_best_pool(pool_states: dict[str, dict[str, Any]], token_in: str, token_out: str, amount_in: int) -> tuple[str, dict[str, Any], int] | None:
         """Find the pool giving the best output for a token pair swap.
@@ -99,9 +98,12 @@ def _dr7():
                 candidates: list[tuple[str, dict[str, Any], int, bool, int]] = []
                 return candidates
             candidates = _dr8()
-            max_liquidity = 0
-            for pool_addr, pool in pool_states.items():
-                def _fw4():
+            max_liquidity = None
+
+            def _lr6():
+                nonlocal liquidity, max_liquidity, pool, pool_addr, zero_for_one
+                max_liquidity = 0
+                for pool_addr, pool in pool_states.items():
                     t0 = pool.get('token0', '').lower()
                     t1 = pool.get('token1', '').lower()
                     if t0 == token_in_lower and t1 == token_out_lower:
@@ -109,19 +111,15 @@ def _dr7():
                     elif t0 == token_out_lower and t1 == token_in_lower:
                         zero_for_one = False
                     else:
-                        return (3, None, zero_for_one)
-                    return (0, None, zero_for_one)
-                _fwr4 = _fw4()
-                zero_for_one = _fwr4[2]
-                if _fwr4[0]:
-                    continue
-                liquidity = int(pool.get('liquidity', 0))
+                        continue
+                    liquidity = int(pool.get('liquidity', 0))
 
-                def _dr6():
-                    nonlocal max_liquidity
-                    max_liquidity = max(max_liquidity, liquidity)
-                    candidates.append((pool_addr, pool, liquidity, zero_for_one, int(pool.get('fee', 3000))))
-                _dr6()
+                    def _dr6():
+                        nonlocal max_liquidity
+                        max_liquidity = max(max_liquidity, liquidity)
+                        candidates.append((pool_addr, pool, liquidity, zero_for_one, int(pool.get('fee', 3000))))
+                    _dr6()
+            _lr6()
             min_liquidity = max_liquidity // 20
             return (candidates, min_liquidity)
         candidates, min_liquidity = _dr2()
@@ -152,8 +150,10 @@ def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token
         if intermediaries is None:
             intermediaries = []
         token_in_lower = token_in.lower()
-        def _fw3():
-            token_out_lower = token_out.lower()
+        token_out_lower = token_out.lower()
+
+        def _lr4():
+            nonlocal best_description, best_hops, best_output
             best_output = 0
             best_description = ''
             best_hops = []
@@ -164,57 +164,44 @@ def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token
                 best_output = output
                 best_description = f'direct via {fee / 1000000:.2%} pool'
                 best_hops = [{'pool_addr': addr, 'pool_state': state, 'fee': fee}]
-            return (token_out_lower, best_output, best_description, best_hops)
-        token_out_lower, best_output, best_description, best_hops = _fw3()
-        return (token_in_lower, token_out_lower)
+            return (token_in_lower, token_out_lower)
+        return _lr4()
     token_in_lower, token_out_lower = _dr1()
-    def _fw2(best_description=best_description, best_hops=best_hops, best_output=best_output):
-        for mid in intermediaries:
+    final_output = hop1 = hop2 = state1 = state2 = None
+    for mid in intermediaries:
+
+        def _lr1():
+            nonlocal final_output, hop1, hop2, state1, state2
             mid_lower = mid.lower()
             if mid_lower == token_in_lower or mid_lower == token_out_lower:
-                continue
+                return True
+            hop1 = find_best_pool(pool_states, token_in, mid, amount_in)
+            if hop1 is None:
+                return True
+            _, state1, mid_amount = hop1
+            hop2 = find_best_pool(pool_states, mid, token_out, mid_amount)
+            if hop2 is None:
+                return True
+            _, state2, final_output = hop2
+        if _lr1():
+            continue
+        if final_output > best_output:
 
-            def _fw1(best_description=best_description, best_hops=best_hops, best_output=best_output):
-                def _miss():
-                    return (3, None, best_description, best_hops, best_output)
-                hop1 = find_best_pool(pool_states, token_in, mid, amount_in)
-                if hop1 is None:
-                    return _miss()
-                _, state1, mid_amount = hop1
-                hop2 = find_best_pool(pool_states, mid, token_out, mid_amount)
-                if hop2 is None:
-                    return _miss()
-                _, state2, final_output = hop2
-                if final_output > best_output:
+            def _dr10():
+                nonlocal best_description, best_hops, best_output
 
-                    def _dr10():
-                        nonlocal best_description, best_hops, best_output
-
-                        def _dr3():
-                            fee1 = int(state1.get('fee', 3000))
-                            fee2 = int(state2.get('fee', 3000))
-                            return (fee1, fee2)
-                        fee1, fee2 = _dr3()
-                        best_output = final_output
-                        best_description = f'2-hop via {fee1 / 1000000:.2%} + {fee2 / 1000000:.2%} pools'
-                        best_hops = [{'pool_addr': hop1[0], 'pool_state': state1, 'fee': fee1}, {'pool_addr': hop2[0], 'pool_state': state2, 'fee': fee2}]
-                        return _DR_UNSET
-                    _dr11 = _dr10()
-                    if _dr11 is not _DR_UNSET:
-                        return (1, _dr11, best_description, best_hops, best_output)
-                return (0, None, best_description, best_hops, best_output)
-            _fwr1 = _fw1()
-            best_description, best_hops, best_output = (_fwr1[2], _fwr1[3], _fwr1[4])
-            if _fwr1[0]:
-                if _fwr1[0] == 1:
-                    return (1, _fwr1[1], best_description, best_hops, best_output)
-                continue
-        return (0, None, best_description, best_hops, best_output)
-    _fwr2 = _fw2()
-    best_description, best_hops, best_output = _fwr2[2], _fwr2[3], _fwr2[4]
-    if _fwr2[0]:
-        if _fwr2[0] == 1:
-            return _fwr2[1]
+                def _dr3():
+                    fee1 = int(state1.get('fee', 3000))
+                    fee2 = int(state2.get('fee', 3000))
+                    return (fee1, fee2)
+                fee1, fee2 = _dr3()
+                best_output = final_output
+                best_description = f'2-hop via {fee1 / 1000000:.2%} + {fee2 / 1000000:.2%} pools'
+                best_hops = [{'pool_addr': hop1[0], 'pool_state': state1, 'fee': fee1}, {'pool_addr': hop2[0], 'pool_state': state2, 'fee': fee2}]
+                return _DR_UNSET
+            _dr11 = _dr10()
+            if _dr11 is not _DR_UNSET:
+                return _dr11
     if best_output <= 0:
         return None
     return (best_output, best_description, best_hops)

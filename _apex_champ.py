@@ -37,27 +37,26 @@ def _load_agent_strategies() -> dict:
     out: dict = {}
     if not _STRATEGIES_DIR.is_dir():
         return out
+    Strategy = mod = obj = spec = None
     for app_dir in _STRATEGIES_DIR.iterdir():
         strat_file = app_dir / 'strategy.py'
         if not (app_dir.is_dir() and app_dir.name.startswith('app_') and strat_file.is_file()):
             continue
-        try:
-            def _fw1():
+
+        def _lr1():
+            nonlocal Strategy, mod, obj, spec
+            try:
                 spec = importlib.util.spec_from_file_location(f'agent_strategy_{app_dir.name}', strat_file)
                 mod = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(mod)
                 from minotaur_subnet.sdk.strategy import Strategy
-                return (mod, Strategy)
-            mod, Strategy = _fw1()
-            for obj in vars(mod).values():
-                def _fw3():
+                for obj in vars(mod).values():
                     if isinstance(obj, type) and issubclass(obj, Strategy) and (obj is not Strategy):
                         out[app_dir.name] = obj()
-                        return ('b',)
-                if _fw3() is not None:
-                    break
-        except Exception:
-            logger.exception('[james] skipping broken strategy %s', strat_file)
+                        break
+            except Exception:
+                logger.exception('[james] skipping broken strategy %s', strat_file)
+        _lr1()
     return out
 
 class _JamesSolverDR17(KingSolver):
@@ -116,14 +115,17 @@ class _JamesSolverDR17(KingSolver):
         from eth_abi import encode as _enc, decode as _dec
         from eth_utils import keccak as _kk, to_checksum_address as _ck
         sel = _kk(b'getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
-        routes = [(_ck(a), _ck(b), False, _ck(self._JAERO_FACTORY)) for a, b in pairs]
-        r = self._james_call(w3, self._JAERO_ROUTER, sel + _enc(['uint256', '(address,address,bool,address)[]'], [amt, routes]))
-        if not r:
-            return 0
-        try:
-            return _dec(['uint256[]'], r)[0][-1]
-        except Exception:
-            return 0
+
+        def _lr32():
+            routes = [(_ck(a), _ck(b), False, _ck(self._JAERO_FACTORY)) for a, b in pairs]
+            r = self._james_call(w3, self._JAERO_ROUTER, sel + _enc(['uint256', '(address,address,bool,address)[]'], [amt, routes]))
+            if not r:
+                return 0
+            try:
+                return _dec(['uint256[]'], r)[0][-1]
+            except Exception:
+                return 0
+        return _lr32()
 
     def _jq_v4(self, w3, tin, tout, amt, fee, tick, hook):
 
@@ -131,13 +133,21 @@ class _JamesSolverDR17(KingSolver):
             from eth_abi import encode as _enc
             from eth_utils import keccak as _kk, to_checksum_address as _ck
             c0, c1 = (tin, tout) if int(tin, 16) < int(tout, 16) else (tout, tin)
-            sel = _kk(b'quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4]
-            r = self._james_call(w3, self._JV4_QUOTER, sel + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), fee, tick, _ck(hook)), c0.lower() == tin.lower(), amt, b'')]))
-            return r
+
+            def _lr31():
+                sel = _kk(b'quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4]
+                r = self._james_call(w3, self._JV4_QUOTER, sel + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), fee, tick, _ck(hook)), c0.lower() == tin.lower(), amt, b'')]))
+                return r
+            return _lr31()
         r = _dr22()
         return int.from_bytes(r[:32], 'big') if r else 0
 
-class JamesSolver(_JamesSolverDR17):
+class _JamesSolverLR30(_JamesSolverDR17):
+    _JAMES_CANONICAL = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x940181a94a35a4569e4529a3cdfb74e38fd98631'}
+    _JAMES_MARGIN = 1.1
+    _JV4_QUOTER = '0x0d5e0F971ED27FBfF6c2837bf31316121532048D'
+
+class JamesSolver(_JamesSolverLR30):
     """King primary; agent strategies cover its empty-plan blind spots; a
     benchmark time-governor guarantees the full corpus gets answered.
 
@@ -152,7 +162,7 @@ class JamesSolver(_JamesSolverDR17):
     outside benchmarks (live mode never calls on_benchmark_start).
     """
     _FAST_BELOW_S = 6.0
-    _RUN_BUDGET_S = 860.0
+    _RUN_BUDGET_S = 520.0
 
     def initialize(self, config):
         super().initialize(config)
@@ -219,13 +229,14 @@ class JamesSolver(_JamesSolverDR17):
             self._dyn_order_budget = None
 
             def _dr20():
-                def _fw4():
+
+                def _lr28():
                     if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
                         import time as _t
                         remaining_time = self._RUN_BUDGET_S - (_t.monotonic() - self._bm_t0)
                         remaining_orders = max(1, self._bm_total - self._bm_done + 1)
                         self._dyn_order_budget = max(4.0, remaining_time / remaining_orders)
-                _fw4()
+                _lr28()
                 if self._behind_pace():
                     fast = self._fast_plan(intent, state, snapshot)
                     if not self._is_empty(fast):
@@ -269,9 +280,6 @@ class JamesSolver(_JamesSolverDR17):
         _dr13 = _dr12()
         if _dr13 is not _DR_UNSET:
             return _dr13
-    _JAMES_CANONICAL = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x940181a94a35a4569e4529a3cdfb74e38fd98631'}
-    _JAMES_MARGIN = 1.1
-    _JV4_QUOTER = '0x0d5e0F971ED27FBfF6c2837bf31316121532048D'
     _JV3_QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
     _JUNIV2 = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
     _JPANCV2 = '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'
@@ -301,17 +309,20 @@ class JamesSolver(_JamesSolverDR17):
             tout = str(p.get('output_token', '') or '').lower()
             return (p, tin, tout)
         p, tin, tout = _dr10()
-        try:
+        _dr4 = best_out = best_spec = proxy = None
 
-            def _dr15():
-                amt = int(p.get('input_amount', 0) or 0)
-                min_out = int(p.get('min_output_amount', 0) or 0)
-                return (amt, min_out)
-            amt, min_out = _dr15()
-        except (TypeError, ValueError):
-            return None
+        def _lr26():
+            nonlocal _dr4, best_out, best_spec, proxy
+            try:
 
-        def _fw2():
+                def _dr15():
+                    amt = int(p.get('input_amount', 0) or 0)
+                    min_out = int(p.get('min_output_amount', 0) or 0)
+                    return (amt, min_out)
+                amt, min_out = _dr15()
+            except (TypeError, ValueError):
+                return (1, None)
+
             def _dr6():
                 chain_id = int(getattr(state, 'chain_id', 0) or 0)
                 if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())) or ((tin, tout) in table):
@@ -319,7 +330,7 @@ class JamesSolver(_JamesSolverDR17):
                 return _DR_UNSET
             _dr7 = _dr6()
             if _dr7 is not _DR_UNSET:
-                return (_dr7,)
+                return (1, _dr7)
 
             def _dr11():
                 w3 = self._james_w3()
@@ -337,14 +348,14 @@ class JamesSolver(_JamesSolverDR17):
 
                             def _dr14():
                                 c0, c1 = (self._JWETH, tout) if int(self._JWETH, 16) < int(tout, 16) else (tout, self._JWETH)
-                                def _fw5():
+
+                                def _lr29():
                                     spec = {'pool': (c0, c1, self._JV4_DYN_FEE, 200, hook), 'settle': self._JWETH, 'zero_for_one': c0.lower() == self._JWETH.lower()}
                                     if tin == self._JUSDC.lower():
                                         spec['v3_tokens'] = (self._JUSDC, self._JWETH)
                                         spec['v3_fees'] = (500,)
-                                    return (spec,)
-                                spec, = _fw5()
-                                return (c0, c1, spec)
+                                    return (c0, c1, spec)
+                                return _lr29()
                             c0, c1, spec = _dr14()
                             best_out, best_spec = (out, spec)
                 if not best_spec:
@@ -352,7 +363,7 @@ class JamesSolver(_JamesSolverDR17):
                 return _DR_UNSET
             _dr3 = _dr2()
             if _dr3 is not _DR_UNSET:
-                return (_dr3,)
+                return (1, _dr3)
             proxy = 0
 
             def _dr4():
@@ -392,13 +403,14 @@ class JamesSolver(_JamesSolverDR17):
                 if _dr19 is not _DR_UNSET:
                     return _dr19
                 return _DR_UNSET
-            _dr5 = _dr4()
-            if _dr5 is not _DR_UNSET:
-                return (_dr5,)
-            return (super().generate_plan(intent, state, snapshot),)
-        _fwr2 = _fw2()
-        if _fwr2 is not None:
-            return _fwr2[0]
+            return (0, None)
+        _lrt27 = _lr26()
+        if _lrt27[0]:
+            return _lrt27[1]
+        _dr5 = _dr4()
+        if _dr5 is not _DR_UNSET:
+            return _dr5
+        return super().generate_plan(intent, state, snapshot)
 
     def metadata(self):
         base = super().metadata()

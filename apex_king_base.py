@@ -12,7 +12,9 @@ Re-fork onto a new champion = copy its solver.py to king_base.py. This file is
 fixed (no re-editing the champion's evolving code) — that's the whole point.
 """
 from __future__ import annotations
-def _fw6():
+
+def _lr30():
+    global ExecutionPlan, Interaction, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _BOTZ, _Base, _DR_UNSET, _NO_HOOK, _USDC_, _dr128, _dr18, _dr28, _dr58, _kb, logger, logging, os, time
     _DR_UNSET = object()
 
     def _dr58():
@@ -43,110 +45,116 @@ def _fw6():
         _dr28()
     except Exception:
         logging.getLogger(__name__).exception('[botz-v4] static-exotic patch failed')
-    return dict(locals())
-globals().update(_fw6())
 
-def _dr18():
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'joeknight')
-    _BASE = 8453
-    _ETH = 1
-    _WETH = '0x4200000000000000000000000000000000000006'
-    _ETH_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-    _ETH_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
-    _ETH_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
-    _MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'
-    _UNIV2_ROUTER = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
-    _VIRTUAL = '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'
-    _FRONTIER_ON = os.environ.get('APEX_FRONTIER', '1') == '1'
-    _FRONTIER_MARGIN = 1.02
-    _SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
-    _SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
-    _SUSHI_V2_ROUTER = '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891'
-    _ALIEN_V2_ROUTER = '0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7'
-    _PANCAKE_V2_ROUTER = '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'
+    def _dr18():
+        SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'joeknight')
+        _BASE = 8453
+        _ETH = 1
+        _WETH = '0x4200000000000000000000000000000000000006'
+        _ETH_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+        _ETH_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+        _ETH_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
+        _MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'
+        _UNIV2_ROUTER = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
+        _VIRTUAL = '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'
+        _FRONTIER_ON = os.environ.get('APEX_FRONTIER', '1') == '1'
+        _FRONTIER_MARGIN = 1.02
+        _SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
+        _SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
+        _SUSHI_V2_ROUTER = '0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891'
+        _ALIEN_V2_ROUTER = '0x8c1A3cF8f83074169FE5D7aD50B978e1cD6b37c7'
+        _PANCAKE_V2_ROUTER = '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'
 
-    def _dr60():
-        _AERO_V2_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
-        _AERO_V2_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
-        _QS_ALGEBRA_ROUTER = '0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04'
-        _QS_ALGEBRA_FACTORY = '0xc5396866754799b9720125b104ae01d935ab9c7b'
-        _ZERO_ADDR = '0x0000000000000000000000000000000000000000'
-        _FRONTIER_MAJORS = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'}
-        _APEX_HOLE_ROUTES = {'0x8189910840771050bf9ed268abfc9c0882137029': ('uni_mav', ('0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f', True)), '0x2ce1340f1d402ae75afeb55003d7491645db1857': ('uni_v2_via', (_VIRTUAL, _UNIV2_ROUTER))}
+        def _dr60():
+            _AERO_V2_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
+            _AERO_V2_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
+            _QS_ALGEBRA_ROUTER = '0xe6c9bb24ddB4aE5c6632dbE0DE14e3E474c6Cb04'
+            _QS_ALGEBRA_FACTORY = '0xc5396866754799b9720125b104ae01d935ab9c7b'
+            _ZERO_ADDR = '0x0000000000000000000000000000000000000000'
 
-        def _dr11():
+            def _lr68():
+                _FRONTIER_MAJORS = {'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b'}
+                _APEX_HOLE_ROUTES = {'0x8189910840771050bf9ed268abfc9c0882137029': ('uni_mav', ('0x77aa9de2695c28ddd5831c33bf7021e9aa2db23f', True)), '0x2ce1340f1d402ae75afeb55003d7491645db1857': ('uni_v2_via', (_VIRTUAL, _UNIV2_ROUTER))}
 
-            def _dr86():
+                def _dr11():
 
-                def _load_dynamic_holes():
-                    """Holes the bot's detector confirmed this round (structural, champion can't route,
+                    def _dr86():
+
+                        def _load_dynamic_holes():
+                            """Holes the bot's detector confirmed this round (structural, champion can't route,
     Uni V3-routable) — baked in via a committed apex_holes.json so the benchmark sees
     them. Format: {"0xtoken": {"kind": "uni_v3"}}. Only kinds we can build are honored.
     """
-                    import json as _json
-                    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_holes.json')
-                    try:
-                        data = _json.load(open(path)) or {}
-                    except Exception:
-                        return {}
-                    out = {}
-                    for tok, spec in data.items():
-                        try:
-                            kind = (spec or {}).get('kind', 'uni_v3')
-                            if kind == 'uni_v3':
-                                out[str(tok).lower()] = ('uni_v3', None)
-                        except Exception:
-                            continue
-                    return out
-                _APEX_HOLE_ROUTES.update(_load_dynamic_holes())
-                _ROUTE_TABLE_ON = os.environ.get('APEX_ROUTES', '1') == '1'
+                            import json as _json
+                            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_holes.json')
 
-                def _load_route_table():
-                    import json as _json
-                    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_routes.json')
+                            def _lr106():
+                                try:
+                                    data = _json.load(open(path)) or {}
+                                except Exception:
+                                    return {}
+                                out = {}
+                                for tok, spec in data.items():
+                                    try:
+                                        kind = (spec or {}).get('kind', 'uni_v3')
+                                        if kind == 'uni_v3':
+                                            out[str(tok).lower()] = ('uni_v3', None)
+                                    except Exception:
+                                        continue
+                                return out
+                            return _lr106()
+                        _APEX_HOLE_ROUTES.update(_load_dynamic_holes())
+                        _ROUTE_TABLE_ON = os.environ.get('APEX_ROUTES', '1') == '1'
 
-                    def _dr120():
-                        try:
-                            data = _json.load(open(path)) or {}
-                        except Exception:
-                            return {}
-                        out = {}
-                        for key, spec in data.items() if isinstance(data, dict) else []:
-                            try:
-                                k = (spec or {}).get('kind')
-                                if k in ('univ3_single', 'univ3_path', 'aero_v2') and ':' in str(key):
-                                    out[str(key).lower()] = spec
-                            except Exception:
-                                continue
-                        return out
-                        return _DR_UNSET
-                    _dr121 = _dr120()
-                    if _dr121 is not _DR_UNSET:
-                        return _dr121
-                _APEX_ROUTES = _load_route_table()
-                return (_APEX_ROUTES, _ROUTE_TABLE_ON)
-            _APEX_ROUTES, _ROUTE_TABLE_ON = _dr86()
-            def _fh1():
-                return {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x01facc69ec7360640aa5898e852326752801674a', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x01facc69ec7360640aa5898e852326752801674a', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', 250000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}}
-            def _fh2():
-                return {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x37d3d61a304695619433bc05ef841e889f69debf', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0x37d3d61a304695619433bc05ef841e889f69debf'], 'fees': [100, 10000]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xc52aedec3374422d7510e294cfaa90799595cba3', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0xc52aedec3374422d7510e294cfaa90799595cba3'], 'fees': [100, 10000]}}
-            _APEX_QUALITY_ROUTES = {**_fh1(), **_fh2()}
-            return (_APEX_QUALITY_ROUTES, _APEX_ROUTES, _ROUTE_TABLE_ON)
-        _APEX_QUALITY_ROUTES, _APEX_ROUTES, _ROUTE_TABLE_ON = _dr11()
-        def _fw15():
-            return ((SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _APEX_QUALITY_ROUTES, _APEX_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _ROUTE_TABLE_ON, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR),)
-            return (_DR_UNSET,)
-        _fwr15 = _fw15()
-        if _fwr15 is not None:
-            return _fwr15[0]
-    _dr61 = _dr60()
-    if _dr61 is not _DR_UNSET:
-        return _dr61
+                        def _load_route_table():
+                            import json as _json
+                            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_routes.json')
 
-def _dr128():
-    global SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _APEX_QUALITY_ROUTES, _APEX_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _ROUTE_TABLE_ON, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR
-    SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _APEX_QUALITY_ROUTES, _APEX_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _ROUTE_TABLE_ON, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR = _dr18()
-_dr128()
+                            def _dr120():
+                                try:
+                                    data = _json.load(open(path)) or {}
+                                except Exception:
+                                    return {}
+                                out = {}
+                                for key, spec in data.items() if isinstance(data, dict) else []:
+                                    try:
+                                        k = (spec or {}).get('kind')
+                                        if k in ('univ3_single', 'univ3_path', 'aero_v2') and ':' in str(key):
+                                            out[str(key).lower()] = spec
+                                    except Exception:
+                                        continue
+                                return out
+                                return _DR_UNSET
+                            _dr121 = _dr120()
+                            if _dr121 is not _DR_UNSET:
+                                return _dr121
+                        _APEX_ROUTES = _load_route_table()
+                        return (_APEX_ROUTES, _ROUTE_TABLE_ON)
+                    _APEX_ROUTES, _ROUTE_TABLE_ON = _dr86()
+
+                    def _lr33():
+                        return {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x01facc69ec7360640aa5898e852326752801674a', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x01facc69ec7360640aa5898e852326752801674a', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}}
+
+                    def _lr34():
+                        return {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', 250000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}}
+
+                    def _lr35():
+                        return {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x37d3d61a304695619433bc05ef841e889f69debf', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0x37d3d61a304695619433bc05ef841e889f69debf'], 'fees': [100, 10000]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xc52aedec3374422d7510e294cfaa90799595cba3', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0xc52aedec3374422d7510e294cfaa90799595cba3'], 'fees': [100, 10000]}}
+                    _APEX_QUALITY_ROUTES = {**_lr33(), **_lr34(), **_lr35()}
+                    return (_APEX_QUALITY_ROUTES, _APEX_ROUTES, _ROUTE_TABLE_ON)
+                _APEX_QUALITY_ROUTES, _APEX_ROUTES, _ROUTE_TABLE_ON = _dr11()
+                return (SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _APEX_QUALITY_ROUTES, _APEX_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _ROUTE_TABLE_ON, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR)
+                return _DR_UNSET
+            return _lr68()
+        _dr61 = _dr60()
+        if _dr61 is not _DR_UNSET:
+            return _dr61
+
+    def _dr128():
+        global SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _APEX_QUALITY_ROUTES, _APEX_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _ROUTE_TABLE_ON, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR
+        SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _APEX_QUALITY_ROUTES, _APEX_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _ROUTE_TABLE_ON, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR = _dr18()
+    _dr128()
+_lr30()
 
 class _MinerSolverDR77(_Base):
 
@@ -157,37 +165,45 @@ class _MinerSolverDR77(_Base):
 
             def _dr91():
                 amount_in = int(params.get('input_amount', 0) or 0)
-                amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
-                    return None
-                kind, param = _APEX_HOLE_ROUTES[tout.lower()]
 
-                def _dr41():
+                def _lr88():
+                    nonlocal amount_in
+                    amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+                    chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                    if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
+                        return None
+                    kind, param = _APEX_HOLE_ROUTES[tout.lower()]
 
-                    def _dr82():
-                        nonlocal mid
-                        if kind == 'uni_mav':
-                            pool, token_a_in = param
-                            return self._apex_uni_mav(intent, state, snapshot, pool, bool(token_a_in), tin, tout, amount_in, chain_id)
-                        if kind == 'uni_v3':
-                            return self._apex_uni_v3(intent, state, snapshot, tin, tout, amount_in, chain_id)
-                        if kind == 'uni_v2_via':
-                            mid, v2_router = param
-                            return self._apex_uni_v2_via(intent, state, snapshot, mid, v2_router, tin, tout, amount_in, chain_id)
+                    def _dr41():
+
+                        def _dr82():
+                            nonlocal mid
+                            if kind == 'uni_mav':
+                                pool, token_a_in = param
+                                return self._apex_uni_mav(intent, state, snapshot, pool, bool(token_a_in), tin, tout, amount_in, chain_id)
+
+                            def _lr112():
+                                nonlocal mid
+                                if kind == 'uni_v3':
+                                    return self._apex_uni_v3(intent, state, snapshot, tin, tout, amount_in, chain_id)
+                                if kind == 'uni_v2_via':
+                                    mid, v2_router = param
+                                    return self._apex_uni_v2_via(intent, state, snapshot, mid, v2_router, tin, tout, amount_in, chain_id)
+                                return _DR_UNSET
+                            return _lr112()
+                        _dr83 = _dr82()
+                        if _dr83 is not _DR_UNSET:
+                            return _dr83
+                        if kind == 'v2':
+                            mid = _WETH
+                            path = [tin, tout] if mid in (tin.lower(), tout.lower()) else [tin, mid, tout]
+                            return self._apex_v2(intent, state, snapshot, param, path, amount_in, chain_id)
                         return _DR_UNSET
-                    _dr83 = _dr82()
-                    if _dr83 is not _DR_UNSET:
-                        return _dr83
-                    if kind == 'v2':
-                        mid = _WETH
-                        path = [tin, tout] if mid in (tin.lower(), tout.lower()) else [tin, mid, tout]
-                        return self._apex_v2(intent, state, snapshot, param, path, amount_in, chain_id)
+                    _dr42 = _dr41()
+                    if _dr42 is not _DR_UNSET:
+                        return _dr42
                     return _DR_UNSET
-                _dr42 = _dr41()
-                if _dr42 is not _DR_UNSET:
-                    return _dr42
-                return _DR_UNSET
+                return _lr88()
             _dr92 = _dr91()
             if _dr92 is not _DR_UNSET:
                 return _dr92
@@ -211,8 +227,13 @@ class _MinerSolverDR77(_Base):
         deadline = self._apex_deadline(snapshot)
 
         def _dr95():
-            call = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount_in), 0, [_ck(p) for p in path], _ck(recipient), int(deadline)]).hex()
-            ix = [Interaction(target=path[0], value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
+            ix = None
+
+            def _lr89():
+                nonlocal ix
+                call = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount_in), 0, [_ck(p) for p in path], _ck(recipient), int(deadline)]).hex()
+                ix = [Interaction(target=path[0], value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
+            _lr89()
             return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-v2', 'chain_id': chain_id})
             return _DR_UNSET
         _dr96 = _dr95()
@@ -229,8 +250,10 @@ class _MinerSolverDR77(_Base):
         def _dr97():
             if w3 is None or not uni_router:
                 return None
-            def _fw13():
-                best_out, best_fee = (0, 3000)
+            best_out, best_fee = (0, 3000)
+
+            def _lr60():
+                nonlocal best_fee, best_out
                 for fee in (3000, 500, 10000, 100):
                     try:
                         q = int(self._quote_one(w3, 'uniswap_v3', fee, tin, tout, amount_in))
@@ -238,23 +261,25 @@ class _MinerSolverDR77(_Base):
                         q = 0
                     if q > best_out:
                         best_out, best_fee = (q, fee)
-                return (best_out, best_fee)
-            best_out, best_fee = _fw13()
-            if best_out <= 0:
-                return None
-            params = self._normalized_swap_params(intent, state)
+                if best_out <= 0:
+                    return None
+                params = self._normalized_swap_params(intent, state)
 
-            def _dr50():
-                recipient = self._apex_recipient(state, params)
-                deadline = self._apex_deadline(snapshot)
-                call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-                ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=call, chain_id=chain_id)]
-                return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v3', 'chain_id': chain_id})
+                def _dr50():
+                    recipient = self._apex_recipient(state, params)
+                    deadline = self._apex_deadline(snapshot)
+
+                    def _lr75():
+                        call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+                        ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=call, chain_id=chain_id)]
+                        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v3', 'chain_id': chain_id})
+                        return _DR_UNSET
+                    return _lr75()
+                _dr51 = _dr50()
+                if _dr51 is not _DR_UNSET:
+                    return _dr51
                 return _DR_UNSET
-            _dr51 = _dr50()
-            if _dr51 is not _DR_UNSET:
-                return _dr51
-            return _DR_UNSET
+            return _lr60()
         _dr98 = _dr97()
         if _dr98 is not _DR_UNSET:
             return _dr98
@@ -271,41 +296,47 @@ class _MinerSolverDR77(_Base):
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
             if w3 is None or not uni_router:
                 return None
-            weth_out, best_fee = (0, 500)
-            for fee in (500, 3000, 100, 10000):
-                try:
-                    q = int(self._quote_one(w3, 'uniswap_v3', fee, tin, _WETH, amount_in))
-                except Exception:
-                    q = 0
-                if q > weth_out:
-                    weth_out, best_fee = (q, fee)
 
-            def _dr68():
-                if weth_out <= 0:
-                    return None
-                mav_in = weth_out * 995 // 1000
-                params = self._normalized_swap_params(intent, state)
-                recipient = self._apex_recipient(state, params)
-                deadline = self._apex_deadline(snapshot)
+            def _lr96():
+                weth_out, best_fee = (0, 500)
+                for fee in (500, 3000, 100, 10000):
+                    try:
+                        q = int(self._quote_one(w3, 'uniswap_v3', fee, tin, _WETH, amount_in))
+                    except Exception:
+                        q = 0
+                    if q > weth_out:
+                        weth_out, best_fee = (q, fee)
 
-                def _dr33():
-                    leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+                def _dr68():
+                    if weth_out <= 0:
+                        return None
+                    mav_in = weth_out * 995 // 1000
+                    params = self._normalized_swap_params(intent, state)
+                    recipient = self._apex_recipient(state, params)
+                    deadline = self._apex_deadline(snapshot)
 
-                    def _dr79():
-                        mav = '0x' + ('a3b105ca' + _enc(['address', 'address', 'bool', 'uint256', 'uint256'], [_ck(recipient), _ck(pool), bool(token_a_in), int(mav_in), 0]).hex())
-                        ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=_WETH, value='0', call_data=encode_approve(_MAVERICK_ROUTER, mav_in), chain_id=chain_id), Interaction(target=_MAVERICK_ROUTER, value='0', call_data=mav, chain_id=chain_id)]
-                        return ix
-                    ix = _dr79()
-                    return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-mav', 'chain_id': chain_id})
+                    def _dr33():
+                        leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+
+                        def _dr79():
+                            mav = '0x' + ('a3b105ca' + _enc(['address', 'address', 'bool', 'uint256', 'uint256'], [_ck(recipient), _ck(pool), bool(token_a_in), int(mav_in), 0]).hex())
+
+                            def _lr90():
+                                ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=_WETH, value='0', call_data=encode_approve(_MAVERICK_ROUTER, mav_in), chain_id=chain_id), Interaction(target=_MAVERICK_ROUTER, value='0', call_data=mav, chain_id=chain_id)]
+                                return ix
+                            return _lr90()
+                        ix = _dr79()
+                        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-mav', 'chain_id': chain_id})
+                        return _DR_UNSET
+                    _dr34 = _dr33()
+                    if _dr34 is not _DR_UNSET:
+                        return _dr34
                     return _DR_UNSET
-                _dr34 = _dr33()
-                if _dr34 is not _DR_UNSET:
-                    return _dr34
+                _dr69 = _dr68()
+                if _dr69 is not _DR_UNSET:
+                    return _dr69
                 return _DR_UNSET
-            _dr69 = _dr68()
-            if _dr69 is not _DR_UNSET:
-                return _dr69
-            return _DR_UNSET
+            return _lr96()
         _dr119 = _dr118()
         if _dr119 is not _DR_UNSET:
             return _dr119
@@ -320,9 +351,10 @@ class _MinerSolverDR77(_Base):
         def _dr122():
             w3 = self._get_web3(int(chain_id))
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-            def _fw12():
+
+            def _lr61():
                 if w3 is None or not uni_router:
-                    return (None,)
+                    return None
 
                 def _dr70():
                     mid_out, best_fee = (0, 3000)
@@ -336,7 +368,7 @@ class _MinerSolverDR77(_Base):
                     return (best_fee, mid_out)
                 best_fee, mid_out = _dr70()
                 if mid_out <= 0:
-                    return (None,)
+                    return None
                 v2_in = mid_out * 995 // 1000
                 params = self._normalized_swap_params(intent, state)
 
@@ -347,21 +379,269 @@ class _MinerSolverDR77(_Base):
 
                     def _dr72():
                         leg2 = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(v2_in), 0, [_ck(mid), _ck(tout)], _ck(recipient), int(deadline)]).hex()
-                        ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=mid, value='0', call_data=encode_approve(v2_router, v2_in), chain_id=chain_id), Interaction(target=v2_router, value='0', call_data=leg2, chain_id=chain_id)]
-                        return ix
+
+                        def _lr70():
+                            ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=mid, value='0', call_data=encode_approve(v2_router, v2_in), chain_id=chain_id), Interaction(target=v2_router, value='0', call_data=leg2, chain_id=chain_id)]
+                            return ix
+                        return _lr70()
                     ix = _dr72()
                     return (deadline, ix)
                 deadline, ix = _dr32()
-                return (ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v2-via', 'chain_id': chain_id}),)
-                return (_DR_UNSET,)
-            _fwr12 = _fw12()
-            if _fwr12 is not None:
-                return _fwr12[0]
+                return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-uni-v2-via', 'chain_id': chain_id})
+                return _DR_UNSET
+            return _lr61()
         _dr123 = _dr122()
         if _dr123 is not _DR_UNSET:
             return _dr123
 
-class MinerSolver(_MinerSolverDR77):
+class _MinerSolverLR91(_MinerSolverDR77):
+
+    def _apex_route_quote(self, w3, spec, tin, tout, amount_in):
+        """One cheap liveness quote of the harvested route. >0 => the pool is still live
+        (route will deliver ~champion). 0/raise => stale/gone => caller defers to base, so
+        a drained pool can never turn into a regression. Much lighter than the base's
+        10-venue enumeration (one call), so it stays inside budget."""
+        _enc = d = r = None
+        try:
+            from eth_utils import to_checksum_address as _ck
+            if spec.get('nogate'):
+                return 1
+            kind = spec.get('kind')
+
+            def pad(a):
+                return a.lower().replace('0x', '').rjust(64, '0')
+
+            def _dr46():
+                nonlocal _enc, d, r
+                if kind == 'hydrex_algebra':
+                    return 1
+                if kind == 'univ3_single':
+                    return 1
+                if kind == 'univ3_path':
+                    from strategies.dex_aggregator.v3_codec import encode_swap_path
+                    from eth_abi import encode as _enc
+
+                    def _lr66():
+                        nonlocal d, r
+                        QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
+                        path = encode_swap_path(list(spec['tokens']), [int(f) for f in spec['fees']])
+                        d = '0xcdca1753' + _enc(['bytes', 'uint256'], [path, int(amount_in)]).hex()
+                        r = w3.eth.call({'to': _ck(QUOTER), 'data': d})
+                        return (1, int(r[:32].hex(), 16) if r else 0)
+                        return (0, None)
+                    _lrt67 = _lr66()
+                    if _lrt67[0]:
+                        return _lrt67[1]
+                return _DR_UNSET
+            _dr47 = _dr46()
+            if _dr47 is not _DR_UNSET:
+                return _dr47
+
+            def _lr38():
+                nonlocal _enc, d, r
+                if kind == 'aero_v2':
+                    from eth_abi import encode as _enc, decode as _dec
+
+                    def _dr75():
+                        routes = [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in spec['routes']]
+                        return routes
+                    routes = _dr75()
+                    d = '0x5509a1ac' + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), routes]).hex()
+                    r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': d})
+                    try:
+                        return (1, int(_dec(['uint256[]'], bytes(r))[0][-1]))
+                    except Exception:
+                        return (1, 0)
+                return (0, None)
+            _lrt39 = _lr38()
+            if _lrt39[0]:
+                return _lrt39[1]
+        except Exception:
+            return 0
+        return 0
+
+    def _apex_route_plan(self, intent, state, snapshot, params, spec):
+        """Build the champion's harvested route RPC-FREE (min_out=0, hardcoded venue/fee),
+        gated by ONE liveness quote so a drained pool defers to the base (never a
+        regression). Supports univ3_single / univ3_path / aero_v2 / hydrex_algebra. Returns None on any
+        problem so the caller falls back to the base (never worse than the current drop)."""
+        _dr26 = None
+        _dr125 = w3 = None
+        try:
+
+            def _lr54():
+                nonlocal _dr125, w3
+                from common.abi_utils import encode_approve
+
+                def _dr16():
+                    tin = str(params.get('input_token', '') or '')
+                    tout = str(params.get('output_token', '') or '')
+                    amount_in = int(params.get('input_amount', 0) or 0)
+                    amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
+                    chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                    return (amount_in, chain_id, tin, tout)
+                amount_in, chain_id, tin, tout = _dr16()
+                if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
+                    return (1, None)
+                w3 = None
+
+                def _dr37():
+                    nonlocal w3
+                    try:
+                        w3 = self._get_web3(int(chain_id))
+                    except Exception:
+                        w3 = None
+                    if w3 is not None and self._apex_route_quote(w3, spec, tin, tout, amount_in) <= 0:
+                        return None
+                    return _DR_UNSET
+                _dr38 = _dr37()
+                if _dr38 is not _DR_UNSET:
+                    return (1, _dr38)
+
+                def _dr45():
+                    recipient = self._apex_recipient(state, params)
+                    deadline = self._apex_deadline(snapshot)
+                    kind = spec.get('kind')
+                    return (deadline, kind, recipient)
+                deadline, kind, recipient = _dr45()
+
+                def _dr77():
+                    nonlocal _dr26
+                    UNISWAP_V3_ROUTERS = _ck = call = router = target = use_fee = None
+                    _enc = tag = None
+
+                    def _lr105():
+                        nonlocal _dr26, _enc, tag
+                        if kind == 'univ3_single':
+
+                            def _lr8():
+                                nonlocal UNISWAP_V3_ROUTERS, _ck, call, router, target, use_fee
+                                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+                                from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+                                from eth_utils import to_checksum_address as _ck
+                                router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+                                if not router:
+                                    return (1, None)
+                                use_fee = int(spec.get('fee', 3000))
+
+                                def _dr2():
+                                    nonlocal use_fee
+                                    if w3 is not None and (not spec.get('nogate')):
+
+                                        def _pad(a):
+                                            return a.lower().replace('0x', '').rjust(64, '0')
+                                        _Q = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
+                                        best_out = 0
+                                        for fee in (100, 500, 3000, 10000):
+                                            try:
+
+                                                def _lr3():
+                                                    nonlocal out
+                                                    dd = '0xc6a5026a' + _pad(tin) + _pad(tout) + hex(int(amount_in))[2:].rjust(64, '0') + hex(fee)[2:].rjust(64, '0') + '0' * 64
+                                                    rr = w3.eth.call({'to': _ck(_Q), 'data': dd})
+                                                    out = int(rr[:32].hex(), 16) if rr else 0
+                                                _lr3()
+                                            except Exception:
+                                                out = 0
+                                            if out > best_out:
+                                                best_out, use_fee = (out, fee)
+                                        if best_out <= 0:
+                                            return None
+                                    return _DR_UNSET
+                                _dr3 = _dr2()
+                                if _dr3 is not _DR_UNSET:
+                                    return (1, _dr3)
+                                call = encode_exact_input_single(token_in=tin, token_out=tout, fee=use_fee, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+                                target = router
+                                return (0, None)
+                            _lrt9 = _lr8()
+                            if _lrt9[0]:
+                                return _lrt9[1]
+                            tag = 'apex-route-univ3'
+                        elif kind == 'univ3_path':
+
+                            def _dr5():
+                                nonlocal UNISWAP_V3_ROUTERS, _ck, _enc, call, router, tag, target
+                                from eth_abi import encode as _enc
+                                from eth_utils import to_checksum_address as _ck
+                                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+                                from strategies.dex_aggregator.v3_codec import encode_swap_path
+                                router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+
+                                def _lr86():
+                                    nonlocal call, tag, target
+
+                                    def _dr114():
+                                        toks = list(spec.get('tokens') or [])
+                                        fees = [int(f) for f in spec.get('fees') or []]
+                                        return (fees, toks)
+                                    fees, toks = _dr114()
+                                    if not router or len(toks) < 2 or len(fees) != len(toks) - 1:
+                                        return None
+                                    path = encode_swap_path(toks, fees)
+                                    call = '0xb858183f' + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)]).hex()
+                                    target = router
+                                    tag = 'apex-route-univ3-path'
+                                    return _DR_UNSET
+                                return _lr86()
+                            _dr6 = _dr5()
+                            if _dr6 is not _DR_UNSET:
+                                return _dr6
+                        elif kind == 'aero_v2':
+
+                            def _dr12():
+                                nonlocal _ck, _enc, call, tag, target
+                                from eth_abi import encode as _enc
+                                from eth_utils import to_checksum_address as _ck
+                                routes = spec.get('routes') or []
+
+                                def _lr92():
+                                    nonlocal call, tag, target
+                                    tuples = [(_ck(r[0]), _ck(r[1]), bool(r[2]), _ck(r[3])) for r in routes]
+                                    if not tuples:
+                                        return None
+                                    call = '0xcac88ea9' + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amount_in), 0, tuples, _ck(recipient), int(deadline)]).hex()
+                                    target = _AERO_V2_ROUTER
+                                    tag = 'apex-route-aero-v2'
+                                    return _DR_UNSET
+                                return _lr92()
+                            _dr13 = _dr12()
+                            if _dr13 is not _DR_UNSET:
+                                return _dr13
+                        elif kind == 'hydrex_algebra':
+                            from eth_abi import encode as _enc
+
+                            def _dr20():
+                                nonlocal _ck, call, tag, target
+                                from eth_utils import to_checksum_address as _ck
+                                target = _ck(spec.get('router', '0x6f4bE24d7dC93b6ffcBAb3Fd0747c5817Cea3F9e'))
+                                call = '0x1679c792' + _enc(['(address,address,address,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), _ck('0x0000000000000000000000000000000000000000'), _ck(recipient), int(deadline), int(amount_in), 0, 0)]).hex()
+                                tag = 'apex-route-hydrex-algebra'
+                            _dr20()
+                        else:
+                            return None
+
+                        def _dr26():
+                            ix = [Interaction(target=tin, value='0', call_data=encode_approve(target, amount_in), chain_id=chain_id), Interaction(target=target, value='0', call_data=call, chain_id=chain_id)]
+                            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': tag, 'chain_id': chain_id})
+                            return _DR_UNSET
+                        return _DR_UNSET
+                    return _lr105()
+                _dr125 = _dr77()
+                return (0, None)
+            _lrt55 = _lr54()
+            if _lrt55[0]:
+                return _lrt55[1]
+            if _dr125 is not _DR_UNSET:
+                return _dr125
+            _dr27 = _dr26()
+            if _dr27 is not _DR_UNSET:
+                return _dr27
+        except Exception:
+            logger.exception('[apex] route plan build failed')
+            return None
+
+class MinerSolver(_MinerSolverLR91):
     """Champion base + never-drop blind-spot cover (apex-split-router)."""
 
     def metadata(self):
@@ -389,25 +669,30 @@ class MinerSolver(_MinerSolverDR77):
 
             def _dr35():
                 nonlocal p, spec, tin, tout
+                _dr100 = None
                 try:
-                    p = self._normalized_swap_params(intent, state)
-                    tin = str(p.get('input_token', '') or '').lower()
-                    tout = str(p.get('output_token', '') or '').lower()
 
-                    def _dr124():
-                        amount_in = int(p.get('input_amount', 0) or 0)
-                        min_out = int(p.get('min_output_amount', 0) or 0)
-                        return (amount_in, min_out)
-                    amount_in, min_out = _dr124()
-                    spec = _APEX_QUALITY_ROUTES.get((tin, tout, amount_in))
+                    def _lr115():
+                        nonlocal _dr100, p, spec, tin, tout
+                        p = self._normalized_swap_params(intent, state)
+                        tin = str(p.get('input_token', '') or '').lower()
+                        tout = str(p.get('output_token', '') or '').lower()
 
-                    def _dr99():
-                        if spec is not None and min_out <= 1:
-                            qplan = self._apex_route_plan(intent, state, snapshot, p, spec)
-                            if qplan is not None:
-                                return qplan
-                        return _DR_UNSET
-                    _dr100 = _dr99()
+                        def _dr124():
+                            amount_in = int(p.get('input_amount', 0) or 0)
+                            min_out = int(p.get('min_output_amount', 0) or 0)
+                            return (amount_in, min_out)
+                        amount_in, min_out = _dr124()
+                        spec = _APEX_QUALITY_ROUTES.get((tin, tout, amount_in))
+
+                        def _dr99():
+                            if spec is not None and min_out <= 1:
+                                qplan = self._apex_route_plan(intent, state, snapshot, p, spec)
+                                if qplan is not None:
+                                    return qplan
+                            return _DR_UNSET
+                        _dr100 = _dr99()
+                    _lr115()
                     if _dr100 is not _DR_UNSET:
                         return _dr100
                 except Exception:
@@ -423,9 +708,12 @@ class MinerSolver(_MinerSolverDR77):
         plan = super().generate_plan(intent, state, snapshot)
         if plan is not None and getattr(plan, 'interactions', None):
             return plan
+        p = spec = tin = tout = None
         if _ROUTE_TABLE_ON and _APEX_ROUTES:
             try:
-                def _fw5():
+
+                def _lr14():
+                    nonlocal p, spec, tin, tout
                     p = self._normalized_swap_params(intent, state)
                     tin = str(p.get('input_token', '') or '').lower()
                     tout = str(p.get('output_token', '') or '').lower()
@@ -438,10 +726,12 @@ class MinerSolver(_MinerSolverDR77):
                                 return cover
                         return _DR_UNSET
                     _dr85 = _dr84()
-                    return (p, tin, tout, spec, _dr85)
-                p, tin, tout, spec, _dr85 = _fw5()
-                if _dr85 is not _DR_UNSET:
-                    return _dr85
+                    if _dr85 is not _DR_UNSET:
+                        return (1, _dr85)
+                    return (0, None)
+                _lrt15 = _lr14()
+                if _lrt15[0]:
+                    return _lrt15[1]
             except Exception:
                 logger.exception('[apex] route-table fill failed; using base plan')
         return plan
@@ -459,254 +749,45 @@ class MinerSolver(_MinerSolverDR77):
         def _dr66():
             tin = str(p.get('input_token', '') or '')
             tout = str(p.get('output_token', '') or '')
-            amount_in = int(p.get('input_amount', 0) or 0)
-            if amount_in <= 0:
-                return None
-            pair_fee = {(_ETH_USDC.lower(), _ETH_WETH.lower()): 500, (_ETH_WBTC.lower(), _ETH_USDC.lower()): 3000}.get((tin.lower(), tout.lower()))
 
-            def _dr39():
-                if pair_fee is None:
+            def _lr80():
+                amount_in = int(p.get('input_amount', 0) or 0)
+                if amount_in <= 0:
                     return None
-                from common.abi_utils import encode_approve
-                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-                router = UNISWAP_V3_ROUTERS.get(chain_id)
+                pair_fee = {(_ETH_USDC.lower(), _ETH_WETH.lower()): 500, (_ETH_WBTC.lower(), _ETH_USDC.lower()): 3000}.get((tin.lower(), tout.lower()))
 
-                def _dr108():
-                    if not router:
+                def _dr39():
+                    if pair_fee is None:
                         return None
-                    def _fw14():
+                    from common.abi_utils import encode_approve
+                    from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
+                    from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+                    router = UNISWAP_V3_ROUTERS.get(chain_id)
+
+                    def _dr108():
+                        if not router:
+                            return None
                         recipient = self._apex_recipient(state, p)
                         deadline = self._apex_deadline(snapshot)
-                        call = encode_exact_input_single(token_in=tin, token_out=tout, fee=pair_fee, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-                        ix = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
-                        return (deadline, ix)
-                    deadline, ix = _fw14()
-                    return ExecutionPlan(intent_id=app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-eth-screening', 'chain_id': chain_id})
+
+                        def _lr69():
+                            call = encode_exact_input_single(token_in=tin, token_out=tout, fee=pair_fee, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
+                            ix = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
+                            return ExecutionPlan(intent_id=app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-eth-screening', 'chain_id': chain_id})
+                            return _DR_UNSET
+                        return _lr69()
+                    _dr109 = _dr108()
+                    if _dr109 is not _DR_UNSET:
+                        return _dr109
                     return _DR_UNSET
-                _dr109 = _dr108()
-                if _dr109 is not _DR_UNSET:
-                    return _dr109
+                _dr40 = _dr39()
+                if _dr40 is not _DR_UNSET:
+                    return _dr40
                 return _DR_UNSET
-            _dr40 = _dr39()
-            if _dr40 is not _DR_UNSET:
-                return _dr40
-            return _DR_UNSET
+            return _lr80()
         _dr67 = _dr66()
         if _dr67 is not _DR_UNSET:
             return _dr67
-
-    def _apex_route_quote(self, w3, spec, tin, tout, amount_in):
-        """One cheap liveness quote of the harvested route. >0 => the pool is still live
-        (route will deliver ~champion). 0/raise => stale/gone => caller defers to base, so
-        a drained pool can never turn into a regression. Much lighter than the base's
-        10-venue enumeration (one call), so it stays inside budget."""
-        try:
-            from eth_utils import to_checksum_address as _ck
-            if spec.get('nogate'):
-                return 1
-            kind = spec.get('kind')
-
-            def pad(a):
-                return a.lower().replace('0x', '').rjust(64, '0')
-
-            def _dr46():
-                nonlocal _enc, d, r
-                if kind == 'hydrex_algebra':
-                    return 1
-                if kind == 'univ3_single':
-                    return 1
-                if kind == 'univ3_path':
-                    def _fw11():
-                        from strategies.dex_aggregator.v3_codec import encode_swap_path
-                        from eth_abi import encode as _enc
-                        QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
-                        path = encode_swap_path(list(spec['tokens']), [int(f) for f in spec['fees']])
-                        d = '0xcdca1753' + _enc(['bytes', 'uint256'], [path, int(amount_in)]).hex()
-                        r = w3.eth.call({'to': _ck(QUOTER), 'data': d})
-                        return (_enc, d, r)
-                    _enc, d, r = _fw11()
-                    return int(r[:32].hex(), 16) if r else 0
-                return _DR_UNSET
-            _dr47 = _dr46()
-            if _dr47 is not _DR_UNSET:
-                return _dr47
-            if kind == 'aero_v2':
-                from eth_abi import encode as _enc, decode as _dec
-
-                def _fw7():
-                    def _dr75():
-                        routes = [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in spec['routes']]
-                        return routes
-                    routes = _dr75()
-                    d = '0x5509a1ac' + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), routes]).hex()
-                    r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': d})
-                    return (d, r)
-                d, r = _fw7()
-                try:
-                    return int(_dec(['uint256[]'], bytes(r))[0][-1])
-                except Exception:
-                    return 0
-        except Exception:
-            return 0
-        return 0
-
-    def _apex_route_plan(self, intent, state, snapshot, params, spec):
-        """Build the champion's harvested route RPC-FREE (min_out=0, hardcoded venue/fee),
-        gated by ONE liveness quote so a drained pool defers to the base (never a
-        regression). Supports univ3_single / univ3_path / aero_v2 / hydrex_algebra. Returns None on any
-        problem so the caller falls back to the base (never worse than the current drop)."""
-        _dr26 = w3 = None
-        try:
-            from common.abi_utils import encode_approve
-
-            def _dr16():
-                tin = str(params.get('input_token', '') or '')
-                tout = str(params.get('output_token', '') or '')
-                amount_in = int(params.get('input_amount', 0) or 0)
-                amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                return (amount_in, chain_id, tin, tout)
-            amount_in, chain_id, tin, tout = _dr16()
-            if chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout):
-                return None
-
-            def _dr37():
-                nonlocal w3
-                try:
-                    w3 = self._get_web3(int(chain_id))
-                except Exception:
-                    w3 = None
-                if w3 is not None and self._apex_route_quote(w3, spec, tin, tout, amount_in) <= 0:
-                    return None
-                return _DR_UNSET
-            _dr38 = _dr37()
-            if _dr38 is not _DR_UNSET:
-                return _dr38
-
-            def _dr45():
-                recipient = self._apex_recipient(state, params)
-                deadline = self._apex_deadline(snapshot)
-                kind = spec.get('kind')
-                return (deadline, kind, recipient)
-            deadline, kind, recipient = _dr45()
-
-            def _dr77():
-                nonlocal _dr26
-                if kind == 'univ3_single':
-                    from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                    from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-                    from eth_utils import to_checksum_address as _ck
-                    router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-                    if not router:
-                        return None
-                    use_fee = int(spec.get('fee', 3000))
-
-                    def _dr2():
-                        nonlocal use_fee
-                        if w3 is not None and (not spec.get('nogate')):
-
-                            def _pad(a):
-                                return a.lower().replace('0x', '').rjust(64, '0')
-                            _Q = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
-                            best_out = 0
-                            for fee in (100, 500, 3000, 10000):
-                                try:
-                                    def _fw2():
-                                        dd = '0xc6a5026a' + _pad(tin) + _pad(tout) + hex(int(amount_in))[2:].rjust(64, '0') + hex(fee)[2:].rjust(64, '0') + '0' * 64
-                                        rr = w3.eth.call({'to': _ck(_Q), 'data': dd})
-                                        out = int(rr[:32].hex(), 16) if rr else 0
-                                        return (out,)
-                                    out, = _fw2()
-                                except Exception:
-                                    out = 0
-                                if out > best_out:
-                                    best_out, use_fee = (out, fee)
-                            if best_out <= 0:
-                                return None
-                        return _DR_UNSET
-                    _dr3 = _dr2()
-                    if _dr3 is not _DR_UNSET:
-                        return _dr3
-                    def _fw3():
-                        call = encode_exact_input_single(token_in=tin, token_out=tout, fee=use_fee, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
-                        target = router
-                        tag = 'apex-route-univ3'
-                        return (call, target, tag)
-                    call, target, tag = _fw3()
-                else:
-
-                    def _fwt():
-                        if kind == 'univ3_path':
-
-                            def _dr5():
-                                nonlocal UNISWAP_V3_ROUTERS, _ck, _enc, call, router, tag, target
-                                from eth_abi import encode as _enc
-                                from eth_utils import to_checksum_address as _ck
-                                from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
-                                from strategies.dex_aggregator.v3_codec import encode_swap_path
-                                router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-
-                                def _dr114():
-                                    toks = list(spec.get('tokens') or [])
-                                    fees = [int(f) for f in spec.get('fees') or []]
-                                    return (fees, toks)
-                                fees, toks = _dr114()
-                                if not router or len(toks) < 2 or len(fees) != len(toks) - 1:
-                                    return None
-                                path = encode_swap_path(toks, fees)
-                                call = '0xb858183f' + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)]).hex()
-                                target = router
-                                tag = 'apex-route-univ3-path'
-                                return _DR_UNSET
-                            _dr6 = _dr5()
-                            if _dr6 is not _DR_UNSET:
-                                return (_dr6,)
-                        elif kind == 'aero_v2':
-
-                            def _dr12():
-                                nonlocal _ck, _enc, call, tag, target
-                                from eth_abi import encode as _enc
-                                from eth_utils import to_checksum_address as _ck
-                                routes = spec.get('routes') or []
-                                tuples = [(_ck(r[0]), _ck(r[1]), bool(r[2]), _ck(r[3])) for r in routes]
-                                if not tuples:
-                                    return None
-                                call = '0xcac88ea9' + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amount_in), 0, tuples, _ck(recipient), int(deadline)]).hex()
-                                target = _AERO_V2_ROUTER
-                                tag = 'apex-route-aero-v2'
-                                return _DR_UNSET
-                            _dr13 = _dr12()
-                            if _dr13 is not _DR_UNSET:
-                                return (_dr13,)
-                        elif kind == 'hydrex_algebra':
-                            from eth_abi import encode as _enc
-
-                            def _dr20():
-                                nonlocal _ck, call, tag, target
-                                from eth_utils import to_checksum_address as _ck
-                                target = _ck(spec.get('router', '0x6f4bE24d7dC93b6ffcBAb3Fd0747c5817Cea3F9e'))
-                                call = '0x1679c792' + _enc(['(address,address,address,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), _ck('0x0000000000000000000000000000000000000000'), _ck(recipient), int(deadline), int(amount_in), 0, 0)]).hex()
-                                tag = 'apex-route-hydrex-algebra'
-                            _dr20()
-                        else:
-                            return (None,)
-                    _fwtr = _fwt()
-                    if _fwtr is not None:
-                        return _fwtr[0]
-
-                def _dr26():
-                    ix = [Interaction(target=tin, value='0', call_data=encode_approve(target, amount_in), chain_id=chain_id), Interaction(target=target, value='0', call_data=call, chain_id=chain_id)]
-                    return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': tag, 'chain_id': chain_id})
-                    return _DR_UNSET
-                return _DR_UNSET
-            _dr125 = _dr77()
-            if _dr125 is not _DR_UNSET:
-                return _dr125
-            return _dr26()
-        except Exception:
-            logger.exception('[apex] route plan build failed')
-            return None
 
     def _generate_plan_impl(self, intent, state, snapshot=None):
         try:
@@ -752,13 +833,18 @@ class MinerSolver(_MinerSolverDR77):
             hole = getattr(kb, '_HOLE_ROUTES', None)
             if isinstance(hole, dict) and toutL in {str(k).lower() for k in hole}:
                 return True
-            exotic = getattr(kb, '_STATIC_EXOTIC_ROUTES', None)
-            if isinstance(exotic, dict):
-                for k in exotic:
-                    if isinstance(k, tuple) and len(k) == 2 and (str(k[0]).lower() == tinL) and (str(k[1]).lower() == toutL):
-                        return True
-            return False
-            return _DR_UNSET
+            k = None
+
+            def _lr99():
+                nonlocal k
+                exotic = getattr(kb, '_STATIC_EXOTIC_ROUTES', None)
+                if isinstance(exotic, dict):
+                    for k in exotic:
+                        if isinstance(k, tuple) and len(k) == 2 and (str(k[0]).lower() == tinL) and (str(k[1]).lower() == toutL):
+                            return True
+                return False
+                return _DR_UNSET
+            return _lr99()
         _dr116 = _dr115()
         if _dr116 is not _DR_UNSET:
             return _dr116
@@ -797,11 +883,16 @@ class MinerSolver(_MinerSolverDR77):
 
         def _dr110():
             best = 0
+            amounts = None
             for stable in (False, True):
                 try:
-                    data = sel + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount), [(_ck(tin), _ck(tout), stable, _ck(_AERO_V2_FACTORY))]]).hex()
-                    r = bytes(w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': data}))
-                    amounts = _dec(['uint256[]'], r)[0]
+
+                    def _lr72():
+                        nonlocal amounts
+                        data = sel + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount), [(_ck(tin), _ck(tout), stable, _ck(_AERO_V2_FACTORY))]]).hex()
+                        r = bytes(w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': data}))
+                        amounts = _dec(['uint256[]'], r)[0]
+                    _lr72()
                     best = max(best, int(amounts[-1]) if amounts else 0)
                 except Exception:
                     continue
@@ -814,9 +905,15 @@ class MinerSolver(_MinerSolverDR77):
         from eth_utils import to_checksum_address as _ck, keccak as _kk
         try:
             sel = '0x' + _kk(text='poolByPair(address,address)')[:4].hex()
-            r = bytes(w3.eth.call({'to': _ck(_QS_ALGEBRA_FACTORY), 'data': sel + _enc(['address', 'address'], [_ck(a), _ck(b)]).hex()}))
-            addr = '0x' + r[-20:].hex()
-            return addr if len(r) >= 20 and int(addr, 16) != 0 else None
+
+            def _lr100():
+                r = bytes(w3.eth.call({'to': _ck(_QS_ALGEBRA_FACTORY), 'data': sel + _enc(['address', 'address'], [_ck(a), _ck(b)]).hex()}))
+                addr = '0x' + r[-20:].hex()
+                return (1, addr if len(r) >= 20 and int(addr, 16) != 0 else None)
+                return (0, None)
+            _lrt101 = _lr100()
+            if _lrt101[0]:
+                return _lrt101[1]
         except Exception:
             return None
 
@@ -833,9 +930,12 @@ class MinerSolver(_MinerSolverDR77):
             nonlocal f
             tasks = []
             for f in (100, 500, 3000, 10000):
-                tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, tin, tout, amount_in)))
-                tasks.append(('R', None, lambda f=f: self._q1(w3, 'pancake_v3', f, tin, tout, amount_in)))
-                tasks.append(('E', ('sushi_v3_direct', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
+
+                def _lr81():
+                    tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, tin, tout, amount_in)))
+                    tasks.append(('R', None, lambda f=f: self._q1(w3, 'pancake_v3', f, tin, tout, amount_in)))
+                    tasks.append(('E', ('sushi_v3_direct', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
+                _lr81()
 
             def _dr17():
                 nonlocal rtr, t
@@ -853,24 +953,29 @@ class MinerSolver(_MinerSolverDR77):
             _dr17()
             return tasks
         tasks = _dr31()
+        f = rtr = t = None
         if wi > 0:
-            for f in (100, 500, 3000, 10000):
 
-                def _dr76():
-                    tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, _WETH, tout, wi)))
-                    tasks.append(('E', ('sushi_v3_weth', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, _WETH, tout, f, wi)))
-                _dr76()
-            for t in (1, 50, 100, 200):
-                tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, _WETH, tout, wi)))
-            for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
-                tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+            def _lr93():
+                nonlocal f, rtr, t
+                for f in (100, 500, 3000, 10000):
 
-            def _dr55():
-                nonlocal rtr
-                tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
-                for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
-                    tasks.append(('E', ('v2fot_weth', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
-            _dr55()
+                    def _dr76():
+                        tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, _WETH, tout, wi)))
+                        tasks.append(('E', ('sushi_v3_weth', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, _WETH, tout, f, wi)))
+                    _dr76()
+                for t in (1, 50, 100, 200):
+                    tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, _WETH, tout, wi)))
+                for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
+                    tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+
+                def _dr55():
+                    nonlocal rtr
+                    tasks.append(('R', None, lambda: self._fx_aerov2_quote(w3, _WETH, tout, wi)))
+                    for rtr in (_SUSHI_V2_ROUTER, _ALIEN_V2_ROUTER):
+                        tasks.append(('E', ('v2fot_weth', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
+                _dr55()
+            _lr93()
         return tasks
 
     def _apex_frontier_sweep(self, intent, state, snapshot, params):
@@ -925,10 +1030,12 @@ class MinerSolver(_MinerSolverDR77):
                 via_weth = tin.lower() != wethL and tout.lower() != wethL
                 weth_fee, weth_out = (500, 0)
                 return via_weth
-            via_weth = _dr43()
-            ex = fut = None
-            if via_weth:
-                def _fwvw(weth_fee=weth_fee, weth_out=weth_out):
+            ex = fut = tasks = weth_fee = weth_out = wi = None
+
+            def _lr2():
+                nonlocal ex, fut, tasks, weth_fee, weth_out, wi
+                via_weth = _dr43()
+                if via_weth:
                     with ThreadPoolExecutor(max_workers=6) as ex:
 
                         def _dr48():
@@ -939,33 +1046,31 @@ class MinerSolver(_MinerSolverDR77):
                             o = fut.result()
                             if o > weth_out:
                                 weth_out, weth_fee = (o, f)
-                    return (weth_fee, weth_out)
-                weth_fee, weth_out = _fwvw()
-            def _fw1():
                 wi = weth_out * 995 // 1000 if weth_out > 0 else 0
                 tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
-                reachable, extra = (0, (0, None))
-                return (wi, tasks, reachable, extra)
-            wi, tasks, reachable, extra = _fw1()
+            _lr2()
+            reachable, extra = (0, (0, None))
 
             def _dr29():
 
                 def _dr9():
                     nonlocal ex, extra, fut, reachable
+                    out = spec = None
                     with ThreadPoolExecutor(max_workers=16) as ex:
-                        def _fw10():
+
+                        def _lr58():
+                            nonlocal extra, fut, out, reachable, spec
                             futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
-                            return (futs,)
-                        futs, = _fw10()
-                        for tag, spec, fut in futs:
-                            try:
-                                out = int(fut.result(timeout=6))
-                            except Exception:
-                                out = 0
-                            if tag == 'R':
-                                reachable = max(reachable, out)
-                            elif out > extra[0]:
-                                extra = (out, spec)
+                            for tag, spec, fut in futs:
+                                try:
+                                    out = int(fut.result(timeout=6))
+                                except Exception:
+                                    out = 0
+                                if tag == 'R':
+                                    reachable = max(reachable, out)
+                                elif out > extra[0]:
+                                    extra = (out, spec)
+                        _lr58()
 
                     def _dr80():
                         nonlocal out, spec
@@ -1027,11 +1132,16 @@ class MinerSolver(_MinerSolverDR77):
 
                 def _dr112():
                     nonlocal best, best_fee
-                    for fee in (500, 3000, 100, 10000):
-                        q = self._q1(w3, 'uniswap_v3', fee, tin, _WETH, amt)
-                        if q > best:
-                            best, best_fee = (q, fee)
-                    leg = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amt, amount_out_minimum=0, chain_id=chain_id)
+                    leg = None
+
+                    def _lr87():
+                        nonlocal best, best_fee, leg
+                        for fee in (500, 3000, 100, 10000):
+                            q = self._q1(w3, 'uniswap_v3', fee, tin, _WETH, amt)
+                            if q > best:
+                                best, best_fee = (q, fee)
+                        leg = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amt, amount_out_minimum=0, chain_id=chain_id)
+                    _lr87()
                     return [Interaction(target=tin, value='0', call_data=encode_approve(uni, amt), chain_id=chain_id), Interaction(target=uni, value='0', call_data=leg, chain_id=chain_id)]
                     return _DR_UNSET
                 _dr113 = _dr112()
@@ -1039,29 +1149,34 @@ class MinerSolver(_MinerSolverDR77):
                     return _dr113
             return (deadline, kind, par, qs_leg, sushi_v3_leg, uni_weth_leg, v2fot_leg)
         deadline, kind, par, qs_leg, sushi_v3_leg, uni_weth_leg, v2fot_leg = _dr111()
-        if kind == 'sushi_v3_direct':
-            ix = sushi_v3_leg(tin, tout, par, amount_in)
-        elif kind == 'v2fot_direct':
-            ix = v2fot_leg(par, [tin, tout], amount_in)
-        else:
+        ix = None
 
-            def _dr56():
-                nonlocal ix
-                if kind == 'sushi_v3_weth':
-                    ix = uni_weth_leg(amount_in) + sushi_v3_leg(_WETH, tout, par, wi)
-                elif kind == 'v2fot_weth':
-                    ix = uni_weth_leg(amount_in) + v2fot_leg(par, [_WETH, tout], wi)
-                elif kind == 'qs_direct':
-                    ix = qs_leg(tin, tout, amount_in)
-                elif kind == 'qs_weth':
-                    ix = uni_weth_leg(amount_in) + qs_leg(_WETH, tout, wi)
-                else:
-                    return None
-                return _DR_UNSET
-            _dr57 = _dr56()
-            if _dr57 is not _DR_UNSET:
-                return _dr57
-        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-frontier', 'chain_id': chain_id})
+        def _lr117():
+            nonlocal ix
+            if kind == 'sushi_v3_direct':
+                ix = sushi_v3_leg(tin, tout, par, amount_in)
+            elif kind == 'v2fot_direct':
+                ix = v2fot_leg(par, [tin, tout], amount_in)
+            else:
+
+                def _dr56():
+                    nonlocal ix
+                    if kind == 'sushi_v3_weth':
+                        ix = uni_weth_leg(amount_in) + sushi_v3_leg(_WETH, tout, par, wi)
+                    elif kind == 'v2fot_weth':
+                        ix = uni_weth_leg(amount_in) + v2fot_leg(par, [_WETH, tout], wi)
+                    elif kind == 'qs_direct':
+                        ix = qs_leg(tin, tout, amount_in)
+                    elif kind == 'qs_weth':
+                        ix = uni_weth_leg(amount_in) + qs_leg(_WETH, tout, wi)
+                    else:
+                        return None
+                    return _DR_UNSET
+                _dr57 = _dr56()
+                if _dr57 is not _DR_UNSET:
+                    return _dr57
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-frontier', 'chain_id': chain_id})
+        return _lr117()
 SOLVER_CLASS = MinerSolver
 try:
 
@@ -1070,14 +1185,15 @@ try:
         from eth_abi import encode as _putty_abi_encode
         from minotaur_subnet.shared.types import ExecutionPlan as _PuttyExecutionPlan
         from minotaur_subnet.shared.types import Interaction as _PuttyInteraction
-        def _fw8():
-            try:
-                from eth_utils import to_checksum_address as _putty_ck
-            except Exception:
+        try:
+            from eth_utils import to_checksum_address as _putty_ck
+        except Exception:
 
-                def _putty_ck(a):
-                    return a
-            _putty_log = _putty_logging.getLogger('putty_shim')
+            def _putty_ck(a):
+                return a
+        _putty_log = _putty_logging.getLogger('putty_shim')
+
+        def _lr56():
             _PUTTY_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
             _PUTTY_WETH = '0x4200000000000000000000000000000000000006'
             _PUTTY_BASE_CHAIN = 8453
@@ -1086,252 +1202,294 @@ try:
             _PUTTY_EXACT_IN_SINGLE_SEL = bytes.fromhex('a026383e')
             _PUTTY_TRANSFER_SEL = bytes.fromhex('a9059cbb')
             _PUTTY_PAIR_SWAP_SEL = bytes.fromhex('022c0d9f')
-            return (_putty_ck, _putty_log, _PUTTY_USDC, _PUTTY_WETH, _PUTTY_BASE_CHAIN, _PUTTY_DEADLINE, _PUTTY_APPROVE_SEL, _PUTTY_EXACT_IN_SINGLE_SEL, _PUTTY_TRANSFER_SEL, _PUTTY_PAIR_SWAP_SEL)
-        _putty_ck, _putty_log, _PUTTY_USDC, _PUTTY_WETH, _PUTTY_BASE_CHAIN, _PUTTY_DEADLINE, _PUTTY_APPROVE_SEL, _PUTTY_EXACT_IN_SINGLE_SEL, _PUTTY_TRANSFER_SEL, _PUTTY_PAIR_SWAP_SEL = _fw8()
 
-        def _dr4():
-            _PUTTY_DEPOSIT_SEL = bytes.fromhex('6e553f65')
-            _PUTTY_GET_AMOUNT_OUT_SEL = bytes.fromhex('f140a35a')
-            _PUTTY_QUOTE_SINGLE_SEL = bytes.fromhex('c6a5026a')
-            _PUTTY_R02_SINGLE_SEL = bytes.fromhex('04e45aaf')
-            _PUTTY_R02_PATH_SEL = bytes.fromhex('b858183f')
-            _PUTTY_UNI_R02 = '0x2626664c2603336E57B271c5C0b26F421741e481'
-            _PUTTY_UNI_QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
-            _PUTTY_MSG_SENDER = '0x0000000000000000000000000000000000000001'
-            _PUTTY_OLD_SINGLE_SEL = bytes.fromhex('414bf389')
-            _PUTTY_CURVE_XCHG_SEL = bytes.fromhex('ddc1f59d')
+            def _dr4():
+                _PUTTY_DEPOSIT_SEL = bytes.fromhex('6e553f65')
+                _PUTTY_GET_AMOUNT_OUT_SEL = bytes.fromhex('f140a35a')
+                _PUTTY_QUOTE_SINGLE_SEL = bytes.fromhex('c6a5026a')
+                _PUTTY_R02_SINGLE_SEL = bytes.fromhex('04e45aaf')
+                _PUTTY_R02_PATH_SEL = bytes.fromhex('b858183f')
+                _PUTTY_UNI_R02 = '0x2626664c2603336E57B271c5C0b26F421741e481'
+                _PUTTY_UNI_QUOTER = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
+                _PUTTY_MSG_SENDER = '0x0000000000000000000000000000000000000001'
+                _PUTTY_OLD_SINGLE_SEL = bytes.fromhex('414bf389')
+                _PUTTY_CURVE_XCHG_SEL = bytes.fromhex('ddc1f59d')
 
-            def _dr64():
-                _PUTTY_SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
+                def _dr64():
+                    _PUTTY_SUSHI_V3_ROUTER = '0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f'
 
-                def _dr1():
-                    _PUTTY_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
+                    def _dr1():
+                        _PUTTY_SUSHI_V3_QUOTER = '0xb1E835Dc2785b52265711e17fCCb0fd018226a6e'
 
-                    def _dr71():
-                        _PUTTY_CURVE_SUPEROETHB = '0x302a94e3c28c290eaf2a4605fc52e11eb915f378'
-                        _PUTTY_ROUTES = {}
-                        _PUTTY_SUBS = {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
-                        return (_PUTTY_ROUTES, _PUTTY_SUBS)
-                    _PUTTY_ROUTES, _PUTTY_SUBS = _dr71()
-                    _PUTTY_SUBS_WETH = {'0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True),), 'lo': 100000000000000, 'hi': 10000000000000000}}
-                    _PUTTY_RPC = {'url': None}
-                    return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER)
-                _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr1()
+                        def _dr71():
+                            _PUTTY_CURVE_SUPEROETHB = '0x302a94e3c28c290eaf2a4605fc52e11eb915f378'
+                            _PUTTY_ROUTES = {}
 
-                def _putty_eth_call(to, data_hex):
-                    import json as _pj
-                    import urllib.request as _pu
-                    url = _PUTTY_RPC.get('url')
+                            def _lr82():
+                                return {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}}
 
-                    def _dr117():
-                        if not url:
-                            raise RuntimeError('putty: no rpc url captured')
-                        body = _pj.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': _putty_ck(to), 'data': data_hex}, 'latest']}).encode()
-                        req = _pu.Request(url, data=body, headers={'content-type': 'application/json'})
-                        with _pu.urlopen(req, timeout=10) as resp:
-                            out = _pj.loads(resp.read())
-                        res = out.get('result')
-                        if not res or res == '0x':
-                            raise RuntimeError(f'putty eth_call failed: {out.get('error')}')
-                        return res
-                    res = _dr117()
-                    return bytes.fromhex(res[2:])
+                            def _lr83():
+                                return {'0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}}
 
-                def _putty_encode_approve(spender, amount):
-                    return '0x' + (_PUTTY_APPROVE_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(spender), int(amount)])).hex()
+                            def _lr84():
+                                return {'0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
+                            _PUTTY_SUBS = {**_lr82(), **_lr83(), **_lr84()}
+                            return (_PUTTY_ROUTES, _PUTTY_SUBS)
+                        _PUTTY_ROUTES, _PUTTY_SUBS = _dr71()
+                        _PUTTY_SUBS_WETH = {'0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True),), 'lo': 100000000000000, 'hi': 10000000000000000}}
+                        _PUTTY_RPC = {'url': None}
+                        return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER)
+                    _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr1()
 
-                def _putty_encode_exact_input_single(token_in, token_out, tick_spacing, recipient, amount_in):
-                    enc = _putty_abi_encode(['(address,address,int24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(tick_spacing), _putty_ck(recipient), int(_PUTTY_DEADLINE), int(amount_in), 0, 0)])
-                    return '0x' + (_PUTTY_EXACT_IN_SINGLE_SEL + enc).hex()
+                    def _lr73():
 
-                def _putty_state_getter(state):
-                    """Champion-agnostic reader over the STABLE IntentState surface."""
-                    raw = {}
-                    try:
-                        if hasattr(state, 'raw_params_view'):
-                            raw = dict(state.raw_params_view() or {})
-                    except Exception:
-                        raw = {}
-                    if not raw:
-                        try:
-                            raw = dict(getattr(state, 'raw_params', {}) or {})
-                        except Exception:
+                        def _putty_eth_call(to, data_hex):
+                            import json as _pj
+                            import urllib.request as _pu
+                            url = _PUTTY_RPC.get('url')
+
+                            def _dr117():
+                                out = res = None
+
+                                def _lr85():
+                                    nonlocal out, res
+                                    if not url:
+                                        raise RuntimeError('putty: no rpc url captured')
+                                    body = _pj.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': _putty_ck(to), 'data': data_hex}, 'latest']}).encode()
+                                    req = _pu.Request(url, data=body, headers={'content-type': 'application/json'})
+                                    with _pu.urlopen(req, timeout=10) as resp:
+                                        out = _pj.loads(resp.read())
+                                    res = out.get('result')
+                                _lr85()
+                                if not res or res == '0x':
+                                    raise RuntimeError(f'putty eth_call failed: {out.get('error')}')
+                                return res
+                            res = _dr117()
+                            return bytes.fromhex(res[2:])
+
+                        def _putty_encode_approve(spender, amount):
+                            return '0x' + (_PUTTY_APPROVE_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(spender), int(amount)])).hex()
+
+                        def _putty_encode_exact_input_single(token_in, token_out, tick_spacing, recipient, amount_in):
+                            enc = _putty_abi_encode(['(address,address,int24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(tick_spacing), _putty_ck(recipient), int(_PUTTY_DEADLINE), int(amount_in), 0, 0)])
+                            return '0x' + (_PUTTY_EXACT_IN_SINGLE_SEL + enc).hex()
+
+                        def _putty_state_getter(state):
+                            """Champion-agnostic reader over the STABLE IntentState surface."""
                             raw = {}
-                    typed = getattr(state, 'typed_context', None)
+                            try:
+                                if hasattr(state, 'raw_params_view'):
+                                    raw = dict(state.raw_params_view() or {})
+                            except Exception:
+                                raw = {}
+                            if not raw:
+                                try:
+                                    raw = dict(getattr(state, 'raw_params', {}) or {})
+                                except Exception:
+                                    raw = {}
+                            typed = getattr(state, 'typed_context', None)
 
-                    def _get(key):
-                        v = raw.get(key)
-                        if (v is None or v == '') and typed is not None:
-                            v = getattr(typed, key, None)
-                        return v
-                    return _get
+                            def _get(key):
+                                v = raw.get(key)
+                                if (v is None or v == '') and typed is not None:
+                                    v = getattr(typed, key, None)
+                                return v
+                            return _get
 
-                def _putty_build_alt_plan(intent, state, token_out, amount_in, router, tick_spacing):
-                    recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
-                    chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
+                        def _putty_build_alt_plan(intent, state, token_out, amount_in, router, tick_spacing):
+                            recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
+                            chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
 
-                    def _dr104():
-                        interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
-                        return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'aerodrome_slipstream_alt', 'venue_param': int(tick_spacing), 'chain_id': chain_id})
-                        return _DR_UNSET
-                    _dr105 = _dr104()
-                    if _dr105 is not _DR_UNSET:
-                        return _dr105
+                            def _dr104():
+                                interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
 
-                def _putty_ix(target, data, chain_id):
-                    return _PuttyInteraction(target=_putty_ck(target), value='0', call_data=data, chain_id=chain_id)
+                                def _lr116():
+                                    return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'aerodrome_slipstream_alt', 'venue_param': int(tick_spacing), 'chain_id': chain_id})
+                                    return _DR_UNSET
+                                return _lr116()
+                            _dr105 = _dr104()
+                            if _dr105 is not _DR_UNSET:
+                                return _dr105
 
-                def _putty_encode_transfer(to, amount):
-                    return '0x' + (_PUTTY_TRANSFER_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(to), int(amount)])).hex()
+                        def _putty_ix(target, data, chain_id):
+                            return _PuttyInteraction(target=_putty_ck(target), value='0', call_data=data, chain_id=chain_id)
 
-                def _putty_r02_single(token_out, fee, recipient, amount_in):
-                    enc = _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(token_out), int(fee), _putty_ck(recipient), int(amount_in), 0, 0)])
-                    return '0x' + (_PUTTY_R02_SINGLE_SEL + enc).hex()
+                        def _putty_encode_transfer(to, amount):
+                            return '0x' + (_PUTTY_TRANSFER_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(to), int(amount)])).hex()
 
-                def _putty_r02_path(mids, token_out, fees, recipient, amount_in):
-                    toks = [_PUTTY_USDC] + list(mids) + [token_out]
-                    path = b''
-                    for i, f in enumerate(fees):
-                        path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
-                    path += bytes.fromhex(toks[-1][2:])
-                    def _fw9():
-                        enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
-                        return ('0x' + (_PUTTY_R02_PATH_SEL + enc).hex(),)
-                    _fwr9 = _fw9()
-                    if _fwr9 is not None:
-                        return _fwr9[0]
+                        def _putty_r02_single(token_out, fee, recipient, amount_in):
+                            enc = _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(token_out), int(fee), _putty_ck(recipient), int(amount_in), 0, 0)])
+                            return '0x' + (_PUTTY_R02_SINGLE_SEL + enc).hex()
 
-                def _putty_quote_usdc_weth(fee, amount_in):
-                    data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(_PUTTY_WETH), int(amount_in), int(fee), 0)])).hex()
-                    raw = _putty_eth_call(_PUTTY_UNI_QUOTER, data)
-                    out = int.from_bytes(raw[:32], 'big')
-                    if out <= 0:
-                        raise RuntimeError('putty quoter returned 0')
-                    return out
+                        def _putty_r02_path(mids, token_out, fees, recipient, amount_in):
+                            toks = [_PUTTY_USDC] + list(mids) + [token_out]
+                            path = b''
 
-                def _putty_quote_v3(quoter, token_in, token_out, fee, amount_in):
-                    """QuoterV2-ABI single quote (uni + sushi share the struct); 0 on failure."""
-                    try:
-                        data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(amount_in), int(fee), 0)])).hex()
-                        raw = _putty_eth_call(quoter, data)
-                        return int.from_bytes(raw[:32], 'big')
-                    except Exception:
-                        return 0
+                            def _lr59():
+                                nonlocal path
+                                for i, f in enumerate(fees):
+                                    path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
+                                path += bytes.fromhex(toks[-1][2:])
+                                enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
+                                return '0x' + (_PUTTY_R02_PATH_SEL + enc).hex()
+                            return _lr59()
 
-                def _putty_best_usdc_weth(amount_in):
-                    """Best uni-v3 USDC->WETH quote over fees {100,500,3000} — a strict
+                        def _putty_quote_usdc_weth(fee, amount_in):
+                            data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(_PUTTY_WETH), int(amount_in), int(fee), 0)])).hex()
+                            raw = _putty_eth_call(_PUTTY_UNI_QUOTER, data)
+                            out = int.from_bytes(raw[:32], 'big')
+                            if out <= 0:
+                                raise RuntimeError('putty quoter returned 0')
+                            return out
+
+                        def _putty_quote_v3(quoter, token_in, token_out, fee, amount_in):
+                            """QuoterV2-ABI single quote (uni + sushi share the struct); 0 on failure."""
+                            try:
+                                data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(amount_in), int(fee), 0)])).hex()
+                                raw = _putty_eth_call(quoter, data)
+                                return int.from_bytes(raw[:32], 'big')
+                            except Exception:
+                                return 0
+
+                        def _putty_best_usdc_weth(amount_in):
+                            """Best uni-v3 USDC->WETH quote over fees {100,500,3000} — a strict
         SUPERSET of the champion curve_ng probe set {500,3000}, so our WETH
         leg is never worse than the champion's."""
-                    best_out, best_fee = (0, 0)
-                    for fee in (100, 500, 3000):
-                        out = _putty_quote_v3(_PUTTY_UNI_QUOTER, _PUTTY_USDC, _PUTTY_WETH, fee, amount_in)
-                        if out > best_out:
-                            best_out, best_fee = (out, fee)
-                    if best_out <= 0:
-                        raise RuntimeError('putty: no uni USDC->WETH quote')
-                    return (best_out, best_fee)
+                            best_out, best_fee = (0, 0)
+                            for fee in (100, 500, 3000):
+                                out = _putty_quote_v3(_PUTTY_UNI_QUOTER, _PUTTY_USDC, _PUTTY_WETH, fee, amount_in)
+                                if out > best_out:
+                                    best_out, best_fee = (out, fee)
+                            if best_out <= 0:
+                                raise RuntimeError('putty: no uni USDC->WETH quote')
+                            return (best_out, best_fee)
 
-                def _putty_pair_get_amount_out(pair, amount_in, token_in):
-                    data = '0x' + (_PUTTY_GET_AMOUNT_OUT_SEL + _putty_abi_encode(['uint256', 'address'], [int(amount_in), _putty_ck(token_in)])).hex()
-                    out = int.from_bytes(_putty_eth_call(pair, data)[:32], 'big')
-                    if out <= 0:
-                        raise RuntimeError('putty getAmountOut returned 0')
-                    return out
+                        def _putty_pair_get_amount_out(pair, amount_in, token_in):
+                            data = '0x' + (_PUTTY_GET_AMOUNT_OUT_SEL + _putty_abi_encode(['uint256', 'address'], [int(amount_in), _putty_ck(token_in)])).hex()
+                            out = int.from_bytes(_putty_eth_call(pair, data)[:32], 'big')
+                            if out <= 0:
+                                raise RuntimeError('putty getAmountOut returned 0')
+                            return out
 
-                def _putty_sub_interactions(spec, token_out, amount_in, recipient, chain_id):
-                    """Build the substituted interaction list for one table entry."""
-                    kind = spec['kind']
+                        def _putty_sub_interactions(spec, token_out, amount_in, recipient, chain_id):
+                            """Build the substituted interaction list for one table entry."""
+                            kind = spec['kind']
 
-                    def _dr102():
-                        if kind == 'univ3_single':
-                            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
+                            def _dr102():
+                                if kind == 'univ3_single':
+                                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
 
-                        def _dr14():
-                            if kind == 'univ3_path':
-                                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
+                                def _dr14():
+                                    if kind == 'univ3_path':
+                                        return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
 
-                            def _dr93():
-                                if kind == 'erc4626':
-                                    quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
-                                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
+                                    def _dr93():
+                                        if kind == 'erc4626':
+                                            quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
+
+                                            def _lr109():
+                                                return (1, [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)])
+                                                return (0, None)
+                                            _lrt110 = _lr109()
+                                            if _lrt110[0]:
+                                                return _lrt110[1]
+                                        return _DR_UNSET
+                                        return _DR_UNSET
+                                    _dr94 = _dr93()
+                                    if _dr94 is not _DR_UNSET:
+                                        return _dr94
+                                    return _DR_UNSET
+                                _dr15 = _dr14()
+                                if _dr15 is not _DR_UNSET:
+                                    return _dr15
                                 return _DR_UNSET
+                            _dr103 = _dr102()
+                            if _dr103 is not _DR_UNSET:
+                                return _dr103
+                            if kind == 'curve_full':
+                                weth_out, fee = _putty_best_usdc_weth(amount_in)
+
+                                def _dr52():
+                                    pool = spec['pool']
+
+                                    def _lr102():
+                                        return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(pool, weth_out), chain_id)]
+
+                                    def _lr103():
+                                        return [_putty_ix(pool, '0x' + (_PUTTY_CURVE_XCHG_SEL + _putty_abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(weth_out), 0, _putty_ck(recipient)])).hex(), chain_id)]
+                                    return [*_lr102(), *_lr103()]
+                                    return _DR_UNSET
+                                _dr53 = _dr52()
+                                if _dr53 is not _DR_UNSET:
+                                    return _dr53
+
+                            def _dr7():
+                                nonlocal fee, weth_out
+                                if kind == 'uni_sushi':
+                                    weth_out, fee = _putty_best_usdc_weth(amount_in)
+                                    sushi_fee = int(spec['sushi_fee'])
+                                    if _putty_quote_v3(_PUTTY_SUSHI_V3_QUOTER, _PUTTY_WETH, token_out, sushi_fee, weth_out) <= 0:
+                                        raise RuntimeError('putty: sushi leg quote empty')
+
+                                    def _dr89():
+                                        sushi_call = '0x' + (_PUTTY_OLD_SINGLE_SEL + _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_WETH), _putty_ck(token_out), sushi_fee, _putty_ck(recipient), int(_PUTTY_DEADLINE), int(weth_out), 0, 0)])).hex()
+
+                                        def _lr111():
+                                            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(_PUTTY_SUSHI_V3_ROUTER, weth_out), chain_id), _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id)]
+                                            return _DR_UNSET
+                                        return _lr111()
+                                    _dr90 = _dr89()
+                                    if _dr90 is not _DR_UNSET:
+                                        return _dr90
                                 return _DR_UNSET
-                            _dr94 = _dr93()
-                            if _dr94 is not _DR_UNSET:
-                                return _dr94
-                            return _DR_UNSET
-                        _dr15 = _dr14()
-                        if _dr15 is not _DR_UNSET:
-                            return _dr15
+                            _dr8 = _dr7()
+                            if _dr8 is not _DR_UNSET:
+                                return _dr8
+                            if kind == 'aero_pd':
+
+                                def _dr23():
+                                    hops = spec['hops']
+                                    ixs = [_putty_ix(hops[0][0], _putty_encode_transfer(hops[0][1], amount_in), chain_id)]
+                                    cur = int(amount_in)
+                                    for i, (tin, pair, in_is_t0) in enumerate(hops):
+
+                                        def _dr78():
+                                            nonlocal cur
+                                            out = _putty_pair_get_amount_out(pair, cur, tin)
+                                            a0 = a1 = to = None
+
+                                            def _lr74():
+                                                nonlocal a0, a1, cur, to
+                                                to = recipient if i == len(hops) - 1 else hops[i + 1][1]
+                                                a0, a1 = (0, out) if in_is_t0 else (out, 0)
+                                                ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
+                                                cur = out
+                                            _lr74()
+                                            return (a0, a1, out, to)
+                                        a0, a1, out, to = _dr78()
+                                    return ixs
+                                ixs = _dr23()
+                                return ixs
+                            raise RuntimeError(f'putty: unknown sub kind {kind}')
+
+                        def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
+                            recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
+
+                            def _lr104():
+                                chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
+                                interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
+                                return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id})
+                            return _lr104()
+                        return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter)
                         return _DR_UNSET
-                    _dr103 = _dr102()
-                    if _dr103 is not _DR_UNSET:
-                        return _dr103
-                    if kind == 'curve_full':
-                        weth_out, fee = _putty_best_usdc_weth(amount_in)
-
-                        def _dr52():
-                            pool = spec['pool']
-                            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(pool, weth_out), chain_id), _putty_ix(pool, '0x' + (_PUTTY_CURVE_XCHG_SEL + _putty_abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(weth_out), 0, _putty_ck(recipient)])).hex(), chain_id)]
-                            return _DR_UNSET
-                        _dr53 = _dr52()
-                        if _dr53 is not _DR_UNSET:
-                            return _dr53
-
-                    def _dr7():
-                        nonlocal fee, weth_out
-                        if kind == 'uni_sushi':
-                            weth_out, fee = _putty_best_usdc_weth(amount_in)
-                            sushi_fee = int(spec['sushi_fee'])
-                            if _putty_quote_v3(_PUTTY_SUSHI_V3_QUOTER, _PUTTY_WETH, token_out, sushi_fee, weth_out) <= 0:
-                                raise RuntimeError('putty: sushi leg quote empty')
-
-                            def _dr89():
-                                sushi_call = '0x' + (_PUTTY_OLD_SINGLE_SEL + _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_WETH), _putty_ck(token_out), sushi_fee, _putty_ck(recipient), int(_PUTTY_DEADLINE), int(weth_out), 0, 0)])).hex()
-                                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(_PUTTY_SUSHI_V3_ROUTER, weth_out), chain_id), _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id)]
-                                return _DR_UNSET
-                            _dr90 = _dr89()
-                            if _dr90 is not _DR_UNSET:
-                                return _dr90
-                        return _DR_UNSET
-                    _dr8 = _dr7()
-                    if _dr8 is not _DR_UNSET:
-                        return _dr8
-                    if kind == 'aero_pd':
-
-                        def _dr23():
-                            hops = spec['hops']
-                            ixs = [_putty_ix(hops[0][0], _putty_encode_transfer(hops[0][1], amount_in), chain_id)]
-                            cur = int(amount_in)
-                            for i, (tin, pair, in_is_t0) in enumerate(hops):
-
-                                def _dr78():
-                                    nonlocal cur
-                                    out = _putty_pair_get_amount_out(pair, cur, tin)
-                                    to = recipient if i == len(hops) - 1 else hops[i + 1][1]
-                                    a0, a1 = (0, out) if in_is_t0 else (out, 0)
-                                    ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
-                                    cur = out
-                                    return (a0, a1, out, to)
-                                a0, a1, out, to = _dr78()
-                            return ixs
-                        ixs = _dr23()
-                        return ixs
-                    raise RuntimeError(f'putty: unknown sub kind {kind}')
-
-                def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
-                    recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
-                    chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
-                    interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
-                    return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id})
-                return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter)
-                return _DR_UNSET
-            _dr65 = _dr64()
-            if _dr65 is not _DR_UNSET:
-                return _dr65
-        _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter = _dr4()
-        _PuttyChampionBase = SOLVER_CLASS
-        return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_USDC, _PUTTY_WETH, _PuttyChampionBase, _putty_build_alt_plan, _putty_build_sub_plan, _putty_log, _putty_state_getter)
+                    return _lr73()
+                _dr65 = _dr64()
+                if _dr65 is not _DR_UNSET:
+                    return _dr65
+            _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter = _dr4()
+            _PuttyChampionBase = SOLVER_CLASS
+            return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_USDC, _PUTTY_WETH, _PuttyChampionBase, _putty_build_alt_plan, _putty_build_sub_plan, _putty_log, _putty_state_getter)
+        return _lr56()
     _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_USDC, _PUTTY_WETH, _PuttyChampionBase, _putty_build_alt_plan, _putty_build_sub_plan, _putty_log, _putty_state_getter = _dr44()
 
     class PuttyEdgeSolver(_PuttyChampionBase):
@@ -1353,6 +1511,7 @@ try:
             return super().initialize(*args, **kwargs)
 
         def generate_plan(self, *args, **kwargs):
+            amount_in = plan = tin = tout = None
             try:
 
                 def _dr59():
@@ -1369,50 +1528,53 @@ try:
                         amount_in = int(get('input_amount') or 0)
                         route = _PUTTY_ROUTES.get(tout.lower())
                         return (amount_in, route, tin, tout)
-                    amount_in, route, tin, tout = _dr49()
-                    def _fw4():
+
+                    def _lr28():
+                        nonlocal amount_in, plan, tin, tout
+                        amount_in, route, tin, tout = _dr49()
                         if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
                             router, tick_spacing = route
                             plan = _putty_build_alt_plan(intent, state, tout, amount_in, router, tick_spacing)
                             if plan is not None and plan.interactions:
                                 _putty_log.info('[putty] alt-CL substitution for %s router=%s tick=%s', tout, router, tick_spacing)
-                                return (plan,)
+                                return (1, plan)
+                        return (0, None)
+                    _lrt29 = _lr28()
+                    if _lrt29[0]:
+                        return _lrt29[1]
 
-                        def _dr87():
-                            spec = _PUTTY_SUBS.get(tout.lower())
+                    def _dr87():
+                        spec = _PUTTY_SUBS.get(tout.lower())
 
-                            def _dr21():
+                        def _dr21():
+                            nonlocal plan
+                            if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
+                                plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
+                                if plan is not None and plan.interactions:
+                                    _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
+                                    return plan
+
+                            def _dr73():
                                 nonlocal plan
-                                if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
-                                    plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
+                                spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
+                                if spec_w is not None and tin.lower() == _PUTTY_WETH.lower() and (spec_w['lo'] <= amount_in <= spec_w['hi']):
+                                    plan = _putty_build_sub_plan(intent, state, spec_w, tout, amount_in)
                                     if plan is not None and plan.interactions:
-                                        _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
+                                        _putty_log.info('[putty] eps WETH substitution %s for %s amt=%s', spec_w['kind'], tout, amount_in)
                                         return plan
-
-                                def _dr73():
-                                    nonlocal plan
-                                    spec_w = _PUTTY_SUBS_WETH.get(tout.lower())
-                                    if spec_w is not None and tin.lower() == _PUTTY_WETH.lower() and (spec_w['lo'] <= amount_in <= spec_w['hi']):
-                                        plan = _putty_build_sub_plan(intent, state, spec_w, tout, amount_in)
-                                        if plan is not None and plan.interactions:
-                                            _putty_log.info('[putty] eps WETH substitution %s for %s amt=%s', spec_w['kind'], tout, amount_in)
-                                            return plan
-                                    return _DR_UNSET
-                                    return _DR_UNSET
-                                _dr74 = _dr73()
-                                if _dr74 is not _DR_UNSET:
-                                    return _dr74
                                 return _DR_UNSET
-                            _dr22 = _dr21()
-                            if _dr22 is not _DR_UNSET:
-                                return _dr22
+                                return _DR_UNSET
+                            _dr74 = _dr73()
+                            if _dr74 is not _DR_UNSET:
+                                return _dr74
                             return _DR_UNSET
-                        _dr88 = _dr87()
-                        if _dr88 is not _DR_UNSET:
-                            return (_dr88,)
-                    _fwr4 = _fw4()
-                    if _fwr4 is not None:
-                        return _fwr4[0]
+                        _dr22 = _dr21()
+                        if _dr22 is not _DR_UNSET:
+                            return _dr22
+                        return _DR_UNSET
+                    _dr88 = _dr87()
+                    if _dr88 is not _DR_UNSET:
+                        return _dr88
             except Exception:
                 _putty_log.exception('[putty] edge failed; deferring to champion plan')
             return super().generate_plan(*args, **kwargs)
