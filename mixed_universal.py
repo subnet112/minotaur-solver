@@ -1,4 +1,4 @@
-"""Mixed Uniswap V2 -> V3 route for quote q_87fd41a9."""
+"""Mixed Uniswap V2 -> V3 route for the KEYCAT output-token pair."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ WETH = "0x4200000000000000000000000000000000000006"
 UNIVERSAL_ROUTER = "0x6ff5693b99212da76ad316178a184ab56d299b43"
 ADDRESS_THIS = "0x0000000000000000000000000000000000000002"
 CONTRACT_BALANCE = 1 << 255
-INPUT_AMOUNT = 146465124281368793842
 SECOND_FEE = 10000
 
 
@@ -27,16 +26,16 @@ def _matches(state, params):
         int(getattr(state, "chain_id", 0) or 0) == CHAIN_ID
         and str(params.get("input_token", "") or "").lower() == TOKEN_IN
         and str(params.get("output_token", "") or "").lower() == TOKEN_OUT
-        and int(params.get("input_amount", 0) or 0) == INPUT_AMOUNT
+        and int(params.get("input_amount", 0) or 0) > 0
     )
 
 
-def _transfer_data(router):
+def _transfer_data(router, amount):
     from eth_abi import encode
     from eth_utils import keccak
 
     return keccak(text="transfer(address,uint256)")[:4] + encode(
-        ["address", "uint256"], [router, INPUT_AMOUNT]
+        ["address", "uint256"], [router, amount]
     )
 
 
@@ -76,7 +75,7 @@ def _execute_data(v2_input, v3_input, deadline):
     )
 
 
-def _interactions(state, deadline):
+def _interactions(state, deadline, amount):
     from eth_utils import to_checksum_address
     from minotaur_subnet.shared.types import Interaction
 
@@ -84,7 +83,7 @@ def _interactions(state, deadline):
     token_in = to_checksum_address(TOKEN_IN)
     weth = to_checksum_address(WETH)
     router = to_checksum_address(UNIVERSAL_ROUTER)
-    transfer = _transfer_data(router)
+    transfer = _transfer_data(router, amount)
     execute = _execute_data(_v2_input(token_in, weth), _v3_input(recipient), deadline)
     return [
         Interaction(target=token_in, value="0", call_data="0x" + transfer.hex(), chain_id=CHAIN_ID),
@@ -92,13 +91,13 @@ def _interactions(state, deadline):
     ]
 
 
-def _build(intent, state):
+def _build(intent, state, amount):
     from minotaur_subnet.shared.types import ExecutionPlan
 
     deadline = 9_999_999_999
     return ExecutionPlan(
         intent_id=intent.app_id,
-        interactions=_interactions(state, deadline),
+        interactions=_interactions(state, deadline, amount),
         deadline=deadline,
         nonce=state.nonce,
         metadata={"chain_id": CHAIN_ID, "solver": "q87-uni-v2-v3"},
@@ -108,6 +107,7 @@ def _build(intent, state):
 def maybe_q87_plan(solver, intent, state):
     try:
         params = _params(solver, intent, state)
-        return _build(intent, state) if _matches(state, params) else None
+        amount = int(params.get("input_amount", 0) or 0)
+        return _build(intent, state, amount) if _matches(state, params) else None
     except Exception:
         return None
