@@ -406,18 +406,18 @@ class _McSolver(_PuttyCleanSolver):
 from baseswap_universal import maybe_q184_plan as _chain_killer_q184
 from mixed_universal import maybe_q87_plan as _chain_killer_q87
 from mor_vvv_edge import maybe_q631_plan as _chain_killer_q631
-from pyusd_pepe_edge import maybe_qd41_plan as _chain_killer_qd41
+from quote_cover import maybe_quote_cover as _chain_killer_cover
 
 class ChainKillerSolver(_McSolver):
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name='chain-killer', version='109.0.0', author='meridian', description='quote-history performance successor', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name='chain-killer', version='110.0.0', author='meridian', description='quote-history performance successor', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     def generate_plan(self, intent, state, snapshot=None):
-        qd41 = _chain_killer_qd41(self, intent, state)
-        if qd41 is not None:
-            return qd41
+        cover = _chain_killer_cover(self, intent, state)
+        if cover is not None:
+            return cover
         q631 = _chain_killer_q631(self, intent, state)
         if q631 is not None:
             return q631

@@ -1,0 +1,27 @@
+{
+  "1|0x6c3ea9036406852006290770bedfcaba0e23a0e8|0xa9e8acf069c58aec8825542845fd754e41a9489a|149990000": {
+    "tag": "qd41-atomic-v3-v2",
+    "v2_tokens": [
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "0xA9E8aCf069C58aEc8825542845Fd754e41a9489A"
+    ],
+    "v3_fees": [100, 500],
+    "v3_tokens": [
+      "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8",
+      "0xA0b86991c6218b36c1d19d4a2e9eb0cE3606eB48",
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ]
+  },
+  "1|0xf3b9569f82b18aef890de263b84189bd33ebe452|0xdac17f958d2ee523a2206206994597c13d831ec7|13654449305318710238385021279": {
+    "tag": "qe936-tail-cover",
+    "v2_tokens": [
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+    ],
+    "v3_fees": [10000],
+    "v3_tokens": [
+      "0xf3b9569F82B18aEf890De263B84189bd33EBe452",
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ]
+  }
+}
