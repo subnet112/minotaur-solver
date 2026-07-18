@@ -79,5 +79,9 @@
       "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
     ]
+  },
+  "1|0x772358ef6ed3e18bde1263f7d229601c5fa81875|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|637151353039433634264": {
+    "kind": "snpad_edge",
+    "tag": "qbbfa-snpad-pancake-ur"
   }
 }

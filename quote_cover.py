@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from snpad_edge import maybe_snpad_plan as _snpad_plan
+
 
 UNIVERSAL_ROUTER = "0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af"
 ADDRESS_THIS = "0x0000000000000000000000000000000000000002"
@@ -139,6 +141,8 @@ def maybe_quote_cover(solver, intent, state):
     try:
         params = _params(solver, intent, state)
         spec = _routes().get(_key(state, params))
+        if spec and spec.get("kind") == "snpad_edge":
+            return _snpad_plan(solver, intent, state)
         return _build(intent, state, params, spec) if spec else None
     except Exception:
         return None
