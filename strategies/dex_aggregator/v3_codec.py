@@ -12,6 +12,7 @@ Two router variants are in production deployments today:
 universally — V2 SwapRouter02 still exposes the deadline-included
 exactInput on every chain we deploy to.
 """
+_FZ = object()
 from eth_abi.abi import encode
 EXACT_INPUT_SINGLE_SELECTOR_V1 = bytes.fromhex('414bf389')
 EXACT_INPUT_SINGLE_SELECTOR_V2 = bytes.fromhex('04e45aaf')
@@ -46,8 +47,11 @@ def encode_exact_input_single(token_in: str, token_out: str, fee: int, recipient
     encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, deadline, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
     return '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex()
 
-def encode_exact_input(path: bytes, recipient: str, deadline: int, amount_in: int, amount_out_minimum: int) -> str:
-    """Encode Uniswap V3 SwapRouter.exactInput calldata (multi-hop).
+def _fz2():
+    global encode_exact_input, encode_swap_path
+
+    def encode_exact_input(path: bytes, recipient: str, deadline: int, amount_in: int, amount_out_minimum: int) -> str:
+        """Encode Uniswap V3 SwapRouter.exactInput calldata (multi-hop).
 
     This encodes a multi-hop swap through a sequence of Uniswap V3 pools.
     The path is a packed encoding of (token, fee, token, fee, ..., token).
@@ -66,11 +70,11 @@ def encode_exact_input(path: bytes, recipient: str, deadline: int, amount_in: in
     Returns:
         The ABI-encoded calldata as a 0x-prefixed hex string.
     """
-    encoded_params = encode(['(bytes,address,uint256,uint256,uint256)'], [(path, recipient, deadline, amount_in, amount_out_minimum)])
-    return '0x' + (EXACT_INPUT_SELECTOR + encoded_params).hex()
+        encoded_params = encode(['(bytes,address,uint256,uint256,uint256)'], [(path, recipient, deadline, amount_in, amount_out_minimum)])
+        return '0x' + (EXACT_INPUT_SELECTOR + encoded_params).hex()
 
-def encode_swap_path(tokens: list[str], fees: list[int]) -> bytes:
-    """Encode a Uniswap V3 multi-hop swap path.
+    def encode_swap_path(tokens: list[str], fees: list[int]) -> bytes:
+        """Encode a Uniswap V3 multi-hop swap path.
 
     Packs token addresses and fee tiers into the format expected by
     Uniswap V3's exactInput function.
@@ -88,18 +92,30 @@ def encode_swap_path(tokens: list[str], fees: list[int]) -> bytes:
         ValueError: If the number of fees does not match len(tokens) - 1,
             or if fewer than 2 tokens are provided.
     """
-    if len(tokens) < 2:
-        raise ValueError(f'Need at least 2 tokens for a path, got {len(tokens)}')
+        if len(tokens) < 2:
+            raise ValueError(f'Need at least 2 tokens for a path, got {len(tokens)}')
 
-    def _dr1():
-        if len(fees) != len(tokens) - 1:
-            raise ValueError(f'Need exactly {len(tokens) - 1} fees for {len(tokens)} tokens, got {len(fees)}')
-        path = b''
-        for i, token in enumerate(tokens):
-            addr_hex = token[2:] if token.startswith('0x') else token
-            path += bytes.fromhex(addr_hex)
-            if i < len(fees):
-                path += fees[i].to_bytes(3, byteorder='big')
+        def _dr1():
+            addr_hex = None
+            i = None
+            path = None
+            token = None
+            if len(fees) != len(tokens) - 1:
+                raise ValueError(f'Need exactly {len(tokens) - 1} fees for {len(tokens)} tokens, got {len(fees)}')
+            path = b''
+
+            def _fz1():
+                nonlocal addr_hex, i, path, token
+                for i, token in enumerate(tokens):
+                    addr_hex = token[2:] if token.startswith('0x') else token
+                    path += bytes.fromhex(addr_hex)
+                    if i < len(fees):
+                        path += fees[i].to_bytes(3, byteorder='big')
+                return path
+                return _FZ
+            _fz1_r = _fz1()
+            if _fz1_r is not _FZ:
+                return _fz1_r
+        path = _dr1()
         return path
-    path = _dr1()
-    return path
+_fz2()

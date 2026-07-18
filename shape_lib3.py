@@ -1,4 +1,4 @@
-# SN112 shape library — pair/composite row builders.
+_FZ = object()
 from shape_lib2 import _V_V3_ROUTERS
 
 def _xfer_cd(pair, amt):
@@ -28,7 +28,7 @@ def _sv3_parts(spec, tin, tout, amt, exec_addr, chain_id):
     from strategies.dex_aggregator import aerodrome as _aero
     slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
     leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid1'], tick_spacing=int(spec['slip_ts']), recipient=exec_addr, deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
-    return slip_router, leg1, _sv3_path(spec, tout)
+    return (slip_router, leg1, _sv3_path(spec, tout))
 
 def _sv3_leg2(path, q1, rcpt):
     from eth_abi import encode as _enc
@@ -66,8 +66,15 @@ def _v_build_vs2(spec, tin, tout, amt, q1, chain_id):
     leg1 = _vs2_leg1(spec, tin, amt)
 
     def _dr343(rcpt):
+        leg2 = None
         leg2 = _aero.encode_exact_input_single(token_in=spec['mid'], token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=rcpt, deadline=9999999999, amount_in=int(q1), amount_out_minimum=0)
-        return [_IX(target=tin, value='0', call_data=encode_approve(_ck(uni_r), int(amt)), chain_id=chain_id), _IX(target=uni_r, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id)]
+
+        def _fz1():
+            return [_IX(target=tin, value='0', call_data=encode_approve(_ck(uni_r), int(amt)), chain_id=chain_id), _IX(target=uni_r, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id)]
+            return _FZ
+        _fz1_r = _fz1()
+        if _fz1_r is not _FZ:
+            return _fz1_r
     return _dr343
 
 def _p2_leg1(spec, tin, amt):
@@ -107,32 +114,36 @@ def _a3_head(tin, amt, leg1, chain_id):
     uni = '0x2626664c2603336E57B271c5C0b26F421741e481'
     return [_IX(target=tin, value='0', call_data=encode_approve(_ck(uni), int(amt)), chain_id=chain_id), _IX(target=uni, value='0', call_data=leg1, chain_id=chain_id)]
 
-def _a3_ixs(spec, tin, amt, q1, parts, rcpt, chain_id):
-    from eth_utils import to_checksum_address as _ck
-    from common.abi_utils import encode_approve
-    from minotaur_subnet.shared.types import Interaction as _IX
-    leg1, slip_router, leg2, a0, a1 = parts
-    tail = [_IX(target=spec['mid1'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=_swap_cd(a0, a1, rcpt), chain_id=chain_id)]
-    return _a3_head(tin, amt, leg1, chain_id) + tail
+def _fz3():
+    global _a3_ixs, build_a3, build_s2
 
-def build_a3(spec, tin, tout, amt, q1, q2, est, chain_id):
-    """3-leg a3 row builder (uni sentinel leg1, slip leg2 to pair, pair.swap)."""
-    parts = _a3_parts(spec, tin, amt, q1, est, chain_id)
+    def _a3_ixs(spec, tin, amt, q1, parts, rcpt, chain_id):
+        from eth_utils import to_checksum_address as _ck
+        from common.abi_utils import encode_approve
+        from minotaur_subnet.shared.types import Interaction as _IX
+        leg1, slip_router, leg2, a0, a1 = parts
+        tail = [_IX(target=spec['mid1'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=_swap_cd(a0, a1, rcpt), chain_id=chain_id)]
+        return _a3_head(tin, amt, leg1, chain_id) + tail
 
-    def _dr311(rcpt):
-        return _a3_ixs(spec, tin, amt, q1, parts, rcpt, chain_id)
-    return _dr311
+    def build_a3(spec, tin, tout, amt, q1, q2, est, chain_id):
+        """3-leg a3 row builder (uni sentinel leg1, slip leg2 to pair, pair.swap)."""
+        parts = _a3_parts(spec, tin, amt, q1, est, chain_id)
 
-def build_s2(spec, tin, tout, amt, q1, est, chain_id):
-    """2-leg s2 row builder (slip leg paid to the pair, pair.swap)."""
-    from eth_utils import to_checksum_address as _ck
-    from strategies.dex_aggregator import aerodrome as _aero
-    from common.abi_utils import encode_approve
-    from minotaur_subnet.shared.types import Interaction as _IX
-    slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
-    leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid'], tick_spacing=int(spec['slip_ts']), recipient=spec['pair'], deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
-    a0, a1 = (int(est), 0) if int(spec['out_index']) == 0 else (0, int(est))
+        def _dr311(rcpt):
+            return _a3_ixs(spec, tin, amt, q1, parts, rcpt, chain_id)
+        return _dr311
 
-    def _dr320(rcpt):
-        return [_IX(target=tin, value='0', call_data=encode_approve(_ck(slip_router), int(amt)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=_swap_cd(a0, a1, rcpt), chain_id=chain_id)]
-    return _dr320
+    def build_s2(spec, tin, tout, amt, q1, est, chain_id):
+        """2-leg s2 row builder (slip leg paid to the pair, pair.swap)."""
+        from eth_utils import to_checksum_address as _ck
+        from strategies.dex_aggregator import aerodrome as _aero
+        from common.abi_utils import encode_approve
+        from minotaur_subnet.shared.types import Interaction as _IX
+        slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+        leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid'], tick_spacing=int(spec['slip_ts']), recipient=spec['pair'], deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
+        a0, a1 = (int(est), 0) if int(spec['out_index']) == 0 else (0, int(est))
+
+        def _dr320(rcpt):
+            return [_IX(target=tin, value='0', call_data=encode_approve(_ck(slip_router), int(amt)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=_swap_cd(a0, a1, rcpt), chain_id=chain_id)]
+        return _dr320
+_fz3()

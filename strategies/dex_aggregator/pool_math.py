@@ -7,6 +7,7 @@ Works with pool_states dicts (from RPC queries or MarketSnapshot) where
 each pool has: token0, token1, fee, sqrtPriceX96, liquidity.
 """
 from __future__ import annotations
+_FZ = object()
 _DR_UNSET = object()
 
 def _dr7():
@@ -15,61 +16,60 @@ def _dr7():
     Q96 = 1 << 96
 
     def compute_v3_output(sqrt_price_x96: int, liquidity: int, amount_in: int, zero_for_one: bool, fee_ppm: int) -> int:
-        """Compute single-tick output for a Uniswap V3 swap.
-
-    Within-tick only — large swaps crossing tick boundaries will be
-    inaccurate. For production quoting with large amounts, use
-    multi-tick simulation.
-
-    Args:
-        sqrt_price_x96: Current sqrtPriceX96 of the pool.
-        liquidity: Current in-range liquidity.
-        amount_in: Input amount (in token's smallest unit).
-        zero_for_one: True if swapping token0 for token1.
-        fee_ppm: Pool fee in parts-per-million, matching Uniswap V3's
-            fee field (e.g., 500 = 0.05%, 3000 = 0.3%, 10000 = 1%).
-
-    Returns:
-        Output amount as integer (in output token's smallest unit).
-        Returns 0 if inputs are invalid.
-    """
+        MAX_SQRT_PRICE_IMPACT = None
+        _dr4 = None
+        _dr5 = None
+        _fwe = None
+        _fwer = None
+        amount_after_fee = None
+        delta_sqrt_price = None
+        output = None
+        "Compute single-tick output for a Uniswap V3 swap.\n\n    Within-tick only — large swaps crossing tick boundaries will be\n    inaccurate. For production quoting with large amounts, use\n    multi-tick simulation.\n\n    Args:\n        sqrt_price_x96: Current sqrtPriceX96 of the pool.\n        liquidity: Current in-range liquidity.\n        amount_in: Input amount (in token's smallest unit).\n        zero_for_one: True if swapping token0 for token1.\n        fee_ppm: Pool fee in parts-per-million, matching Uniswap V3's\n            fee field (e.g., 500 = 0.05%, 3000 = 0.3%, 10000 = 1%).\n\n    Returns:\n        Output amount as integer (in output token's smallest unit).\n        Returns 0 if inputs are invalid.\n    "
         if liquidity <= 0 or amount_in <= 0 or sqrt_price_x96 <= 0:
             return 0
         amount_after_fee = amount_in * (1000000 - fee_ppm) // 1000000
         if amount_after_fee <= 0:
             return 0
         MAX_SQRT_PRICE_IMPACT = sqrt_price_x96 // 100
-        if zero_for_one:
 
-            def _dr4():
-                nonlocal delta_sqrt_price, output
-                numerator = amount_after_fee * sqrt_price_x96
-                denominator = liquidity * Q96 + amount_after_fee * sqrt_price_x96
-                if denominator <= 0:
-                    return 0
-                delta_sqrt_price = numerator * sqrt_price_x96 // denominator
-                if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
-                    return 0
-                output = liquidity * delta_sqrt_price // Q96
-                return _DR_UNSET
-            _dr5 = _dr4()
-            if _dr5 is not _DR_UNSET:
-                return _dr5
-        else:
-            def _fwe():
-                delta_sqrt_price = amount_after_fee * Q96 // liquidity
-                if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
-                    return (0,)
-                new_sqrt_price = sqrt_price_x96 + delta_sqrt_price
-                if new_sqrt_price <= 0:
-                    return (0,)
-                output = liquidity * Q96 * delta_sqrt_price // (sqrt_price_x96 * new_sqrt_price)
-                return (None, delta_sqrt_price, output)
-            _fwer = _fwe()
-            if _fwer[0] is not None:
-                return _fwer[0]
-            delta_sqrt_price, output = _fwer[1], _fwer[2]
-        return max(0, output)
+        def _fz1():
+            nonlocal _dr4, _dr5, _fwe, _fwer, delta_sqrt_price, output
+            if zero_for_one:
+
+                def _dr4():
+                    nonlocal delta_sqrt_price, output
+                    numerator = amount_after_fee * sqrt_price_x96
+                    denominator = liquidity * Q96 + amount_after_fee * sqrt_price_x96
+                    if denominator <= 0:
+                        return 0
+                    delta_sqrt_price = numerator * sqrt_price_x96 // denominator
+                    if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
+                        return 0
+                    output = liquidity * delta_sqrt_price // Q96
+                    return _DR_UNSET
+                _dr5 = _dr4()
+                if _dr5 is not _DR_UNSET:
+                    return _dr5
+            else:
+
+                def _fwe():
+                    delta_sqrt_price = amount_after_fee * Q96 // liquidity
+                    if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
+                        return (0,)
+                    new_sqrt_price = sqrt_price_x96 + delta_sqrt_price
+                    if new_sqrt_price <= 0:
+                        return (0,)
+                    output = liquidity * Q96 * delta_sqrt_price // (sqrt_price_x96 * new_sqrt_price)
+                    return (None, delta_sqrt_price, output)
+                _fwer = _fwe()
+                if _fwer[0] is not None:
+                    return _fwer[0]
+                delta_sqrt_price, output = (_fwer[1], _fwer[2])
+            return max(0, output)
+            return _FZ
+        _fz1_r = _fz1()
+        if _fz1_r is not _FZ:
+            return _fz1_r
 
     def find_best_pool(pool_states: dict[str, dict[str, Any]], token_in: str, token_out: str, amount_in: int) -> tuple[str, dict[str, Any], int] | None:
         """Find the pool giving the best output for a token pair swap.
@@ -101,6 +101,7 @@ def _dr7():
             candidates = _dr8()
             max_liquidity = 0
             for pool_addr, pool in pool_states.items():
+
                 def _fw4():
                     t0 = pool.get('token0', '').lower()
                     t1 = pool.get('token1', '').lower()
@@ -152,22 +153,40 @@ def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token
         if intermediaries is None:
             intermediaries = []
         token_in_lower = token_in.lower()
+
         def _fw3():
+            addr = None
+            best_description = None
+            best_hops = None
+            best_output = None
+            direct = None
+            fee = None
+            output = None
+            state = None
+            token_out_lower = None
             token_out_lower = token_out.lower()
             best_output = 0
             best_description = ''
             best_hops = []
             direct = find_best_pool(pool_states, token_in, token_out, amount_in)
-            if direct is not None:
-                addr, state, output = direct
-                fee = int(state.get('fee', 3000))
-                best_output = output
-                best_description = f'direct via {fee / 1000000:.2%} pool'
-                best_hops = [{'pool_addr': addr, 'pool_state': state, 'fee': fee}]
-            return (token_out_lower, best_output, best_description, best_hops)
+
+            def _fz2():
+                nonlocal addr, best_description, best_hops, best_output, fee, output, state
+                if direct is not None:
+                    addr, state, output = direct
+                    fee = int(state.get('fee', 3000))
+                    best_output = output
+                    best_description = f'direct via {fee / 1000000:.2%} pool'
+                    best_hops = [{'pool_addr': addr, 'pool_state': state, 'fee': fee}]
+                return (token_out_lower, best_output, best_description, best_hops)
+                return _FZ
+            _fz2_r = _fz2()
+            if _fz2_r is not _FZ:
+                return _fz2_r
         token_out_lower, best_output, best_description, best_hops = _fw3()
         return (token_in_lower, token_out_lower)
     token_in_lower, token_out_lower = _dr1()
+
     def _fw2(best_description=best_description, best_hops=best_hops, best_output=best_output):
         for mid in intermediaries:
             mid_lower = mid.lower()
@@ -175,6 +194,7 @@ def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token
                 continue
 
             def _fw1(best_description=best_description, best_hops=best_hops, best_output=best_output):
+
                 def _miss():
                     return (3, None, best_description, best_hops, best_output)
                 hop1 = find_best_pool(pool_states, token_in, mid, amount_in)
@@ -211,7 +231,7 @@ def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token
                 continue
         return (0, None, best_description, best_hops, best_output)
     _fwr2 = _fw2()
-    best_description, best_hops, best_output = _fwr2[2], _fwr2[3], _fwr2[4]
+    best_description, best_hops, best_output = (_fwr2[2], _fwr2[3], _fwr2[4])
     if _fwr2[0]:
         if _fwr2[0] == 1:
             return _fwr2[1]

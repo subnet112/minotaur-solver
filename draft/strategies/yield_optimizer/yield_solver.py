@@ -12,6 +12,7 @@ Miners should surpass this with:
 - Withdrawal queue awareness
 """
 from __future__ import annotations
+_FZ = object()
 _DR_UNSET = object()
 import logging
 import time
@@ -74,15 +75,26 @@ def _query_compound_rate(rpc_url: str) -> float:
         payload = json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': COMPOUND_V3_CUSDC, 'data': '0x7eb71131'}, 'latest']}).encode()
 
         def _dr2():
+            data = None
+            req = None
+            util_hex = None
+            utilization = None
             nonlocal payload, resp
             req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
             resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
             util_hex = resp.get('result', '0x0')
             utilization = int(util_hex, 16)
             data = '0xd955759d' + _encode_uint256(utilization)
-            payload = json.dumps({'jsonrpc': '2.0', 'id': 2, 'method': 'eth_call', 'params': [{'to': COMPOUND_V3_CUSDC, 'data': data}, 'latest']}).encode()
-            req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
-            return req
+
+            def _fz2():
+                nonlocal payload, req
+                payload = json.dumps({'jsonrpc': '2.0', 'id': 2, 'method': 'eth_call', 'params': [{'to': COMPOUND_V3_CUSDC, 'data': data}, 'latest']}).encode()
+                req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
+                return req
+                return _FZ
+            _fz2_r = _fz2()
+            if _fz2_r is not _FZ:
+                return _fz2_r
         req = _dr2()
         resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
         rate_hex = resp.get('result', '0x0')
@@ -108,6 +120,12 @@ class BaselineYieldStrategy(Strategy):
         rpc_url = ''
 
         def _dr3():
+            _dr1 = None
+            aave_rate = None
+            compound_rate = None
+            interactions = None
+            route = None
+            target_protocol = None
             nonlocal rpc_url
             if snapshot and hasattr(snapshot, 'rpc_urls') and snapshot.rpc_urls:
                 rpc_url = snapshot.rpc_urls.get(chain_id, '')
@@ -119,27 +137,51 @@ class BaselineYieldStrategy(Strategy):
                     rpc_url = os.environ.get('ANVIL_RPC_URL', '')
 
                 def _dr5():
+                    aave_rate = None
+                    compound_rate = None
+                    route = None
+                    supply_calldata = None
+                    target_protocol = None
                     aave_rate = _query_aave_rate(rpc_url) if rpc_url else 0
                     compound_rate = _query_compound_rate(rpc_url) if rpc_url else 0
-                    if compound_rate > aave_rate and compound_rate > 0:
-                        target_protocol = COMPOUND_V3_CUSDC
-                        supply_calldata = _encode_compound_supply(asset, amount)
-                        route = 'compound_v3'
-                    elif aave_rate > 0:
-                        target_protocol = AAVE_V3_POOL
-                        supply_calldata = _encode_aave_supply(asset, amount, contract_address)
-                        route = 'aave_v3'
-                    else:
-                        target_protocol = AAVE_V3_POOL
-                        supply_calldata = _encode_aave_supply(asset, amount, contract_address)
-                        route = 'aave_v3_default'
-                    return (aave_rate, compound_rate, route, supply_calldata, target_protocol)
+
+                    def _fz5():
+                        nonlocal route, supply_calldata, target_protocol
+                        if compound_rate > aave_rate and compound_rate > 0:
+                            target_protocol = COMPOUND_V3_CUSDC
+                            supply_calldata = _encode_compound_supply(asset, amount)
+                            route = 'compound_v3'
+                        elif aave_rate > 0:
+                            target_protocol = AAVE_V3_POOL
+                            supply_calldata = _encode_aave_supply(asset, amount, contract_address)
+                            route = 'aave_v3'
+                        else:
+                            target_protocol = AAVE_V3_POOL
+                            supply_calldata = _encode_aave_supply(asset, amount, contract_address)
+                            route = 'aave_v3_default'
+
+                        def _fz4():
+                            return (aave_rate, compound_rate, route, supply_calldata, target_protocol)
+                            return _FZ
+                        _fz4_r = _fz4()
+                        if _fz4_r is not _FZ:
+                            return _fz4_r
+                        return _FZ
+                    _fz5_r = _fz5()
+                    if _fz5_r is not _FZ:
+                        return _fz5_r
                 aave_rate, compound_rate, route, supply_calldata, target_protocol = _dr5()
                 interactions = [Interaction(target=asset, value='0', call_data=_encode_approve(target_protocol, amount), chain_id=chain_id), Interaction(target=target_protocol, value='0', call_data=supply_calldata, chain_id=chain_id)]
                 return (aave_rate, compound_rate, interactions, route, target_protocol)
             aave_rate, compound_rate, interactions, route, target_protocol = _dr1()
-            return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=int(time.time()) + 300, nonce=state.nonce, metadata={'strategy': 'baseline_yield', 'route': route, 'aave_rate': round(aave_rate, 4), 'compound_rate': round(compound_rate, 4), 'target_protocol': target_protocol, 'asset': asset, 'amount': str(amount)})
-            return _DR_UNSET
+
+            def _fz6():
+                return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=int(time.time()) + 300, nonce=state.nonce, metadata={'strategy': 'baseline_yield', 'route': route, 'aave_rate': round(aave_rate, 4), 'compound_rate': round(compound_rate, 4), 'target_protocol': target_protocol, 'asset': asset, 'amount': str(amount)})
+                return _DR_UNSET
+                return _FZ
+            _fz6_r = _fz6()
+            if _fz6_r is not _FZ:
+                return _fz6_r
         _dr4 = _dr3()
         if _dr4 is not _DR_UNSET:
             return _dr4

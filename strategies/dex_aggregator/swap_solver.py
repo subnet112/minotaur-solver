@@ -23,6 +23,7 @@ Intent metadata format for swaps::
     }
 """
 from __future__ import annotations
+_FZ = object()
 _DR_UNSET = object()
 import logging
 from typing import Any
@@ -111,6 +112,7 @@ class SwapIntentProcessor(IntentProcessor):
             ValueError: If required metadata is missing or chain unsupported.
         """
         params = self._extract_swap_params(intent, state)
+
         def _fw1():
             input_token: str = params['input_token']
             output_token: str = params['output_token']
@@ -122,10 +124,18 @@ class SwapIntentProcessor(IntentProcessor):
             router_address = self._get_router(chain_id)
 
             def _dr1():
+                deadline = None
+                interactions = None
                 deadline = context.timestamp + self.deadline_offset
                 interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router_address, input_amount), chain_id=chain_id), Interaction(target=router_address, value='0', call_data=encode_exact_input_single(token_in=input_token, token_out=output_token, fee=fee_tier, recipient=recipient, deadline=deadline, amount_in=input_amount, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
-                return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3', 'fee_tier': fee_tier, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'min_output_amount': str(min_output_amount)})
-                return _DR_UNSET
+
+                def _fz1():
+                    return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3', 'fee_tier': fee_tier, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'min_output_amount': str(min_output_amount)})
+                    return _DR_UNSET
+                    return _FZ
+                _fz1_r = _fz1()
+                if _fz1_r is not _FZ:
+                    return _fz1_r
             return (_dr1,)
         _dr1, = _fw1()
         _dr2 = _dr1()
@@ -141,41 +151,37 @@ class SwapIntentProcessor(IntentProcessor):
         logger.info('SwapIntentProcessor score received: %.3f (valid=%s) for intent %s', score.score, score.valid, intent.app_id)
 
     def _extract_swap_params(self, intent: AppIntentDefinition, state: IntentState) -> dict[str, Any]:
-        """Extract and validate swap parameters from intent + state.
-
-        Swap parameters can come from two places:
-        1. state.raw_params -- runtime parameters set when the intent is triggered
-        2. Intent config -- static defaults
-
-        Args:
-            intent: The intent definition.
-            state: The on-chain intent state.
-
-        Returns:
-            Dictionary with validated swap parameters.
-
-        Raises:
-            ValueError: If required parameters are missing.
-        """
+        _dr3 = None
+        normalized = None
+        params = None
+        result = None
+        'Extract and validate swap parameters from intent + state.\n\n        Swap parameters can come from two places:\n        1. state.raw_params -- runtime parameters set when the intent is triggered\n        2. Intent config -- static defaults\n\n        Args:\n            intent: The intent definition.\n            state: The on-chain intent state.\n\n        Returns:\n            Dictionary with validated swap parameters.\n\n        Raises:\n            ValueError: If required parameters are missing.\n        '
         if isinstance(state.typed_context, SwapIntentContext):
             return {'input_token': state.typed_context.input_token, 'output_token': state.typed_context.output_token, 'input_amount': state.typed_context.input_amount, 'min_output_amount': state.typed_context.min_output_amount, 'receiver': state.typed_context.receiver, 'fee_tier': state.typed_context.fee_tier}
         params = _state_params(state)
-        normalized = normalize_swap_intent_params(params, manifest=manifest_from_definition(intent), intent_name=_intent_function_from_state(state, 'swap'), receiver_default=state.contract_address or state.owner, slippage_bps=self.slippage_bps)
 
-        def _dr3():
-            input_token = normalized.get('input_token')
-            output_token = normalized.get('output_token')
-            input_amount = normalized.get('input_amount', 0)
-            if not input_token:
-                raise ValueError('Missing required parameter: input_token in state.raw_params')
-            if not output_token:
-                raise ValueError('Missing required parameter: output_token in state.raw_params')
-            if input_amount <= 0:
-                raise ValueError(f'input_amount must be positive, got {input_amount}')
-            result: dict[str, Any] = {'input_token': input_token, 'output_token': output_token, 'input_amount': input_amount, 'min_output_amount': normalized['min_output_amount'], 'receiver': normalized['receiver'], 'fee_tier': normalized['fee_tier']}
+        def _fz2():
+            nonlocal _dr3, normalized, result
+            normalized = normalize_swap_intent_params(params, manifest=manifest_from_definition(intent), intent_name=_intent_function_from_state(state, 'swap'), receiver_default=state.contract_address or state.owner, slippage_bps=self.slippage_bps)
+
+            def _dr3():
+                input_token = normalized.get('input_token')
+                output_token = normalized.get('output_token')
+                input_amount = normalized.get('input_amount', 0)
+                if not input_token:
+                    raise ValueError('Missing required parameter: input_token in state.raw_params')
+                if not output_token:
+                    raise ValueError('Missing required parameter: output_token in state.raw_params')
+                if input_amount <= 0:
+                    raise ValueError(f'input_amount must be positive, got {input_amount}')
+                result: dict[str, Any] = {'input_token': input_token, 'output_token': output_token, 'input_amount': input_amount, 'min_output_amount': normalized['min_output_amount'], 'receiver': normalized['receiver'], 'fee_tier': normalized['fee_tier']}
+                return result
+            result = _dr3()
             return result
-        result = _dr3()
-        return result
+            return _FZ
+        _fz2_r = _fz2()
+        if _fz2_r is not _FZ:
+            return _fz2_r
 
     def _get_router(self, chain_id: int) -> str:
         """Get the Uniswap V3 router address for a chain.

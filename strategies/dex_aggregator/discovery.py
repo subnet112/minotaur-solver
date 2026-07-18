@@ -27,6 +27,7 @@ All addresses are const; every RPC call is wrapped so any single venue failing
 degrades to "no candidate from that venue", never an exception upward.
 """
 from __future__ import annotations
+_FZ = object()
 import logging
 from typing import Any, Callable
 from eth_abi import encode as _enc, decode as _dec
@@ -38,6 +39,7 @@ def _dr9():
     WETH = '0x4200000000000000000000000000000000000006'
     USDC = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
     USDBC = '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'
+
     def _fw4():
         CBETH = '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22'
         ZORA = '0x1111111111166b7fe7bd91427724b487980afc69'
@@ -60,6 +62,7 @@ def _dr3():
     HOOK_BDF9 = '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'
     ZORA_HOOK = '0xc8d077444625eb300a427a6dfb2b1dbf9b159040'
     ZORA_CREATOR_HOOK = '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040'
+
     def _fw3():
         V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
         V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
@@ -67,233 +70,341 @@ def _dr3():
     V4_KEY_GRID, V4_BASES = _fw3()
     return (HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK)
 HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK = _dr3()
-# Ethereum (chain 1) Uniswap V4 venue config. No StateView wired for this chain
-# -> the quoter is the liquidity gate (reverts / returns 0 on an empty pool), so
-# _v4_liquidity is skipped on ETH.
 ETH_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 ETH_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
 ETH_DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
-ETH_USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
-ETH_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
-ETH_V4_QUOTER = '0x52f0e24d1c21c8a0cb1e5a5dd6198556bd9e1203'
-ETH_V4_BASES = (_ZERO, ETH_WETH, ETH_USDC, ETH_DAI, ETH_USDT, ETH_WBTC)
-# hookless fee/tickSpacing grid + the ultra-low-fee stable pools (fee 7/10/100,
-# tick 1) that mainnet uses for stable<->stable; ordered most-liquid first.
-ETH_V4_KEY_GRID = ((3000, 60, _ZERO), (500, 10, _ZERO), (10000, 200, _ZERO), (100, 1, _ZERO), (10, 1, _ZERO), (7, 1, _ZERO))
-MAX_CALLS = 90
 
+def _fz14():
+    global ETH_USDT, ETH_V4_BASES, ETH_V4_KEY_GRID, ETH_V4_QUOTER, ETH_WBTC, MAX_CALLS, _v4_cfg
+    ETH_USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+    ETH_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
+    ETH_V4_QUOTER = '0x52f0e24d1c21c8a0cb1e5a5dd6198556bd9e1203'
+    ETH_V4_BASES = (_ZERO, ETH_WETH, ETH_USDC, ETH_DAI, ETH_USDT, ETH_WBTC)
+    ETH_V4_KEY_GRID = ((3000, 60, _ZERO), (500, 10, _ZERO), (10000, 200, _ZERO), (100, 1, _ZERO), (10, 1, _ZERO), (7, 1, _ZERO))
+    MAX_CALLS = 90
 
-def _v4_cfg(chain_id):
-    """(bases, grid, weth, quoter, stateview_or_None) for the chain's V4 venue."""
-    if chain_id == 8453:
-        return (V4_BASES, V4_KEY_GRID, WETH, V4_QUOTER, V4_STATE_VIEW)
-    return (ETH_V4_BASES, ETH_V4_KEY_GRID, ETH_WETH, ETH_V4_QUOTER, None)
+    def _v4_cfg(chain_id):
+        """(bases, grid, weth, quoter, stateview_or_None) for the chain's V4 venue."""
+        if chain_id == 8453:
+            return (V4_BASES, V4_KEY_GRID, WETH, V4_QUOTER, V4_STATE_VIEW)
+        return (ETH_V4_BASES, ETH_V4_KEY_GRID, ETH_WETH, ETH_V4_QUOTER, None)
 
-def _sorted_pair(a: str, b: str) -> tuple[str, str]:
-    return (a, b) if int(a, 16) < int(b, 16) else (b, a)
+    def _fz13():
+        global DiscoveryEngine, _DiscoveryEngineDR12, _mix12_0, _mix12_1, _sorted_pair, v4_pool_id
 
-def v4_pool_id(c0: str, c1: str, fee: int, tick: int, hooks: str) -> bytes:
-    """keccak(abi.encode(PoolKey)) — computed offline, no RPC."""
-    return _kk(_enc(['address', 'address', 'uint24', 'int24', 'address'], [_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)]))
+        def _sorted_pair(a: str, b: str) -> tuple[str, str]:
+            return (a, b) if int(a, 16) < int(b, 16) else (b, a)
 
-class _DiscoveryEngineDR12:
+        def v4_pool_id(c0: str, c1: str, fee: int, tick: int, hooks: str) -> bytes:
+            """keccak(abi.encode(PoolKey)) — computed offline, no RPC."""
+            return _kk(_enc(['address', 'address', 'uint24', 'int24', 'address'], [_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)]))
 
-    def v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
-        forks = V2_FORKS_BASE if chain_id == 8453 else V2_FORKS_MAINNET if chain_id == 1 else ()
-        hubs = [WETH, USDC] if chain_id == 8453 else ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48']
-        out: list[dict] = []
-        paths = [[tin, tout]] + [[tin, h, tout] for h in hubs if h.lower() not in (tin.lower(), tout.lower())]
+        class _DiscoveryEngineDR12:
 
-        def _dr6():
-            for label, router, native in forks:
-                for path in paths:
-                    q = self._v2_quote(router, path, amount_in)
-                    if q <= 0:
-                        continue
-                    n_hops = len(path) - 1
-                    base = {'out': q, 'tokens': tuple(path), 'gas_est': 150000 * n_hops, 'gas_model': 350000 + 150000 * n_hops, 'discovered': label}
-                    if native:
-                        out.append({**base, 'venue': native, 'param': tuple(path)})
-                    else:
-                        out.append({**base, 'venue': 'v2_fork', 'router': router, 'param': router})
-                    break
-        _dr6()
-        return out
+            def v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
+                forks = V2_FORKS_BASE if chain_id == 8453 else V2_FORKS_MAINNET if chain_id == 1 else ()
+                hubs = [WETH, USDC] if chain_id == 8453 else ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48']
+                out: list[dict] = []
+                paths = [[tin, tout]] + [[tin, h, tout] for h in hubs if h.lower() not in (tin.lower(), tout.lower())]
 
-    def aero_v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
-        if chain_id != 8453:
-            return []
+                def _dr6():
+                    for label, router, native in forks:
+                        for path in paths:
+                            q = self._v2_quote(router, path, amount_in)
+                            if q <= 0:
+                                continue
+                            n_hops = len(path) - 1
+                            base = {'out': q, 'tokens': tuple(path), 'gas_est': 150000 * n_hops, 'gas_model': 350000 + 150000 * n_hops, 'discovered': label}
+                            if native:
+                                out.append({**base, 'venue': native, 'param': tuple(path)})
+                            else:
+                                out.append({**base, 'venue': 'v2_fork', 'router': router, 'param': router})
+                            break
+                _dr6()
+                return out
 
-        def _dr2():
-            out: list[dict] = []
-            route_sets: list[tuple[tuple, ...]] = []
-            for stable in (False, True):
-                route_sets.append(((tin, tout, stable, AERO_V2_FACTORY),))
-            for hub in (WETH, USDC):
-                if hub.lower() in (tin.lower(), tout.lower()):
-                    continue
-                route_sets.append(((tin, hub, False, AERO_V2_FACTORY), (hub, tout, False, AERO_V2_FACTORY)))
-            return (out, route_sets)
-        out, route_sets = _dr2()
-        for routes in route_sets:
+            def aero_v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
+                _dr2 = None
+                _dr8 = None
+                data = None
+                out = None
+                q = None
+                r = None
+                route_sets = None
+                routes = None
+                if chain_id != 8453:
+                    return []
 
-            def _dr8():
-                data = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [amount_in, [(_ck(a), _ck(b), s, _ck(f)) for a, b, s, f in routes]])
-                r = self._c(AERO_V2_ROUTER, data)
-                return (data, r)
-            data, r = _dr8()
-            if not r:
-                continue
-            try:
-                q = int(_dec(['uint256[]'], r)[0][-1])
-            except Exception:
-                continue
-            if q <= 0:
-                continue
-            out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
-        return out
+                def _dr2():
+                    hub = None
+                    out = None
+                    route_sets = None
+                    stable = None
+                    out: list[dict] = []
+                    route_sets: list[tuple[tuple, ...]] = []
+                    for stable in (False, True):
+                        route_sets.append(((tin, tout, stable, AERO_V2_FACTORY),))
 
-class DiscoveryEngine(_DiscoveryEngineDR12):
-    """Stateless per-call sweep; ``call`` is an eth_call thunk with the
-    solver's socket timeout already applied: call(to, data) -> bytes|None."""
+                    def _fz1():
+                        nonlocal hub
+                        for hub in (WETH, USDC):
+                            if hub.lower() in (tin.lower(), tout.lower()):
+                                continue
+                            route_sets.append(((tin, hub, False, AERO_V2_FACTORY), (hub, tout, False, AERO_V2_FACTORY)))
+                        return (out, route_sets)
+                        return _FZ
+                    _fz1_r = _fz1()
+                    if _fz1_r is not _FZ:
+                        return _fz1_r
+                out, route_sets = _dr2()
 
-    def __init__(self, call: Callable[[str, str], Any]):
-        self._call = call
-        self._used = 0
+                def _fz3():
+                    nonlocal _dr8, data, q, r, routes
+                    for routes in route_sets:
 
-    def _c(self, to: str, data: bytes) -> bytes | None:
-        if self._used >= MAX_CALLS:
-            return None
-        self._used += 1
-        try:
-            r = self._call(_ck(to), '0x' + data.hex())
-            if r is None:
-                return None
-            return bytes(r)
-        except Exception:
-            return None
+                        def _dr8():
+                            data = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [amount_in, [(_ck(a), _ck(b), s, _ck(f)) for a, b, s, f in routes]])
+                            r = self._c(AERO_V2_ROUTER, data)
+                            return (data, r)
+                        data, r = _dr8()
+                        if not r:
+                            continue
+                        try:
+                            q = int(_dec(['uint256[]'], r)[0][-1])
+                        except Exception:
+                            continue
+                        if q <= 0:
+                            continue
+                        out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
 
-    def _v2_quote(self, router: str, path: list[str], amount_in: int) -> int:
-        data = _kk(text='getAmountsOut(uint256,address[])')[:4] + _enc(['uint256', 'address[]'], [amount_in, [_ck(p) for p in path]])
-        r = self._c(router, data)
-        if not r:
-            return 0
-        try:
-            return int(_dec(['uint256[]'], r)[0][-1])
-        except Exception:
-            return 0
+                    def _fz2():
+                        return out
+                        return _FZ
+                    _fz2_r = _fz2()
+                    if _fz2_r is not _FZ:
+                        return _fz2_r
+                    return _FZ
+                _fz3_r = _fz3()
+                if _fz3_r is not _FZ:
+                    return _fz3_r
 
-    def _v4_liquidity(self, pool_id: bytes, state_view=None) -> int:
-        # state_view None (mainnet — no public StateView wired) -> skip the
-        # liquidity gate; the quoter reverts/returns 0 on an empty pool anyway.
-        sv = state_view or V4_STATE_VIEW
-        if state_view is None and sv is None:
-            return 1
-        data = _kk(text='getLiquidity(bytes32)')[:4] + pool_id
-        r = self._c(sv, data)
-        if not r:
-            return 0
-        try:
-            return int.from_bytes(r[-16:], 'big')
-        except Exception:
-            return 0
+        class _mix12_0:
 
-    def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int, quoter=None) -> int:
-        c0, c1, fee, tick, hooks = key
-        data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
-        r = self._c(quoter or V4_QUOTER, data)
-        if not r or len(r) < 32:
-            return 0
-        try:
-            return int(_dec(['uint256', 'uint256'], r)[0])
-        except Exception:
-            return 0
+            def __init__(self, call: Callable[[str, str], Any]):
+                self._call = call
+                self._used = 0
 
-    def v4_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
-        """Find a V4 pool holding ``tout`` against a known base currency.
+            def _c(self, to: str, data: bytes) -> bytes | None:
+                if self._used >= MAX_CALLS:
+                    return None
+                self._used += 1
+                try:
+                    r = self._call(_ck(to), '0x' + data.hex())
+                    if r is None:
+                        return None
+                    return bytes(r)
+                except Exception:
+                    return None
 
-        Emits ``uniswap_v4_ur`` specs matching the solver's existing builder:
-        base == tin -> single v4 leg; base != tin -> UR v3 leg (tin->WETH/USDC)
-        chained into the v4 leg via CONTRACT_BALANCE. Base + Ethereum (chain 1)
-        via chain-selected quoter/bases/grid (see ``_v4_cfg``).
-        """
-        if chain_id not in (8453, 1):
-            return []
-        bases, grid, weth, quoter, state_view = _v4_cfg(chain_id)
-        # ETH (state_view None): skip the on-chain liquidity gate, let the quoter
-        # decide; Base keeps its StateView getLiquidity() pre-filter.
-        skip_liq = state_view is None
-        out: list[dict] = []
-        for base in bases:
-            if base.lower() == tout.lower():
-                continue
-            hit = self._v4_scan_grid(base, tin, tout, amount_in, grid, weth, quoter, state_view, skip_liq)
-            if hit is not None:
-                out.append(hit)
-                break
-        return out
+            def _v2_quote(self, router: str, path: list[str], amount_in: int) -> int:
+                data = _kk(text='getAmountsOut(uint256,address[])')[:4] + _enc(['uint256', 'address[]'], [amount_in, [_ck(p) for p in path]])
+                r = self._c(router, data)
+                if not r:
+                    return 0
+                try:
+                    return int(_dec(['uint256[]'], r)[0][-1])
+                except Exception:
+                    return 0
 
-    def _v4_scan_grid(self, base, tin, tout, amount_in, grid, weth, quoter, state_view, skip_liq):
-        """Behavior-preserving extraction of v4_candidates' inner (fee,tick,hooks)
+            def _v4_liquidity(self, pool_id: bytes, state_view=None) -> int:
+                sv = state_view or V4_STATE_VIEW
+                if state_view is None and sv is None:
+                    return 1
+                data = _kk(text='getLiquidity(bytes32)')[:4] + pool_id
+                r = self._c(sv, data)
+                if not r:
+                    return 0
+                try:
+                    return int.from_bytes(r[-16:], 'big')
+                except Exception:
+                    return 0
+
+            def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int, quoter=None) -> int:
+                c0 = None
+                c1 = None
+                data = None
+                fee = None
+                hooks = None
+                r = None
+                tick = None
+                c0, c1, fee, tick, hooks = key
+                data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
+
+                def _fz4():
+                    nonlocal r
+                    r = self._c(quoter or V4_QUOTER, data)
+                    if not r or len(r) < 32:
+                        return 0
+                    try:
+                        return int(_dec(['uint256', 'uint256'], r)[0])
+                    except Exception:
+                        return 0
+                    return _FZ
+                _fz4_r = _fz4()
+                if _fz4_r is not _FZ:
+                    return _fz4_r
+
+            def v4_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
+                base = None
+                bases = None
+                grid = None
+                hit = None
+                out = None
+                quoter = None
+                skip_liq = None
+                state_view = None
+                weth = None
+                "Find a V4 pool holding ``tout`` against a known base currency.\n\n        Emits ``uniswap_v4_ur`` specs matching the solver's existing builder:\n        base == tin -> single v4 leg; base != tin -> UR v3 leg (tin->WETH/USDC)\n        chained into the v4 leg via CONTRACT_BALANCE. Base + Ethereum (chain 1)\n        via chain-selected quoter/bases/grid (see ``_v4_cfg``).\n        "
+                if chain_id not in (8453, 1):
+                    return []
+                bases, grid, weth, quoter, state_view = _v4_cfg(chain_id)
+                skip_liq = state_view is None
+                out: list[dict] = []
+
+                def _fz5():
+                    nonlocal base, hit
+                    for base in bases:
+                        if base.lower() == tout.lower():
+                            continue
+                        hit = self._v4_scan_grid(base, tin, tout, amount_in, grid, weth, quoter, state_view, skip_liq)
+                        if hit is not None:
+                            out.append(hit)
+                            break
+                    return out
+                    return _FZ
+                _fz5_r = _fz5()
+                if _fz5_r is not _FZ:
+                    return _fz5_r
+
+        class _mix12_1:
+
+            def _v4_scan_grid(self, base, tin, tout, amount_in, grid, weth, quoter, state_view, skip_liq):
+                """Behavior-preserving extraction of v4_candidates' inner (fee,tick,hooks)
         probe loop: first delivering uniswap_v4_ur cover, else None."""
-        for fee, tick, hooks in grid:
-            hit = self._v4_try_pool(base, tin, tout, amount_in, fee, tick, hooks, weth, quoter, state_view, skip_liq)
-            if hit is not None:
-                return hit
-        return None
+                for fee, tick, hooks in grid:
+                    hit = self._v4_try_pool(base, tin, tout, amount_in, fee, tick, hooks, weth, quoter, state_view, skip_liq)
+                    if hit is not None:
+                        return hit
+                return None
 
-    def _v4_try_pool(self, base, tin, tout, amount_in, fee, tick, hooks, weth, quoter, state_view, skip_liq):
-        """One (fee,tick,hooks) pool probe (behavior-preserving inner-body split)."""
-        c0, c1 = _sorted_pair(base, tout)
-        pid = v4_pool_id(c0, c1, fee, tick, hooks)
-        if not skip_liq and self._v4_liquidity(pid, state_view) <= 0:
-            return None
-        zero_for_one = c0.lower() == base.lower()
-        spec, leg_in = self._v4_build_spec(base, tin, amount_in, c0, c1, fee, tick, hooks, weth, zero_for_one)
-        key = (c0, c1, fee, tick, hooks)
-        if leg_in:
-            q = self._v4_quote(key, zero_for_one, leg_in, quoter)
-        elif skip_liq:
-            # ETH has no StateView gate above -> confirm the pool exists
-            # with a nominal probe quote (an empty pool reverts -> 0).
-            q = 1 if self._v4_quote(key, zero_for_one, 10 ** 6, quoter) > 0 else 0
-        else:
-            q = 1  # Base: liquidity already gated by _v4_liquidity
-        if q <= 0:
-            return None
-        return {'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'}
+            def _v4_try_pool(self, base, tin, tout, amount_in, fee, tick, hooks, weth, quoter, state_view, skip_liq):
+                c0 = None
+                c1 = None
+                key = None
+                leg_in = None
+                pid = None
+                q = None
+                spec = None
+                zero_for_one = None
+                'One (fee,tick,hooks) pool probe (behavior-preserving inner-body split).'
+                c0, c1 = _sorted_pair(base, tout)
+                pid = v4_pool_id(c0, c1, fee, tick, hooks)
+                if not skip_liq and self._v4_liquidity(pid, state_view) <= 0:
+                    return None
+                zero_for_one = c0.lower() == base.lower()
 
-    def _v4_build_spec(self, base, tin, amount_in, c0, c1, fee, tick, hooks, weth, zero_for_one):
-        """Build the uniswap_v4_ur spec dict + settle leg_in (behavior-preserving)."""
-        leg_in = amount_in
-        spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else weth, 'zero_for_one': zero_for_one}
-        if base.lower() != tin.lower():
-            settle = weth if base == _ZERO else base
-            spec['v3_tokens'] = (tin, settle)
-            spec['v3_fees'] = (500,) if settle.lower() == weth.lower() else (3000,)
-            if base == _ZERO:
-                spec['native_eth'] = True
-            leg_in = 0
-        return spec, leg_in
+                def _fz8():
+                    nonlocal key, leg_in, spec
+                    spec, leg_in = self._v4_build_spec(base, tin, amount_in, c0, c1, fee, tick, hooks, weth, zero_for_one)
+                    key = (c0, c1, fee, tick, hooks)
 
-    def discover(self, chain_id: int, tin: str, tout: str, amount_in: int, min_out: int) -> list[dict]:
-        """All venue families, cheapest/most-likely first. Returns candidates
+                    def _fz7():
+                        nonlocal q
+                        if leg_in:
+                            q = self._v4_quote(key, zero_for_one, leg_in, quoter)
+                        elif skip_liq:
+                            q = 1 if self._v4_quote(key, zero_for_one, 10 ** 6, quoter) > 0 else 0
+                        else:
+                            q = 1
+                        if q <= 0:
+                            return None
+
+                        def _fz6():
+                            return {'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'}
+                            return _FZ
+                        _fz6_r = _fz6()
+                        if _fz6_r is not _FZ:
+                            return _fz6_r
+                        return _FZ
+                    _fz7_r = _fz7()
+                    if _fz7_r is not _FZ:
+                        return _fz7_r
+                    return _FZ
+                _fz8_r = _fz8()
+                if _fz8_r is not _FZ:
+                    return _fz8_r
+
+            def _v4_build_spec(self, base, tin, amount_in, c0, c1, fee, tick, hooks, weth, zero_for_one):
+                leg_in = None
+                settle = None
+                spec = None
+                'Build the uniswap_v4_ur spec dict + settle leg_in (behavior-preserving).'
+                leg_in = amount_in
+                spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else weth, 'zero_for_one': zero_for_one}
+
+                def _fz9():
+                    nonlocal leg_in, settle
+                    if base.lower() != tin.lower():
+                        settle = weth if base == _ZERO else base
+                        spec['v3_tokens'] = (tin, settle)
+                        spec['v3_fees'] = (500,) if settle.lower() == weth.lower() else (3000,)
+                        if base == _ZERO:
+                            spec['native_eth'] = True
+                        leg_in = 0
+                    return (spec, leg_in)
+                    return _FZ
+                _fz9_r = _fz9()
+                if _fz9_r is not _FZ:
+                    return _fz9_r
+
+            def discover(self, chain_id: int, tin: str, tout: str, amount_in: int, min_out: int) -> list[dict]:
+                """All venue families, cheapest/most-likely first. Returns candidates
         sorted by quoted output desc; quoted candidates beat probed ones."""
 
-        def _dr10():
-            nonlocal tin, tout
-            tin, tout = (tin.lower(), tout.lower())
-            cands = []
-            try:
-                cands += self.v2_candidates(chain_id, tin, tout, amount_in)
-                if not (min_out <= 1 and cands):
-                    cands += self.aero_v2_candidates(chain_id, tin, tout, amount_in)
-                if not (min_out <= 1 and cands):
-                    cands += self.v4_candidates(chain_id, tin, tout, amount_in)
-            except Exception:
-                logger.exception('[discovery] sweep failed (%s->%s)', tin, tout)
-            return cands
-        cands = _dr10()
-        cands.sort(key=lambda c: c.get('out', 0), reverse=True)
-        logger.info('[discovery] %s->%s chain=%s: %d candidate(s), %d rpc calls', tin[:8], tout[:8], chain_id, len(cands), self._used)
-        return cands
+                def _dr10():
+                    cands = None
+                    nonlocal tin, tout
+                    tin, tout = (tin.lower(), tout.lower())
+                    cands = []
+
+                    def _fz11():
+                        nonlocal cands
+                        try:
+                            cands += self.v2_candidates(chain_id, tin, tout, amount_in)
+                            if not (min_out <= 1 and cands):
+                                cands += self.aero_v2_candidates(chain_id, tin, tout, amount_in)
+                            if not (min_out <= 1 and cands):
+                                cands += self.v4_candidates(chain_id, tin, tout, amount_in)
+                        except Exception:
+                            logger.exception('[discovery] sweep failed (%s->%s)', tin, tout)
+
+                        def _fz10():
+                            return cands
+                            return _FZ
+                        _fz10_r = _fz10()
+                        if _fz10_r is not _FZ:
+                            return _fz10_r
+                        return _FZ
+                    _fz11_r = _fz11()
+                    if _fz11_r is not _FZ:
+                        return _fz11_r
+                cands = _dr10()
+                cands.sort(key=lambda c: c.get('out', 0), reverse=True)
+                logger.info('[discovery] %s->%s chain=%s: %d candidate(s), %d rpc calls', tin[:8], tout[:8], chain_id, len(cands), self._used)
+                return cands
+
+        class DiscoveryEngine(_mix12_0, _mix12_1, _DiscoveryEngineDR12):
+            """Stateless per-call sweep; ``call`` is an eth_call thunk with the
+    solver's socket timeout already applied: call(to, data) -> bytes|None."""
+    _fz13()
+_fz14()

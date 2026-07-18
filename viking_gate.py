@@ -1,7 +1,6 @@
-# gated-tier evaluation (z / baseline-proxy / margin gates)
+_FZ = object()
 import logging
 import shape_base as _sba
-
 logger = logging.getLogger('viking')
 
 def _gate_z(s, spec, tin, tout, amt, key, chain_id):
@@ -12,11 +11,20 @@ def _gate_z(s, spec, tin, tout, amt, key, chain_id):
     return (est, mid_q)
 
 def _gate_base(s, spec, plan, tin, tout, amt, chain_id):
+    base_out = None
+    qs = None
     base_out = _sba.base_out_av2(s, plan, spec, tin, tout, amt, chain_id) if 'base_mid' in spec else _sba.base_out(s, plan, chain_id)
-    if not base_out and spec.get('bl'):
-        qs = [s._hydra_quote_leg1({'leg1_router': rt, 'leg1_fee': fe, 'mid': tout}, tin, amt, chain_id) for rt, fe in spec['bl']]
-        base_out = max([q for q in qs if q] or [0]) or None
-    return base_out
+
+    def _fz1():
+        nonlocal base_out, qs
+        if not base_out and spec.get('bl'):
+            qs = [s._hydra_quote_leg1({'leg1_router': rt, 'leg1_fee': fe, 'mid': tout}, tin, amt, chain_id) for rt, fe in spec['bl']]
+            base_out = max([q for q in qs if q] or [0]) or None
+        return base_out
+        return _FZ
+    _fz1_r = _fz1()
+    if _fz1_r is not _FZ:
+        return _fz1_r
 
 def _gate_margin(s, spec, plan, tin, tout, amt, key, chain_id):
     base_out = _gate_base(s, spec, plan, tin, tout, amt, chain_id)
@@ -61,15 +69,28 @@ def _dyn_try(s, intent, state, snapshot, venue, param, tin, tout, amount_in, cha
     return plan
 
 def dyn_fallback(s, intent, state, snapshot, spec, tin, tout, amount_in):
+    _v_bs_quote = None
+    chain_id = None
+    param = None
+    plan = None
+    q = None
+    venue = None
     from shape_lib import _v_bs_quote
     chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
     if chain_id != 8453:
         return None
-    for venue, param in spec:
-        q = _v_bs_quote(s, venue, param, tin, tout, amount_in, chain_id)
-        if not q or int(q) <= 0:
-            continue
-        plan = _dyn_try(s, intent, state, snapshot, venue, param, tin, tout, amount_in, chain_id, q)
-        if plan is not None:
-            return plan
-    return None
+
+    def _fz3():
+        nonlocal param, plan, q, venue
+        for venue, param in spec:
+            q = _v_bs_quote(s, venue, param, tin, tout, amount_in, chain_id)
+            if not q or int(q) <= 0:
+                continue
+            plan = _dyn_try(s, intent, state, snapshot, venue, param, tin, tout, amount_in, chain_id, q)
+            if plan is not None:
+                return plan
+        return None
+        return _FZ
+    _fz3_r = _fz3()
+    if _fz3_r is not _FZ:
+        return _fz3_r

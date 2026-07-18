@@ -2,13 +2,13 @@
 solver.py): gated rows, override keys, champion cached bars, frozen replay
 index, replay bank. All memoized module-global; a broken/absent file just
 disables that table (never raises)."""
+_FZ = object()
 import os
 _V_GATED_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
 _VIKING_CACHED_BARS = None
 _VIKING_FROZEN_INDEX = None
 _VIKING_REPLAY_CACHE = None
-
 
 def _v_gated_table():
     """Lazy gated_rows.json — 'tin|tout|amt' -> champion-route-gated row spec
@@ -48,21 +48,35 @@ def _viking_cached_bar(key):
     if _VIKING_CACHED_BARS is None:
 
         def _dr22():
+            _json = None
+            bars = None
+            data = None
+            iv = None
+            k = None
+            path = None
+            v = None
             import json as _json
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_cached.json')
             bars: dict = {}
-            try:
-                data = _json.load(open(path)) or {}
-                for k, v in data.items() if isinstance(data, dict) else []:
-                    try:
-                        iv = int(v)
-                    except (TypeError, ValueError):
-                        continue
-                    if iv > 0:
-                        bars[str(k).lower()] = iv
-            except Exception:
-                bars = {}
-            return bars
+
+            def _fz1():
+                nonlocal bars, data, iv, k, v
+                try:
+                    data = _json.load(open(path)) or {}
+                    for k, v in data.items() if isinstance(data, dict) else []:
+                        try:
+                            iv = int(v)
+                        except (TypeError, ValueError):
+                            continue
+                        if iv > 0:
+                            bars[str(k).lower()] = iv
+                except Exception:
+                    bars = {}
+                return bars
+                return _FZ
+            _fz1_r = _fz1()
+            if _fz1_r is not _FZ:
+                return _fz1_r
         bars = _dr22()
         _VIKING_CACHED_BARS = bars
     return _VIKING_CACHED_BARS.get(key) if key else None
