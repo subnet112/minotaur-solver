@@ -410,7 +410,7 @@ class ChainKillerSolver(_McSolver):
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name='chain-killer', version='compact-107.1', author='top', description='current champion plus two proven quote-history routes', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name='meridian-edge', version='107.1.0', author='meridian', description='compact quote-history route successor', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     def generate_plan(self, intent, state, snapshot=None):
         q87 = _chain_killer_q87(self, intent, state)
