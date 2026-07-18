@@ -4,7 +4,6 @@ import os
 from mc_data import _MC_QUOTER, _MC_PANCAKE_Q
 _MC_DEAD_FILL_CACHE = None
 
-
 def dead_fill():
     """Lazy dead_fill.json — 'tin|tout|amt' keys where BOTH the champion tree
     and our base are executor-sim PROVEN to deliver 0 end-to-end. Treated as
@@ -29,13 +28,19 @@ def base_call(s, base_plan, tin, tout, amt):
     """(target,callbytes) that re-quotes the champion's OWN route, or None (undecodable)."""
     try:
         ix = base_plan.interactions[-1]
-        cd = ix.call_data if ix.call_data.startswith('0x') else '0x' + ix.call_data
-        sel = cd[:10]
-        body = bytes.fromhex(cd[10:])
-        if sel in ('0x04e45aaf', '0x414bf389'):
-            return _bc_v3s(s, sel, body, tin, tout, amt)
-        if sel == '0xb858183f':
-            return (_MC_QUOTER, s._mc_path_qdata(body, amt))
+
+        def _lr3():
+            cd = ix.call_data if ix.call_data.startswith('0x') else '0x' + ix.call_data
+            sel = cd[:10]
+            body = bytes.fromhex(cd[10:])
+            if sel in ('0x04e45aaf', '0x414bf389'):
+                return (1, _bc_v3s(s, sel, body, tin, tout, amt))
+            if sel == '0xb858183f':
+                return (1, (_MC_QUOTER, s._mc_path_qdata(body, amt)))
+            return (0, None)
+        _lrt4 = _lr3()
+        if _lrt4[0]:
+            return _lrt4[1]
     except Exception:
         return None
     return None

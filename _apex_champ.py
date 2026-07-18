@@ -35,30 +35,35 @@ def _load_agent_strategies() -> dict:
     """Load Strategy classes from strategies/<app_id>/strategy.py, keyed by
     app_id. Never raises — a broken strategy file is skipped."""
     out: dict = {}
-    if not _STRATEGIES_DIR.is_dir():
+
+    def _lr4():
+        if not _STRATEGIES_DIR.is_dir():
+            return out
+        for app_dir in _STRATEGIES_DIR.iterdir():
+            strat_file = app_dir / 'strategy.py'
+            if not (app_dir.is_dir() and app_dir.name.startswith('app_') and strat_file.is_file()):
+                continue
+            try:
+
+                def _fw1():
+                    spec = importlib.util.spec_from_file_location(f'agent_strategy_{app_dir.name}', strat_file)
+                    mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(mod)
+                    from minotaur_subnet.sdk.strategy import Strategy
+                    return (mod, Strategy)
+                mod, Strategy = _fw1()
+                for obj in vars(mod).values():
+
+                    def _fw3():
+                        if isinstance(obj, type) and issubclass(obj, Strategy) and (obj is not Strategy):
+                            out[app_dir.name] = obj()
+                            return ('b',)
+                    if _fw3() is not None:
+                        break
+            except Exception:
+                logger.exception('[james] skipping broken strategy %s', strat_file)
         return out
-    for app_dir in _STRATEGIES_DIR.iterdir():
-        strat_file = app_dir / 'strategy.py'
-        if not (app_dir.is_dir() and app_dir.name.startswith('app_') and strat_file.is_file()):
-            continue
-        try:
-            def _fw1():
-                spec = importlib.util.spec_from_file_location(f'agent_strategy_{app_dir.name}', strat_file)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-                from minotaur_subnet.sdk.strategy import Strategy
-                return (mod, Strategy)
-            mod, Strategy = _fw1()
-            for obj in vars(mod).values():
-                def _fw3():
-                    if isinstance(obj, type) and issubclass(obj, Strategy) and (obj is not Strategy):
-                        out[app_dir.name] = obj()
-                        return ('b',)
-                if _fw3() is not None:
-                    break
-        except Exception:
-            logger.exception('[james] skipping broken strategy %s', strat_file)
-    return out
+    return _lr4()
 
 class _JamesSolverDR17(KingSolver):
 
@@ -116,14 +121,17 @@ class _JamesSolverDR17(KingSolver):
         from eth_abi import encode as _enc, decode as _dec
         from eth_utils import keccak as _kk, to_checksum_address as _ck
         sel = _kk(b'getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
-        routes = [(_ck(a), _ck(b), False, _ck(self._JAERO_FACTORY)) for a, b in pairs]
-        r = self._james_call(w3, self._JAERO_ROUTER, sel + _enc(['uint256', '(address,address,bool,address)[]'], [amt, routes]))
-        if not r:
-            return 0
-        try:
-            return _dec(['uint256[]'], r)[0][-1]
-        except Exception:
-            return 0
+
+        def _lr3():
+            routes = [(_ck(a), _ck(b), False, _ck(self._JAERO_FACTORY)) for a, b in pairs]
+            r = self._james_call(w3, self._JAERO_ROUTER, sel + _enc(['uint256', '(address,address,bool,address)[]'], [amt, routes]))
+            if not r:
+                return 0
+            try:
+                return _dec(['uint256[]'], r)[0][-1]
+            except Exception:
+                return 0
+        return _lr3()
 
     def _jq_v4(self, w3, tin, tout, amt, fee, tick, hook):
 
@@ -131,13 +139,46 @@ class _JamesSolverDR17(KingSolver):
             from eth_abi import encode as _enc
             from eth_utils import keccak as _kk, to_checksum_address as _ck
             c0, c1 = (tin, tout) if int(tin, 16) < int(tout, 16) else (tout, tin)
-            sel = _kk(b'quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4]
-            r = self._james_call(w3, self._JV4_QUOTER, sel + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), fee, tick, _ck(hook)), c0.lower() == tin.lower(), amt, b'')]))
-            return r
+
+            def _lr2():
+                sel = _kk(b'quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4]
+                r = self._james_call(w3, self._JV4_QUOTER, sel + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), fee, tick, _ck(hook)), c0.lower() == tin.lower(), amt, b'')]))
+                return r
+            return _lr2()
         r = _dr22()
         return int.from_bytes(r[:32], 'big') if r else 0
 
-class JamesSolver(_JamesSolverDR17):
+class _JamesSolverLR1(_JamesSolverDR17):
+
+    def _behind_pace(self) -> bool:
+        if not getattr(self, '_bm_t0', None) or not getattr(self, '_bm_total', 0):
+            return False
+        import time as _t
+        elapsed = _t.monotonic() - self._bm_t0
+        remaining_orders = max(1, self._bm_total - self._bm_done)
+        remaining_time = self._RUN_BUDGET_S - elapsed
+        return remaining_time / remaining_orders < self._FAST_BELOW_S
+
+    def _fast_plan(self, intent, state, snapshot=None):
+        """King's cheap path (offline snapshot / best-effort single-hop) —
+        seconds, mostly RPC-free. Falls back to None if internals drift."""
+        lr = getattr(super(), '_last_resort_plan', None)
+        if lr is None:
+            return None
+        try:
+            return lr(intent, state, snapshot)
+        except Exception:
+            logger.exception('[james] fast path raised')
+            return None
+
+    @staticmethod
+    def _is_empty(plan) -> bool:
+        try:
+            return plan is None or not getattr(plan, 'interactions', None)
+        except Exception:
+            return True
+
+class JamesSolver(_JamesSolverLR1):
     """King primary; agent strategies cover its empty-plan blind spots; a
     benchmark time-governor guarantees the full corpus gets answered.
 
@@ -184,34 +225,6 @@ class JamesSolver(_JamesSolverDR17):
             pass
         self._bm_t0 = None
 
-    def _behind_pace(self) -> bool:
-        if not getattr(self, '_bm_t0', None) or not getattr(self, '_bm_total', 0):
-            return False
-        import time as _t
-        elapsed = _t.monotonic() - self._bm_t0
-        remaining_orders = max(1, self._bm_total - self._bm_done)
-        remaining_time = self._RUN_BUDGET_S - elapsed
-        return remaining_time / remaining_orders < self._FAST_BELOW_S
-
-    def _fast_plan(self, intent, state, snapshot=None):
-        """King's cheap path (offline snapshot / best-effort single-hop) —
-        seconds, mostly RPC-free. Falls back to None if internals drift."""
-        lr = getattr(super(), '_last_resort_plan', None)
-        if lr is None:
-            return None
-        try:
-            return lr(intent, state, snapshot)
-        except Exception:
-            logger.exception('[james] fast path raised')
-            return None
-
-    @staticmethod
-    def _is_empty(plan) -> bool:
-        try:
-            return plan is None or not getattr(plan, 'interactions', None)
-        except Exception:
-            return True
-
     def generate_plan(self, intent, state, snapshot=None):
 
         def _dr8():
@@ -219,6 +232,7 @@ class JamesSolver(_JamesSolverDR17):
             self._dyn_order_budget = None
 
             def _dr20():
+
                 def _fw4():
                     if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
                         import time as _t
@@ -312,6 +326,7 @@ class JamesSolver(_JamesSolverDR17):
             return None
 
         def _fw2():
+
             def _dr6():
                 chain_id = int(getattr(state, 'chain_id', 0) or 0)
                 if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())) or ((tin, tout) in table):
@@ -337,6 +352,7 @@ class JamesSolver(_JamesSolverDR17):
 
                             def _dr14():
                                 c0, c1 = (self._JWETH, tout) if int(self._JWETH, 16) < int(tout, 16) else (tout, self._JWETH)
+
                                 def _fw5():
                                     spec = {'pool': (c0, c1, self._JV4_DYN_FEE, 200, hook), 'settle': self._JWETH, 'zero_for_one': c0.lower() == self._JWETH.lower()}
                                     if tin == self._JUSDC.lower():

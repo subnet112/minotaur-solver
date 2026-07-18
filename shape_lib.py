@@ -1,5 +1,3 @@
-# SN112 shape library — quote helpers (builders live in shape_lib2/shape_lib3).
-
 def _res_call(s, pair, chain_id):
     from eth_abi import decode as _dec
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
@@ -17,7 +15,7 @@ def _v_v2_out(s, pair, amt_in, in_is_t0, chain_id):
             return None
         rin, rout = (res[0], res[1]) if in_is_t0 else (res[1], res[0])
         ai = int(amt_in) * 997
-        return ((ai * rout) // (rin * 1000 + ai)) or None
+        return ai * rout // (rin * 1000 + ai) or None
     except Exception:
         return None
 
@@ -34,28 +32,44 @@ def _v_bs_quote(s, venue, param, tin, tout, amt, chain_id):
 
 def _v_sng_dy(s, pool, i, j, dx, chain_id):
     """Curve StableNg forward quote: pool.get_dy(i, j, dx); None on failure."""
+    _dec = r = None
     try:
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        w3 = s._get_web3(int(chain_id))
-        if w3 is None:
-            return None
-        sel = _keccak(text='get_dy(int128,int128,uint256)')[:4]
-        r = w3.eth.call({'to': _ck(pool), 'data': '0x' + (sel + _enc(['int128', 'int128', 'uint256'], [int(i), int(j), int(dx)])).hex()})
+
+        def _lr3():
+            nonlocal _dec, r
+            from eth_abi import encode as _enc, decode as _dec
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            w3 = s._get_web3(int(chain_id))
+            if w3 is None:
+                return (1, None)
+            sel = _keccak(text='get_dy(int128,int128,uint256)')[:4]
+            r = w3.eth.call({'to': _ck(pool), 'data': '0x' + (sel + _enc(['int128', 'int128', 'uint256'], [int(i), int(j), int(dx)])).hex()})
+            return (0, None)
+        _lrt4 = _lr3()
+        if _lrt4[0]:
+            return _lrt4[1]
         return _dec(['uint256'], r)[0] or None
     except Exception:
         return None
 
 def _v_pair_gao(s, pair, amt, tin, chain_id):
     """Solidly/Aero V2 pair forward quote via the pair's own getAmountOut."""
+    _dec = r = None
     try:
-        from eth_abi import encode as _enc, decode as _dec
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        w3 = s._get_web3(int(chain_id))
-        if w3 is None:
-            return None
-        sel = _keccak(text='getAmountOut(uint256,address)')[:4]
-        r = w3.eth.call({'to': _ck(pair), 'data': '0x' + (sel + _enc(['uint256', 'address'], [int(amt), _ck(tin)])).hex()})
+
+        def _lr11():
+            nonlocal _dec, r
+            from eth_abi import encode as _enc, decode as _dec
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            w3 = s._get_web3(int(chain_id))
+            if w3 is None:
+                return (1, None)
+            sel = _keccak(text='getAmountOut(uint256,address)')[:4]
+            r = w3.eth.call({'to': _ck(pair), 'data': '0x' + (sel + _enc(['uint256', 'address'], [int(amt), _ck(tin)])).hex()})
+            return (0, None)
+        _lrt12 = _lr11()
+        if _lrt12[0]:
+            return _lrt12[1]
         return _dec(['uint256'], r)[0] or None
     except Exception:
         return None

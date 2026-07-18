@@ -23,37 +23,40 @@ covers are added ONLY from fresh scorecards against THIS champion, one proven
 row at a time.
 """
 from __future__ import annotations
-_DR_UNSET = object()
-import logging
-_REFORK_LANE = "k03"  # lane marker (fingerprint differentiation)
-import os
-from hydra_top import SOLVER_CLASS as _HydraBase
-from minotaur_subnet.sdk.intent_solver import SolverMetadata
-from minotaur_subnet.shared.types import ExecutionPlan, Interaction
-logger = logging.getLogger(__name__)
-_PUTTY_FINAL_BRAND = 'hydra-discovery-router'
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.0.0')
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
 
-import shape_lib as _sl
-import shape_est2 as _se
-import shape_build as _sb
-import shape_lib3 as _sl3
-import viking_gate as _vg
-import viking_data as _vd
-import shape_base as _sba
-import chain1 as _c1
-import viking_tables as _vt
-import viking_serve as _vs
-import mc_lib as _mcl
+def _lr1():
+    global ExecutionPlan, Interaction, SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _DR_UNSET, _HydraBase, _PUTTY_FINAL_BRAND, _REFORK_LANE, _c1, _mcl, _sb, _sba, _se, _sl, _sl3, _vd, _vg, _vs, _vt, logger, logging, os
+    _DR_UNSET = object()
+    import logging
+    _REFORK_LANE = 'k03'
+    import os
+    from hydra_top import SOLVER_CLASS as _HydraBase
+    from minotaur_subnet.sdk.intent_solver import SolverMetadata
+    from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+    logger = logging.getLogger(__name__)
+    _PUTTY_FINAL_BRAND = 'hydra-discovery-router'
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.0.0')
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
+    import shape_lib as _sl
+    import shape_est2 as _se
+    import shape_build as _sb
+    import shape_lib3 as _sl3
+    import viking_gate as _vg
+    import viking_data as _vd
+    import shape_base as _sba
+    import chain1 as _c1
+    import viking_tables as _vt
+    import viking_serve as _vs
+    import mc_lib as _mcl
+_lr1()
 
 class VikingSolver(_HydraBase):
     """Champion stack + viking delta (override-precedence, then fill-only-empty)."""
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version="412.0.3", author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
+        return SolverMetadata(name=SOLVER_NAME, version='412.0.3', author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
 
     @staticmethod
     def _v_is_empty(plan) -> bool:
@@ -70,16 +73,21 @@ class VikingSolver(_HydraBase):
         try:
 
             def _dr14():
-                norm = getattr(self, '_normalized_swap_params', None)
-                try:
-                    p = norm(intent, state) if callable(norm) else {}
-                except Exception:
-                    p = {}
-                if not p:
-                    p = dict(getattr(state, 'raw_params', None) or {})
-                if not p and isinstance(state, dict):
-                    p = state
-                tin = str(p.get('input_token', '') or '').lower()
+                p = tin = None
+
+                def _lr3():
+                    nonlocal p, tin
+                    norm = getattr(self, '_normalized_swap_params', None)
+                    try:
+                        p = norm(intent, state) if callable(norm) else {}
+                    except Exception:
+                        p = {}
+                    if not p:
+                        p = dict(getattr(state, 'raw_params', None) or {})
+                    if not p and isinstance(state, dict):
+                        p = state
+                    tin = str(p.get('input_token', '') or '').lower()
+                _lr3()
                 tout = str(p.get('output_token', '') or '').lower()
                 return (p, tin, tout)
             p, tin, tout = _dr14()
@@ -125,9 +133,14 @@ class VikingSolver(_HydraBase):
             def _dr20():
                 if not rows:
                     return None
-                chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
-                ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
-                rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
+                rp = None
+
+                def _lr6():
+                    nonlocal rp
+                    chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+                    ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
+                    rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
+                _lr6()
                 return None if self._v_is_empty(rp) else rp
                 return _DR_UNSET
             _dr21 = _dr20()
@@ -137,31 +150,36 @@ class VikingSolver(_HydraBase):
             logger.exception('[viking] replay build failed')
             return None
     _VIKING_DYN_FALLBACKS = _vd.DYN_FALLBACKS
+
     def _v_dynamic_fallback(self, intent, state, snapshot):
         try:
 
             def _dr23():
                 norm = getattr(self, '_normalized_swap_params', None)
-                try:
-                    p = norm(intent, state) if callable(norm) else {}
-                except Exception:
-                    p = {}
-                if not p:
-                    p = dict(getattr(state, 'raw_params', None) or {})
-                tin = str(p.get('input_token', '') or '').lower()
-                tout = str(p.get('output_token', '') or '').lower()
-                spec = self._VIKING_DYN_FALLBACKS.get((tin, tout))
+                _dr3 = None
 
-                def _dr3():
-                    if not spec:
-                        return None
-                    amount_in = int(p.get('input_amount', 0) or 0)
-                    if amount_in <= 0:
-                        return None
+                def _lr4():
+                    nonlocal _dr3
+                    try:
+                        p = norm(intent, state) if callable(norm) else {}
+                    except Exception:
+                        p = {}
+                    if not p:
+                        p = dict(getattr(state, 'raw_params', None) or {})
+                    tin = str(p.get('input_token', '') or '').lower()
+                    tout = str(p.get('output_token', '') or '').lower()
+                    spec = self._VIKING_DYN_FALLBACKS.get((tin, tout))
 
-                    _dr16 = _vg.dyn_fallback(self, intent, state, snapshot, spec, tin, tout, amount_in)
-                    if _dr16 is not _DR_UNSET:
-                        return _dr16
+                    def _dr3():
+                        if not spec:
+                            return None
+                        amount_in = int(p.get('input_amount', 0) or 0)
+                        if amount_in <= 0:
+                            return None
+                        _dr16 = _vg.dyn_fallback(self, intent, state, snapshot, spec, tin, tout, amount_in)
+                        if _dr16 is not _DR_UNSET:
+                            return _dr16
+                _lr4()
                 _dr4 = _dr3()
                 return _dr4
             _dr4 = _dr23()
@@ -193,12 +211,15 @@ class VikingSolver(_HydraBase):
         if ov is not None:
             return ov
         plan = super().generate_plan(intent, state, snapshot)
-        gp = self._v_gated(intent, state, snapshot, plan, key)
-        if gp is None:
-            gp = _c1.superset(self, intent, state, snapshot, plan)
-        if gp is None:
-            gp = _vs.tail_serve(self, key, plan, intent, state, snapshot)
-        return gp
+
+        def _lr7():
+            gp = self._v_gated(intent, state, snapshot, plan, key)
+            if gp is None:
+                gp = _c1.superset(self, intent, state, snapshot, plan)
+            if gp is None:
+                gp = _vs.tail_serve(self, key, plan, intent, state, snapshot)
+            return gp
+        return _lr7()
 
 class _PuttyCleanSolver(VikingSolver):
     """Outermost brand wrapper: forces metadata().name to the clean brand
@@ -209,13 +230,13 @@ class _PuttyCleanSolver(VikingSolver):
         _rep = getattr(_m, '_replace', None)
         if callable(_rep):
             try:
-                return _rep(name="scandinavia-solver-3")
+                return _rep(name='scandinavia-solver-3')
             except Exception:
                 pass
         try:
             import dataclasses as _dc
             if _dc.is_dataclass(_m):
-                return _dc.replace(_m, name="scandinavia-solver-3")
+                return _dc.replace(_m, name='scandinavia-solver-3')
         except Exception:
             pass
         try:
@@ -223,7 +244,6 @@ class _PuttyCleanSolver(VikingSolver):
         except Exception:
             pass
         return _m
-
 from mc_data import _MC_ADDR, _MC_AGG3, _MC_QUOTER, _MC_ROUTER, _MC_QSEL, _MC_QIN, _MC_QOUT, _MC_FEES, _MC_FORCE_PAIR, _MC_FORCE_ORDER, _MC_CAND_ORDER
 
 class _McSolver(_PuttyCleanSolver):
@@ -233,6 +253,7 @@ class _McSolver(_PuttyCleanSolver):
     route in ONE aggregate3 eth_call and serve the best live single-hop >= min_out.
     FORCE keys fill unconditionally (proven-dead); CAND keys fill only when the
     base route re-quotes to 0 => can lift a 0 to a delivery, never regress."""
+
     def _mc_qdata(self, tin, tout, amt, fee):
         from eth_abi import encode as _e
         from eth_utils import to_checksum_address as _ck
@@ -241,11 +262,14 @@ class _McSolver(_PuttyCleanSolver):
     def _mc_path_qdata(self, body, amt):
         from eth_abi import encode as _e
         off = int.from_bytes(body[0:32], 'big')
-        t = body[off:]
-        po = int.from_bytes(t[0:32], 'big')
-        pl = int.from_bytes(t[po:po + 32], 'big')
-        path = t[po + 32:po + 32 + pl]
-        return bytes.fromhex('cdca1753' + _e(['bytes', 'uint256'], [path, amt]).hex())
+
+        def _lr8():
+            t = body[off:]
+            po = int.from_bytes(t[0:32], 'big')
+            pl = int.from_bytes(t[po:po + 32], 'big')
+            path = t[po + 32:po + 32 + pl]
+            return bytes.fromhex('cdca1753' + _e(['bytes', 'uint256'], [path, amt]).hex())
+        return _lr8()
 
     def _mc_base_call(self, base_plan, tin, tout, amt):
         """(target,callbytes) that re-quotes the champion's OWN route, or None (undecodable)."""
@@ -267,7 +291,7 @@ class _McSolver(_PuttyCleanSolver):
         k3 = (tin.lower(), tout.lower(), amt)
         if (tin.lower(), tout.lower()) in _MC_FORCE_PAIR or k3 in _MC_FORCE_ORDER:
             return 'wl'
-        if (k3[0] + '|' + k3[1] + '|' + str(amt)) in _mcl.dead_fill():
+        if k3[0] + '|' + k3[1] + '|' + str(amt) in _mcl.dead_fill():
             return 'wl'
         if k3 in _MC_CAND_ORDER:
             return 'cand'
@@ -316,12 +340,15 @@ class _McSolver(_PuttyCleanSolver):
     def _mc_params(self, intent, state):
         p = self._normalized_swap_params(intent, state)
         tin = str(p.get('input_token', '') or '')
-        tout = str(p.get('output_token', '') or '')
-        amt = int(p.get('input_amount', 0) or 0)
-        mino = int(p.get('min_output_amount', 0) or 0)
-        if amt <= 0 or not tin or (not tout) or (tin.lower() == tout.lower()):
-            return None
-        return (tin, tout, amt, mino)
+
+        def _lr5():
+            tout = str(p.get('output_token', '') or '')
+            amt = int(p.get('input_amount', 0) or 0)
+            mino = int(p.get('min_output_amount', 0) or 0)
+            if amt <= 0 or not tin or (not tout) or (tin.lower() == tout.lower()):
+                return None
+            return (tin, tout, amt, mino)
+        return _lr5()
 
     def _mc_setup(self, intent, state, base_plan):
         """One gate: chain + params + target-class + w3 + Multicall list. None to defer."""
@@ -329,16 +356,19 @@ class _McSolver(_PuttyCleanSolver):
 
     def _mc_skip_sub(self, intent, state, snapshot, base_plan):
         s = self._mc_setup(intent, state, base_plan)
-        if s is None:
-            return None
-        w3, tin, tout, amt, mino, cls, calls, base_call = s
-        res = self._mc_run(w3, calls)
-        if res is None:
-            return None
-        best_fee = self._mc_decide(res, cls, base_call, mino)
-        if best_fee is None:
-            return None
-        return self._mc_plan(intent, state, snapshot, tin, tout, amt, mino, best_fee)
+
+        def _lr9():
+            if s is None:
+                return None
+            w3, tin, tout, amt, mino, cls, calls, base_call = s
+            res = self._mc_run(w3, calls)
+            if res is None:
+                return None
+            best_fee = self._mc_decide(res, cls, base_call, mino)
+            if best_fee is None:
+                return None
+            return self._mc_plan(intent, state, snapshot, tin, tout, amt, mino, best_fee)
+        return _lr9()
 
     def _mc_decide(self, res, cls, base_call, mino):
         """Pick our best tier; None to defer. Candidate fills only if the base route re-quotes dead."""
@@ -376,18 +406,11 @@ class _McSolver(_PuttyCleanSolver):
 from baseswap_universal import maybe_q184_plan as _chain_killer_q184
 from mixed_universal import maybe_q87_plan as _chain_killer_q87
 
-
 class ChainKillerSolver(_McSolver):
+
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(
-            name="chain-killer",
-            version="quote-native-3",
-            author="top",
-            description="current champion plus two proven quote-history routes",
-            supported_chains=base.supported_chains,
-            supported_intent_types=base.supported_intent_types,
-        )
+        return SolverMetadata(name='chain-killer', version='compact-107.1', author='top', description='current champion plus two proven quote-history routes', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     def generate_plan(self, intent, state, snapshot=None):
         q87 = _chain_killer_q87(self, intent, state)
@@ -397,6 +420,4 @@ class ChainKillerSolver(_McSolver):
         if q184 is not None:
             return q184
         return super().generate_plan(intent, state, snapshot)
-
-
 SOLVER_CLASS = ChainKillerSolver

@@ -9,7 +9,6 @@ _VIKING_CACHED_BARS = None
 _VIKING_FROZEN_INDEX = None
 _VIKING_REPLAY_CACHE = None
 
-
 def _v_gated_table():
     """Lazy gated_rows.json — 'tin|tout|amt' -> champion-route-gated row spec
     (own-built routes only; pool params machine-extracted from oracle route
@@ -50,19 +49,22 @@ def _viking_cached_bar(key):
         def _dr22():
             import json as _json
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_cached.json')
-            bars: dict = {}
-            try:
-                data = _json.load(open(path)) or {}
-                for k, v in data.items() if isinstance(data, dict) else []:
-                    try:
-                        iv = int(v)
-                    except (TypeError, ValueError):
-                        continue
-                    if iv > 0:
-                        bars[str(k).lower()] = iv
-            except Exception:
-                bars = {}
-            return bars
+
+            def _lr1():
+                bars: dict = {}
+                try:
+                    data = _json.load(open(path)) or {}
+                    for k, v in data.items() if isinstance(data, dict) else []:
+                        try:
+                            iv = int(v)
+                        except (TypeError, ValueError):
+                            continue
+                        if iv > 0:
+                            bars[str(k).lower()] = iv
+                except Exception:
+                    bars = {}
+                return bars
+            return _lr1()
         bars = _dr22()
         _VIKING_CACHED_BARS = bars
     return _VIKING_CACHED_BARS.get(key) if key else None
@@ -75,23 +77,27 @@ def _viking_frozen_index() -> dict:
     global _VIKING_FROZEN_INDEX
     if _VIKING_FROZEN_INDEX is None:
         import json as _json
-        idx: dict = {}
-        here = os.path.dirname(os.path.abspath(__file__))
-        for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
-            try:
-                data = _json.load(open(os.path.join(here, fname))) or {}
-            except Exception:
-                continue
-            for k, spec in data.items() if isinstance(data, dict) else []:
 
-                def _dr12():
-                    rows = (spec or {}).get('interactions') or []
-                    sig = frozenset(((str(r.get('target', '')).lower(), str(r.get('data', '')).lower()) for r in rows))
-                    if sig:
-                        idx.setdefault(str(k).lower(), []).append(sig)
-                    return (rows, sig)
-                rows, sig = _dr12()
-        _VIKING_FROZEN_INDEX = idx
+        def _lr2():
+            global _VIKING_FROZEN_INDEX
+            idx: dict = {}
+            here = os.path.dirname(os.path.abspath(__file__))
+            for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
+                try:
+                    data = _json.load(open(os.path.join(here, fname))) or {}
+                except Exception:
+                    continue
+                for k, spec in data.items() if isinstance(data, dict) else []:
+
+                    def _dr12():
+                        rows = (spec or {}).get('interactions') or []
+                        sig = frozenset(((str(r.get('target', '')).lower(), str(r.get('data', '')).lower()) for r in rows))
+                        if sig:
+                            idx.setdefault(str(k).lower(), []).append(sig)
+                        return (rows, sig)
+                    rows, sig = _dr12()
+            _VIKING_FROZEN_INDEX = idx
+        _lr2()
     return _VIKING_FROZEN_INDEX
 
 def _viking_replay() -> dict:
