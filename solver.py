@@ -412,7 +412,7 @@ class ChainKillerSolver(_McSolver):
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name='chain-killer', version='110.0.0', author='meridian', description='quote-history performance successor', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name='chain-killer', version='112.0.0', author='meridian', description='quote-history performance successor', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     def generate_plan(self, intent, state, snapshot=None):
         cover = _chain_killer_cover(self, intent, state)

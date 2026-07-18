@@ -23,5 +23,15 @@
       "0xf3b9569F82B18aEf890De263B84189bd33EBe452",
       "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
     ]
+  },
+  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|1000000000000000000": {
+    "fee": 100,
+    "kind": "v3_direct",
+    "tag": "q090-weth-wsteth-v3"
+  },
+  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|18208488179670928720": {
+    "fee": 100,
+    "kind": "v3_direct",
+    "tag": "q4e8-weth-wsteth-v3"
   }
 }

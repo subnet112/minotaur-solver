@@ -2,6 +2,7 @@ from __future__ import annotations
 
 
 UNIVERSAL_ROUTER = "0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af"
+UNISWAP_V3_ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564"
 ADDRESS_THIS = "0x0000000000000000000000000000000000000002"
 CONTRACT_BALANCE = 1 << 255
 DEADLINE = 9999999999
@@ -89,9 +90,54 @@ def _execute_data(spec, recipient):
     return "0x" + (selector + args).hex()
 
 
+def _approve_data(spender, amount):
+    from eth_abi import encode
+    from eth_utils import keccak, to_checksum_address as checksum
+
+    selector = keccak(text="approve(address,uint256)")[:4]
+    args = encode(["address", "uint256"], [checksum(spender), amount])
+    return "0x" + (selector + args).hex()
+
+
+def _direct_v3_data(state, params, spec):
+    from eth_abi import encode
+    from eth_utils import to_checksum_address as checksum
+
+    selector = bytes.fromhex("414bf389")
+    values = (
+        checksum(params["input_token"]),
+        checksum(params["output_token"]),
+        int(spec["fee"]),
+        checksum(state.contract_address),
+        DEADLINE,
+        int(params["input_amount"]),
+        0,
+        0,
+    )
+    args = encode(
+        ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
+        [values],
+    )
+    return "0x" + (selector + args).hex()
+
+
+def _direct_v3_calls(state, params, spec):
+    from eth_utils import to_checksum_address as checksum
+
+    amount = int(params["input_amount"])
+    router = checksum(UNISWAP_V3_ROUTER)
+    token_in = checksum(params["input_token"])
+    return (
+        (token_in, _approve_data(router, amount)),
+        (router, _direct_v3_data(state, params, spec)),
+    )
+
+
 def _calls(state, params, spec):
     from eth_utils import to_checksum_address as checksum
 
+    if spec.get("kind") == "v3_direct":
+        return _direct_v3_calls(state, params, spec)
     token_in = checksum(params["input_token"])
     amount = int(params["input_amount"])
     return (
