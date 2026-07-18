@@ -23,5 +23,61 @@
       "0xf3b9569F82B18aEf890De263B84189bd33EBe452",
       "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
     ]
+  },
+  "1|0xa2c2c937333165d4c5f2dc5f31a43e1239fecfeb|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|9992269859569862910": {
+    "kind": "v2_direct",
+    "tag": "q3a27-hera-usdc-v2",
+    "v2_tokens": [
+      "0xA2c2C937333165d4c5f2dC5f31a43E1239FeCfeB",
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ]
+  },
+  "1|0x14fee680690900ba0cccfc76ad70fd1b95d10e16|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|10738239660000": {
+    "kind": "v2_v3",
+    "tag": "q4448-paal-usdc-v2-v3",
+    "v2_tokens": [
+      "0x14feE680690900BA0ccCfC76AD70Fd1b95D10e16",
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ],
+    "v3_fees": [100],
+    "v3_tokens": [
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ]
+  },
+  "1|0x0d8775f648430679a709e98d2b0cb6250d2887ef|0x8143182a775c54578c8b7b3ef77982498866945d|5000000000000000000000": {
+    "kind": "v2_v3",
+    "tag": "qaa9-bat-wquil-v2-v3",
+    "v2_tokens": [
+      "0x0D8775F648430679A709E98d2b0Cb6250d2887EF",
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ],
+    "v3_fees": [10000],
+    "v3_tokens": [
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "0x8143182a775C54578c8B7b3Ef77982498866945D"
+    ]
+  },
+  "1|0x88800092ff476844f74dc2fc427974bbee2794ae|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|587696271424745400477": {
+    "kind": "v3_direct",
+    "tag": "qcce-wallet-usdc-v3",
+    "v3_fees": [10000, 100],
+    "v3_tokens": [
+      "0x88800092fF476844f74dC2FC427974BBee2794Ae",
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ]
+  },
+  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x40e3d1a4b2c47d9aa61261f5606136ef73e28042|1186807977": {
+    "tag": "qbbe-usdc-serv-v3-v2",
+    "v2_tokens": [
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "0x40e3d1A4B2C47d9AA61261F5606136ef73E28042"
+    ],
+    "v3_fees": [100],
+    "v3_tokens": [
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ]
   }
 }

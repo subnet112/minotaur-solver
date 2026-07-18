@@ -56,13 +56,13 @@ def _transfer_data(amount):
     return "0x" + (selector + args).hex()
 
 
-def _v3_input(spec):
+def _v3_input(spec, recipient=ADDRESS_THIS):
     from eth_abi import encode
     from eth_utils import to_checksum_address as checksum
 
     return encode(
         ["address", "uint256", "uint256", "bytes", "bool"],
-        [checksum(ADDRESS_THIS), CONTRACT_BALANCE, 0, _path(spec), False],
+        [checksum(recipient), CONTRACT_BALANCE, 0, _path(spec), False],
     )
 
 
@@ -77,14 +77,32 @@ def _v2_input(spec, recipient):
     )
 
 
+def _v2_v3_inputs(spec, recipient):
+    return [
+        _v2_input(spec, ADDRESS_THIS),
+        _v3_input(spec, recipient),
+    ]
+
+
+def _command_inputs(spec, recipient):
+    kind = spec.get("kind")
+    if kind == "v2_direct":
+        return bytes((8,)), [_v2_input(spec, recipient)]
+    if kind == "v2_v3":
+        return bytes((8, 0)), _v2_v3_inputs(spec, recipient)
+    if kind == "v3_direct":
+        return bytes((0,)), [_v3_input(spec, recipient)]
+    return bytes((0, 8)), [_v3_input(spec), _v2_input(spec, recipient)]
+
+
 def _execute_data(spec, recipient):
     from eth_abi import encode
     from eth_utils import keccak
 
     selector = keccak(text="execute(bytes,bytes[],uint256)")[:4]
-    inputs = [_v3_input(spec), _v2_input(spec, recipient)]
+    commands, inputs = _command_inputs(spec, recipient)
     args = encode(
-        ["bytes", "bytes[]", "uint256"], [bytes((0, 8)), inputs, DEADLINE]
+        ["bytes", "bytes[]", "uint256"], [commands, inputs, DEADLINE]
     )
     return "0x" + (selector + args).hex()
 
