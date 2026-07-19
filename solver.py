@@ -51,7 +51,6 @@ import viking_tables as _vt
 import viking_serve as _vs
 import mc_lib as _mcl
 import v3_arb as _va
-from base_q6c7_edge import maybe_q6c7_plan as _chain_killer_q6c7
 from mor_vvv_edge import maybe_q631_plan as _chain_killer_q631
 
 
@@ -446,16 +445,13 @@ class ChainKillerSolver(_McSolver):
         base = super().metadata()
         return SolverMetadata(
             name="chain-killer",
-            version="125.0.0",
+            version="126.0.0",
             author="meridian",
-            description="certified 423.0.3 floor plus measured q631 and q6c7 routes",
+            description="certified 423.0.3 floor plus a measured q631 split route",
             supported_chains=getattr(base, "supported_chains", None) or [8453],
         )
 
     def generate_plan(self, intent, state, snapshot=None):
-        q6c7 = _chain_killer_q6c7(self, intent, state)
-        if q6c7 is not None:
-            return q6c7
         q631 = _chain_killer_q631(self, intent, state)
         if q631 is not None:
             return q631
