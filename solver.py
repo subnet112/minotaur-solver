@@ -1,8 +1,8 @@
-"""chain-killer v134: incoming hydra floor plus eight exact wins."""
+"""chain-killer v135: certified retry floor plus eight exact wins."""
 
 from __future__ import annotations
 
-from _incoming_fca9_floor import SOLVER_CLASS as _ChampionSolver
+from _incoming_b246_floor import SOLVER_CLASS as _ChampionSolver
 from base_q397_edge import maybe_q397_plan
 from base_q45dd_edge import maybe_q45dd_plan
 from base_q87_edge import maybe_q87_plan
@@ -33,15 +33,15 @@ def _exact_plan(solver, intent, state):
 
 
 class ChainKillerSolver(_ChampionSolver):
-    """Preserve the incoming champion except on replay-proven exact keys."""
+    """Preserve the certified champion except on replay-proven exact keys."""
 
     def metadata(self):
         base = super().metadata()
         return SolverMetadata(
             name="chain-killer",
-            version="134.0.0",
+            version="135.0.0",
             author="meridian",
-            description="incoming hydra floor plus eight route wins",
+            description="certified retry floor plus eight route wins",
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types,
         )
