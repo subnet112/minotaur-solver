@@ -1,4 +1,4 @@
-"""chain-killer v136: current-main retry floor plus eight exact wins."""
+"""chain-killer v137: current-main retry floor plus nine exact wins."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from base_q87_edge import maybe_q87_plan
 from base_qb01e_edge import maybe_qb01e_plan
 from base_qbfbd_edge import maybe_qbfbd_plan
 from bat_wquil_edge import maybe_qaa9_plan
+from eth_q94be_edge import maybe_q94be_plan
 from mor_vvv_edge import maybe_q631_plan
 from pyusd_pepe_edge import maybe_qd41_plan
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
@@ -24,6 +25,7 @@ def _exact_plan(solver, intent, state):
         maybe_qd41_plan,
         maybe_qaa9_plan,
         maybe_q631_plan,
+        maybe_q94be_plan,
     )
     for handler in handlers:
         plan = handler(solver, intent, state)
@@ -39,9 +41,9 @@ class ChainKillerSolver(_ChampionSolver):
         base = super().metadata()
         return SolverMetadata(
             name="chain-killer",
-            version="136.0.0",
+            version="137.0.0",
             author="meridian",
-            description="current-main retry floor plus eight route wins",
+            description="current-main retry floor plus nine route wins",
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types,
         )
