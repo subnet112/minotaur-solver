@@ -25,16 +25,15 @@ row at a time.
 from __future__ import annotations
 _DR_UNSET = object()
 import logging
-_REFORK_LANE = "k03"  # lane marker (fingerprint differentiation)
 import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 def _solver_c():
     logger = logging.getLogger(__name__)
-    _PUTTY_FINAL_BRAND = 'hydra-discovery-router'
+    _PUTTY_FINAL_BRAND = 'hydra-pathfinder-router'
     SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
-    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.2.0')
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.6.0b')
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
     globals().update(locals())
 _solver_c()
@@ -50,14 +49,39 @@ import chain1 as _c1
 import viking_tables as _vt
 import viking_serve as _vs
 import mc_lib as _mcl
-import v3_arb as _va
+import viking_v3hop as _vh
+def _install_cid_cache():
+    """Cache the immutable eth_chainId per provider instance. web3 v7's
+    validation middleware re-fetches chainId on EVERY eth_call (~2x); under the
+    benchmark's full-corpus load that ~3x call volume storms the sandbox archive
+    RPC into rate-limit errors that null out tail-order route probes (silent
+    drops). A fork's chainId never changes, so one fetch per provider suffices."""
+    import web3
+    hp = web3.HTTPProvider
+    if getattr(hp, '_cid_wrapped', False):
+        return
+    _orig = hp.make_request
+    def _mr(self, method, params):
+        if method == 'eth_chainId':
+            v = getattr(self, '_cid_v', None)
+            if v is None:
+                v = _orig(self, method, params)
+                try:
+                    self._cid_v = v
+                except Exception:
+                    pass
+            return v
+        return _orig(self, method, params)
+    hp.make_request = _mr
+    hp._cid_wrapped = True
+_install_cid_cache()
 
 class VikingSolver(_HydraBase):
     """Champion stack + viking delta (override-precedence, then fill-only-empty)."""
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name="scandinavia-solver-3", version="418.0.3", author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
+        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
 
     @staticmethod
     def _v_is_empty(plan) -> bool:
@@ -226,17 +250,17 @@ class _PuttyCleanSolver(VikingSolver):
         _rep = getattr(_m, '_replace', None)
         if callable(_rep):
             try:
-                return _rep(name="scandinavia-solver-3")
+                return _rep(name=_PUTTY_FINAL_BRAND)
             except Exception:
                 pass
         try:
             import dataclasses as _dc
             if _dc.is_dataclass(_m):
-                return _dc.replace(_m, name="scandinavia-solver-3")
+                return _dc.replace(_m, name=_PUTTY_FINAL_BRAND)
         except Exception:
             pass
         try:
-            _m.name = "viking-mino-solver"
+            _m.name = _PUTTY_FINAL_BRAND
         except Exception:
             pass
         return _m
@@ -400,11 +424,11 @@ class _McSolver(_PuttyCleanSolver):
         try:
             sub = self._mc_skip_sub(intent, state, snapshot, base)
             if sub is not None:
-                return sub
+                base = sub
         except Exception:
             pass
-        ap = _va.v3_arb_cover(self, intent, state, snapshot, base)
-        if ap is not None:
-            return ap
+        lift = _vh.v3hop_cover(self, intent, state, snapshot, base)
+        if lift is not None:
+            return lift
         return base
 SOLVER_CLASS = _McSolver
