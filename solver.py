@@ -25,15 +25,16 @@ row at a time.
 from __future__ import annotations
 _DR_UNSET = object()
 import logging
+_REFORK_LANE = "rise03"  # lane marker (fingerprint differentiation)
 import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 def _solver_c():
     logger = logging.getLogger(__name__)
-    _PUTTY_FINAL_BRAND = 'hydra-pathfinder-router'
+    _PUTTY_FINAL_BRAND = 'hydra-discovery-router'
     SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
-    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.6.1b')
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.2.0')
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
     globals().update(locals())
 _solver_c()
@@ -49,7 +50,9 @@ import chain1 as _c1
 import viking_tables as _vt
 import viking_serve as _vs
 import mc_lib as _mcl
-import viking_v3hop as _vh
+import v3_arb as _va
+
+
 def _install_cid_cache():
     """Cache the immutable eth_chainId per provider instance. web3 v7's
     validation middleware re-fetches chainId on EVERY eth_call (~2x); under the
@@ -74,14 +77,17 @@ def _install_cid_cache():
         return _orig(self, method, params)
     hp.make_request = _mr
     hp._cid_wrapped = True
+
+
 _install_cid_cache()
+
 
 class VikingSolver(_HydraBase):
     """Champion stack + viking delta (override-precedence, then fill-only-empty)."""
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
+        return SolverMetadata(name="scandinavia-solver-3", version="423.0.3", author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
 
     @staticmethod
     def _v_is_empty(plan) -> bool:
@@ -250,17 +256,17 @@ class _PuttyCleanSolver(VikingSolver):
         _rep = getattr(_m, '_replace', None)
         if callable(_rep):
             try:
-                return _rep(name=_PUTTY_FINAL_BRAND)
+                return _rep(name="scandinavia-solver-3")
             except Exception:
                 pass
         try:
             import dataclasses as _dc
             if _dc.is_dataclass(_m):
-                return _dc.replace(_m, name=_PUTTY_FINAL_BRAND)
+                return _dc.replace(_m, name="scandinavia-solver-3")
         except Exception:
             pass
         try:
-            _m.name = _PUTTY_FINAL_BRAND
+            _m.name = "viking-mino-solver"
         except Exception:
             pass
         return _m
@@ -424,11 +430,11 @@ class _McSolver(_PuttyCleanSolver):
         try:
             sub = self._mc_skip_sub(intent, state, snapshot, base)
             if sub is not None:
-                base = sub
+                return sub
         except Exception:
             pass
-        lift = _vh.v3hop_cover(self, intent, state, snapshot, base)
-        if lift is not None:
-            return lift
+        ap = _va.v3_arb_cover(self, intent, state, snapshot, base)
+        if ap is not None:
+            return ap
         return base
 SOLVER_CLASS = _McSolver
