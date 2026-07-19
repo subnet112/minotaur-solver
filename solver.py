@@ -407,4 +407,37 @@ class _McSolver(_PuttyCleanSolver):
         if ap is not None:
             return ap
         return base
-SOLVER_CLASS = _McSolver
+
+
+from baseswap_universal import maybe_q184_plan as _chain_killer_q184
+from mor_vvv_edge import maybe_q631_plan as _chain_killer_q631
+from quote_cover import maybe_quote_cover as _chain_killer_cover
+
+
+class ChainKillerSolver(_McSolver):
+
+    def metadata(self):
+        base = super().metadata()
+        return SolverMetadata(
+            name="chain-killer",
+            version="116.0.0",
+            author="meridian",
+            description="current-champion successor with measured narrow covers",
+            supported_chains=base.supported_chains,
+            supported_intent_types=base.supported_intent_types,
+        )
+
+    def generate_plan(self, intent, state, snapshot=None):
+        cover = _chain_killer_cover(self, intent, state)
+        if cover is not None:
+            return cover
+        q631 = _chain_killer_q631(self, intent, state)
+        if q631 is not None:
+            return q631
+        q184 = _chain_killer_q184(self, intent, state)
+        if q184 is not None:
+            return q184
+        return super().generate_plan(intent, state, snapshot)
+
+
+SOLVER_CLASS = ChainKillerSolver
