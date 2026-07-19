@@ -1,6 +1,6 @@
 # chain-1 dynamic tier: v2-pair helpers + candidate sweep
-from chain1_c import _V2_PAIRS, _MAX_QUOTES
-from chain1_lib import _candidates, _qroute
+from chain1_c import _V2_PAIRS, _MAX_QUOTES, _QUOTER
+from chain1_lib import _candidates, _qroute, _qbytes, _qdec, _agg3
 
 def _v2_reserves(w3, pair, block):
     from eth_abi import decode as _dec
@@ -40,16 +40,32 @@ def _v2_build(pair, in_is_t0, tin, amt, out, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX
     return [_IX(target=tin, value='0', call_data=_v2_xfer_cd(pair, amt), chain_id=chain_id), _IX(target=pair, value='0', call_data=_v2_swap_cd(in_is_t0, out, rcpt), chain_id=chain_id)]
 
-def _sweep(w3, tin, tout, amt, block):
-    best, n = None, 0
-    for cand in _candidates(tin, tout):
-        if n >= _MAX_QUOTES:
-            break
-        n += 1
-        q = _qroute(w3, cand, amt, block)
+def _fmax(pairs):
+    """First strict-max (out, cand) over [(cand, out|None)] (earlier cand wins ties)."""
+    best = None
+    for cand, q in pairs:
         if q and (best is None or q > best[0]):
             best = (q, cand)
     return best
+
+def _sweep_seq(w3, cands, amt, block):
+    """Proven per-candidate quote loop (fallback when the batch call OOMs/flakes)."""
+    return _fmax([(c, _qroute(w3, c, amt, block)) for c in cands])
+
+def _sweep_batch(cands, res):
+    """Decode the aggregate3 results per candidate, same selection as _sweep_seq."""
+    return _fmax([(c, _qdec(r[0], r[1])) for c, r in zip(cands, res)])
+
+def _sweep(w3, tin, tout, amt, block):
+    """Best (out, route) over the candidate set. ONE aggregate3 batch normally;
+    on batch OOM/flake fall back to _sweep_seq, so the selected route is identical
+    to the individual-call form either way (heavy liquid majors can exceed the
+    node's eth_call gas cap under a single batch -> fall back for those)."""
+    cands = _candidates(tin, tout)[:_MAX_QUOTES]
+    res = _agg3(w3, [(_QUOTER, _qbytes(c, amt)) for c in cands], block)
+    if res is not None and len(res) == len(cands):
+        return _sweep_batch(cands, res)
+    return _sweep_seq(w3, cands, amt, block)
 
 def _v2_best(w3, tin, tout, amt, block, best):
     v2 = _v2_lookup(tin, tout)
