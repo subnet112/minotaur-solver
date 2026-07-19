@@ -394,7 +394,12 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
                                 _hb = self._sas_honor_baseline(base_plan, best, bp_out, min_out, raw_output_pair, tin, tout, score)
                                 if _hb is not None:
                                     return _hb
-                                return self._dispatch_venue_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                                if best.get('venue') == 'crossvenue_2hop':
+                                    return self._build_2hop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                                if best.get('venue') == 'crossvenue_2hop_proxy':
+                                    return self._build_2hop_proxy_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
+                                return _DR_UNSET
+                                return _DR_UNSET
                             _dr218 = _dr217()
                             if _dr218 is not _DR_UNSET:
                                 return _dr218
@@ -971,10 +976,6 @@ def _dr166():
     split-router takes the row. Fixed <=4 socket-bounded quotes; candidates
     feed the normal selection gates + the existing _build_2hop_plan."""
         out = []
-        try:
-            self._univ2_via_weth_cand(out, chain_id, tin, tout, amount_in)
-        except Exception:
-            pass
         try:
             paths = _MAJOR_HUB_PATHS.get((str(tin).lower(), str(tout).lower()))
 
@@ -4538,52 +4539,6 @@ class MinerSolver(_MinerSolver_fz):
     _MC3 = '0xcA11bde05977b3631167028862bE2a173976CA11'
     _SWEEP_BAL_SLOTS = {'0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': 9, '0x4200000000000000000000000000000000000006': 3}
     _SPLITTABLE = ('uniswap_v3', 'aerodrome_slipstream', 'pancake_v3')
-
-    def _dispatch_venue_plan(self, intent, state, snapshot, best, tin, tout, amount_in, chain_id):
-        """Build the plan for the winning candidate's venue (or _DR_UNSET to fall
-        through to split / singlehop). Extracted from the selection region to keep
-        it under the factor floor."""
-        v = best.get('venue')
-        if v == 'crossvenue_2hop':
-            return self._build_2hop_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
-        if v == 'crossvenue_2hop_proxy':
-            return self._build_2hop_proxy_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id)
-        if v == 'univ2_2hop':
-            return self._apex_v2(intent, state, snapshot, best['router'], best['path'], amount_in, chain_id)
-        return _DR_UNSET
-
-    def _univ2_via_weth_cand(self, out, chain_id, tin, tout, amount_in):
-        """Budget-immune UniV2 tin->WETH->tout 2-hop candidate. The normal 2-hop
-        enumeration forces leg2 onto uniswap_v3, so classic-UniV2-deep exotic
-        tokens (WETH pair) never get their deep route and hole on a thin V3 pool.
-        Marked extra_route so it only wins when it beats the core best output."""
-        wl = _WETH.lower()
-        if int(chain_id) != _BASE or tin.lower() == wl or tout.lower() == wl:
-            return
-        w3 = self._get_quoter_web3(int(chain_id))
-        if w3 is None:
-            return
-        path = [tin, _WETH, tout]
-
-        def _q():
-            from eth_abi import decode as _dec
-            from eth_utils import to_checksum_address as _ck
-
-            def _cd():
-                from eth_abi import encode as _enc
-                from eth_utils import keccak as _kk, to_checksum_address as _c2
-                return _kk(text='getAmountsOut(uint256,address[])')[:4] + _enc(['uint256', 'address[]'], [int(amount_in), [_c2(a) for a in path]])
-            try:
-                r = w3.eth.call({'to': _ck(_UNIV2_ROUTER), 'data': '0x' + _cd().hex()})
-                v = int(_dec(['uint256[]'], r)[0][-1])
-            except Exception:
-                return None
-            if v <= 0:
-                return None
-            return {'venue': 'univ2_2hop', 'param': ('univ2_2hop',), 'out': v, 'path': path, 'router': _UNIV2_ROUTER, 'gas_est': 200000, 'gas_model': _GAS_MULTIHOP + 90000, 'extra_route': True}
-        c = _q()
-        if c is not None:
-            out.append(c)
 
     def _quote_one(self, w3, venue, param, tin, tout, amount):
         """Single eth_call quote for one (venue, param) at `amount`. 0 on revert."""
