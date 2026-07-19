@@ -17,15 +17,13 @@ Each named region is kept <=110 AST nodes (factorization discipline); the split
 is pure code motion — served calldata is byte-identical to the single-file form.
 """
 import logging
-
 import viking_quote as _q
 import viking_build as _b
-
 logger = logging.getLogger('solver')
-
 
 def _dec_v3(cd):
     sel = cd[:10]
+
     def _sng():
         from eth_abi import decode as _d
         body = bytes.fromhex(cd[10:])
@@ -34,6 +32,7 @@ def _dec_v3(cd):
             return ('single', t[0], t[1], t[2], t[4])
         t = _d(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], body)[0]
         return ('single', t[0], t[1], t[2], t[5])
+
     def _pth():
         from eth_abi import decode as _d
         body = bytes.fromhex(cd[10:])
@@ -51,24 +50,20 @@ def _dec_v3(cd):
         return None
     return None
 
-
 def _dec_v2(cd):
     from eth_abi import decode as _d
     if cd[:10] not in ('0x38ed1739', '0x5c11d795', '0xd06ca61f'):
         return None
     try:
-        t = _d(['uint256', 'uint256', 'address[]', 'address', 'uint256'],
-               bytes.fromhex(cd[10:]))
+        t = _d(['uint256', 'uint256', 'address[]', 'address', 'uint256'], bytes.fromhex(cd[10:]))
         return (list(t[2]), int(t[0]))
     except Exception:
         return None
-
 
 def _requote_v3(w3, chain, v3):
     if v3[0] == 'single':
         return _q._q_single(w3, chain, v3[1], v3[2], v3[3], v3[4])
     return _q._q_path(w3, chain, v3[1], v3[2])
-
 
 def _requote_ix(w3, chain, c):
     """Re-quoted delivery of a decoded final-ix calldata: int, or None (undecodable)."""
@@ -80,7 +75,6 @@ def _requote_ix(w3, chain, c):
         return _q._v2_out(w3, chain, v2[0], v2[1])
     return None
 
-
 def _base_out(w3, chain, plan):
     """Re-quoted delivery of the engine's plan: 0 if empty, int if decodable,
     None if non-empty but undecodable (defer)."""
@@ -91,11 +85,8 @@ def _base_out(w3, chain, plan):
     c = cd if cd.startswith('0x') else '0x' + cd
     return _requote_ix(w3, chain, c)
 
-
 def _chain_of(state, snapshot):
-    return int(getattr(state, 'chain_id', 0)
-               or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
-
+    return int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
 
 def _swap_triple(solver, intent, state):
     """(tin, tout, amt, params) for this swap, or None if unusable."""
@@ -106,7 +97,6 @@ def _swap_triple(solver, intent, state):
     if not tin or not tout or amt <= 0:
         return None
     return (tin, tout, amt, p)
-
 
 def _cover_ctx(solver, intent, state, snapshot):
     """(chain, tin, tout, amt, w3, p) for a coverable order, or None to defer."""
@@ -122,7 +112,6 @@ def _cover_ctx(solver, intent, state, snapshot):
         return None
     return (chain, tin, tout, amt, w3, p)
 
-
 def _best_lift(w3, chain, tin, tout, amt, floor):
     """Best strict-better candidate over the floor, or None."""
     cands = _q.candidates(w3, chain, tin, tout, amt)
@@ -130,7 +119,6 @@ def _best_lift(w3, chain, tin, tout, amt, floor):
         return None
     best = max(cands, key=lambda c: c[0])
     return best if best[0] > floor else None
-
 
 def _cover(solver, intent, state, snapshot, base_plan):
     ctx = _cover_ctx(solver, intent, state, snapshot)
@@ -144,7 +132,6 @@ def _cover(solver, intent, state, snapshot, base_plan):
     if best is None:
         return None
     return _b.serve(intent, state, chain, tin, tout, best, amt, p)
-
 
 def v3hop_cover(solver, intent, state, snapshot, base_plan):
     """Serve the best V3/V2 route ONLY when it strictly beats the re-quoted base."""
