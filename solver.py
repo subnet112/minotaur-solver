@@ -1,10 +1,11 @@
-"""chain-killer v133: incoming hydra floor plus seven exact wins."""
+"""chain-killer v134: incoming hydra floor plus eight exact wins."""
 
 from __future__ import annotations
 
 from _incoming_fca9_floor import SOLVER_CLASS as _ChampionSolver
 from base_q397_edge import maybe_q397_plan
 from base_q45dd_edge import maybe_q45dd_plan
+from base_q87_edge import maybe_q87_plan
 from base_qb01e_edge import maybe_qb01e_plan
 from base_qbfbd_edge import maybe_qbfbd_plan
 from bat_wquil_edge import maybe_qaa9_plan
@@ -17,6 +18,7 @@ def _exact_plan(solver, intent, state):
     handlers = (
         maybe_q397_plan,
         maybe_q45dd_plan,
+        maybe_q87_plan,
         maybe_qbfbd_plan,
         maybe_qb01e_plan,
         maybe_qd41_plan,
@@ -37,9 +39,9 @@ class ChainKillerSolver(_ChampionSolver):
         base = super().metadata()
         return SolverMetadata(
             name="chain-killer",
-            version="133.0.0",
+            version="134.0.0",
             author="meridian",
-            description="incoming hydra floor plus seven route wins",
+            description="incoming hydra floor plus eight route wins",
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types,
         )
