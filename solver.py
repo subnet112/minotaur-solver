@@ -53,6 +53,7 @@ import mc_lib as _mcl
 import v3_arb as _va
 from mor_vvv_edge import maybe_q631_plan as _chain_killer_q631
 from bat_wquil_edge import maybe_qaa9_plan as _chain_killer_qaa9
+from pyusd_pepe_edge import maybe_qd41_plan as _chain_killer_qd41
 
 
 def _install_cid_cache():
@@ -440,19 +441,22 @@ class _McSolver(_PuttyCleanSolver):
             return ap
         return base
 class ChainKillerSolver(_McSolver):
-    """Certified 423.0.3 floor plus replay-proven q631 and qaa9 routes."""
+    """Certified 423.0.3 floor plus three replay-proven routes."""
 
     def metadata(self):
         base = super().metadata()
         return SolverMetadata(
             name="chain-killer",
-            version="127.0.0",
+            version="128.0.0",
             author="meridian",
-            description="certified 423.0.3 floor plus measured q631 and qaa9 routes",
+            description="certified 423.0.3 floor plus three measured route wins",
             supported_chains=getattr(base, "supported_chains", None) or [8453],
         )
 
     def generate_plan(self, intent, state, snapshot=None):
+        qd41 = _chain_killer_qd41(self, intent, state)
+        if qd41 is not None:
+            return qd41
         qaa9 = _chain_killer_qaa9(self, intent, state)
         if qaa9 is not None:
             return qaa9
