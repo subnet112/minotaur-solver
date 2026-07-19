@@ -52,6 +52,7 @@ import viking_serve as _vs
 import mc_lib as _mcl
 import v3_arb as _va
 from mor_vvv_edge import maybe_q631_plan as _chain_killer_q631
+from bat_wquil_edge import maybe_qaa9_plan as _chain_killer_qaa9
 
 
 def _install_cid_cache():
@@ -439,19 +440,22 @@ class _McSolver(_PuttyCleanSolver):
             return ap
         return base
 class ChainKillerSolver(_McSolver):
-    """Certified 423.0.3 floor plus one replay-proven q631 improvement."""
+    """Certified 423.0.3 floor plus replay-proven q631 and qaa9 routes."""
 
     def metadata(self):
         base = super().metadata()
         return SolverMetadata(
             name="chain-killer",
-            version="126.0.0",
+            version="127.0.0",
             author="meridian",
-            description="certified 423.0.3 floor plus a measured q631 split route",
+            description="certified 423.0.3 floor plus measured q631 and qaa9 routes",
             supported_chains=getattr(base, "supported_chains", None) or [8453],
         )
 
     def generate_plan(self, intent, state, snapshot=None):
+        qaa9 = _chain_killer_qaa9(self, intent, state)
+        if qaa9 is not None:
+            return qaa9
         q631 = _chain_killer_q631(self, intent, state)
         if q631 is not None:
             return q631
