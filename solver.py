@@ -1,12 +1,12 @@
-"""chain-killer v132: certified champion floor plus seven exact wins."""
+"""chain-killer v133: incoming hydra floor plus seven exact wins."""
 
 from __future__ import annotations
 
-from _blueguider_floor import SOLVER_CLASS as _ChampionSolver
-from base_qb01e_edge import maybe_qb01e_plan
-from base_qbfbd_edge import maybe_qbfbd_plan
+from _incoming_fca9_floor import SOLVER_CLASS as _ChampionSolver
 from base_q397_edge import maybe_q397_plan
 from base_q45dd_edge import maybe_q45dd_plan
+from base_qb01e_edge import maybe_qb01e_plan
+from base_qbfbd_edge import maybe_qbfbd_plan
 from bat_wquil_edge import maybe_qaa9_plan
 from mor_vvv_edge import maybe_q631_plan
 from pyusd_pepe_edge import maybe_qd41_plan
@@ -31,15 +31,15 @@ def _exact_plan(solver, intent, state):
 
 
 class ChainKillerSolver(_ChampionSolver):
-    """Preserve the champion except on replay-proven exact keys."""
+    """Preserve the incoming champion except on replay-proven exact keys."""
 
     def metadata(self):
         base = super().metadata()
         return SolverMetadata(
             name="chain-killer",
-            version="132.0.0",
+            version="133.0.0",
             author="meridian",
-            description="certified champion floor plus seven route wins",
+            description="incoming hydra floor plus seven route wins",
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types,
         )
