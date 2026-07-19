@@ -431,4 +431,30 @@ class _McSolver(_PuttyCleanSolver):
         if lift is not None:
             return lift
         return base
-SOLVER_CLASS = _McSolver
+from eth_blindspot_edge import maybe_q010_plan as _chain_killer_q010
+from mor_vvv_edge import maybe_q631_plan as _chain_killer_q631
+
+
+class ChainKillerSolver(_McSolver):
+    def metadata(self):
+        base = super().metadata()
+        return SolverMetadata(
+            name="chain-killer",
+            version="119.0.0",
+            author="meridian",
+            description="hydra-vector champion plus measured q631/q010 coverage",
+            supported_chains=base.supported_chains,
+            supported_intent_types=base.supported_intent_types,
+        )
+
+    def generate_plan(self, intent, state, snapshot=None):
+        q631 = _chain_killer_q631(self, intent, state)
+        if q631 is not None:
+            return q631
+        q010 = _chain_killer_q010(self, intent, state)
+        if q010 is not None:
+            return q010
+        return super().generate_plan(intent, state, snapshot)
+
+
+SOLVER_CLASS = ChainKillerSolver
