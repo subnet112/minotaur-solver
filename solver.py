@@ -431,4 +431,26 @@ class _McSolver(_PuttyCleanSolver):
         if lift is not None:
             return lift
         return base
-SOLVER_CLASS = _McSolver
+from mor_vvv_edge import maybe_q631_plan as _chain_killer_q631
+
+
+class ChainKillerSolver(_McSolver):
+    def metadata(self):
+        base = super().metadata()
+        return SolverMetadata(
+            name="chain-killer",
+            version="118.0.0",
+            author="meridian",
+            description="hydra-relay champion plus one measured MOR/VVV split",
+            supported_chains=base.supported_chains,
+            supported_intent_types=base.supported_intent_types,
+        )
+
+    def generate_plan(self, intent, state, snapshot=None):
+        q631 = _chain_killer_q631(self, intent, state)
+        if q631 is not None:
+            return q631
+        return super().generate_plan(intent, state, snapshot)
+
+
+SOLVER_CLASS = ChainKillerSolver
