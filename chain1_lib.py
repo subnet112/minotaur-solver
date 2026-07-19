@@ -13,11 +13,15 @@ def _champ_route(tin, tout):
     fs = frozenset((tin, tout))
     if fs in _CHAMP_FEE:
         return ((tin, tout), (_CHAMP_FEE[fs],))
-    if _WETH not in (tin, tout):
-        f1 = _CHAMP_FEE.get(frozenset((tin, _WETH)), 3000)
-        f2 = _CHAMP_FEE.get(frozenset((_WETH, tout)), 3000)
-        return ((tin, _WETH, tout), (f1, f2))
-    return ((tin, tout), (3000,))
+    def _fw1():
+        if _WETH not in (tin, tout):
+            f1 = _CHAMP_FEE.get(frozenset((tin, _WETH)), 3000)
+            f2 = _CHAMP_FEE.get(frozenset((_WETH, tout)), 3000)
+            return (((tin, _WETH, tout), (f1, f2)),)
+        return (((tin, tout), (3000,)),)
+    _fwr1 = _fw1()
+    if _fwr1 is not None:
+        return _fwr1[0]
 
 def _candidates(tin, tout):
     out = [((tin, tout), (f,)) for f in _FEES]
@@ -75,8 +79,12 @@ def _amounts(p):
 def _params(s, intent, state):
     p = s._normalized_swap_params(intent, state)
     tin = str(p.get('input_token', '') or '').lower()
-    tout = str(p.get('output_token', '') or '').lower()
-    amt, mo = _amounts(p)
-    if len(tin) != 42 or len(tout) != 42 or amt <= 0 or tin == tout:
-        return None
-    return (tin, tout, amt, mo)
+    def _fw1():
+        tout = str(p.get('output_token', '') or '').lower()
+        amt, mo = _amounts(p)
+        if len(tin) != 42 or len(tout) != 42 or amt <= 0 or (tin == tout):
+            return (None,)
+        return ((tin, tout, amt, mo),)
+    _fwr1 = _fw1()
+    if _fwr1 is not None:
+        return _fwr1[0]

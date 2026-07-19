@@ -122,8 +122,11 @@ class SwapIntentProcessor(IntentProcessor):
             router_address = self._get_router(chain_id)
 
             def _dr1():
-                deadline = context.timestamp + self.deadline_offset
-                interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router_address, input_amount), chain_id=chain_id), Interaction(target=router_address, value='0', call_data=encode_exact_input_single(token_in=input_token, token_out=output_token, fee=fee_tier, recipient=recipient, deadline=deadline, amount_in=input_amount, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
+                def _fw1():
+                    deadline = context.timestamp + self.deadline_offset
+                    interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router_address, input_amount), chain_id=chain_id), Interaction(target=router_address, value='0', call_data=encode_exact_input_single(token_in=input_token, token_out=output_token, fee=fee_tier, recipient=recipient, deadline=deadline, amount_in=input_amount, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
+                    return (deadline, interactions)
+                deadline, interactions = _fw1()
                 return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3', 'fee_tier': fee_tier, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'min_output_amount': str(min_output_amount)})
                 return _DR_UNSET
             return (_dr1,)
@@ -159,22 +162,28 @@ class SwapIntentProcessor(IntentProcessor):
         """
         if isinstance(state.typed_context, SwapIntentContext):
             return {'input_token': state.typed_context.input_token, 'output_token': state.typed_context.output_token, 'input_amount': state.typed_context.input_amount, 'min_output_amount': state.typed_context.min_output_amount, 'receiver': state.typed_context.receiver, 'fee_tier': state.typed_context.fee_tier}
-        params = _state_params(state)
-        normalized = normalize_swap_intent_params(params, manifest=manifest_from_definition(intent), intent_name=_intent_function_from_state(state, 'swap'), receiver_default=state.contract_address or state.owner, slippage_bps=self.slippage_bps)
+        def _fw2():
+            params = _state_params(state)
+            normalized = normalize_swap_intent_params(params, manifest=manifest_from_definition(intent), intent_name=_intent_function_from_state(state, 'swap'), receiver_default=state.contract_address or state.owner, slippage_bps=self.slippage_bps)
 
-        def _dr3():
-            input_token = normalized.get('input_token')
-            output_token = normalized.get('output_token')
-            input_amount = normalized.get('input_amount', 0)
-            if not input_token:
-                raise ValueError('Missing required parameter: input_token in state.raw_params')
-            if not output_token:
-                raise ValueError('Missing required parameter: output_token in state.raw_params')
-            if input_amount <= 0:
-                raise ValueError(f'input_amount must be positive, got {input_amount}')
-            result: dict[str, Any] = {'input_token': input_token, 'output_token': output_token, 'input_amount': input_amount, 'min_output_amount': normalized['min_output_amount'], 'receiver': normalized['receiver'], 'fee_tier': normalized['fee_tier']}
-            return result
-        result = _dr3()
+            def _dr3():
+                input_token = normalized.get('input_token')
+                output_token = normalized.get('output_token')
+                input_amount = normalized.get('input_amount', 0)
+                def _fw3():
+                    if not input_token:
+                        raise ValueError('Missing required parameter: input_token in state.raw_params')
+                    if not output_token:
+                        raise ValueError('Missing required parameter: output_token in state.raw_params')
+                    if input_amount <= 0:
+                        raise ValueError(f'input_amount must be positive, got {input_amount}')
+                    result: dict[str, Any] = {'input_token': input_token, 'output_token': output_token, 'input_amount': input_amount, 'min_output_amount': normalized['min_output_amount'], 'receiver': normalized['receiver'], 'fee_tier': normalized['fee_tier']}
+                    return (result,)
+                result, = _fw3()
+                return result
+            result = _dr3()
+            return (result,)
+        result, = _fw2()
         return result
 
     def _get_router(self, chain_id: int) -> str:

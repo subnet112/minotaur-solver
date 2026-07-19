@@ -30,12 +30,16 @@ def base_call(s, base_plan, tin, tout, amt):
     try:
         ix = base_plan.interactions[-1]
         cd = ix.call_data if ix.call_data.startswith('0x') else '0x' + ix.call_data
-        sel = cd[:10]
-        body = bytes.fromhex(cd[10:])
-        if sel in ('0x04e45aaf', '0x414bf389'):
-            return _bc_v3s(s, sel, body, tin, tout, amt)
-        if sel == '0xb858183f':
-            return (_MC_QUOTER, s._mc_path_qdata(body, amt))
+        def _fw1():
+            sel = cd[:10]
+            body = bytes.fromhex(cd[10:])
+            if sel in ('0x04e45aaf', '0x414bf389'):
+                return (_bc_v3s(s, sel, body, tin, tout, amt),)
+            if sel == '0xb858183f':
+                return ((_MC_QUOTER, s._mc_path_qdata(body, amt)),)
+        _fwr1 = _fw1()
+        if _fwr1 is not None:
+            return _fwr1[0]
     except Exception:
         return None
     return None

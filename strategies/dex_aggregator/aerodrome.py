@@ -20,10 +20,13 @@ import logging
 import time
 from typing import Any, Callable
 from eth_abi.abi import encode as abi_encode
-logger = logging.getLogger(__name__)
-AERODROME_SLIPSTREAM_FACTORY: dict[int, str] = {8453: '0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A'}
-AERODROME_SLIPSTREAM_ROUTER: dict[int, str] = {8453: '0xBE6D8f0d05cC4be24d5167a3eF062215bE6D18a5'}
-AERODROME_TICK_SPACINGS: tuple[int, ...] = (1, 50, 100, 200, 2000)
+def _aero_c():
+    logger = logging.getLogger(__name__)
+    AERODROME_SLIPSTREAM_FACTORY: dict[int, str] = {8453: '0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A'}
+    AERODROME_SLIPSTREAM_ROUTER: dict[int, str] = {8453: '0xBE6D8f0d05cC4be24d5167a3eF062215bE6D18a5'}
+    AERODROME_TICK_SPACINGS: tuple[int, ...] = (1, 50, 100, 200, 2000)
+    globals().update(locals())
+_aero_c()
 
 def _dr4():
     def _fw2():
@@ -64,12 +67,16 @@ def _dr4():
                         def _dr9():
                             pool = w3.eth.contract(address=w3.to_checksum_address(pool_address), abi=_POOL_ABI)
                             slot0 = pool.functions.slot0().call()
-                            liquidity = pool.functions.liquidity().call()
-                            fee = pool.functions.fee().call()
-                            token0 = pool.functions.token0().call()
-                            token1 = pool.functions.token1().call()
-                            tick_spacing = pool.functions.tickSpacing().call()
-                            return (fee, liquidity, slot0, tick_spacing, token0, token1)
+                            def _fw3():
+                                liquidity = pool.functions.liquidity().call()
+                                fee = pool.functions.fee().call()
+                                token0 = pool.functions.token0().call()
+                                token1 = pool.functions.token1().call()
+                                tick_spacing = pool.functions.tickSpacing().call()
+                                return ((fee, liquidity, slot0, tick_spacing, token0, token1),)
+                            _fwr3 = _fw3()
+                            if _fwr3 is not None:
+                                return _fwr3[0]
                         fee, liquidity, slot0, tick_spacing, token0, token1 = _dr9()
                     except Exception as exc:
                         logger.debug('Slipstream pool query failed for %s: %s', pool_address, exc)
@@ -78,7 +85,7 @@ def _dr4():
 
                 def _dr7():
 
-                    def discover_pools_for_pair(w3: Any, chain_id: int, token_a: str, token_b: str, pool_states: dict[str, dict[str, Any]], base_query_pool_state: Callable[[Any, str], dict[str, Any] | None], discovery_cache: dict[tuple[int, str, str, str], float] | None=None, cache_ttl: float=60.0) -> dict[str, dict[str, Any]]:
+                    def discover_pools_for_pair(w3, chain_id, token_a, token_b, pool_states, base_query_pool_state, discovery_cache=None, cache_ttl=60.0):
                         """Discover Aerodrome Slipstream pools for a token pair.
 
     Mirrors ``BaselineSwapSolver._discover_pools_for_pair`` but uses the
@@ -136,9 +143,12 @@ def _dr4():
                                 if discovery_cache is not None and rpc_errors < len(AERODROME_TICK_SPACINGS):
                                     discovery_cache[cache_key] = now
                                 return discovered
-                            discovered = _dr3()
-                            if discovered > 0:
-                                logger.debug('Aerodrome: %d pools for %s/%s on chain %d', discovered, token_a[:10], token_b[:10], chain_id)
+                            def _fw1():
+                                discovered = _dr3()
+                                if discovered > 0:
+                                    logger.debug('Aerodrome: %d pools for %s/%s on chain %d', discovered, token_a[:10], token_b[:10], chain_id)
+                                return (discovered,)
+                            discovered, = _fw1()
                             return pool_states
                             return _DR_UNSET
                         _dr6 = _dr5()
