@@ -30,10 +30,8 @@ Ties break on venue index so the result is deterministic (the subnet replays
 plans and any nondeterminism reads as a regression).
 """
 from __future__ import annotations
-
 from dataclasses import dataclass, field
 from typing import Callable
-
 
 @dataclass
 class Venue:
@@ -49,18 +47,16 @@ class Venue:
     output_fn: Callable[[int], int]
     gas_out: int = 0
 
-
 @dataclass
 class SplitResult:
-    allocations: dict[str, int]      # venue key -> input wei assigned (only used venues)
-    gross_output: int                # sum of leg outputs, before gas
-    net_output: int                  # gross minus gas of used venues
-    is_split: bool                   # True if >1 venue used
+    allocations: dict[str, int]
+    gross_output: int
+    net_output: int
+    is_split: bool
     legs: int = field(default=0)
 
     def __post_init__(self):
         self.legs = len([a for a in self.allocations.values() if a > 0])
-
 
 def _gross_and_net(venues: dict[str, Venue], alloc: dict[str, int]) -> tuple[int, int]:
     gross = 0
@@ -70,31 +66,23 @@ def _gross_and_net(venues: dict[str, Venue], alloc: dict[str, int]) -> tuple[int
             continue
         gross += venues[k].output_fn(amt)
         gas += venues[k].gas_out
-    return gross, gross - gas
-
+    return (gross, gross - gas)
 
 def best_single(venues: list[Venue], amount_in: int) -> SplitResult:
     """The champion's behavior: put everything in the single best venue."""
-    best_key, best_net, best_gross = None, None, 0
+    best_key, best_net, best_gross = (None, None, 0)
     for v in venues:
         out = v.output_fn(amount_in)
         if out <= 0:
             continue
         net = out - v.gas_out
         if best_net is None or net > best_net or (net == best_net and best_key is None):
-            best_key, best_net, best_gross = v.key, net, out
+            best_key, best_net, best_gross = (v.key, net, out)
     if best_key is None:
         return SplitResult({}, 0, 0, False)
     return SplitResult({best_key: amount_in}, best_gross, best_net, False)
 
-
-def optimal_split(
-    venues: list[Venue],
-    amount_in: int,
-    *,
-    chunks: int = 256,
-    min_leg_bps: int = 50,
-) -> SplitResult:
+def optimal_split(venues: list[Venue], amount_in: int, *, chunks: int=256, min_leg_bps: int=50) -> SplitResult:
     """Allocate ``amount_in`` across ``venues`` to maximize net output.
 
     chunks:      granularity of the water-fill (higher = finer, slower).
@@ -107,61 +95,43 @@ def optimal_split(
         return SplitResult({}, 0, 0, False)
     if len(venues) == 1:
         return best_single(venues, amount_in)
-
     by_key = {v.key: v for v in venues}
     alloc = _waterfill(venues, amount_in, chunks)
-
-    # Prune dust legs (min_leg_bps of total) and re-fill among survivors, once.
-    floor = amount_in * min_leg_bps // 10_000
+    floor = amount_in * min_leg_bps // 10000
     survivors = [by_key[k] for k, amt in alloc.items() if amt >= floor and amt > 0]
     if survivors and len(survivors) < len([a for a in alloc.values() if a > 0]):
         alloc = _waterfill(survivors, amount_in, chunks)
         by_key = {v.key: v for v in survivors}
-
     gross, net = _gross_and_net(by_key, alloc)
     used = {k: a for k, a in alloc.items() if a > 0}
     return SplitResult(used, gross, net, is_split=len(used) > 1)
-
 
 def _waterfill(venues: list[Venue], amount_in: int, chunks: int) -> dict[str, int]:
     """Marginal-output greedy allocation. Deterministic (index tie-break)."""
     n = max(1, min(chunks, amount_in))
     base = amount_in // n
     rem = amount_in - base * n
-    # chunk sizes: distribute the remainder into the first `rem` chunks
     chunk_sizes = [base + (1 if i < rem else 0) for i in range(n)]
-
     alloc = {v.key: 0 for v in venues}
-    out_at = {v.key: 0 for v in venues}   # cached output at current allocation
-
+    out_at = {v.key: 0 for v in venues}
     for size in chunk_sizes:
         if size <= 0:
             continue
-        best_i, best_marginal = -1, 0
+        best_i, best_marginal = (-1, 0)
         for i, v in enumerate(venues):
             cur = alloc[v.key]
             new_out = v.output_fn(cur + size)
             marginal = new_out - out_at[v.key]
-            # strict '>' with index tie-break keeps it deterministic
             if best_i == -1 or marginal > best_marginal:
-                best_i, best_marginal, best_new_out = i, marginal, new_out
+                best_i, best_marginal, best_new_out = (i, marginal, new_out)
         if best_i == -1 or best_marginal <= 0:
-            # no venue can absorb more profitably; stop (leftover stays unrouted)
             break
         vk = venues[best_i].key
         alloc[vk] += size
         out_at[vk] = best_new_out
     return alloc
 
-
-def choose(
-    venues: list[Venue],
-    amount_in: int,
-    *,
-    improve_bps: int = 10,
-    chunks: int = 256,
-    min_leg_bps: int = 50,
-) -> tuple[SplitResult, bool]:
+def choose(venues: list[Venue], amount_in: int, *, improve_bps: int=10, chunks: int=256, min_leg_bps: int=50) -> tuple[SplitResult, bool]:
     """Compare the optimal split against the best single venue.
 
     Returns (result, use_split). ``use_split`` is True only when the split beats
@@ -173,12 +143,10 @@ def choose(
     single = best_single(venues, amount_in)
     split = optimal_split(venues, amount_in, chunks=chunks, min_leg_bps=min_leg_bps)
     if not split.is_split:
-        return single, False
-    # require a strict, above-noise improvement on NET output
-    threshold = single.net_output + (single.net_output * improve_bps // 10_000)
+        return (single, False)
+    threshold = single.net_output + single.net_output * improve_bps // 10000
     if single.net_output > 0 and split.net_output > threshold:
-        return split, True
+        return (split, True)
     if single.net_output <= 0 and split.net_output > 0:
-        # champion delivers nothing here; the split is a blind-spot cover
-        return split, True
-    return single, False
+        return (split, True)
+    return (single, False)
