@@ -126,14 +126,19 @@ def _cover_ctx(solver, intent, state, snapshot):
     return (chain, tin, tout, amt, w3, p)
 
 
-def _best_lift(w3, chain, tin, tout, amt, floor):
-    """Best strict-better candidate over the floor, or None. Candidate pool =
-    Uniswap V3/V2 (viking_batch) + PancakeSwap V3 (viking_pcs); taking the max
-    over the union is lift-only (adding a venue can only raise the best)."""
+def _providers():
     import viking_v4 as _v4
-    cands = _qb.candidates(w3, chain, tin, tout, amt)
-    cands += _pcs.pcs_candidates(w3, chain, tin, tout, amt)
-    cands += _v4.v4_candidates(w3, chain, tin, tout, amt)
+    import viking_curve as _cv
+    return (_qb.candidates, _pcs.pcs_candidates, _v4.v4_candidates, _cv.curve_candidates)
+
+
+def _best_lift(w3, chain, tin, tout, amt, floor):
+    """Best strict-better candidate over the union of every venue's candidates
+    (Uni V3/V2, Pancake V3, V4 exact-key, Curve) — lift-only (a new venue can
+    only raise the best), or None."""
+    cands = []
+    for fn in _providers():
+        cands += fn(w3, chain, tin, tout, amt)
     if not cands:
         return None
     best = max(cands, key=lambda c: c[0])
