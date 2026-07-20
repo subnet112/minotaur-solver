@@ -130,8 +130,10 @@ def _best_lift(w3, chain, tin, tout, amt, floor):
     """Best strict-better candidate over the floor, or None. Candidate pool =
     Uniswap V3/V2 (viking_batch) + PancakeSwap V3 (viking_pcs); taking the max
     over the union is lift-only (adding a venue can only raise the best)."""
+    import viking_v4 as _v4
     cands = _qb.candidates(w3, chain, tin, tout, amt)
     cands += _pcs.pcs_candidates(w3, chain, tin, tout, amt)
+    cands += _v4.v4_candidates(w3, chain, tin, tout, amt)
     if not cands:
         return None
     best = max(cands, key=lambda c: c[0])
@@ -156,6 +158,16 @@ def _lift_serve(w3, chain, tin, tout, amt, floor, intent, state, p):
     return _b.serve(intent, state, chain, tin, tout, best, amt, p)
 
 
+def _serve_cascade(ctx, floor, intent, state):
+    """Venue lift first, aToken wrap cover second — both floor-gated."""
+    import viking_aave as _av
+    chain, tin, tout, amt, w3, p = ctx
+    plan = _lift_serve(w3, chain, tin, tout, amt, floor, intent, state, p)
+    if plan is not None:
+        return plan
+    return _av.lift(ctx, floor, intent, state)
+
+
 def _cover(solver, intent, state, snapshot, base_plan):
     ctx = _cover_ctx(solver, intent, state, snapshot)
     if ctx is None:
@@ -164,7 +176,7 @@ def _cover(solver, intent, state, snapshot, base_plan):
     floor = _floor(w3, chain, base_plan, state, tin, tout, amt, p)
     if floor is None:
         return None
-    return _lift_serve(w3, chain, tin, tout, amt, floor, intent, state, p)
+    return _serve_cascade(ctx, floor, intent, state)
 
 
 def v3hop_cover(solver, intent, state, snapshot, base_plan):
