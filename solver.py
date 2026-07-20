@@ -434,4 +434,30 @@ class _McSolver(_PuttyCleanSolver):
         if lift is not None:
             return lift
         return base
-SOLVER_CLASS = _McSolver
+from base_q87_edge import maybe_q87_plan
+from base_qbfbd_edge import maybe_qbfbd_plan
+
+
+class ChainKillerSolver(_McSolver):
+    """Current champion floor plus two same-round, fork-proven Base covers."""
+
+    def metadata(self):
+        base = super().metadata()
+        return SolverMetadata(
+            name="chain-killer",
+            version="144.0.0",
+            author="meridian",
+            description="Hydra Pathfinder floor plus two current-round Base covers",
+            supported_chains=base.supported_chains,
+            supported_intent_types=base.supported_intent_types,
+        )
+
+    def generate_plan(self, intent, state, snapshot=None):
+        for handler in (maybe_qbfbd_plan, maybe_q87_plan):
+            plan = handler(self, intent, state)
+            if plan is not None:
+                return plan
+        return super().generate_plan(intent, state, snapshot)
+
+
+SOLVER_CLASS = ChainKillerSolver
