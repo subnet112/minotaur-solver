@@ -1,250 +1,134 @@
-"""blueguider-uid124 — lean delegate over the reigning champion.
+"""uid220 champion + Balancer V2 venue — genuine differentiator.
 
-Chassis doctrine (2026-07-18 rebuild, from studying 21 adoptions):
-- The champion's engine runs VERBATIM on every order: identical plans,
-  identical pace ("byte-parity engine = byte-parity pace"). No pre-engine
-  hooks, no live probing, no guarded-call overhead.
-- Our ONLY divergence: when the engine returns a structurally-empty plan or
-  its self-declared blind guess (metadata solver in {best-effort,
-  offline-fallback} or route == last_resort_empty — the lineage's own
-  convention), we try zero-RPC covers: exact-key rows from
-  bg124_covers.json, then the token-keyed V4 census (james_census.json).
-  Fill-only-empty ⇒ can only lift a champion-zero, never regress.
-- Every region in this file stays far below the champion floor (~123 AST
-  nodes, validator metric): tie-breaks and the factorization axis both
-  reward the smaller tree, and losing an adoption we outscored to a
-  123-node rival (2026-07-17) is what forced this rewrite.
+The incumbent champion covers Uni V2/V3/V4, Aerodrome, Pancake, Sushi, Curve,
+Maverick — but NOT Balancer. This solver keeps the champion verbatim
+(FlowEnhanceMixin + _ChampionBase) and adds Balancer as an extra venue:
+
+  * exact output via Vault.queryBatchSwap (real pool math, RPC view call)
+  * revert-safe execution via approve + Vault.swap (validated on a mainnet fork)
+
+It emits a Balancer plan ONLY when Balancer's exact quote beats the champion's
+own quote by a safe margin; otherwise the champion runs untouched. The whole
+Balancer path is wrapped so ANY failure (no RPC in screening, no pool for the
+pair, quote error) falls straight back to the champion — it can never regress
+or crash. This is the "net-better on breadth, zero-regression" adoption path.
 """
-
 from __future__ import annotations
 
-import json
 import logging
-from pathlib import Path
+import time
 
-def _resolve_base():
-    """Import ladder: this generation's sha-named shim, then the legacy
-    fixed-name shim a champion tree may carry, then the bare engine."""
-    try:
-        from _bg124_shim_b91aacb import (  # noqa — rebase-wrapper.sh seds this
-            SOLVER_CLASS, base_module, SOLVER_VERSION)
-        return SOLVER_CLASS, base_module, SOLVER_VERSION
-    except Exception:  # pragma: no cover — legacy layouts
-        pass
-    try:
-        from _blueguider_uid124_shim import (
-            SOLVER_CLASS, base_module, SOLVER_VERSION)
-        return SOLVER_CLASS, base_module, SOLVER_VERSION
-    except Exception:
-        import king_solver as base_module
-        return (base_module.MinerSolver, base_module,
-                getattr(base_module, "SOLVER_VERSION", "unknown"))
+from _champion_entry import SOLVER_CLASS as _ChampionBase
+from minopot_flow import FlowEnhanceMixin
+from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
-
-def _resolve_metadata_cls():
-    try:
-        from minotaur_subnet.sdk.intent_solver import SolverMetadata
-        return SolverMetadata
-    except Exception:  # pragma: no cover
-        return None
-
-
-_Base, _base_module, _BASE_VERSION = _resolve_base()
-SolverMetadata = _resolve_metadata_cls()
+import balancer
 
 logger = logging.getLogger(__name__)
 
-_WETH = "0x4200000000000000000000000000000000000006"
-_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
-
-# Lane identity is sed-inlined at use sites (rebase-wrapper.sh): the census
-# SPLIT partitions tokens between sibling lanes (-1 = serve all) so our own
-# reigning lane's census gaps are the next lane's covers — the coverage
-# rotation that actually dethrones. Distinct inlined values also mean
-# distinct validator fingerprints => each lane owns a 2-round bench quota.
+# Balancer must beat the champion's quote by at least this margin to be chosen.
+# Clears the 10bps match band with headroom and absorbs quote-vs-sim drift so a
+# chosen Balancer route is a real win, not a regression risk.
+_MARGIN_BPS = 50
 
 
-def _load_json(name):
-    try:
-        path = Path(__file__).parent / name
-        if path.is_file():
-            return json.loads(path.read_text())
-    except Exception:
-        logger.exception("[bg124] failed loading %s", name)
-    return {}
+class MinerSolver(FlowEnhanceMixin, _ChampionBase):
+    """Champion + Balancer V2 venue (regression-safe, quote-gated)."""
 
+    def initialize(self, config: dict) -> None:
+        super().initialize(config)
+        self._bal_rpc = dict((config or {}).get("rpc_urls", {}) or {})
+        self._bal_w3: dict = {}
 
-# _COVERS: exact-key rows "chain|tin|tout|amt" -> {venue, spec, out, ...},
-# harvested from public round reports and pre-flight-verified at bake time.
-# _CENSUS: liquidity-verified V4 pool per token (offline Initialize scan).
-_COVERS = _load_json("bg124_covers.json")
-_CENSUS = _load_json("james_census.json")
-
-
-def _try_curve(solver, intent, state):
-    """Live Curve factory-pool cover (bg124_curve) — a venue class absent from
-    the champion lineage; fill-only-empty, executes through the proxy."""
-    try:
-        import bg124_curve
-        return bg124_curve.try_cover(solver, intent, state)
-    except Exception:
-        return None
-
-
-def _empty(solver, plan):
-    try:
-        return solver._is_empty(plan)
-    except Exception:
-        return plan is None or not getattr(plan, "interactions", None)
-
-
-def _blind(plan):
-    """The lineage's own no-route sentinel: structurally non-empty but a
-    self-declared guess that scores 0 when the default pool doesn't exist."""
-    try:
-        md = dict(getattr(plan, "metadata", {}) or {})
-    except Exception:
-        return False
-    return (md.get("solver") in ("best-effort", "offline-fallback")
-            or md.get("route") == "last_resort_empty")
-
-
-def _parse_tokens(state):
-    p = dict(getattr(state, "raw_params", {}) or {})
-    tin = str(p.get("input_token", "") or "").lower()
-    tout = str(p.get("output_token", "") or "").lower()
-    return tin, tout, p.get("input_amount", 0)
-
-
-def _order_key(state):
-    tin, tout, raw_amt = _parse_tokens(state)
-    try:
-        amt = int(raw_amt or 0)
-    except (TypeError, ValueError):
-        return None
-    chain = int(getattr(state, "chain_id", 0) or 0)
-    if amt <= 0 or not tout.startswith("0x"):
-        return None
-    return chain, tin, tout, amt
-
-
-def _census_pool(tout):
-    row = _CENSUS.get(tout)
-    if not row:
-        return None
-    if 0 >= 0 and (int(tout[-4:], 16) & 1) != BG124_LANE_SPLIT:
-        return None
-    pool = row["pool"] if isinstance(row, dict) else row
-    return tuple(pool)
-
-
-def _census_leg(spec, tin, paired):
-    if paired == tin:
-        if tin == _USDC:
-            spec["sweep_settle"] = True
-        return spec
-    if tin == _USDC and paired == _WETH:
-        spec["v3_tokens"] = (_USDC, _WETH)
-        spec["v3_fees"] = (500,)
-        return spec
-    return None
-
-
-def _census_spec(tin, tout):
-    """Census pool -> spec for the lineage's uniswap_v4_ur builder. Direct
-    when tin is the pool's paired side; USDC-in via a v3 USDC->WETH leg
-    when the pool is WETH-paired; else unroutable-safely -> None."""
-    pool = _census_pool(tout)
-    if pool is None:
-        return None
-    c0, c1 = pool[0], pool[1]
-    paired = c0 if c1 == tout else c1
-    spec = {"pool": pool, "settle": paired, "zero_for_one": c0 == paired}
-    return _census_leg(spec, tin, paired)
-
-
-def _spend_build(solver):
-    """Pace guard (2026-07-19): two consecutive benches rejected on exactly
-    1 dropped order (the 900s completion race). Cover BUILDS go through the
-    engine's builder and can cost RPC time on doomed zero-quote orders; cap
-    attempts per run so cover work can never turn a completed run into a
-    tail-drop."""
-    spent = getattr(solver, "_bg124_builds", 0)
-    if spent >= 8:
-        return False
-    solver._bg124_builds = spent + 1
-    return True
-
-
-def _cover_row(key):
-    chain, tin, tout, amt = key
-    row = _COVERS.get("%d|%s|%s|%d" % key)
-    if row is None and chain == 8453:
-        spec = _census_spec(tin, tout)
-        if spec is not None:
-            row = {"venue": "uniswap_v4_ur", "spec": spec, "out": 1}
-    return row
-
-
-class Bg124Solver(_Base):
-    """Champion verbatim + zero-RPC fill-only-empty covers."""
-
-    def generate_plan(self, intent, state, snapshot=None):
-        plan = super().generate_plan(intent, state, snapshot)
-        if not _empty(self, plan) and not _blind(plan):
-            return plan
-        alt = self._bg124_cover(intent, state, snapshot)
-        if alt is not None and not _empty(self, alt):
-            logger.info("[bg124] cover fired for %s",
-                        getattr(intent, "app_id", "?"))
-            return alt
-        curve = _try_curve(self, intent, state)
-        if curve is not None and not _empty(self, curve):
-            return curve
-        return plan
-
-    def _bg124_cover(self, intent, state, snapshot):
-        try:
-            key = _order_key(state)
-            if key is None:
-                return None
-            row = _cover_row(key)
-            if row is None:
-                return None
-            if not _spend_build(self):
-                return None
-            chain, tin, tout, amt = key
-            return self._bg124_build(intent, state, snapshot, row,
-                                     tin, tout, amt, chain)
-        except Exception:
-            logger.exception("[bg124] cover path failed; champion plan stands")
+    # --- helpers ---
+    def _eth_call(self, chain_id: int):
+        rpc = getattr(self, "_bal_rpc", {}) or {}
+        url = rpc.get(chain_id) or rpc.get(str(chain_id))
+        if not url:
             return None
+        from web3 import Web3
+        w3 = getattr(self, "_bal_w3", {}).get(chain_id)
+        if w3 is None:
+            w3 = Web3(Web3.HTTPProvider(url, request_kwargs={"timeout": 4}))
+            self._bal_w3[chain_id] = w3
 
-    def _bg124_build(self, intent, state, snapshot, row, tin, tout, amt, chain):
-        spec = row.get("spec")
-        if isinstance(spec, dict):  # JSON round-trip: lists back to tuples
-            spec = {k: tuple(v) if isinstance(v, list) else v
-                    for k, v in spec.items()}
-        cand = {"venue": row["venue"], "spec": spec, "param": "bg124-cover",
-                "out": row.get("out", 1), "gas_est": 650000,
-                "gas_model": 1000000}
-        plan = super()._build_singlehop_plan(
-            intent, state, snapshot, cand, tin, tout, amt, chain)
-        return plan
+        def call(to, data):
+            try:
+                return w3.eth.call({"to": Web3.to_checksum_address(to), "data": data}).hex()
+            except Exception:
+                return None
 
-    def metadata(self):
-        base = super().metadata()
-        if SolverMetadata is None:
-            return base
-        return SolverMetadata(
-            name="blueguider-lane3",
-            version=f"{_BASE_VERSION}+bg.3.L3",
-            author="5GVmB1MosKnDuUs7oFS47sYkU9hSofVzEJc3NhwEwyYo9VBF",
-            description=("champion verbatim + zero-RPC fill-only-empty "
-                         "covers (census + harvested exact-key rows)"),
-            supported_chains=base.supported_chains,
-            supported_intent_types=base.supported_intent_types,
+        return call
+
+    def _swap_params(self, state):
+        ctx = getattr(state, "typed_context", None)
+        if ctx is not None and getattr(ctx, "input_token", None):
+            try:
+                return ctx.input_token, ctx.output_token, int(ctx.input_amount)
+            except Exception:
+                pass
+        rp = getattr(state, "raw_params", None) or {}
+        try:
+            return rp.get("input_token", ""), rp.get("output_token", ""), int(rp.get("input_amount", "0") or 0)
+        except Exception:
+            return "", "", 0
+
+    def _min_out(self, state):
+        rp = getattr(state, "raw_params", None) or {}
+        try:
+            return int(rp.get("min_output_amount", 0) or 0)
+        except Exception:
+            return 0
+
+    def _maybe_balancer(self, intent, state, snapshot):
+        chain_id = getattr(state, "chain_id", None) or 1
+        tin, tout, amount = self._swap_params(state)
+        if not tin or not tout or amount <= 0:
+            return None
+        if balancer.pool_for(chain_id, tin, tout) is None:
+            return None  # no Balancer pool for this pair -> champion (zero overhead)
+        call = self._eth_call(chain_id)
+        if call is None:
+            return None  # no RPC (e.g. screening sandbox) -> champion
+        bal_out = balancer.quote(call, chain_id, tin, tout, amount)
+        if bal_out <= 0:
+            return None
+        try:
+            champ_out = int(super().quote(intent, state, snapshot).estimated_output)
+        except Exception:
+            return None  # can't compare -> champion
+        if champ_out <= 0 or bal_out <= champ_out * (10000 + _MARGIN_BPS) // 10000:
+            return None  # not clearly better -> champion
+        # Balancer wins by margin -> build the plan.
+        min_out = self._min_out(state)
+        recipient = getattr(state, "contract_address", None) or getattr(state, "owner", None) or tin
+        ts = snapshot.timestamp if snapshot is not None else int(time.time())
+        deadline = ts + 600
+        cd = balancer.build_calldata(tin, tout, amount, min_out, recipient, chain_id, deadline)
+        if not cd:
+            return None
+        approve_cd, swap_cd = cd
+        logger.info("uid220-balancer WIN: %s->%s bal=%d champ=%d", tin[:8], tout[:8], bal_out, champ_out)
+        return ExecutionPlan(
+            intent_id=intent.app_id,
+            interactions=[
+                Interaction(target=tin, value="0", call_data=approve_cd, chain_id=chain_id),
+                Interaction(target=balancer.VAULT, value="0", call_data=swap_cd, chain_id=chain_id),
+            ],
+            deadline=deadline,
+            nonce=state.nonce,
+            metadata={"route": "balancer_v2", "pool": balancer.pool_for(chain_id, tin, tout),
+                      "chain_id": chain_id, "solver": "uid220-balancer"},
         )
 
+    def generate_plan(self, intent, state, snapshot=None):
+        try:
+            plan = self._maybe_balancer(intent, state, snapshot)
+            if plan is not None:
+                return plan
+        except Exception:
+            logger.exception("balancer path errored; falling back to champion")
+        return super().generate_plan(intent, state, snapshot)
 
-SOLVER_CLASS = Bg124Solver
+
+SOLVER_CLASS = MinerSolver
