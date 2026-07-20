@@ -10,9 +10,11 @@ from base_qbfbd_edge import maybe_qbfbd_plan
 from bat_wquil_edge import maybe_qaa9_plan
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from pyusd_pepe_edge import maybe_qd41_plan
+from usdt_a9d4_edge import maybe_qa9d4_plan
 
 
 _EDGE_HANDLERS = (
+    maybe_qa9d4_plan,
     maybe_q397_plan,
     maybe_q45dd_plan,
     maybe_q87_plan,
@@ -31,7 +33,7 @@ class ChainKillerSolver(_HydraSolver):
             name="chain-killer",
             version="139.0.0",
             author="meridian",
-            description="Hydra discovery floor plus six replay-proven routes",
+            description="Hydra discovery floor plus seven replay-proven routes",
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types,
         )
