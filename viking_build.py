@@ -93,9 +93,7 @@ def _serve_v2(intent, state, chain, tin, tout, det, amt, recipient, out):
 def _builders():
     """kind -> plan builder (uniform signature). Pancake lives in viking_pcs_build."""
     import viking_pcs_build as _pcsb
-    import viking_v4_build as _v4b
-    return {'v3d': _serve_v3d, 'v3h': _serve_v3h, 'pcs': _pcsb.serve_pcs,
-            'v4': _v4b.serve_v4}
+    return {'v3d': _serve_v3d, 'v3h': _serve_v3h, 'pcs': _pcsb.serve_pcs}
 
 
 def serve(intent, state, chain, tin, tout, best, amt, p):
