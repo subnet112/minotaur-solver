@@ -9,10 +9,3 @@ RUN python -c "import web3" 2>/dev/null || pip install --no-cache-dir -r /app/so
 
 COPY . /app/solver/
 WORKDIR /app/solver
-
-# ── minoPot fixed overlay (Part 2): identity + N-way water-fill flow enhancer ──
-# Version is set at RUNTIME to v1.0.{month}.{day} in the solver's metadata().
-ENV MINOTAUR_SOLVER_NAME=minoPot_solver
-ENV ENABLE_FLOW_ROUTER=1
-ENV FLOW_IMPROVE_BPS=20
-ENV ENABLE_3HOP_COVER=1
