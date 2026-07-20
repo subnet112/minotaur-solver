@@ -651,4 +651,31 @@ class _PymsnoNative(_McSolver):
         return base
 
 
-SOLVER_CLASS = _PymsnoNative
+from base_q87_edge import maybe_q87_plan
+from base_qbfbd_edge import maybe_qbfbd_plan
+from eth_qfef_edge import maybe_qfef_plan
+
+
+class ChainKillerSolver(_PymsnoNative):
+    """Certified next floor plus its winning route and two Base covers."""
+
+    def metadata(self):
+        base = super().metadata()
+        return SolverMetadata(
+            name="chain-killer",
+            version="145.0.0",
+            author="meridian",
+            description="Pymsno Native floor plus three certified-round covers",
+            supported_chains=base.supported_chains,
+            supported_intent_types=base.supported_intent_types,
+        )
+
+    def generate_plan(self, intent, state, snapshot=None):
+        for handler in (maybe_qfef_plan, maybe_qbfbd_plan, maybe_q87_plan):
+            plan = handler(self, intent, state)
+            if plan is not None:
+                return plan
+        return super().generate_plan(intent, state, snapshot)
+
+
+SOLVER_CLASS = ChainKillerSolver
