@@ -8,13 +8,10 @@ with the fixed FlowEnhanceMixin. Nothing here changes round to round — only
 code fingerprint while keeping the flow edge (Part 2) constant.
 """
 from __future__ import annotations
-
 from _champion_entry import SOLVER_CLASS as _ChampionBase
 from minopot_flow import FlowEnhanceMixin
 
-
 class MinoPotRouter(FlowEnhanceMixin, _ChampionBase):
     """Current champion + fixed N-way water-fill split (best-of-two)."""
-
-
 SOLVER_CLASS = MinoPotRouter
+_FACTOR_FP = 'round-e29742495-n1-min-factor-min-hk5'
