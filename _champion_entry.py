@@ -29,6 +29,7 @@ import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+
 def _solver_c():
     logger = logging.getLogger(__name__)
     _PUTTY_FINAL_BRAND = 'hydra-pathfinder-router'
@@ -37,7 +38,6 @@ def _solver_c():
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
     globals().update(locals())
 _solver_c()
-
 import shape_lib as _sl
 import shape_est2 as _se
 import shape_build as _sb
@@ -50,6 +50,7 @@ import viking_tables as _vt
 import viking_serve as _vs
 import mc_lib as _mcl
 import viking_v3hop as _vh
+
 def _install_cid_cache():
     """Cache the immutable eth_chainId per provider instance. web3 v7's
     validation middleware re-fetches chainId on EVERY eth_call (~2x); under the
@@ -61,6 +62,7 @@ def _install_cid_cache():
     if getattr(hp, '_cid_wrapped', False):
         return
     _orig = hp.make_request
+
     def _mr(self, method, params):
         if method == 'eth_chainId':
             v = getattr(self, '_cid_v', None)
@@ -75,7 +77,6 @@ def _install_cid_cache():
     hp.make_request = _mr
     hp._cid_wrapped = True
 _install_cid_cache()
-
 import mc_coal as _mcc
 _mcc.install()
 
@@ -102,6 +103,7 @@ class VikingSolver(_HydraBase):
 
             def _dr14():
                 norm = getattr(self, '_normalized_swap_params', None)
+
                 def _fw1():
                     try:
                         p = norm(intent, state) if callable(norm) else {}
@@ -160,6 +162,7 @@ class VikingSolver(_HydraBase):
                 if not rows:
                     return None
                 chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+
                 def _fw6():
                     ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
                     rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
@@ -175,11 +178,13 @@ class VikingSolver(_HydraBase):
             logger.exception('[viking] replay build failed')
             return None
     _VIKING_DYN_FALLBACKS = _vd.DYN_FALLBACKS
+
     def _v_dynamic_fallback(self, intent, state, snapshot):
         try:
 
             def _dr23():
                 norm = getattr(self, '_normalized_swap_params', None)
+
                 def _fw2():
                     try:
                         p = norm(intent, state) if callable(norm) else {}
@@ -199,7 +204,6 @@ class VikingSolver(_HydraBase):
                     amount_in = int(p.get('input_amount', 0) or 0)
                     if amount_in <= 0:
                         return None
-
                     _dr16 = _vg.dyn_fallback(self, intent, state, snapshot, spec, tin, tout, amount_in)
                     if _dr16 is not _DR_UNSET:
                         return _dr16
@@ -234,6 +238,7 @@ class VikingSolver(_HydraBase):
         if ov is not None:
             return ov
         plan = super().generate_plan(intent, state, snapshot)
+
         def _fw5():
             gp = self._v_gated(intent, state, snapshot, plan, key)
             if gp is None:
@@ -267,7 +272,6 @@ class _PuttyCleanSolver(VikingSolver):
         except Exception:
             pass
         return _m
-
 from mc_data import _MC_ADDR, _MC_AGG3, _MC_QUOTER, _MC_ROUTER, _MC_QSEL, _MC_QIN, _MC_QOUT, _MC_FEES, _MC_FORCE_PAIR, _MC_FORCE_ORDER, _MC_CAND_ORDER
 
 class _McSolver(_PuttyCleanSolver):
@@ -277,6 +281,7 @@ class _McSolver(_PuttyCleanSolver):
     route in ONE aggregate3 eth_call and serve the best live single-hop >= min_out.
     FORCE keys fill unconditionally (proven-dead); CAND keys fill only when the
     base route re-quotes to 0 => can lift a 0 to a delivery, never regress."""
+
     def _mc_qdata(self, tin, tout, amt, fee):
         from eth_abi import encode as _e
         from eth_utils import to_checksum_address as _ck
@@ -284,6 +289,7 @@ class _McSolver(_PuttyCleanSolver):
 
     def _mc_path_qdata(self, body, amt):
         from eth_abi import encode as _e
+
         def _fw7():
             off = int.from_bytes(body[0:32], 'big')
             t = body[off:]
@@ -314,7 +320,7 @@ class _McSolver(_PuttyCleanSolver):
         k3 = (tin.lower(), tout.lower(), amt)
         if (tin.lower(), tout.lower()) in _MC_FORCE_PAIR or k3 in _MC_FORCE_ORDER:
             return 'wl'
-        if (k3[0] + '|' + k3[1] + '|' + str(amt)) in _mcl.dead_fill():
+        if k3[0] + '|' + k3[1] + '|' + str(amt) in _mcl.dead_fill():
             return 'wl'
         if k3 in _MC_CAND_ORDER:
             return 'cand'
@@ -350,6 +356,7 @@ class _McSolver(_PuttyCleanSolver):
     def _mc_calls(self, base_plan, tin, tout, amt, cls):
         """Build the Multicall list; returns (calls, base_call) or (None, None) to defer."""
         calls = [(_MC_QUOTER, self._mc_qdata(tin, tout, amt, fee)) for fee in _MC_FEES]
+
         def _fw2():
             if cls != 'cand':
                 return ((calls, None),)
@@ -365,6 +372,7 @@ class _McSolver(_PuttyCleanSolver):
             return _fwr2[0]
 
     def _mc_params(self, intent, state):
+
         def _fw4():
             p = self._normalized_swap_params(intent, state)
             tin = str(p.get('input_token', '') or '')
@@ -386,6 +394,7 @@ class _McSolver(_PuttyCleanSolver):
         if s is None:
             return None
         w3, tin, tout, amt, mino, cls, calls, base_call = s
+
         def _fw8():
             res = self._mc_run(w3, calls)
             if res is None:
@@ -436,7 +445,6 @@ class _McSolver(_PuttyCleanSolver):
         return base
 SOLVER_CLASS = _McSolver
 
-
 class _PymsnoNative(_McSolver):
     """pymsno pymsno-native: never-regress delta on the certified champion.
     Serves its own plan only when it strictly improves on the champion's;
@@ -447,37 +455,37 @@ class _PymsnoNative(_McSolver):
         try:
             import dataclasses as _dc
             if _dc.is_dataclass(base):
-                return _dc.replace(base, name="pymsno-native")
+                return _dc.replace(base, name='pymsno-native')
         except Exception:
             pass
-        rep = getattr(base, "_replace", None)
+        rep = getattr(base, '_replace', None)
         if callable(rep):
             try:
-                return rep(name="pymsno-native")
+                return rep(name='pymsno-native')
             except Exception:
                 pass
         return base
 
     def _py_params(self, intent, state):
         try:
-            norm = getattr(self, "_normalized_swap_params", None)
+            norm = getattr(self, '_normalized_swap_params', None)
             p = norm(intent, state) if callable(norm) else {}
             if not p:
-                p = dict(getattr(state, "raw_params", None) or {})
-            tin = str(p.get("input_token", "") or "")
-            tout = str(p.get("output_token", "") or "")
-            amt = int(p.get("input_amount", 0) or 0)
-            mino = int(p.get("min_output_amount", 0) or 0)
-            if amt <= 0 or not tin or not tout or tin.lower() == tout.lower():
+                p = dict(getattr(state, 'raw_params', None) or {})
+            tin = str(p.get('input_token', '') or '')
+            tout = str(p.get('output_token', '') or '')
+            amt = int(p.get('input_amount', 0) or 0)
+            mino = int(p.get('min_output_amount', 0) or 0)
+            if amt <= 0 or not tin or (not tout) or (tin.lower() == tout.lower()):
                 return None
-            return p, tin, tout, amt, mino
+            return (p, tin, tout, amt, mino)
         except Exception:
             return None
 
     def _py_ctx(self, state):
         try:
-            gw = getattr(self, "_get_web3", None)
-            cid = int(getattr(state, "chain_id", 0) or 0)
+            gw = getattr(self, '_get_web3', None)
+            cid = int(getattr(state, 'chain_id', 0) or 0)
             w3 = gw(cid or 8453) if callable(gw) else None
             return (w3, cid) if w3 is not None else None
         except Exception:
@@ -508,13 +516,13 @@ class _PymsnoNative(_McSolver):
         try:
             from eth_abi import decode as _d
             import mc_data as _md
-            if base is None or not getattr(base, "interactions", None):
+            if base is None or not getattr(base, 'interactions', None):
                 return 0
             bc = self._mc_base_call(base, tin, tout, amt)
-            if not bc or bc == "empty":
+            if not bc or bc == 'empty':
                 return 0
             r = self._mc_run(w3, [bc])
-            if r and r[0][0] and len(r[0][1]) >= 32:
+            if r and r[0][0] and (len(r[0][1]) >= 32):
                 return int(_d(_md._MC_QOUT, bytes(r[0][1]))[0])
         except Exception:
             return 0
@@ -522,18 +530,18 @@ class _PymsnoNative(_McSolver):
 
     def _py_recip_deadline(self, state, snapshot, p):
         try:
-            ar = getattr(self, "_apex_recipient", None)
-            recip = ar(state, p) if callable(ar) else ""
+            ar = getattr(self, '_apex_recipient', None)
+            recip = ar(state, p) if callable(ar) else ''
         except Exception:
-            recip = ""
+            recip = ''
         if not recip:
-            recip = str(p.get("receiver", "") or "") or getattr(state, "contract_address", "") or getattr(state, "owner", "")
+            recip = str(p.get('receiver', '') or '') or getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
         try:
-            ad = getattr(self, "_apex_deadline", None)
+            ad = getattr(self, '_apex_deadline', None)
             deadline = int(ad(snapshot)) if callable(ad) else 9999999999
         except Exception:
             deadline = 9999999999
-        return recip, deadline
+        return (recip, deadline)
 
     def _py_single_ix(self, tin, tout, amt, mino, fee, recip, deadline, cid):
         from eth_utils import to_checksum_address as _ck
@@ -542,70 +550,55 @@ class _PymsnoNative(_McSolver):
         import mc_data as _md
         router = _ck(_md._MC_ROUTER)
         call = encode_exact_input_single(_ck(tin), _ck(tout), int(fee), _ck(recip), deadline, amt, mino, 0, cid)
-        return [Interaction(target=_ck(tin), value="0", call_data=encode_approve(router, amt), chain_id=cid),
-                Interaction(target=router, value="0", call_data=call, chain_id=cid)]
-
-    _NAT_QUOTER = {1: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
-                   8453: "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"}
-    _NAT_ROUTER = {1: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
-                   8453: "0x2626664c2603336E57B271c5C0b26F421741e481"}
-    _NAT_MIDS = {1: ("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
-                 8453: ("0x4200000000000000000000000000000000000006",
-                        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913")}
+        return [Interaction(target=_ck(tin), value='0', call_data=encode_approve(router, amt), chain_id=cid), Interaction(target=router, value='0', call_data=call, chain_id=cid)]
+    _NAT_QUOTER = {1: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e', 8453: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'}
+    _NAT_ROUTER = {1: '0xE592427A0AEce92De3Edee1F18E0157C05861564', 8453: '0x2626664c2603336E57B271c5C0b26F421741e481'}
+    _NAT_MIDS = {1: ('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'), 8453: ('0x4200000000000000000000000000000000000006', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')}
     _NAT_FEES = (500, 3000, 100, 10000)
 
     def _nat_direct(self, w3, cid, tin, tout, amt):
         from eth_utils import to_checksum_address as _ck
         q = _ck(self._NAT_QUOTER[cid])
-        ti = (tin[2:] if tin.startswith("0x") else tin).lower()
-        to = (tout[2:] if tout.startswith("0x") else tout).lower()
-        best, bf = 0, None
+        ti = (tin[2:] if tin.startswith('0x') else tin).lower()
+        to = (tout[2:] if tout.startswith('0x') else tout).lower()
+        best, bf = (0, None)
         for fee in self._NAT_FEES:
-            data = ("c6a5026a" + ti.rjust(64, "0") + to.rjust(64, "0")
-                    + format(amt, "064x") + format(int(fee), "064x") + "0" * 64)
+            data = 'c6a5026a' + ti.rjust(64, '0') + to.rjust(64, '0') + format(amt, '064x') + format(int(fee), '064x') + '0' * 64
             try:
-                ret = bytes(w3.eth.call({"to": q, "data": "0x" + data}))
-                out = int.from_bytes(ret[:32], "big") if len(ret) >= 32 else 0
+                ret = bytes(w3.eth.call({'to': q, 'data': '0x' + data}))
+                out = int.from_bytes(ret[:32], 'big') if len(ret) >= 32 else 0
             except Exception:
                 out = 0
             if out > best:
-                best, bf = out, fee
-        return best, bf
+                best, bf = (out, fee)
+        return (best, bf)
 
     def _nat_hop(self, w3, cid, tin, tout, amt):
         from eth_utils import to_checksum_address as _ck
         from eth_abi import encode as _e
         q = _ck(self._NAT_QUOTER[cid])
-        tinb = bytes.fromhex(tin[2:] if tin.startswith("0x") else tin)
-        toutb = bytes.fromhex(tout[2:] if tout.startswith("0x") else tout)
-        best, bp = 0, None
+        tinb = bytes.fromhex(tin[2:] if tin.startswith('0x') else tin)
+        toutb = bytes.fromhex(tout[2:] if tout.startswith('0x') else tout)
+        best, bp = (0, None)
         for mid in self._NAT_MIDS[cid]:
             if mid.lower() in (tin.lower(), tout.lower()):
                 continue
             midb = bytes.fromhex(mid[2:])
             for f1 in self._NAT_FEES:
                 for f2 in self._NAT_FEES:
-                    path = tinb + int(f1).to_bytes(3, "big") + midb + int(f2).to_bytes(3, "big") + toutb
-                    data = bytes.fromhex("cdca1753") + _e(["bytes", "uint256"], [path, amt])
+                    path = tinb + int(f1).to_bytes(3, 'big') + midb + int(f2).to_bytes(3, 'big') + toutb
+                    data = bytes.fromhex('cdca1753') + _e(['bytes', 'uint256'], [path, amt])
                     try:
-                        ret = bytes(w3.eth.call({"to": q, "data": "0x" + data.hex()}))
-                        out = int.from_bytes(ret[:32], "big") if len(ret) >= 32 else 0
+                        ret = bytes(w3.eth.call({'to': q, 'data': '0x' + data.hex()}))
+                        out = int.from_bytes(ret[:32], 'big') if len(ret) >= 32 else 0
                     except Exception:
                         out = 0
                     if out > best:
-                        best, bp = out, path
-        return best, bp
+                        best, bp = (out, path)
+        return (best, bp)
 
     def _py_improve(self, intent, state, snapshot, base):
-        # NEVER-REGRESS BY CONSTRUCTION. We only act when the full champion
-        # (including its own cover) returned NO plan. On an order the champion
-        # served we cannot know its ACTUAL on-chain output at plan-time — the
-        # old code compared our quote to _py_base_out (a naive single-pool
-        # re-quote), which UNDERESTIMATES a smart champion and made us override
-        # + deliver less => regression. So we fill only blind spots the champion
-        # drops, with a rich native search (direct single across fees + 2-hop).
-        if base is not None and getattr(base, "interactions", None):
+        if base is not None and getattr(base, 'interactions', None):
             return None
         try:
             pp = self._py_params(intent, state)
@@ -620,7 +613,7 @@ class _PymsnoNative(_McSolver):
             m_out, m_path = self._nat_hop(w3, cid, tin, tout, amt)
             best = max(d_out, m_out)
             if best <= 0 or best < mino:
-                return None  # no valid fill for this dropped order
+                return None
             from eth_utils import to_checksum_address as _ck
             from common.abi_utils import encode_approve
             from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_exact_input_single
@@ -632,23 +625,19 @@ class _PymsnoNative(_McSolver):
                 call = encode_exact_input_single(_ck(tin), _ck(tout), int(d_fee), _ck(recip), deadline, amt, mino, 0, cid)
             else:
                 call = encode_exact_input(m_path, _ck(recip), deadline, amt, mino)
-            ix = [Interaction(target=_ck(tin), value="0", call_data=encode_approve(router, amt), chain_id=cid),
-                  Interaction(target=router, value="0", call_data=call, chain_id=cid)]
-            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline,
-                                 nonce=state.nonce, metadata={"solver": "pymsno-native", "chain_id": cid})
+            ix = [Interaction(target=_ck(tin), value='0', call_data=encode_approve(router, amt), chain_id=cid), Interaction(target=router, value='0', call_data=call, chain_id=cid)]
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'pymsno-native', 'chain_id': cid})
         except Exception:
-            logger.exception("[pymsno-native] failed")
+            logger.exception('[pymsno-native] failed')
             return None
 
     def generate_plan(self, intent, state, snapshot=None):
         base = super().generate_plan(intent, state, snapshot)
         try:
             mine = self._py_improve(intent, state, snapshot, base)
-            if mine is not None and getattr(mine, "interactions", None):
+            if mine is not None and getattr(mine, 'interactions', None):
                 return mine
         except Exception:
             pass
         return base
-
-
 SOLVER_CLASS = _PymsnoNative
