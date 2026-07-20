@@ -29,6 +29,7 @@ import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+
 def _solver_c():
     logger = logging.getLogger(__name__)
     _PUTTY_FINAL_BRAND = 'hydra-thread-router'
@@ -37,7 +38,6 @@ def _solver_c():
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
     globals().update(locals())
 _solver_c()
-
 import shape_lib as _sl
 import shape_est2 as _se
 import shape_build as _sb
@@ -50,6 +50,7 @@ import viking_tables as _vt
 import viking_serve as _vs
 import mc_lib as _mcl
 import viking_v3hop as _vh
+
 def _install_cid_cache():
     """Cache the immutable eth_chainId per provider instance. web3 v7's
     validation middleware re-fetches chainId on EVERY eth_call (~2x); under the
@@ -61,6 +62,7 @@ def _install_cid_cache():
     if getattr(hp, '_cid_wrapped', False):
         return
     _orig = hp.make_request
+
     def _mr(self, method, params):
         if method == 'eth_chainId':
             v = getattr(self, '_cid_v', None)
@@ -75,7 +77,6 @@ def _install_cid_cache():
     hp.make_request = _mr
     hp._cid_wrapped = True
 _install_cid_cache()
-
 import mc_coal as _mcc
 _mcc.install()
 
@@ -102,6 +103,7 @@ class VikingSolver(_HydraBase):
 
             def _dr14():
                 norm = getattr(self, '_normalized_swap_params', None)
+
                 def _fw1():
                     try:
                         p = norm(intent, state) if callable(norm) else {}
@@ -160,6 +162,7 @@ class VikingSolver(_HydraBase):
                 if not rows:
                     return None
                 chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+
                 def _fw6():
                     ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
                     rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
@@ -175,11 +178,13 @@ class VikingSolver(_HydraBase):
             logger.exception('[viking] replay build failed')
             return None
     _VIKING_DYN_FALLBACKS = _vd.DYN_FALLBACKS
+
     def _v_dynamic_fallback(self, intent, state, snapshot):
         try:
 
             def _dr23():
                 norm = getattr(self, '_normalized_swap_params', None)
+
                 def _fw2():
                     try:
                         p = norm(intent, state) if callable(norm) else {}
@@ -199,7 +204,6 @@ class VikingSolver(_HydraBase):
                     amount_in = int(p.get('input_amount', 0) or 0)
                     if amount_in <= 0:
                         return None
-
                     _dr16 = _vg.dyn_fallback(self, intent, state, snapshot, spec, tin, tout, amount_in)
                     if _dr16 is not _DR_UNSET:
                         return _dr16
@@ -234,6 +238,7 @@ class VikingSolver(_HydraBase):
         if ov is not None:
             return ov
         plan = super().generate_plan(intent, state, snapshot)
+
         def _fw5():
             gp = self._v_gated(intent, state, snapshot, plan, key)
             if gp is None:
@@ -267,7 +272,6 @@ class _PuttyCleanSolver(VikingSolver):
         except Exception:
             pass
         return _m
-
 from mc_data import _MC_ADDR, _MC_AGG3, _MC_QUOTER, _MC_ROUTER, _MC_QSEL, _MC_QIN, _MC_QOUT, _MC_FEES, _MC_FORCE_PAIR, _MC_FORCE_ORDER, _MC_CAND_ORDER
 
 class _McSolver(_PuttyCleanSolver):
@@ -277,6 +281,7 @@ class _McSolver(_PuttyCleanSolver):
     route in ONE aggregate3 eth_call and serve the best live single-hop >= min_out.
     FORCE keys fill unconditionally (proven-dead); CAND keys fill only when the
     base route re-quotes to 0 => can lift a 0 to a delivery, never regress."""
+
     def _mc_qdata(self, tin, tout, amt, fee):
         from eth_abi import encode as _e
         from eth_utils import to_checksum_address as _ck
@@ -284,6 +289,7 @@ class _McSolver(_PuttyCleanSolver):
 
     def _mc_path_qdata(self, body, amt):
         from eth_abi import encode as _e
+
         def _fw7():
             off = int.from_bytes(body[0:32], 'big')
             t = body[off:]
@@ -314,7 +320,7 @@ class _McSolver(_PuttyCleanSolver):
         k3 = (tin.lower(), tout.lower(), amt)
         if (tin.lower(), tout.lower()) in _MC_FORCE_PAIR or k3 in _MC_FORCE_ORDER:
             return 'wl'
-        if (k3[0] + '|' + k3[1] + '|' + str(amt)) in _mcl.dead_fill():
+        if k3[0] + '|' + k3[1] + '|' + str(amt) in _mcl.dead_fill():
             return 'wl'
         if k3 in _MC_CAND_ORDER:
             return 'cand'
@@ -350,6 +356,7 @@ class _McSolver(_PuttyCleanSolver):
     def _mc_calls(self, base_plan, tin, tout, amt, cls):
         """Build the Multicall list; returns (calls, base_call) or (None, None) to defer."""
         calls = [(_MC_QUOTER, self._mc_qdata(tin, tout, amt, fee)) for fee in _MC_FEES]
+
         def _fw2():
             if cls != 'cand':
                 return ((calls, None),)
@@ -365,6 +372,7 @@ class _McSolver(_PuttyCleanSolver):
             return _fwr2[0]
 
     def _mc_params(self, intent, state):
+
         def _fw4():
             p = self._normalized_swap_params(intent, state)
             tin = str(p.get('input_token', '') or '')
@@ -386,6 +394,7 @@ class _McSolver(_PuttyCleanSolver):
         if s is None:
             return None
         w3, tin, tout, amt, mino, cls, calls, base_call = s
+
         def _fw8():
             res = self._mc_run(w3, calls)
             if res is None:
@@ -444,104 +453,85 @@ class _McSolver(_PuttyCleanSolver):
             return lift
         return base
 SOLVER_CLASS = _McSolver
-
-# ===== DELTA LAYER (appended) — pre-built keyed deltas + a RUNTIME chain-1 UniV3 router =====
-# Two jobs:
-#  1. Serve pre-built frozen routes for keyed orders (deltas.json — e.g. blind spots).
-#  2. RUNTIME-route the EXOTIC chain-1 tail. The benchmark corpus is now ~half chain-1
-#     (Ethereum) and the forked champion code REVERTS on exotic chain-1 pairs (single-hop
-#     UniV3, no pool) => a dropped champion-served order = hard veto. EVERY Base-only fork
-#     in the field hits this. We instead quote UniV3 (direct all-fee + 2-hop via WETH/USDC)
-#     at runtime and deliver to state.contract_address (the runtime recipient — solves the
-#     per-app recipient problem). Measured to reach >=99% of achievable on ~15/19 exotic
-#     orders; turns a guaranteed veto-drop into a match/cover. Major-major chain-1 pairs and
-#     all Base orders defer to the champion (it handles those well) => never a regression there.
 import json as _dl_json, os as _dl_os, urllib.request as _dl_url
 from minotaur_subnet.shared.types import ExecutionPlan as _DLPlan, Interaction as _DLIx
-
-_DELTA_BASE = SOLVER_CLASS  # the champion's top class
-
-_ETH_QUOTER = "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"   # UniV3 QuoterV2 (mainnet)
-_ETH_ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564"   # UniV3 SwapRouter (mainnet)
-_ETH_WETH   = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-_ETH_USDC   = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-_ETH_MAJ    = {t.lower() for t in (_ETH_WETH, _ETH_USDC,
-               "0x6B175474E89094C44Da98b954EedeAC495271d0F",   # DAI
-               "0xdAC17F958D2ee523a2206206994597C13D831ec7",   # USDT
-               "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599")}  # WBTC
+_DELTA_BASE = SOLVER_CLASS
+_ETH_QUOTER = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e'
+_ETH_ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+_ETH_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+_ETH_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+_ETH_MAJ = {t.lower() for t in (_ETH_WETH, _ETH_USDC, '0x6B175474E89094C44Da98b954EedeAC495271d0F', '0xdAC17F958D2ee523a2206206994597C13D831ec7', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}
 _DL_FEES = (100, 500, 3000, 10000)
 
 def _dl_sel(sig):
     from eth_utils import keccak
-    return "0x" + keccak(sig.encode())[:4].hex()
+    return '0x' + keccak(sig.encode())[:4].hex()
 
 def _dl_ethcall(url, to, data):
-    body = _dl_json.dumps({"jsonrpc": "2.0", "method": "eth_call",
-                           "params": [{"to": to, "data": data}, "latest"], "id": 1}).encode()
-    hdrs = {"content-type": "application/json",
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                          "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
+    body = _dl_json.dumps({'jsonrpc': '2.0', 'method': 'eth_call', 'params': [{'to': to, 'data': data}, 'latest'], 'id': 1}).encode()
+    hdrs = {'content-type': 'application/json', 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'}
     try:
         r = _dl_url.urlopen(_dl_url.Request(url, data=body, headers=hdrs), timeout=9)
-        res = _dl_json.load(r).get("result")
-        return res if res and res != "0x" else None
+        res = _dl_json.load(r).get('result')
+        return res if res and res != '0x' else None
     except Exception:
         return None
 
 def _dl_qsingle(url, tin, tout, amt, fee):
     from eth_abi import encode
-    data = _dl_sel("quoteExactInputSingle((address,address,uint256,uint24,uint160))") + \
-        encode(["(address,address,uint256,uint24,uint160)"], [(tin, tout, int(amt), fee, 0)]).hex()
+    data = _dl_sel('quoteExactInputSingle((address,address,uint256,uint24,uint160))') + encode(['(address,address,uint256,uint24,uint160)'], [(tin, tout, int(amt), fee, 0)]).hex()
     r = _dl_ethcall(url, _ETH_QUOTER, data)
     return int(r[2:66], 16) if r and len(r) >= 66 else 0
 
 def _dl_qpath(url, tokens, fees, amt):
     from eth_abi import encode
-    b = b""
+    b = b''
     for i, t in enumerate(tokens):
         b += bytes.fromhex(t[2:])
-        if i < len(fees): b += int(fees[i]).to_bytes(3, "big")
-    data = _dl_sel("quoteExactInput(bytes,uint256)") + encode(["bytes", "uint256"], [b, int(amt)]).hex()
+        if i < len(fees):
+            b += int(fees[i]).to_bytes(3, 'big')
+    data = _dl_sel('quoteExactInput(bytes,uint256)') + encode(['bytes', 'uint256'], [b, int(amt)]).hex()
     r = _dl_ethcall(url, _ETH_QUOTER, data)
     return int(r[2:66], 16) if r and len(r) >= 66 else 0
 
 def _dl_best_route(url, tin, tout, amt):
-    best = (0, None)  # (out, ("single",fee) | ("path",tokens,fees))
+    best = (0, None)
     for f in _DL_FEES:
         o = _dl_qsingle(url, tin, tout, amt, f)
-        if o > best[0]: best = (o, ("single", f))
+        if o > best[0]:
+            best = (o, ('single', f))
     for mid in (_ETH_WETH, _ETH_USDC):
-        if tin.lower() == mid.lower() or tout.lower() == mid.lower(): continue
+        if tin.lower() == mid.lower() or tout.lower() == mid.lower():
+            continue
         for f1 in (500, 3000):
             for f2 in (500, 3000):
                 o = _dl_qpath(url, [tin, mid, tout], [f1, f2], amt)
-                if o > best[0]: best = (o, ("path", [tin, mid, tout], [f1, f2]))
+                if o > best[0]:
+                    best = (o, ('path', [tin, mid, tout], [f1, f2]))
     return best
 
 def _dl_eth_ix(tin, tout, amt, recipient, route):
     from eth_abi import encode
     amt = int(amt)
-    approve = "0x095ea7b3" + _ETH_ROUTER[2:].rjust(64, "0").lower() + amt.to_bytes(32, "big").hex()
+    approve = '0x095ea7b3' + _ETH_ROUTER[2:].rjust(64, '0').lower() + amt.to_bytes(32, 'big').hex()
     kind = route[1][0]
-    if kind == "single":
+    if kind == 'single':
         fee = route[1][1]
-        swap = _dl_sel("exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))") + \
-            encode(["(address,address,uint24,address,uint256,uint256,uint256,uint160)"],
-                   [(tin, tout, int(fee), recipient, 9999999999, amt, 1, 0)]).hex()
+        swap = _dl_sel('exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))') + encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(tin, tout, int(fee), recipient, 9999999999, amt, 1, 0)]).hex()
     else:
-        tokens, fees = route[1][1], route[1][2]
-        b = b""
+        tokens, fees = (route[1][1], route[1][2])
+        b = b''
         for i, t in enumerate(tokens):
             b += bytes.fromhex(t[2:])
-            if i < len(fees): b += int(fees[i]).to_bytes(3, "big")
-        swap = _dl_sel("exactInput((bytes,address,uint256,uint256,uint256))") + \
-            encode(["(bytes,address,uint256,uint256,uint256)"], [(b, recipient, 9999999999, amt, 1)]).hex()
+            if i < len(fees):
+                b += int(fees[i]).to_bytes(3, 'big')
+        swap = _dl_sel('exactInput((bytes,address,uint256,uint256,uint256))') + encode(['(bytes,address,uint256,uint256,uint256)'], [(b, recipient, 9999999999, amt, 1)]).hex()
     return [(tin, approve), (_ETH_ROUTER, swap)]
-
-# UniV3 exactInputSingle selectors: SwapRouter02 (7-field) / SwapRouter (8-field, has deadline)
-_SEL_EIS_02 = "04e45aaf"; _SEL_EIS = "414bf389"
-_SEL_EI_02  = "b858183f"; _SEL_EI  = "c04b8d59"           # exactInput (path)
-_SEL_MC     = ("ac9650d8", "5ae401dc")                    # multicall(bytes[]) / multicall(uint256,bytes[])
+_SEL_EIS_02 = '04e45aaf'
+_SEL_EIS = '414bf389'
+_SEL_EI_02 = 'b858183f'
+_SEL_EI = 'c04b8d59'
+_SEL_MC = ('ac9650d8', '5ae401dc')
 
 def _dl_champ_out(base_plan, url):
     """The champion's OWN delivered output for this order, so we can be FAIL-CLOSED
@@ -550,74 +540,71 @@ def _dl_champ_out(base_plan, url):
     that route live. Returns: 0 if the champion serves NOTHING (blind spot); an int
     if we can decode+re-quote its UniV3 route; None if it serves via a venue we
     can't decode (-> caller DEFERS, never risking a regression)."""
+
+    def _dz1():
+        nonlocal _mo, _rec, amt, found_swap, q
+        path, _rec, amt, _mo = decode(['(bytes,address,uint256,uint256)'], body)[0] if sel == _SEL_EI_02 else decode(['(bytes,address,uint256,uint256,uint256)'], body)[0][:4]
+        toks, fees = ([], [])
+        p = path if isinstance(path, (bytes, bytearray)) else bytes.fromhex(str(path))
+        o = 0
+        while o + 20 <= len(p):
+            toks.append('0x' + p[o:o + 20].hex())
+            o += 20
+            if o + 3 <= len(p):
+                fees.append(int.from_bytes(p[o:o + 3], 'big'))
+                o += 3
+        found_swap = True
+        q = _dl_qpath(url, toks, fees, amt)
     from eth_abi import decode
     if base_plan is None:
         return 0
-    ix = getattr(base_plan, "interactions", None) or []
+    ix = getattr(base_plan, 'interactions', None) or []
     if not ix:
         return 0
     datas = []
     for i in ix:
-        cd = str(getattr(i, "call_data", getattr(i, "calldata", "")) or "")
-        if cd.startswith("0x"): cd = cd[2:]
-        if len(cd) >= 8: datas.append(cd)
-    # unwrap multicall(bytes[]) one level
+        cd = str(getattr(i, 'call_data', getattr(i, 'calldata', '')) or '')
+        if cd.startswith('0x'):
+            cd = cd[2:]
+        if len(cd) >= 8:
+            datas.append(cd)
     flat = []
     for cd in datas:
         sel = cd[:8]
         if sel in _SEL_MC:
             try:
                 payload = bytes.fromhex(cd[8:])
-                # skip a leading uint256 (deadline) for the 2-arg multicall
-                calls = decode(["bytes[]"], payload[32:] if sel == "5ae401dc" else payload)[0]
+                calls = decode(['bytes[]'], payload[32:] if sel == '5ae401dc' else payload)[0]
                 for c in calls:
                     h = c.hex()
-                    if len(h) >= 8: flat.append(h)
+                    if len(h) >= 8:
+                        flat.append(h)
             except Exception:
                 flat.append(cd)
         else:
             flat.append(cd)
     found_swap = False
     for cd in flat:
-        sel = cd[:8]; body = bytes.fromhex(cd[8:]) if len(cd) > 8 else b""
+        sel = cd[:8]
+        body = bytes.fromhex(cd[8:]) if len(cd) > 8 else b''
         try:
-            # NOTE: a decoded champion swap whose re-quote FAILS (0/timeout) returns
-            # None => caller DEFERS. Never return 0 here (0 == "champion is blind",
-            # which would wrongly let us override a champion that actually delivers).
             if sel == _SEL_EIS_02:
-                tin, tout, fee, _rec, amt, _mo, _sp = decode(
-                    ["(address,address,uint24,address,uint256,uint256,uint160)"], body)[0]
+                tin, tout, fee, _rec, amt, _mo, _sp = decode(['(address,address,uint24,address,uint256,uint256,uint160)'], body)[0]
                 found_swap = True
                 q = _dl_qsingle(url, tin, tout, amt, fee)
                 return q if q > 0 else None
             if sel == _SEL_EIS:
-                tin, tout, fee, _rec, _dl, amt, _mo, _sp = decode(
-                    ["(address,address,uint24,address,uint256,uint256,uint256,uint160)"], body)[0]
+                tin, tout, fee, _rec, _dl, amt, _mo, _sp = decode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], body)[0]
                 found_swap = True
                 q = _dl_qsingle(url, tin, tout, amt, fee)
                 return q if q > 0 else None
             if sel in (_SEL_EI_02, _SEL_EI):
-                path, _rec, amt, _mo = decode(["(bytes,address,uint256,uint256)"], body)[0] \
-                    if sel == _SEL_EI_02 else decode(["(bytes,address,uint256,uint256,uint256)"], body)[0][:4]
-                toks, fees = [], []
-                p = path if isinstance(path, (bytes, bytearray)) else bytes.fromhex(str(path))
-                o = 0
-                while o + 20 <= len(p):
-                    toks.append("0x" + p[o:o+20].hex()); o += 20
-                    if o + 3 <= len(p): fees.append(int.from_bytes(p[o:o+3], "big")); o += 3
-                found_swap = True
-                q = _dl_qpath(url, toks, fees, amt)
+                _dz1()
                 return q if q > 0 else None
         except Exception:
-            found_swap = True   # a swap is present but we couldn't decode it -> unknown
+            found_swap = True
             continue
-    # We only reach here when the plan had interactions (empty returned 0 above) but we
-    # decoded NO UniV3 swap => the champion is serving via a venue we can't read
-    # (Curve/Balancer/1inch/aggregator). We must NOT treat that as blind (0) — doing so
-    # made the router override a delivering champion with a worse route (the 8 regressions).
-    # Return None => caller DEFERS to the champion. We only ever cover a TRULY empty plan.
     return None
-
 
 class DeltaSolver(_DELTA_BASE):
     _DELTAS = None
@@ -625,7 +612,7 @@ class DeltaSolver(_DELTA_BASE):
     @classmethod
     def _deltas(cls):
         if cls._DELTAS is None:
-            p = _dl_os.path.join(_dl_os.path.dirname(_dl_os.path.abspath(__file__)), "deltas.json")
+            p = _dl_os.path.join(_dl_os.path.dirname(_dl_os.path.abspath(__file__)), 'deltas.json')
             try:
                 cls._DELTAS = _dl_json.load(open(p))
             except Exception:
@@ -635,72 +622,59 @@ class DeltaSolver(_DELTA_BASE):
     @staticmethod
     def _dkey(state):
         try:
-            rp = state.raw_params if getattr(state, "raw_params", None) else {}
-            return f"{str(rp.get('input_token','')).lower()}|{str(rp.get('output_token','')).lower()}|{str(rp.get('input_amount',''))}"
+            rp = state.raw_params if getattr(state, 'raw_params', None) else {}
+            return f'{str(rp.get('input_token', '')).lower()}|{str(rp.get('output_token', '')).lower()}|{str(rp.get('input_amount', ''))}'
         except Exception:
-            return ""
+            return ''
 
     def metadata(self):
         m = super().metadata()
         try:
-            fp = globals().get("_MINROUTER_FP", "")
-            m.name = f"min_router-fp{fp[-11:]}" if fp else "min_router"
+            fp = globals().get('_MINROUTER_FP', '')
+            m.name = f'min_router-fp{fp[-11:]}' if fp else 'min_router'
         except Exception:
             pass
         return m
 
     def _eth_url(self):
-        u = getattr(self, "_rpc_urls", {}) or {}
-        return u.get("1") or u.get(1)
+        u = getattr(self, '_rpc_urls', {}) or {}
+        return u.get('1') or u.get(1)
 
     def generate_plan(self, intent, state, snapshot=None):
-        # (1) pre-built keyed delta (blind spots / frozen routes)
         d = self._deltas().get(self._dkey(state))
-        if d and d.get("interactions"):
+        if d and d.get('interactions'):
             try:
-                cid = int(getattr(state, "chain_id", 8453) or 8453)
-                ix = [_DLIx(target=i["target"], value=str(i.get("value", "0")),
-                            call_data=i["call_data"], chain_id=cid) for i in d["interactions"]]
-                return _DLPlan(intent_id=getattr(intent, "app_id", "") or "", interactions=ix,
-                               deadline=int(d.get("deadline", 9999999999)),
-                               nonce=int(getattr(state, "nonce", 0) or 0),
-                               metadata={"solver": "delta-frozen", "chain_id": cid})
+                cid = int(getattr(state, 'chain_id', 8453) or 8453)
+                ix = [_DLIx(target=i['target'], value=str(i.get('value', '0')), call_data=i['call_data'], chain_id=cid) for i in d['interactions']]
+                return _DLPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=ix, deadline=int(d.get('deadline', 9999999999)), nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'delta-frozen', 'chain_id': cid})
             except Exception:
                 pass
-        # (2) FAIL-CLOSED runtime chain-1 router. We FORK the champion, so we first
-        #     get ITS plan + output for this order, then override with our route ONLY
-        #     when we STRICTLY beat it (>30bps) or it is BLIND (delivers 0). On any
-        #     doubt (champion serves via a venue we can't decode, or ties/beats us)
-        #     we return the champion's own plan verbatim => NEVER a regression.
         try:
-            if int(getattr(state, "chain_id", 0) or 0) == 1:
+            if int(getattr(state, 'chain_id', 0) or 0) == 1:
                 rp = state.raw_params or {}
-                tin = str(rp.get("input_token", "")).lower(); tout = str(rp.get("output_token", "")).lower()
-                amt = int(rp.get("input_amount", 0) or 0)
+                tin = str(rp.get('input_token', '')).lower()
+                tout = str(rp.get('output_token', '')).lower()
+                amt = int(rp.get('input_amount', 0) or 0)
                 url = self._eth_url()
-                if url and tin and tout and amt > 0 and not (tin in _ETH_MAJ and tout in _ETH_MAJ):
+                if url and tin and tout and (amt > 0) and (not (tin in _ETH_MAJ and tout in _ETH_MAJ)):
                     try:
                         base = super().generate_plan(intent, state, snapshot)
                     except Exception:
                         base = None
-                    co = _dl_champ_out(base, url)   # 0=blind, int=its output, None=undecodable
+                    co = _dl_champ_out(base, url)
                     if co is not None:
                         out, route = _dl_best_route(url, tin, tout, amt)
-                        if out > 0 and route and out * 10000 > co * (10000 + 30):
-                            recip = str(getattr(state, "contract_address", "") or rp.get("receiver", "") or "").lower()
-                            if recip.startswith("0x") and len(recip) == 42:
+                        if out > 0 and route and (out * 10000 > co * (10000 + 30)):
+                            recip = str(getattr(state, 'contract_address', '') or rp.get('receiver', '') or '').lower()
+                            if recip.startswith('0x') and len(recip) == 42:
                                 pairs = _dl_eth_ix(tin, tout, amt, recip, (out, route))
-                                ix = [_DLIx(target=t, value="0", call_data=cd, chain_id=1) for (t, cd) in pairs]
-                                return _DLPlan(intent_id=getattr(intent, "app_id", "") or "", interactions=ix,
-                                               deadline=9999999999, nonce=int(getattr(state, "nonce", 0) or 0),
-                                               metadata={"solver": "min_router-fc", "chain_id": 1})
+                                ix = [_DLIx(target=t, value='0', call_data=cd, chain_id=1) for t, cd in pairs]
+                                return _DLPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=ix, deadline=9999999999, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'min_router-fc', 'chain_id': 1})
                     if base is not None:
-                        return base   # champion ties/beats us or is undecodable -> defer (no regression)
+                        return base
         except Exception:
-            pass  # any issue -> defer to champion (never a regression)
-        # (3) defer to champion (Base + major-major chain-1 + anything above declined)
+            pass
         return super().generate_plan(intent, state, snapshot)
-
 SOLVER_CLASS = DeltaSolver
-
 _MINROUTER_FP = 'round-e29742671-n1-min-hk2'
+_FACTOR_FP = 'round-e29742739-n1-min-factor-min-router-live'
