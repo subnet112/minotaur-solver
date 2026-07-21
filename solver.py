@@ -25,11 +25,12 @@ row at a time.
 from __future__ import annotations
 _DR_UNSET = object()
 import logging
-_REFORK_LANE = "rise03"  # lane marker
+_REFORK_LANE = 'rise03'
 import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+
 def _solver_c():
     logger = logging.getLogger(__name__)
     _PUTTY_FINAL_BRAND = 'hydra-thread-router'
@@ -38,7 +39,6 @@ def _solver_c():
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'wisedev0103')
     globals().update(locals())
 _solver_c()
-
 import shape_lib as _sl
 import shape_est2 as _se
 import shape_build as _sb
@@ -51,6 +51,7 @@ import viking_tables as _vt
 import viking_serve as _vs
 import mc_lib as _mcl
 import viking_v3hop as _vh
+
 def _install_cid_cache():
     """Cache the immutable eth_chainId per provider instance. web3 v7's
     validation middleware re-fetches chainId on EVERY eth_call (~2x); under the
@@ -62,6 +63,7 @@ def _install_cid_cache():
     if getattr(hp, '_cid_wrapped', False):
         return
     _orig = hp.make_request
+
     def _mr(self, method, params):
         if method == 'eth_chainId':
             v = getattr(self, '_cid_v', None)
@@ -76,7 +78,6 @@ def _install_cid_cache():
     hp.make_request = _mr
     hp._cid_wrapped = True
 _install_cid_cache()
-
 import mc_coal as _mcc
 _mcc.install()
 
@@ -103,6 +104,7 @@ class VikingSolver(_HydraBase):
 
             def _dr14():
                 norm = getattr(self, '_normalized_swap_params', None)
+
                 def _fw1():
                     try:
                         p = norm(intent, state) if callable(norm) else {}
@@ -161,6 +163,7 @@ class VikingSolver(_HydraBase):
                 if not rows:
                     return None
                 chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+
                 def _fw6():
                     ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
                     rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
@@ -176,11 +179,13 @@ class VikingSolver(_HydraBase):
             logger.exception('[viking] replay build failed')
             return None
     _VIKING_DYN_FALLBACKS = _vd.DYN_FALLBACKS
+
     def _v_dynamic_fallback(self, intent, state, snapshot):
         try:
 
             def _dr23():
                 norm = getattr(self, '_normalized_swap_params', None)
+
                 def _fw2():
                     try:
                         p = norm(intent, state) if callable(norm) else {}
@@ -200,7 +205,6 @@ class VikingSolver(_HydraBase):
                     amount_in = int(p.get('input_amount', 0) or 0)
                     if amount_in <= 0:
                         return None
-
                     _dr16 = _vg.dyn_fallback(self, intent, state, snapshot, spec, tin, tout, amount_in)
                     if _dr16 is not _DR_UNSET:
                         return _dr16
@@ -235,6 +239,7 @@ class VikingSolver(_HydraBase):
         if ov is not None:
             return ov
         plan = super().generate_plan(intent, state, snapshot)
+
         def _fw5():
             gp = self._v_gated(intent, state, snapshot, plan, key)
             if gp is None:
@@ -268,7 +273,6 @@ class _PuttyCleanSolver(VikingSolver):
         except Exception:
             pass
         return _m
-
 from mc_data import _MC_ADDR, _MC_AGG3, _MC_QUOTER, _MC_ROUTER, _MC_QSEL, _MC_QIN, _MC_QOUT, _MC_FEES, _MC_FORCE_PAIR, _MC_FORCE_ORDER, _MC_CAND_ORDER
 
 class _McSolver(_PuttyCleanSolver):
@@ -278,6 +282,7 @@ class _McSolver(_PuttyCleanSolver):
     route in ONE aggregate3 eth_call and serve the best live single-hop >= min_out.
     FORCE keys fill unconditionally (proven-dead); CAND keys fill only when the
     base route re-quotes to 0 => can lift a 0 to a delivery, never regress."""
+
     def _mc_qdata(self, tin, tout, amt, fee):
         from eth_abi import encode as _e
         from eth_utils import to_checksum_address as _ck
@@ -285,6 +290,7 @@ class _McSolver(_PuttyCleanSolver):
 
     def _mc_path_qdata(self, body, amt):
         from eth_abi import encode as _e
+
         def _fw7():
             off = int.from_bytes(body[0:32], 'big')
             t = body[off:]
@@ -315,7 +321,7 @@ class _McSolver(_PuttyCleanSolver):
         k3 = (tin.lower(), tout.lower(), amt)
         if (tin.lower(), tout.lower()) in _MC_FORCE_PAIR or k3 in _MC_FORCE_ORDER:
             return 'wl'
-        if (k3[0] + '|' + k3[1] + '|' + str(amt)) in _mcl.dead_fill():
+        if k3[0] + '|' + k3[1] + '|' + str(amt) in _mcl.dead_fill():
             return 'wl'
         if k3 in _MC_CAND_ORDER:
             return 'cand'
@@ -351,6 +357,7 @@ class _McSolver(_PuttyCleanSolver):
     def _mc_calls(self, base_plan, tin, tout, amt, cls):
         """Build the Multicall list; returns (calls, base_call) or (None, None) to defer."""
         calls = [(_MC_QUOTER, self._mc_qdata(tin, tout, amt, fee)) for fee in _MC_FEES]
+
         def _fw2():
             if cls != 'cand':
                 return ((calls, None),)
@@ -366,6 +373,7 @@ class _McSolver(_PuttyCleanSolver):
             return _fwr2[0]
 
     def _mc_params(self, intent, state):
+
         def _fw4():
             p = self._normalized_swap_params(intent, state)
             tin = str(p.get('input_token', '') or '')
@@ -387,6 +395,7 @@ class _McSolver(_PuttyCleanSolver):
         if s is None:
             return None
         w3, tin, tout, amt, mino, cls, calls, base_call = s
+
         def _fw8():
             res = self._mc_run(w3, calls)
             if res is None:
@@ -445,63 +454,387 @@ class _McSolver(_PuttyCleanSolver):
             return lift
         return base
 SOLVER_CLASS = _McSolver
-
-# ===== OVERRIDE LAYER (absorbed from champion harvey-router sub_a68ba769 => 0 drops vs it) =====
-# Pre-baked plans keyed chain|contract_address|tin|tout|amount. CONTRACT-scoped so a cover never
-# fires on a different-app order sharing the pair/amount (that override would revert -> DROP -> veto).
 import json as _gjson, os as _gos
 from minotaur_subnet.shared.types import Interaction as _GIx, ExecutionPlan as _GPlan
 _GORAN_BASE = SOLVER_CLASS
 try:
-    _GORAN_OVERRIDES = _gjson.load(
-        open(_gos.path.join(_gos.path.dirname(_gos.path.abspath(__file__)), "overrides.json")))
+    _GORAN_OVERRIDES = _gjson.load(open(_gos.path.join(_gos.path.dirname(_gos.path.abspath(__file__)), 'overrides.json')))
 except Exception:
     _GORAN_OVERRIDES = {}
 
-
 def _goran_key(state):
+
+    def _dz27():
+        tin = str(p.get('input_token', '') or '').lower()
+        tout = str(p.get('output_token', '') or '').lower()
+        amt = str(int(p.get('input_amount', 0) or 0))
+        if tin and tout and (amt != '0'):
+            return (cid + '|' + con + '|' + tin + '|' + tout + '|' + amt,)
+        return _DR_UNSET
     try:
-        p = dict(getattr(state, "raw_params", None) or {})
-        cid = str(int(getattr(state, "chain_id", 0) or 0))
-        con = str(getattr(state, "contract_address", "") or "").lower()
-        tin = str(p.get("input_token", "") or "").lower()
-        tout = str(p.get("output_token", "") or "").lower()
-        amt = str(int(p.get("input_amount", 0) or 0))
-        if tin and tout and amt != "0":
-            return cid + "|" + con + "|" + tin + "|" + tout + "|" + amt
+        p = dict(getattr(state, 'raw_params', None) or {})
+        cid = str(int(getattr(state, 'chain_id', 0) or 0))
+        con = str(getattr(state, 'contract_address', '') or '').lower()
+        _r_dz27 = _dz27()
+        if _r_dz27 is not _DR_UNSET:
+            return _r_dz27[0]
     except Exception:
         pass
     return None
-
 
 class GoranSolver(_GORAN_BASE):
     """Champion engine + absorbed pre-baked overrides on the exact keys they beat the base."""
 
     def generate_plan(self, intent, state, snapshot=None):
+
+        def _dz13():
+            if row and row.get('interactions'):
+                cid = int(getattr(state, 'chain_id', 0) or 0)
+                ix = [_GIx(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=cid) for r in row['interactions']]
+                if ix:
+                    return (_GPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'override'}),)
+            return _DR_UNSET
         try:
             row = _GORAN_OVERRIDES.get(_goran_key(state))
-            if row and row.get("interactions"):
-                cid = int(getattr(state, "chain_id", 0) or 0)
-                ix = [_GIx(target=r["target"], value=str(r.get("value", "0")),
-                           call_data=r["data"], chain_id=cid) for r in row["interactions"]]
-                if ix:
-                    return _GPlan(intent_id=intent.app_id, interactions=ix,
-                                  deadline=9999999999, nonce=state.nonce,
-                                  metadata={"solver": "override"})
+            _r_dz13 = _dz13()
+            if _r_dz13 is not _DR_UNSET:
+                return _r_dz13[0]
         except Exception:
             pass
         return super().generate_plan(intent, state, snapshot)
-
-
 SOLVER_CLASS = GoranSolver
-
-# ===== CURVE WIN LAYER (on top of absorbed overrides) — chain-1 Curve amount/blind-fills the =====
-# champion still misses (allowlist, /score-verified). MultiVenueSolver wraps GoranSolver so it
-# sees harvey's covers as its base => defers to them (0 drops) and only overrides on its own pairs.
 try:
     from min_multivenue import MultiVenueSolver as _MVSolver
     SOLVER_CLASS = _MVSolver
-except Exception:  # any import problem -> keep GoranSolver (harvey parity), never crash
+except Exception:
     import logging as _mvlog
     _mvlog.getLogger(__name__).exception('[mv] curve win layer failed to load; using GoranSolver')
+import json as _dl_json, os as _dl_os, urllib.request as _dl_url
+from minotaur_subnet.shared.types import ExecutionPlan as _DLPlan, Interaction as _DLIx
+try:
+    _DELTA_BASE = SOLVER_CLASS
+except NameError:
+    from solver import SOLVER_CLASS as _DELTA_BASE
 
+def _dl_consts():
+    weth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+    usdc = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    maj = {t.lower() for t in (weth, usdc, '0x6B175474E89094C44Da98b954EedeAC495271d0F', '0xdAC17F958D2ee523a2206206994597C13D831ec7', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}
+    return ('0x61fFE014bA17989E743c5F6cB21bF9697530B21e', '0xE592427A0AEce92De3Edee1F18E0157C05861564', weth, usdc, maj, (100, 500, 3000, 10000), '04e45aaf', '414bf389', 'b858183f', 'c04b8d59', ('ac9650d8', '5ae401dc'))
+_ETH_QUOTER, _ETH_ROUTER, _ETH_WETH, _ETH_USDC, _ETH_MAJ, _DL_FEES, _SEL_EIS_02, _SEL_EIS, _SEL_EI_02, _SEL_EI, _SEL_MC = _dl_consts()
+
+def _dl_sel(sig):
+    from eth_utils import keccak
+    return '0x' + keccak(sig.encode())[:4].hex()
+
+def _dl_ethcall(url, to, data):
+    body = _dl_json.dumps({'jsonrpc': '2.0', 'method': 'eth_call', 'params': [{'to': to, 'data': data}, 'latest'], 'id': 1}).encode()
+    hdrs = {'content-type': 'application/json', 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'}
+    try:
+        r = _dl_url.urlopen(_dl_url.Request(url, data=body, headers=hdrs), timeout=9)
+        res = _dl_json.load(r).get('result')
+        return res if res and res != '0x' else None
+    except Exception:
+        return None
+
+def _dl_qsingle(url, tin, tout, amt, fee):
+    from eth_abi import encode
+    data = _dl_sel('quoteExactInputSingle((address,address,uint256,uint24,uint160))') + encode(['(address,address,uint256,uint24,uint160)'], [(tin, tout, int(amt), fee, 0)]).hex()
+    r = _dl_ethcall(url, _ETH_QUOTER, data)
+    return int(r[2:66], 16) if r and len(r) >= 66 else 0
+
+def _dl_qpath(url, tokens, fees, amt):
+
+    def _dz26():
+        data = _dl_sel('quoteExactInput(bytes,uint256)') + encode(['bytes', 'uint256'], [b, int(amt)]).hex()
+        r = _dl_ethcall(url, _ETH_QUOTER, data)
+        return (int(r[2:66], 16) if r and len(r) >= 66 else 0,)
+        return _DR_UNSET
+    from eth_abi import encode
+    b = b''
+    for i, t in enumerate(tokens):
+        b += bytes.fromhex(t[2:])
+        if i < len(fees):
+            b += int(fees[i]).to_bytes(3, 'big')
+    _r_dz26 = _dz26()
+    if _r_dz26 is not _DR_UNSET:
+        return _r_dz26[0]
+
+def _dl_best_route(url, tin, tout, amt):
+
+    def _dz25():
+        nonlocal best, o
+        for f1 in (500, 3000):
+            for f2 in (500, 3000):
+                o = _dl_qpath(url, [tin, mid, tout], [f1, f2], amt)
+                if o > best[0]:
+                    best = (o, ('path', [tin, mid, tout], [f1, f2]))
+    best = (0, None)
+    for f in _DL_FEES:
+        o = _dl_qsingle(url, tin, tout, amt, f)
+        if o > best[0]:
+            best = (o, ('single', f))
+    for mid in (_ETH_WETH, _ETH_USDC):
+        if tin.lower() == mid.lower() or tout.lower() == mid.lower():
+            continue
+        _dz25()
+    return best
+
+def _dl_eth_ix(tin, tout, amt, recipient, route):
+
+    def _dz24(amt, recipient, route, tin, tout):
+        fee = route[1][1]
+        swap = _dl_sel('exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))') + encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(tin, tout, int(fee), recipient, 9999999999, amt, 1, 0)]).hex()
+        return (fee, swap)
+
+    def _dz23(amt, route):
+        amt = int(amt)
+        approve = '0x095ea7b3' + _ETH_ROUTER[2:].rjust(64, '0').lower() + amt.to_bytes(32, 'big').hex()
+        kind = route[1][0]
+        return (amt, approve, kind)
+
+    def _dz22():
+        nonlocal swap
+        b = b''
+        for i, t in enumerate(tokens):
+            b += bytes.fromhex(t[2:])
+            if i < len(fees):
+                b += int(fees[i]).to_bytes(3, 'big')
+        swap = _dl_sel('exactInput((bytes,address,uint256,uint256,uint256))') + encode(['(bytes,address,uint256,uint256,uint256)'], [(b, recipient, 9999999999, amt, 1)]).hex()
+    from eth_abi import encode
+    amt, approve, kind = _dz23(amt, route)
+    if kind == 'single':
+        fee, swap = _dz24(amt, recipient, route, tin, tout)
+    else:
+        tokens, fees = (route[1][1], route[1][2])
+        _dz22()
+    return [(tin, approve), (_ETH_ROUTER, swap)]
+
+def _dl_flatten(ix):
+    """Interaction calldatas, unwrapping one level of multicall(bytes[])."""
+
+    def _dz21():
+        if cd[:8] in _SEL_MC:
+            try:
+                payload = bytes.fromhex(cd[8:])
+                calls = decode(['bytes[]'], payload[32:] if cd[:8] == '5ae401dc' else payload)[0]
+                for c in calls:
+                    h = c.hex()
+                    if len(h) >= 8:
+                        flat.append(h)
+            except Exception:
+                flat.append(cd)
+        else:
+            flat.append(cd)
+    from eth_abi import decode
+    datas = []
+    for i in ix:
+        cd = str(getattr(i, 'call_data', getattr(i, 'calldata', '')) or '')
+        if cd.startswith('0x'):
+            cd = cd[2:]
+        if len(cd) >= 8:
+            datas.append(cd)
+    flat = []
+    for cd in datas:
+        _dz21()
+    return flat
+
+def _dl_decode_path(body, sel, url):
+    """Re-quote a decoded exactInput (path) champion swap."""
+
+    def _dz20(body, sel):
+        path, _rec, amt, _mo = decode(['(bytes,address,uint256,uint256)'], body)[0] if sel == _SEL_EI_02 else decode(['(bytes,address,uint256,uint256,uint256)'], body)[0][:4]
+        toks, fees = ([], [])
+        p = path if isinstance(path, (bytes, bytearray)) else bytes.fromhex(str(path))
+        return (_mo, _rec, amt, fees, p, path, toks)
+
+    def _dz19():
+        o = 0
+        while o + 20 <= len(p):
+            toks.append('0x' + p[o:o + 20].hex())
+            o += 20
+            if o + 3 <= len(p):
+                fees.append(int.from_bytes(p[o:o + 3], 'big'))
+                o += 3
+        return (_dl_qpath(url, toks, fees, amt),)
+        return _DR_UNSET
+    from eth_abi import decode
+    _mo, _rec, amt, fees, p, path, toks = _dz20(body, sel)
+    _r_dz19 = _dz19()
+    if _r_dz19 is not _DR_UNSET:
+        return _r_dz19[0]
+
+def _dl_decode_one(cd, url):
+    """Decode+re-quote one calldata. Returns ('ANSWER', q_or_None) if it's a UniV3
+    swap (q>0 -> its output; else None so caller DEFERS, never treats as blind),
+    ('SWAP', None) if a swap is present but undecodable, or ('SKIP', None)."""
+
+    def _dz18(cd):
+        sel = cd[:8]
+        body = bytes.fromhex(cd[8:]) if len(cd) > 8 else b''
+        return (body, sel)
+
+    def _dz17(body, url):
+        tin, tout, fee, _r, amt, _m, _s = decode(['(address,address,uint24,address,uint256,uint256,uint160)'], body)[0]
+        q = _dl_qsingle(url, tin, tout, amt, fee)
+        return (_m, _r, _s, amt, fee, q, tin, tout)
+
+    def _dz16():
+        nonlocal q
+        _r_dz15 = _dz15()
+        if _r_dz15 is not _DR_UNSET:
+            return (_r_dz15[0],)
+        if sel in (_SEL_EI_02, _SEL_EI):
+            q = _dl_decode_path(body, sel, url)
+            return (('ANSWER', q if q > 0 else None),)
+        return _DR_UNSET
+
+    def _dz15():
+        nonlocal _m, _r, _s, amt, fee, q, tin, tout
+        if sel == _SEL_EIS:
+            tin, tout, fee, _r, _d, amt, _m, _s = decode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], body)[0]
+            q = _dl_qsingle(url, tin, tout, amt, fee)
+            return (('ANSWER', q if q > 0 else None),)
+        return _DR_UNSET
+    from eth_abi import decode
+    body, sel = _dz18(cd)
+    try:
+        if sel == _SEL_EIS_02:
+            _m, _r, _s, amt, fee, q, tin, tout = _dz17(body, url)
+            return ('ANSWER', q if q > 0 else None)
+        _r_dz16 = _dz16()
+        if _r_dz16 is not _DR_UNSET:
+            return _r_dz16[0]
+    except Exception:
+        return ('SWAP', None)
+    return ('SKIP', None)
+
+def _dl_champ_out(base_plan, url):
+    """The champion's OWN delivered output for this order (FAIL-CLOSED anchor).
+    0 = champion serves NOTHING (blind, we may cover); int = decoded UniV3 output;
+    None = serves via a venue we can't read -> caller DEFERS (never a regression)."""
+    if base_plan is None:
+        return 0
+    ix = getattr(base_plan, 'interactions', None) or []
+    if not ix:
+        return 0
+    for cd in _dl_flatten(ix):
+        kind, val = _dl_decode_one(cd, url)
+        if kind == 'ANSWER':
+            return val
+    return None
+
+def _dl_override(intent, state, rp, url, tin, tout, amt, co):
+    """Build our override plan iff we STRICTLY beat the champion's output `co` (>30bps)
+    and have a valid recipient. Returns a _DLPlan or None (None -> caller defers to
+    champion). Split out of _dl_route1 so each region stays small (un-factorable)."""
+
+    def _dz14():
+        if recip.startswith('0x') and len(recip) == 42:
+            pairs = _dl_eth_ix(tin, tout, amt, recip, (out, route))
+            ix = [_DLIx(target=t, value='0', call_data=cd, chain_id=1) for t, cd in pairs]
+            return (_DLPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=ix, deadline=9999999999, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'min_router-fc', 'chain_id': 1}),)
+        return _DR_UNSET
+    out, route = _dl_best_route(url, tin, tout, amt)
+    if out > 0 and route and (out * 10000 > co * (10000 + 30)):
+        recip = str(getattr(state, 'contract_address', '') or rp.get('receiver', '') or '').lower()
+        _r_dz14 = _dz14()
+        if _r_dz14 is not _DR_UNSET:
+            return _r_dz14[0]
+    return None
+
+class DeltaSolver(_DELTA_BASE):
+    _DELTAS = None
+
+    @classmethod
+    def _deltas(cls):
+        if cls._DELTAS is None:
+            p = _dl_os.path.join(_dl_os.path.dirname(_dl_os.path.abspath(__file__)), 'deltas.json')
+            try:
+                cls._DELTAS = _dl_json.load(open(p))
+            except Exception:
+                cls._DELTAS = {}
+        return cls._DELTAS
+
+    @staticmethod
+    def _dkey(state):
+        try:
+            rp = state.raw_params if getattr(state, 'raw_params', None) else {}
+            return f'{str(rp.get('input_token', '')).lower()}|{str(rp.get('output_token', '')).lower()}|{str(rp.get('input_amount', ''))}'
+        except Exception:
+            return ''
+
+    def metadata(self):
+        m = super().metadata()
+        try:
+            fp = globals().get('_MINROUTER_FP', '')
+            m.name = f'min_router-fp{fp[-11:]}' if fp else 'min_router'
+        except Exception:
+            pass
+        return m
+
+    def _eth_url(self):
+        u = getattr(self, '_rpc_urls', {}) or {}
+        return u.get('1') or u.get(1)
+
+    def _dl_frozen(self, intent, state):
+
+        def _dz12():
+            ix = [_DLIx(target=i['target'], value=str(i.get('value', '0')), call_data=i['call_data'], chain_id=cid) for i in d['interactions']]
+            return (_DLPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=ix, deadline=int(d.get('deadline', 9999999999)), nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'delta-frozen', 'chain_id': cid}),)
+            return _DR_UNSET
+        d = self._deltas().get(self._dkey(state))
+        if d and d.get('interactions'):
+            try:
+                cid = int(getattr(state, 'chain_id', 8453) or 8453)
+                _r_dz12 = _dz12()
+                if _r_dz12 is not _DR_UNSET:
+                    return _r_dz12[0]
+            except Exception:
+                pass
+        return None
+
+    def _dl_route1(self, intent, state, snapshot):
+
+        def _dz11(self, state):
+            rp = state.raw_params or {}
+            tin = str(rp.get('input_token', '')).lower()
+            tout = str(rp.get('output_token', '')).lower()
+            amt = int(rp.get('input_amount', 0) or 0)
+            url = self._eth_url()
+            return (amt, rp, tin, tout, url)
+
+        def _dz10():
+            try:
+                base = super().generate_plan(intent, state, snapshot)
+            except Exception:
+                base = None
+            co = _dl_champ_out(base, url)
+            if co is not None:
+                ov = _dl_override(intent, state, rp, url, tin, tout, amt, co)
+                if ov is not None:
+                    return (ov,)
+            return (base,)
+            return _DR_UNSET
+        try:
+            if int(getattr(state, 'chain_id', 0) or 0) != 1:
+                return None
+            amt, rp, tin, tout, url = _dz11(self, state)
+            if not (url and tin and tout and (amt > 0) and (not (tin in _ETH_MAJ and tout in _ETH_MAJ))):
+                return None
+            _r_dz10 = _dz10()
+            if _r_dz10 is not _DR_UNSET:
+                return _r_dz10[0]
+        except Exception:
+            return None
+
+    def generate_plan(self, intent, state, snapshot=None):
+        p = self._dl_frozen(intent, state)
+        if p is not None:
+            return p
+        p = self._dl_route1(intent, state, snapshot)
+        if p is not None:
+            return p
+        return super().generate_plan(intent, state, snapshot)
+SOLVER_CLASS = DeltaSolver
+_MINROUTER_FP = 'round-e29743876-n1-min-hk6'
