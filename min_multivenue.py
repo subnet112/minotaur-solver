@@ -49,10 +49,10 @@ _CURVE_WINS = {tuple(k.split("|")): v for k, v in _mj.loads(
 ).items()}
 
 # Per-lane brand (build_lane seds these three per lane) + fingerprint nonce.
-_MV_NAME = "phan-solver"
-_MV_VERSION = "517.0.3"
+_MV_NAME = "sky-solver"
+_MV_VERSION = "519.0.1"
 _MV_AUTHOR = "wisedev0103"
-_ROTATE_FP_NONCE = "513"
+_ROTATE_FP_NONCE = "106"
 
 # live_wins.json — /score-VERIFIED winning plans, re-verified every cycle by the overlay
 # daemon (never stale, unlike pre-baked competitor overrides). Exact-key format identical
@@ -181,11 +181,13 @@ class MultiVenueSolver(_Base):
         return m
 
     def generate_plan(self, intent, state, snapshot=None):
-        # 1) verified-fresh overlay first: exact-key /score-verified wins (re-verified each
-        # cycle) outrank everything, including a stale absorbed override on the same key.
-        lw = _live_win_plan(intent, state)
-        if lw is not None:
-            return lw
+        # PRECEDENCE (learned 2026-07-21): fresh LIVE solve-time routes outrank the pre-baked
+        # overlay. A pre-baked route is frozen at its build block; /score+bench evaluate at an
+        # ADVANCING block, so pre-bakes DECAY (self-heal drops 12/16 in minutes) and a stale one
+        # that reverts at bench delivers 0 -> masks the fresh live route that WOULD win. So:
+        #   1) LIVE blind-fill / curve override (quoted on the bench fork at solve time -> reproduces)
+        #   2) pre-baked overlay (only where the live path can't route; decays, self-heal-guarded)
+        #   3) champion base (floor -> never a drop)
         base = super().generate_plan(intent, state, snapshot)   # champion's own plan
         try:
             if int(getattr(state, "chain_id", 0) or 0) == 1:
@@ -198,4 +200,7 @@ class MultiVenueSolver(_Base):
                     return ov
         except Exception:
             pass
+        lw = _live_win_plan(intent, state)      # pre-baked overlay: fallback where live can't route
+        if lw is not None:
+            return lw
         return base
