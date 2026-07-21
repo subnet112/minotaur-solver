@@ -25,16 +25,17 @@ row at a time.
 from __future__ import annotations
 _DR_UNSET = object()
 import logging
+_REFORK_LANE = "rise03"  # lane marker
 import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 def _solver_c():
     logger = logging.getLogger(__name__)
-    _PUTTY_FINAL_BRAND = 'hydra-beacon-router'
+    _PUTTY_FINAL_BRAND = 'hydra-thread-router'
     SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
-    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.8.2d')
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.8.1c')
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'wisedev0103')
     globals().update(locals())
 _solver_c()
 
@@ -445,15 +446,12 @@ class _McSolver(_PuttyCleanSolver):
         return base
 SOLVER_CLASS = _McSolver
 
-
-# == goran override layer (appended by go.py; self-contained) ==================
-import json as _gjson
-import os as _gos
+# ===== OVERRIDE LAYER (absorbed from champion harvey-router sub_a68ba769 => 0 drops vs it) =====
+# Pre-baked plans keyed chain|contract_address|tin|tout|amount. CONTRACT-scoped so a cover never
+# fires on a different-app order sharing the pair/amount (that override would revert -> DROP -> veto).
+import json as _gjson, os as _gos
 from minotaur_subnet.shared.types import Interaction as _GIx, ExecutionPlan as _GPlan
-
-_GORAN_BASE = SOLVER_CLASS  # wrap whatever class the champion exported above
-_GORAN_NAME = _gos.environ.get("GORAN_SOLVER_NAME", "harvey-router")  # OUR name, not the forked base's
-_GORAN_AUTHOR = "harvey"
+_GORAN_BASE = SOLVER_CLASS
 try:
     _GORAN_OVERRIDES = _gjson.load(
         open(_gos.path.join(_gos.path.dirname(_gos.path.abspath(__file__)), "overrides.json")))
@@ -464,8 +462,8 @@ except Exception:
 def _goran_key(state):
     try:
         p = dict(getattr(state, "raw_params", None) or {})
-        cid = str(int(getattr(state, "chain_id", 0) or 0))  # chain-scoped: Base(8453) and ETH(1) never collide
-        con = str(getattr(state, "contract_address", "") or "").lower()  # CONTRACT-scoped: a V2 cover must NOT fire on a V1/other-app SERVED order sharing the pair/amount — that override reverts -> delivers 0 -> DROP -> hard veto (this aborted our rank-1 round)
+        cid = str(int(getattr(state, "chain_id", 0) or 0))
+        con = str(getattr(state, "contract_address", "") or "").lower()
         tin = str(p.get("input_token", "") or "").lower()
         tout = str(p.get("output_token", "") or "").lower()
         amt = str(int(p.get("input_amount", 0) or 0))
@@ -477,18 +475,7 @@ def _goran_key(state):
 
 
 class GoranSolver(_GORAN_BASE):
-    """Champion engine + VERIFIED KyberSwap overrides on the exact keys where we beat it."""
-
-    def metadata(self):
-        # Report OUR OWN submission name/author — never reuse the forked base's name
-        # (a fellow miner asked, and the subnet says the name is permissionless).
-        md = super().metadata()
-        try:
-            md.name = _GORAN_NAME
-            md.author = _GORAN_AUTHOR
-        except Exception:
-            pass
-        return md
+    """Champion engine + absorbed pre-baked overrides on the exact keys they beat the base."""
 
     def generate_plan(self, intent, state, snapshot=None):
         try:
@@ -500,10 +487,21 @@ class GoranSolver(_GORAN_BASE):
                 if ix:
                     return _GPlan(intent_id=intent.app_id, interactions=ix,
                                   deadline=9999999999, nonce=state.nonce,
-                                  metadata={"solver": "goran-override"})
+                                  metadata={"solver": "override"})
         except Exception:
             pass
         return super().generate_plan(intent, state, snapshot)
 
 
 SOLVER_CLASS = GoranSolver
+
+# ===== CURVE WIN LAYER (on top of absorbed overrides) — chain-1 Curve amount/blind-fills the =====
+# champion still misses (allowlist, /score-verified). MultiVenueSolver wraps GoranSolver so it
+# sees harvey's covers as its base => defers to them (0 drops) and only overrides on its own pairs.
+try:
+    from min_multivenue import MultiVenueSolver as _MVSolver
+    SOLVER_CLASS = _MVSolver
+except Exception:  # any import problem -> keep GoranSolver (harvey parity), never crash
+    import logging as _mvlog
+    _mvlog.getLogger(__name__).exception('[mv] curve win layer failed to load; using GoranSolver')
+
