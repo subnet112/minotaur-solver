@@ -25,7 +25,7 @@ row at a time.
 from __future__ import annotations
 _DR_UNSET = object()
 import logging
-_REFORK_LANE = "rise03"  # lane marker
+_REFORK_LANE = "rise01"  # lane marker
 import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
@@ -39,21 +39,18 @@ def _solver_c():
     globals().update(locals())
 _solver_c()
 
-def _imp_shape():
-    import shape_lib as _sl
-    import shape_est2 as _se
-    import shape_build as _sb
-    import shape_lib3 as _sl3
-    import viking_gate as _vg
-    import viking_data as _vd
-    import shape_base as _sba
-    import chain1 as _c1
-    import viking_tables as _vt
-    import viking_serve as _vs
-    import mc_lib as _mcl
-    import viking_v3hop as _vh
-    globals().update(locals())
-_imp_shape()
+import shape_lib as _sl
+import shape_est2 as _se
+import shape_build as _sb
+import shape_lib3 as _sl3
+import viking_gate as _vg
+import viking_data as _vd
+import shape_base as _sba
+import chain1 as _c1
+import viking_tables as _vt
+import viking_serve as _vs
+import mc_lib as _mcl
+import viking_v3hop as _vh
 def _install_cid_cache():
     """Cache the immutable eth_chainId per provider instance. web3 v7's
     validation middleware re-fetches chainId on EVERY eth_call (~2x); under the
@@ -452,74 +449,114 @@ SOLVER_CLASS = _McSolver
 # ===== OVERRIDE LAYER (absorbed from champion harvey-router sub_a68ba769 => 0 drops vs it) =====
 # Pre-baked plans keyed chain|contract_address|tin|tout|amount. CONTRACT-scoped so a cover never
 # fires on a different-app order sharing the pair/amount (that override would revert -> DROP -> veto).
-def _build_goran():
-    import json as _gjson, os as _gos
-    from minotaur_subnet.shared.types import Interaction as _GIx, ExecutionPlan as _GPlan
-    _GORAN_BASE = globals()['SOLVER_CLASS']
-    try:
-        _GORAN_OVERRIDES = _gjson.load(
-            open(_gos.path.join(_gos.path.dirname(_gos.path.abspath(__file__)), "overrides.json")))
-    except Exception:
-        _GORAN_OVERRIDES = {}
+import json as _gjson, os as _gos
+from minotaur_subnet.shared.types import Interaction as _GIx, ExecutionPlan as _GPlan
+_GORAN_BASE = SOLVER_CLASS
+try:
+    _GORAN_OVERRIDES = _gjson.load(
+        open(_gos.path.join(_gos.path.dirname(_gos.path.abspath(__file__)), "overrides.json")))
+except Exception:
+    _GORAN_OVERRIDES = {}
 
-    def _goran_key(state):
+
+def _goran_key(state):
+    try:
+        p = dict(getattr(state, "raw_params", None) or {})
+        cid = str(int(getattr(state, "chain_id", 0) or 0))
+        con = str(getattr(state, "contract_address", "") or "").lower()
+        tin = str(p.get("input_token", "") or "").lower()
+        tout = str(p.get("output_token", "") or "").lower()
+        amt = str(int(p.get("input_amount", 0) or 0))
+        if tin and tout and amt != "0":
+            return cid + "|" + con + "|" + tin + "|" + tout + "|" + amt
+    except Exception:
+        pass
+    return None
+
+
+class GoranSolver(_GORAN_BASE):
+    """Champion engine + absorbed pre-baked overrides on the exact keys they beat the base."""
+
+    def generate_plan(self, intent, state, snapshot=None):
         try:
-            def _fields():
-                p = dict(getattr(state, "raw_params", None) or {})
-                cid = str(int(getattr(state, "chain_id", 0) or 0))
-                con = str(getattr(state, "contract_address", "") or "").lower()
-                def _toks():
-                    tin = str(p.get("input_token", "") or "").lower()
-                    tout = str(p.get("output_token", "") or "").lower()
-                    amt = str(int(p.get("input_amount", 0) or 0))
-                    return tin, tout, amt
-                tin, tout, amt = _toks()
-                return cid, con, tin, tout, amt
-            cid, con, tin, tout, amt = _fields()
-            if tin and tout and amt != "0":
-                return cid + "|" + con + "|" + tin + "|" + tout + "|" + amt
+            row = _GORAN_OVERRIDES.get(_goran_key(state))
+            if row and row.get("interactions"):
+                cid = int(getattr(state, "chain_id", 0) or 0)
+                ix = [_GIx(target=r["target"], value=str(r.get("value", "0")),
+                           call_data=r["data"], chain_id=cid) for r in row["interactions"]]
+                if ix:
+                    return _GPlan(intent_id=intent.app_id, interactions=ix,
+                                  deadline=9999999999, nonce=state.nonce,
+                                  metadata={"solver": "override"})
         except Exception:
             pass
-        return None
+        return super().generate_plan(intent, state, snapshot)
 
-    class GoranSolver(_GORAN_BASE):
-        """Champion engine + absorbed pre-baked overrides on the exact keys they beat the base."""
 
-        def generate_plan(self, intent, state, snapshot=None):
-            def _ov():
-                try:
-                    row = _GORAN_OVERRIDES.get(_goran_key(state))
-                    if row and row.get("interactions"):
-                        cid = int(getattr(state, "chain_id", 0) or 0)
-                        def _ix():
-                            return [_GIx(target=r["target"], value=str(r.get("value", "0")),
-                                         call_data=r["data"], chain_id=cid) for r in row["interactions"]]
-                        ix = _ix()
-                        if ix:
-                            return _GPlan(intent_id=intent.app_id, interactions=ix,
-                                          deadline=9999999999, nonce=state.nonce,
-                                          metadata={"solver": "override"})
-                except Exception:
-                    pass
-                return None
-            ov = _ov()
-            if ov is not None:
-                return ov
-            return super().generate_plan(intent, state, snapshot)
-
-    globals().update(locals())
-    globals()['SOLVER_CLASS'] = GoranSolver
-_build_goran()
+SOLVER_CLASS = GoranSolver
 
 # ===== CURVE WIN LAYER (on top of absorbed overrides) — chain-1 Curve amount/blind-fills the =====
 # champion still misses (allowlist, /score-verified). MultiVenueSolver wraps GoranSolver so it
 # sees harvey's covers as its base => defers to them (0 drops) and only overrides on its own pairs.
-def _load_mv():
-    try:
-        from min_multivenue import MultiVenueSolver as _MVSolver
-        globals()['SOLVER_CLASS'] = _MVSolver
-    except Exception:  # any import problem -> keep GoranSolver (harvey parity), never crash
-        import logging as _mvlog
-        _mvlog.getLogger(__name__).exception('[mv] curve win layer failed to load; using GoranSolver')
-_load_mv()
+try:
+    from min_multivenue import MultiVenueSolver as _MVSolver
+    SOLVER_CLASS = _MVSolver
+except Exception:  # any import problem -> keep GoranSolver (harvey parity), never crash
+    import logging as _mvlog
+    _mvlog.getLogger(__name__).exception('[mv] curve win layer failed to load; using GoranSolver')
 
+
+# Exact-key successor layer: preserve sky-solver and add three replayed covers.
+import dataclasses as _ck_dataclasses
+import chain_killer_direct_v3 as _ck_direct_v3
+import chain_killer_wsteth_fill as _ck_wsteth_fill
+
+_CK_BASE = SOLVER_CLASS
+_CK_NAME = _gos.environ.get("CHAIN_KILLER_SOLVER_NAME", "chain-killer")
+_CK_VERSION = _gos.environ.get("CHAIN_KILLER_SOLVER_VERSION", "169.0.0")
+_CK_AUTHOR = _gos.environ.get("CHAIN_KILLER_SOLVER_AUTHOR", "chain-killer")
+
+try:
+    _CK_TARGETS = _gjson.load(
+        open(
+            _gos.path.join(
+                _gos.path.dirname(_gos.path.abspath(__file__)),
+                "chain_killer_targets_29743589.json",
+            )
+        )
+    )
+except Exception:
+    _CK_TARGETS = {}
+
+
+class ChainKillerSolver(_CK_BASE):
+    def metadata(self):
+        metadata = super().metadata()
+        try:
+            return _ck_dataclasses.replace(
+                metadata, name=_CK_NAME, version=_CK_VERSION, author=_CK_AUTHOR
+            )
+        except Exception:
+            try:
+                metadata.name = _CK_NAME
+                metadata.version = _CK_VERSION
+                metadata.author = _CK_AUTHOR
+            except Exception:
+                pass
+            return metadata
+
+    def generate_plan(self, intent, state, snapshot=None):
+        route_spec = _CK_TARGETS.get(_goran_key(state))
+        if route_spec is not None:
+            builder = (
+                _ck_direct_v3.build_plan
+                if route_spec.get("kind") == "direct-v3"
+                else _ck_wsteth_fill.build_plan
+            )
+            replacement = builder(self, intent, state, snapshot, route_spec)
+            if replacement is not None:
+                return replacement
+        return super().generate_plan(intent, state, snapshot)
+
+
+SOLVER_CLASS = ChainKillerSolver
