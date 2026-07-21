@@ -29,6 +29,7 @@ import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
+
 def _solver_c():
     logger = logging.getLogger(__name__)
     _PUTTY_FINAL_BRAND = 'hydra-beacon-router'
@@ -37,7 +38,6 @@ def _solver_c():
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
     globals().update(locals())
 _solver_c()
-
 import shape_lib as _sl
 import shape_est2 as _se
 import shape_build as _sb
@@ -50,6 +50,7 @@ import viking_tables as _vt
 import viking_serve as _vs
 import mc_lib as _mcl
 import viking_v3hop as _vh
+
 def _install_cid_cache():
     """Cache the immutable eth_chainId per provider instance. web3 v7's
     validation middleware re-fetches chainId on EVERY eth_call (~2x); under the
@@ -61,6 +62,7 @@ def _install_cid_cache():
     if getattr(hp, '_cid_wrapped', False):
         return
     _orig = hp.make_request
+
     def _mr(self, method, params):
         if method == 'eth_chainId':
             v = getattr(self, '_cid_v', None)
@@ -75,7 +77,6 @@ def _install_cid_cache():
     hp.make_request = _mr
     hp._cid_wrapped = True
 _install_cid_cache()
-
 import mc_coal as _mcc
 _mcc.install()
 
@@ -102,6 +103,7 @@ class VikingSolver(_HydraBase):
 
             def _dr14():
                 norm = getattr(self, '_normalized_swap_params', None)
+
                 def _fw1():
                     try:
                         p = norm(intent, state) if callable(norm) else {}
@@ -160,6 +162,7 @@ class VikingSolver(_HydraBase):
                 if not rows:
                     return None
                 chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+
                 def _fw6():
                     ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
                     rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
@@ -175,11 +178,13 @@ class VikingSolver(_HydraBase):
             logger.exception('[viking] replay build failed')
             return None
     _VIKING_DYN_FALLBACKS = _vd.DYN_FALLBACKS
+
     def _v_dynamic_fallback(self, intent, state, snapshot):
         try:
 
             def _dr23():
                 norm = getattr(self, '_normalized_swap_params', None)
+
                 def _fw2():
                     try:
                         p = norm(intent, state) if callable(norm) else {}
@@ -199,7 +204,6 @@ class VikingSolver(_HydraBase):
                     amount_in = int(p.get('input_amount', 0) or 0)
                     if amount_in <= 0:
                         return None
-
                     _dr16 = _vg.dyn_fallback(self, intent, state, snapshot, spec, tin, tout, amount_in)
                     if _dr16 is not _DR_UNSET:
                         return _dr16
@@ -234,6 +238,7 @@ class VikingSolver(_HydraBase):
         if ov is not None:
             return ov
         plan = super().generate_plan(intent, state, snapshot)
+
         def _fw5():
             gp = self._v_gated(intent, state, snapshot, plan, key)
             if gp is None:
@@ -267,7 +272,6 @@ class _PuttyCleanSolver(VikingSolver):
         except Exception:
             pass
         return _m
-
 from mc_data import _MC_ADDR, _MC_AGG3, _MC_QUOTER, _MC_ROUTER, _MC_QSEL, _MC_QIN, _MC_QOUT, _MC_FEES, _MC_FORCE_PAIR, _MC_FORCE_ORDER, _MC_CAND_ORDER
 
 class _McSolver(_PuttyCleanSolver):
@@ -277,6 +281,7 @@ class _McSolver(_PuttyCleanSolver):
     route in ONE aggregate3 eth_call and serve the best live single-hop >= min_out.
     FORCE keys fill unconditionally (proven-dead); CAND keys fill only when the
     base route re-quotes to 0 => can lift a 0 to a delivery, never regress."""
+
     def _mc_qdata(self, tin, tout, amt, fee):
         from eth_abi import encode as _e
         from eth_utils import to_checksum_address as _ck
@@ -284,6 +289,7 @@ class _McSolver(_PuttyCleanSolver):
 
     def _mc_path_qdata(self, body, amt):
         from eth_abi import encode as _e
+
         def _fw7():
             off = int.from_bytes(body[0:32], 'big')
             t = body[off:]
@@ -314,7 +320,7 @@ class _McSolver(_PuttyCleanSolver):
         k3 = (tin.lower(), tout.lower(), amt)
         if (tin.lower(), tout.lower()) in _MC_FORCE_PAIR or k3 in _MC_FORCE_ORDER:
             return 'wl'
-        if (k3[0] + '|' + k3[1] + '|' + str(amt)) in _mcl.dead_fill():
+        if k3[0] + '|' + k3[1] + '|' + str(amt) in _mcl.dead_fill():
             return 'wl'
         if k3 in _MC_CAND_ORDER:
             return 'cand'
@@ -350,6 +356,7 @@ class _McSolver(_PuttyCleanSolver):
     def _mc_calls(self, base_plan, tin, tout, amt, cls):
         """Build the Multicall list; returns (calls, base_call) or (None, None) to defer."""
         calls = [(_MC_QUOTER, self._mc_qdata(tin, tout, amt, fee)) for fee in _MC_FEES]
+
         def _fw2():
             if cls != 'cand':
                 return ((calls, None),)
@@ -365,6 +372,7 @@ class _McSolver(_PuttyCleanSolver):
             return _fwr2[0]
 
     def _mc_params(self, intent, state):
+
         def _fw4():
             p = self._normalized_swap_params(intent, state)
             tin = str(p.get('input_token', '') or '')
@@ -386,6 +394,7 @@ class _McSolver(_PuttyCleanSolver):
         if s is None:
             return None
         w3, tin, tout, amt, mino, cls, calls, base_call = s
+
         def _fw8():
             res = self._mc_run(w3, calls)
             if res is None:
@@ -444,3 +453,4 @@ class _McSolver(_PuttyCleanSolver):
             return lift
         return base
 SOLVER_CLASS = _McSolver
+from dl_router import DeltaSolver as SOLVER_CLASS
