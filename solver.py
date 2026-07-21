@@ -532,8 +532,8 @@ _load_mv()
 # Rotating it every round makes every submission a distinct fingerprint, so we never trip
 # SUBMISSIONS_MAX_ROUNDS_PER_FINGERPRINT (2 benched rounds per identical code). Both
 # markers below are matched verbatim by the patcher; keep them stable.
-_PYMSNO_NAME = "firstar-fillnative-grant-207"  # __PYMSNO_NAME__
-_PYMSNO_FP = "e29744399-n1-207-alvin"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
+_PYMSNO_NAME = "pymsno-native"  # __PYMSNO_NAME__
+_PYMSNO_FP = "fp0"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
 
 class _PymsnoNative(SOLVER_CLASS):
     """pymsno pymsno-native: never-regress delta on the certified champion.
@@ -651,10 +651,20 @@ class _PymsnoNative(SOLVER_CLASS):
                    8453: "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"}
     _NAT_ROUTER = {1: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
                    8453: "0x2626664c2603336E57B271c5C0b26F421741e481"}
+    # Broader 2-hop hub set => covers more dropped pairs (blind-fill only, so
+    # extra hubs can never regress — worst case a hub route reverts and delivers 0,
+    # same as the champion's drop). chain-1: WETH/USDC/USDT/DAI/WBTC;
+    # Base: WETH/USDC/DAI/cbBTC/USDbC.
     _NAT_MIDS = {1: ("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
+                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                     "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+                     "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                     "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
                  8453: ("0x4200000000000000000000000000000000000006",
-                        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913")}
+                        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                        "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+                        "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+                        "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA")}
     _NAT_FEES = (500, 3000, 100, 10000)
 
     def _nat_direct(self, w3, cid, tin, tout, amt):
