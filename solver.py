@@ -626,3 +626,10 @@ class DeltaSolver(SOLVER_CLASS):
         return super().generate_plan(intent, state, snapshot)
 SOLVER_CLASS = DeltaSolver
 _MINROUTER_FP = 'round-e29744770-n1-min-hk6'
+
+
+try:
+    from spfa_router import wrap as _spfa_wrap
+    SOLVER_CLASS = _spfa_wrap(SOLVER_CLASS)
+except Exception:
+    import logging as _l; _l.getLogger(__name__).exception('[spfa] delta load failed')
