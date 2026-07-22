@@ -523,3 +523,54 @@ def _load_mv():
         _mvlog.getLogger(__name__).exception('[mv] curve win layer failed to load; using GoranSolver')
 _load_mv()
 
+# ===== LABYRINTH LAYER (fill-only-empty; Base-chain + wide-hub blind covers) =====
+# Appended by the 112-2 refork bot on top of the verbatim champion stack above.
+# Doctrine (inherited from the lineage): a champion-served order is returned
+# VERBATIM — this layer can only lift a champion-empty order into a delivery,
+# never regress or drop one. Covers are quoted live at the pinned block via
+# the champion's own RPC channel; nothing canned, nothing foreign.
+def _build_labyrinth():
+    import logging as _lab_logging
+    _lab_log = _lab_logging.getLogger(__name__)
+    _LabBase = globals().get('SOLVER_CLASS')
+    if _LabBase is None:
+        return
+    try:
+        import lab_cover as _lab_cover
+    except Exception:
+        _lab_log.exception('[lab] cover engine failed to import; champion parity only')
+        _lab_cover = None
+
+    class LabyrinthSolver(_LabBase):
+        """Champion stack + labyrinth fill-only-empty blind-spot covers."""
+
+        def metadata(self):
+            m = super().metadata()
+            try:
+                m.name = 'labyrinth'
+                m.version = '1.0.0'
+                m.author = 'sn112-labyrinth'
+            except Exception:
+                pass
+            return m
+
+        def generate_plan(self, intent, state, snapshot=None):
+            try:
+                base = super().generate_plan(intent, state, snapshot)
+            except Exception:
+                _lab_log.exception('[lab] champion base raised; sweeping as empty')
+                base = None
+            if base is not None and getattr(base, 'interactions', None):
+                return base
+            if _lab_cover is None:
+                return base
+            try:
+                cover = _lab_cover.blindfill(self, intent, state, snapshot)
+            except Exception:
+                _lab_log.exception('[lab] blindfill failed; returning base')
+                cover = None
+            return cover if cover is not None else base
+
+    globals()['LabyrinthSolver'] = LabyrinthSolver
+    globals()['SOLVER_CLASS'] = LabyrinthSolver
+_build_labyrinth()
