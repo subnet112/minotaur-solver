@@ -1,3 +1,5 @@
+# SN112 shape library — quote helpers (builders live in shape_lib2/shape_lib3).
+
 def _res_call(s, pair, chain_id):
     from eth_abi import decode as _dec
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
@@ -15,7 +17,7 @@ def _v_v2_out(s, pair, amt_in, in_is_t0, chain_id):
             return None
         rin, rout = (res[0], res[1]) if in_is_t0 else (res[1], res[0])
         ai = int(amt_in) * 997
-        return ai * rout // (rin * 1000 + ai) or None
+        return ((ai * rout) // (rin * 1000 + ai)) or None
     except Exception:
         return None
 
@@ -38,7 +40,6 @@ def _v_sng_dy(s, pool, i, j, dx, chain_id):
         w3 = s._get_web3(int(chain_id))
         if w3 is None:
             return None
-
         def _fw1():
             sel = _keccak(text='get_dy(int128,int128,uint256)')[:4]
             r = w3.eth.call({'to': _ck(pool), 'data': '0x' + (sel + _enc(['int128', 'int128', 'uint256'], [int(i), int(j), int(dx)])).hex()})
@@ -55,7 +56,6 @@ def _v_pair_gao(s, pair, amt, tin, chain_id):
         from eth_abi import encode as _enc, decode as _dec
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
         w3 = s._get_web3(int(chain_id))
-
         def _fw2():
             if w3 is None:
                 return (None,)
@@ -106,7 +106,6 @@ def _slip_call(s, ts, tin, tout, amt, chain_id, quoter):
     w3 = s._get_web3(int(chain_id))
     if w3 is None:
         return None
-
     def _fw3():
         sel = _keccak(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
         params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amt), int(ts), 0)])

@@ -7,6 +7,7 @@ from viking_tables import _v_gated_table, _viking_override, _viking_cached_bar, 
 from minotaur_subnet.shared.types import ExecutionPlan as _EP
 logger = logging.getLogger('solver')
 
+
 def head_serve(s, intent, state, snapshot):
     key = s._v_swap_key(intent, state)
     return (key, override_serve(s, key, intent, state, snapshot))
@@ -39,7 +40,6 @@ def _bar_serve(s, key, row, plan, bar, intent, state, snapshot):
     and the base plan is NOT a frozen-table serve (those wei-tie by construction)."""
     import time as _time
     fresh_row = _time.time() - float(row.get('at') or 0) <= s._V_ROW_FRESH_S
-
     def _fw3():
         if not (fresh_row and int(row.get('out') or 0) >= bar):
             return (None,)
@@ -93,12 +93,11 @@ def tail_serve(s, key, plan, intent, state, snapshot):
     return fill_empty(s, key, plan, intent, state, snapshot)
 
 def _fw1():
-
     def _gated_gate(s, state, snapshot, plan, key):
         spec = _v_gated_table().get(key or '')
         if spec is None:
             return None
-        if (plan is None or s._v_is_empty(plan)) and (not spec.get('z')):
+        if (plan is None or s._v_is_empty(plan)) and not spec.get('z'):
             return None
         chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
         return None if chain_id not in (8453, 1) else (spec, chain_id)
@@ -113,7 +112,6 @@ def _fw1():
         if hit is None:
             return None
         spec, chain_id = hit
-
         def _fw2():
             tin, tout, amt_s = key.split('|')
             amt = int(amt_s)

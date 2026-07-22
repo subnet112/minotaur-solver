@@ -25,7 +25,6 @@ def _dr23():
     SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
     SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '96.0.0')
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
-
     def _fw6():
         _BASE = 8453
         _WETH = '0x4200000000000000000000000000000000000006'
@@ -61,7 +60,6 @@ def _dr50():
     """
         import json as _json
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_holes.json')
-
         def _fw14():
             try:
                 data = _json.load(open(path)) or {}
@@ -103,7 +101,6 @@ class _MinerSolverDR41(_Base):
             exotic = getattr(kb, '_STATIC_EXOTIC_ROUTES', None)
             if isinstance(exotic, dict):
                 for k in exotic:
-
                     def _fw12():
                         if isinstance(k, tuple) and len(k) == 2 and (str(k[0]).lower() == tinL) and (str(k[1]).lower() == toutL):
                             return (True,)
@@ -144,7 +141,6 @@ class _MinerSolverDR41(_Base):
             return 0
 
 class _MinerSolver_fz(_MinerSolverDR41):
-
     def _apex_frontier_sweep(self, intent, state, snapshot, params):
         """Quote Sushi V3 / SushiV2 / AlienBase (venues king lacks) vs king's reachable
         best; override king ONLY when an extra venue beats reachable*margin AND clears
@@ -200,7 +196,6 @@ class _MinerSolver_fz(_MinerSolverDR41):
             via_weth = _dr15()
             ex = fut = None
             if via_weth:
-
                 def _fwvw(weth_fee=weth_fee, weth_out=weth_out):
                     with ThreadPoolExecutor(max_workers=6) as ex:
 
@@ -214,7 +209,6 @@ class _MinerSolver_fz(_MinerSolverDR41):
                                 weth_out, weth_fee = (o, f)
                     return (weth_fee, weth_out)
                 weth_fee, weth_out = _fwvw()
-
             def _fw1():
                 wi = weth_out * 995 // 1000 if weth_out > 0 else 0
                 tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
@@ -227,13 +221,11 @@ class _MinerSolver_fz(_MinerSolverDR41):
                 def _dr1():
                     nonlocal ex, extra, fut, reachable
                     with ThreadPoolExecutor(max_workers=16) as ex:
-
                         def _fw2():
                             futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
                             return (futs,)
                         futs, = _fw2()
                         for tag, spec, fut in futs:
-
                             def _fw1():
                                 try:
                                     out = int(fut.result(timeout=6))
@@ -310,7 +302,6 @@ class _MinerSolver_fz(_MinerSolverDR41):
                         q = self._q1(w3, 'uniswap_v3', fee, tin, _WETH, amt)
                         if q > best:
                             best, best_fee = (q, fee)
-
                     def _fw5():
                         leg = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amt, amount_out_minimum=0, chain_id=chain_id)
                         return ([Interaction(target=tin, value='0', call_data=encode_approve(uni, amt), chain_id=chain_id), Interaction(target=uni, value='0', call_data=leg, chain_id=chain_id)],)
@@ -323,7 +314,6 @@ class _MinerSolver_fz(_MinerSolverDR41):
                     return _dr47
             return (deadline, kind, par, qs_leg, sushi_v3_leg, uni_weth_leg, v2fot_leg)
         deadline, kind, par, qs_leg, sushi_v3_leg, uni_weth_leg, v2fot_leg = _dr45()
-
         def _fw1():
             if kind == 'sushi_v3_direct':
                 ix = sushi_v3_leg(tin, tout, par, amount_in)
@@ -402,7 +392,6 @@ class MinerSolver(_MinerSolver_fz):
             tout = str(params.get('output_token', '') or '')
 
             def _dr34():
-
                 def _fw10():
                     amount_in = int(params.get('input_amount', 0) or 0)
                     amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
@@ -417,7 +406,6 @@ class MinerSolver(_MinerSolver_fz):
 
                     def _dr32():
                         nonlocal mid
-
                         def _fw15():
                             if kind == 'uni_mav':
                                 pool, token_a_in = param
@@ -467,7 +455,6 @@ class MinerSolver(_MinerSolver_fz):
 
         def _dr36():
             call = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount_in), 0, [_ck(p) for p in path], _ck(recipient), int(deadline)]).hex()
-
             def _fw9():
                 ix = [Interaction(target=path[0], value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
                 return (ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-v2', 'chain_id': chain_id}),)
@@ -489,7 +476,6 @@ class MinerSolver(_MinerSolver_fz):
         def _dr38():
             if w3 is None or not uni_router:
                 return None
-
             def _fw4():
                 best_out, best_fee = (0, 3000)
                 for fee in (3000, 500, 10000, 100):
@@ -507,7 +493,6 @@ class MinerSolver(_MinerSolver_fz):
 
             def _dr17():
                 recipient = self._apex_recipient(state, params)
-
                 def _fw4():
                     deadline = self._apex_deadline(snapshot)
                     call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
@@ -536,7 +521,6 @@ class MinerSolver(_MinerSolver_fz):
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
             if w3 is None or not uni_router:
                 return None
-
             def _fw11():
                 weth_out, best_fee = (0, 500)
                 for fee in (500, 3000, 100, 10000):
@@ -560,7 +544,6 @@ class MinerSolver(_MinerSolver_fz):
 
                         def _dr29():
                             mav = '0x' + ('a3b105ca' + _enc(['address', 'address', 'bool', 'uint256', 'uint256'], [_ck(recipient), _ck(pool), bool(token_a_in), int(mav_in), 0]).hex())
-
                             def _fw8():
                                 ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=_WETH, value='0', call_data=encode_approve(_MAVERICK_ROUTER, mav_in), chain_id=chain_id), Interaction(target=_MAVERICK_ROUTER, value='0', call_data=mav, chain_id=chain_id)]
                                 return (ix,)
@@ -593,7 +576,6 @@ class MinerSolver(_MinerSolver_fz):
         def _dr53():
             w3 = self._get_web3(int(chain_id))
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-
             def _fw3():
                 if w3 is None or not uni_router:
                     return (None,)
@@ -609,7 +591,6 @@ class MinerSolver(_MinerSolver_fz):
                             mid_out, best_fee = (q, fee)
                     return (best_fee, mid_out)
                 best_fee, mid_out = _dr26()
-
                 def _fw16():
                     if mid_out <= 0:
                         return ((None,),)
@@ -653,7 +634,6 @@ class MinerSolver(_MinerSolver_fz):
             best = 0
             for stable in (False, True):
                 try:
-
                     def _fw1():
                         data = sel + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount), [(_ck(tin), _ck(tout), stable, _ck(_AERO_V2_FACTORY))]]).hex()
                         r = bytes(w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': data}))
@@ -671,7 +651,6 @@ class MinerSolver(_MinerSolver_fz):
         from eth_abi import encode as _enc
         from eth_utils import to_checksum_address as _ck, keccak as _kk
         try:
-
             def _fw13():
                 sel = '0x' + _kk(text='poolByPair(address,address)')[:4].hex()
                 r = bytes(w3.eth.call({'to': _ck(_QS_ALGEBRA_FACTORY), 'data': sel + _enc(['address', 'address'], [_ck(a), _ck(b)]).hex()}))
@@ -696,7 +675,6 @@ class MinerSolver(_MinerSolver_fz):
             tasks = []
             for f in (100, 500, 3000, 10000):
                 tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, tin, tout, amount_in)))
-
                 def _fw3():
                     tasks.append(('R', None, lambda f=f: self._q1(w3, 'pancake_v3', f, tin, tout, amount_in)))
                     tasks.append(('E', ('sushi_v3_direct', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
@@ -728,7 +706,6 @@ class MinerSolver(_MinerSolver_fz):
             for t in (1, 50, 100, 200):
                 tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, _WETH, tout, wi)))
             for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
-
                 def _fw7():
                     tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
                 _fw7()
@@ -740,4 +717,5 @@ class MinerSolver(_MinerSolver_fz):
                     tasks.append(('E', ('v2fot_weth', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
             _dr20()
         return tasks
+
 SOLVER_CLASS = MinerSolver

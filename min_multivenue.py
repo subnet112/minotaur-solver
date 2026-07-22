@@ -26,10 +26,10 @@ try:
     from solver import GoranSolver as _Base
 except Exception:
     from solver import _McSolver as _Base
-_MV_NAME = 'merlin'
-_MV_VERSION = '524.0.3'
+_MV_NAME = "merlin"
+_MV_VERSION = "524.0.3"
 _MV_AUTHOR = 'wisedev0103'
-_ROTATE_FP_NONCE = '518'
+_ROTATE_FP_NONCE = "518"
 try:
     _LIVE_WINS = _mj.load(open(_mos.path.join(_mos.path.dirname(_mos.path.abspath(__file__)), 'live_wins.json')))
 except Exception:

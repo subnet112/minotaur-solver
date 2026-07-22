@@ -1,3 +1,4 @@
+# chain-1 dynamic tier: quoting + v3 building helpers
 from chain1_c import _WETH, _USDT, _QUOTER, _ROUTER, _FEES, _HUBS, _CHAMP_FEE
 
 def _pack(tokens, fees):
@@ -12,7 +13,6 @@ def _champ_route(tin, tout):
     fs = frozenset((tin, tout))
     if fs in _CHAMP_FEE:
         return ((tin, tout), (_CHAMP_FEE[fs],))
-
     def _fw1():
         if _WETH not in (tin, tout):
             f1 = _CHAMP_FEE.get(frozenset((tin, _WETH)), 3000)
@@ -48,7 +48,8 @@ def _qroute(w3, route, amt, block):
         return _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0] or None
     except Exception:
         return None
-_MC3 = '0xcA11bde05977b3631167028862bE2a173976CA11'
+
+_MC3 = '0xcA11bde05977b3631167028862bE2a173976CA11'  # Multicall3 (same on all chains)
 
 def _qbytes(route, amt):
     from eth_abi import encode as _enc
@@ -116,12 +117,11 @@ def _build(route, tin, amt, rcpt, chain_id):
 def _amounts(p):
     amt = int(p.get('input_amount', 0) or 0)
     mo = int(p.get('min_output_amount', 0) or 0)
-    return (amt, mo)
+    return amt, mo
 
 def _params(s, intent, state):
     p = s._normalized_swap_params(intent, state)
     tin = str(p.get('input_token', '') or '').lower()
-
     def _fw1():
         tout = str(p.get('output_token', '') or '').lower()
         amt, mo = _amounts(p)
