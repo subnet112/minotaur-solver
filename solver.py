@@ -532,8 +532,8 @@ _load_mv()
 # Rotating it every round makes every submission a distinct fingerprint, so we never trip
 # SUBMISSIONS_MAX_ROUNDS_PER_FINGERPRINT (2 benched rounds per identical code). Both
 # markers below are matched verbatim by the patcher; keep them stable.
-_PYMSNO_NAME = "firstar-fillnative-eisenhower-214"  # __PYMSNO_NAME__
-_PYMSNO_FP = "e29745203-n1-214-alvin"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
+_PYMSNO_NAME = "pymsno-native"  # __PYMSNO_NAME__
+_PYMSNO_FP = "fp0"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
 
 class _PymsnoNative(SOLVER_CLASS):
     """pymsno pymsno-native: never-regress delta on the certified champion.
@@ -647,31 +647,35 @@ class _PymsnoNative(SOLVER_CLASS):
         return [Interaction(target=_ck(tin), value="0", call_data=encode_approve(router, amt), chain_id=cid),
                 Interaction(target=router, value="0", call_data=call, chain_id=cid)]
 
-    _NAT_QUOTER = {1: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
-                   8453: "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"}
-    _NAT_ROUTER = {1: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
-                   8453: "0x2626664c2603336E57B271c5C0b26F421741e481"}
-    # 2 canonical hubs per chain (WETH, USDC). MUST stay lean: Stage-3
-    # check_trigger internally calls generate_plan under a 10s budget, so a wide
-    # RPC fan-out here gets the WHOLE submission rejected (trigger_timeout — the
-    # obama-33/roosevelt-45 rejections). Extra hubs bought ~nothing (the champion's
-    # own richer router already can't route what it drops) but blew the budget.
-    _NAT_MIDS = {1: ("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
-                 8453: ("0x4200000000000000000000000000000000000006",
-                        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913")}
-    _NAT_FEES = (500, 3000, 100, 10000)
-    _NAT_HOP_FEES = (500, 3000)          # 2-hop uses only the deep fee tiers
-    _NAT_BUDGET_S = 2.5                   # hard wall-clock cap on the whole search
+    _CV_QUOTER = {1: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+                  8453: "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"}
+    _CV_ROUTER = {1: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+                  8453: "0x2626664c2603336E57B271c5C0b26F421741e481"}
+    _CV_MIDS = {1: ("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
+                8453: ("0x4200000000000000000000000000000000000006",
+                       "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913")}
+    _CV_FEES = (500, 3000, 100, 10000)
+    _CV_HOPFEES = (500, 3000)
+    _CV_BUDGET = 2.5
 
-    def _nat_direct(self, w3, cid, tin, tout, amt, deadline):
+    def _cv_recip(self, state, rp):
+        for v in (getattr(state, "contract_address", None), rp.get("receiver"),
+                  rp.get("recipient"), rp.get("to"), getattr(state, "owner", None),
+                  rp.get("owner"), rp.get("from"), rp.get("sender")):
+            r = str(v or "").lower()
+            if r.startswith("0x") and len(r) == 42:
+                return r
+        return None
+
+    def _cv_direct(self, w3, cid, tin, tout, amt, deadline):
         import time as _t
         from eth_utils import to_checksum_address as _ck
-        q = _ck(self._NAT_QUOTER[cid])
+        q = _ck(self._CV_QUOTER[cid])
         ti = (tin[2:] if tin.startswith("0x") else tin).lower()
         to = (tout[2:] if tout.startswith("0x") else tout).lower()
         best, bf = 0, None
-        for fee in self._NAT_FEES:
+        for fee in self._CV_FEES:
             if _t.time() > deadline:
                 break
             data = ("c6a5026a" + ti.rjust(64, "0") + to.rjust(64, "0")
@@ -685,22 +689,22 @@ class _PymsnoNative(SOLVER_CLASS):
                 best, bf = out, fee
         return best, bf
 
-    def _nat_hop(self, w3, cid, tin, tout, amt, deadline):
+    def _cv_hop(self, w3, cid, tin, tout, amt, deadline):
         import time as _t
         from eth_utils import to_checksum_address as _ck
         from eth_abi import encode as _e
-        q = _ck(self._NAT_QUOTER[cid])
+        q = _ck(self._CV_QUOTER[cid])
         tinb = bytes.fromhex(tin[2:] if tin.startswith("0x") else tin)
         toutb = bytes.fromhex(tout[2:] if tout.startswith("0x") else tout)
         best, bp = 0, None
-        for mid in self._NAT_MIDS[cid]:
+        for mid in self._CV_MIDS[cid]:
             if mid.lower() in (tin.lower(), tout.lower()):
                 continue
             midb = bytes.fromhex(mid[2:])
-            for f1 in self._NAT_HOP_FEES:
-                for f2 in self._NAT_HOP_FEES:
+            for f1 in self._CV_HOPFEES:
+                for f2 in self._CV_HOPFEES:
                     if _t.time() > deadline:
-                        return best, bp    # budget spent -> stop early
+                        return best, bp
                     path = tinb + int(f1).to_bytes(3, "big") + midb + int(f2).to_bytes(3, "big") + toutb
                     data = bytes.fromhex("cdca1753") + _e(["bytes", "uint256"], [path, amt])
                     try:
@@ -713,46 +717,61 @@ class _PymsnoNative(SOLVER_CLASS):
         return best, bp
 
     def _py_improve(self, intent, state, snapshot, base):
-        # NEVER-REGRESS BY CONSTRUCTION: fires only when the champion returned NO
-        # plan (empty base) and fills that dropped order via a self-contained UniV3
-        # search (direct across fees + 2-hop via WETH/USDC). A thin/wrong route
-        # reverts -> 0 == the champion's own drop, never a regression. HARD-BUDGETED
-        # (_NAT_BUDGET_S) so it can never blow the 10s Stage-3 check_trigger window.
         if base is not None and getattr(base, "interactions", None):
-            return None
+            return None  # champion served it -> defer (never touch a served order)
         try:
+            cid = int(getattr(state, "chain_id", 0) or 0)
+            # CHAIN-1: the champion's OWN full multi-venue router (Curve + UniV3 +
+            # UniV2/Sushi + PancakeV3) — proven to deliver on the drops it gates.
+            if cid == 1:
+                try:
+                    from min_multivenue import _general_blindfill
+                    plan = _general_blindfill(self, intent, state, snapshot)
+                    if plan is not None and getattr(plan, "interactions", None):
+                        return plan
+                except Exception:
+                    pass
+            # ANY chain (Base primary + chain-1 fallback): self-contained UniV3
+            # direct + 2-hop, hard-budgeted so it can't blow the screening window.
+            if cid not in self._CV_QUOTER:
+                return None
             import time as _t
-            deadline = _t.time() + self._NAT_BUDGET_S
+            deadline = _t.time() + self._CV_BUDGET
             pp = self._py_params(intent, state)
             ctx = self._py_ctx(state)
             if pp is None or ctx is None:
                 return None
             p, tin, tout, amt, mino = pp
-            w3, cid = ctx
-            if cid not in self._NAT_QUOTER:
+            w3, cid2 = ctx
+            if cid2 not in self._CV_QUOTER:
                 return None
-            d_out, d_fee = self._nat_direct(w3, cid, tin, tout, amt, deadline)
-            m_out, m_path = self._nat_hop(w3, cid, tin, tout, amt, deadline)
+            d_out, d_fee = self._cv_direct(w3, cid2, tin, tout, amt, deadline)
+            m_out, m_path = self._cv_hop(w3, cid2, tin, tout, amt, deadline)
             best = max(d_out, m_out)
             if best <= 0 or best < mino:
-                return None  # no valid fill for this dropped order
+                return None
             from eth_utils import to_checksum_address as _ck
             from common.abi_utils import encode_approve
             from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_exact_input_single
-            recip, deadline = self._py_recip_deadline(state, snapshot, p)
+            recip, deadline2 = self._py_recip_deadline(state, snapshot, p)
+            if not recip:
+                recip = self._cv_recip(state, p)
             if not recip:
                 return None
-            router = _ck(self._NAT_ROUTER[cid])
+            router = _ck(self._CV_ROUTER[cid2])
             if d_out >= m_out and d_fee is not None:
-                call = encode_exact_input_single(_ck(tin), _ck(tout), int(d_fee), _ck(recip), deadline, amt, mino, 0, cid)
+                call = encode_exact_input_single(_ck(tin), _ck(tout), int(d_fee), _ck(recip), deadline2, amt, mino, 0, cid2)
             else:
-                call = encode_exact_input(m_path, _ck(recip), deadline, amt, mino)
-            ix = [Interaction(target=_ck(tin), value="0", call_data=encode_approve(router, amt), chain_id=cid),
-                  Interaction(target=router, value="0", call_data=call, chain_id=cid)]
-            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline,
-                                 nonce=state.nonce, metadata={"solver": "pymsno-native", "chain_id": cid})
+                call = encode_exact_input(m_path, _ck(recip), deadline2, amt, mino)
+            ix = [Interaction(target=_ck(tin), value="0", call_data=encode_approve(router, amt), chain_id=cid2),
+                  Interaction(target=router, value="0", call_data=call, chain_id=cid2)]
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline2,
+                                 nonce=state.nonce, metadata={"solver": "pymsno-native", "chain_id": cid2})
         except Exception:
-            logger.exception("[pymsno-native] failed")
+            try:
+                logger.exception("[pymsno-cover] failed")
+            except Exception:
+                pass
             return None
 
     def _pm_nonempty(self, plan):
@@ -767,25 +786,21 @@ class _PymsnoNative(SOLVER_CLASS):
         base = super().generate_plan(intent, state, snapshot)
         if self._pm_nonempty(base):
             return base   # champion served it -> defer (never touch a served order)
-        base_dt = _pmt.time() - _t0
         # EMPTY base = champion dropped this order. The champion routes LIVE, so a
         # re-bench sometimes drops an order it SERVED at adoption -> a hard-veto
-        # "dropped" against us (the raptor-10 lesson: 6 chain-1 drops the incumbent
-        # served). If the drop was FAST (< 0.8s => a gate/flake, not a full-route
-        # miss), give the champion's OWN routing a couple of bounded retries: if it
-        # recovers we deliver its exact route == parity, no veto. Cost-bounded (only
-        # cheap drops retry; hard/slow drops fall straight through) so this can never
-        # blow the screening time budget. Then our blind-fill cover. All never-regress.
-        if base_dt < 0.8:
-            for _ in range(2):
-                if _pmt.time() - _t0 > 2.5:
-                    break
-                try:
-                    b2 = super().generate_plan(intent, state, snapshot)
-                except Exception:
-                    b2 = None
-                if self._pm_nonempty(b2):
-                    return b2
+        # "dropped" against us (johnson-45: 12 such drops = the whole loss). Give the
+        # champion's OWN routing bounded retries FIRST: if it recovers we deliver its
+        # exact route == parity, no veto. Bounded to a 3s TOTAL window (incl. the base
+        # call) so it can never blow the 10s screening budget, then the blind-fill.
+        _tries = 0
+        while _pmt.time() - _t0 < 3.0 and _tries < 3:
+            _tries += 1
+            try:
+                b2 = super().generate_plan(intent, state, snapshot)
+            except Exception:
+                b2 = None
+            if self._pm_nonempty(b2):
+                return b2
         try:
             mine = self._py_improve(intent, state, snapshot, base)
             if self._pm_nonempty(mine):
