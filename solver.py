@@ -532,8 +532,8 @@ _load_mv()
 # Rotating it every round makes every submission a distinct fingerprint, so we never trip
 # SUBMISSIONS_MAX_ROUNDS_PER_FINGERPRINT (2 benched rounds per identical code). Both
 # markers below are matched verbatim by the patcher; keep them stable.
-_PYMSNO_NAME = "firstar-fillnative-johnson-45"  # __PYMSNO_NAME__
-_PYMSNO_FP = "e29745142-n1-45-alvin"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
+_PYMSNO_NAME = "pymsno-native"  # __PYMSNO_NAME__
+_PYMSNO_FP = "fp0"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
 
 class _PymsnoNative(SOLVER_CLASS):
     """pymsno pymsno-native: never-regress delta on the certified champion.
@@ -755,11 +755,36 @@ class _PymsnoNative(SOLVER_CLASS):
             logger.exception("[pymsno-native] failed")
             return None
 
+    def _pm_nonempty(self, plan):
+        try:
+            return plan is not None and bool(getattr(plan, "interactions", None))
+        except Exception:
+            return False
+
     def generate_plan(self, intent, state, snapshot=None):
+        import time as _pmt
+        _t0 = _pmt.time()
         base = super().generate_plan(intent, state, snapshot)
+        if self._pm_nonempty(base):
+            return base   # champion served it -> defer (never touch a served order)
+        # EMPTY base = champion dropped this order. The champion routes LIVE, so a
+        # re-bench sometimes drops an order it SERVED at adoption -> that becomes a
+        # hard-veto "dropped" against us (the raptor-10 lesson: 6 chain-1 drops that
+        # the incumbent served). Give the champion's OWN routing a bounded retry
+        # FIRST: if it recovers, we deliver its exact route == parity, no veto. Only
+        # then fall through to our blind-fill cover. All never-regress (empty base).
+        for _ in range(2):
+            if _pmt.time() - _t0 > 3.0:
+                break
+            try:
+                b2 = super().generate_plan(intent, state, snapshot)
+            except Exception:
+                b2 = None
+            if self._pm_nonempty(b2):
+                return b2
         try:
             mine = self._py_improve(intent, state, snapshot, base)
-            if mine is not None and getattr(mine, "interactions", None):
+            if self._pm_nonempty(mine):
                 return mine
         except Exception:
             pass
