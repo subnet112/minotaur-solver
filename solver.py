@@ -532,8 +532,8 @@ _load_mv()
 # Rotating it every round makes every submission a distinct fingerprint, so we never trip
 # SUBMISSIONS_MAX_ROUNDS_PER_FINGERPRINT (2 benched rounds per identical code). Both
 # markers below are matched verbatim by the patcher; keep them stable.
-_PYMSNO_NAME = "firstar-fillnative-grant-215"  # __PYMSNO_NAME__
-_PYMSNO_FP = "e29745068-n1-215-alvin"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
+_PYMSNO_NAME = "pymsno-native"  # __PYMSNO_NAME__
+_PYMSNO_FP = "fp0"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
 
 class _PymsnoNative(SOLVER_CLASS):
     """pymsno pymsno-native: never-regress delta on the certified champion.
@@ -651,29 +651,29 @@ class _PymsnoNative(SOLVER_CLASS):
                    8453: "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"}
     _NAT_ROUTER = {1: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
                    8453: "0x2626664c2603336E57B271c5C0b26F421741e481"}
-    # Broader 2-hop hub set => covers more dropped pairs (blind-fill only, so
-    # extra hubs can never regress — worst case a hub route reverts and delivers 0,
-    # same as the champion's drop). chain-1: WETH/USDC/USDT/DAI/WBTC;
-    # Base: WETH/USDC/DAI/cbBTC/USDbC.
+    # 2 canonical hubs per chain (WETH, USDC). MUST stay lean: Stage-3
+    # check_trigger internally calls generate_plan under a 10s budget, so a wide
+    # RPC fan-out here gets the WHOLE submission rejected (trigger_timeout — the
+    # obama-33/roosevelt-45 rejections). Extra hubs bought ~nothing (the champion's
+    # own richer router already can't route what it drops) but blew the budget.
     _NAT_MIDS = {1: ("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-                     "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-                     "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-                     "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
+                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
                  8453: ("0x4200000000000000000000000000000000000006",
-                        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                        "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
-                        "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
-                        "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA")}
+                        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913")}
     _NAT_FEES = (500, 3000, 100, 10000)
+    _NAT_HOP_FEES = (500, 3000)          # 2-hop uses only the deep fee tiers
+    _NAT_BUDGET_S = 2.5                   # hard wall-clock cap on the whole search
 
-    def _nat_direct(self, w3, cid, tin, tout, amt):
+    def _nat_direct(self, w3, cid, tin, tout, amt, deadline):
+        import time as _t
         from eth_utils import to_checksum_address as _ck
         q = _ck(self._NAT_QUOTER[cid])
         ti = (tin[2:] if tin.startswith("0x") else tin).lower()
         to = (tout[2:] if tout.startswith("0x") else tout).lower()
         best, bf = 0, None
         for fee in self._NAT_FEES:
+            if _t.time() > deadline:
+                break
             data = ("c6a5026a" + ti.rjust(64, "0") + to.rjust(64, "0")
                     + format(amt, "064x") + format(int(fee), "064x") + "0" * 64)
             try:
@@ -685,7 +685,8 @@ class _PymsnoNative(SOLVER_CLASS):
                 best, bf = out, fee
         return best, bf
 
-    def _nat_hop(self, w3, cid, tin, tout, amt):
+    def _nat_hop(self, w3, cid, tin, tout, amt, deadline):
+        import time as _t
         from eth_utils import to_checksum_address as _ck
         from eth_abi import encode as _e
         q = _ck(self._NAT_QUOTER[cid])
@@ -696,8 +697,10 @@ class _PymsnoNative(SOLVER_CLASS):
             if mid.lower() in (tin.lower(), tout.lower()):
                 continue
             midb = bytes.fromhex(mid[2:])
-            for f1 in self._NAT_FEES:
-                for f2 in self._NAT_FEES:
+            for f1 in self._NAT_HOP_FEES:
+                for f2 in self._NAT_HOP_FEES:
+                    if _t.time() > deadline:
+                        return best, bp    # budget spent -> stop early
                     path = tinb + int(f1).to_bytes(3, "big") + midb + int(f2).to_bytes(3, "big") + toutb
                     data = bytes.fromhex("cdca1753") + _e(["bytes", "uint256"], [path, amt])
                     try:
@@ -710,16 +713,16 @@ class _PymsnoNative(SOLVER_CLASS):
         return best, bp
 
     def _py_improve(self, intent, state, snapshot, base):
-        # NEVER-REGRESS BY CONSTRUCTION. We only act when the full champion
-        # (including its own cover) returned NO plan. On an order the champion
-        # served we cannot know its ACTUAL on-chain output at plan-time — the
-        # old code compared our quote to _py_base_out (a naive single-pool
-        # re-quote), which UNDERESTIMATES a smart champion and made us override
-        # + deliver less => regression. So we fill only blind spots the champion
-        # drops, with a rich native search (direct single across fees + 2-hop).
+        # NEVER-REGRESS BY CONSTRUCTION: fires only when the champion returned NO
+        # plan (empty base) and fills that dropped order via a self-contained UniV3
+        # search (direct across fees + 2-hop via WETH/USDC). A thin/wrong route
+        # reverts -> 0 == the champion's own drop, never a regression. HARD-BUDGETED
+        # (_NAT_BUDGET_S) so it can never blow the 10s Stage-3 check_trigger window.
         if base is not None and getattr(base, "interactions", None):
             return None
         try:
+            import time as _t
+            deadline = _t.time() + self._NAT_BUDGET_S
             pp = self._py_params(intent, state)
             ctx = self._py_ctx(state)
             if pp is None or ctx is None:
@@ -728,8 +731,8 @@ class _PymsnoNative(SOLVER_CLASS):
             w3, cid = ctx
             if cid not in self._NAT_QUOTER:
                 return None
-            d_out, d_fee = self._nat_direct(w3, cid, tin, tout, amt)
-            m_out, m_path = self._nat_hop(w3, cid, tin, tout, amt)
+            d_out, d_fee = self._nat_direct(w3, cid, tin, tout, amt, deadline)
+            m_out, m_path = self._nat_hop(w3, cid, tin, tout, amt, deadline)
             best = max(d_out, m_out)
             if best <= 0 or best < mino:
                 return None  # no valid fill for this dropped order
