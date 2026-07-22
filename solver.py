@@ -767,21 +767,25 @@ class _PymsnoNative(SOLVER_CLASS):
         base = super().generate_plan(intent, state, snapshot)
         if self._pm_nonempty(base):
             return base   # champion served it -> defer (never touch a served order)
+        base_dt = _pmt.time() - _t0
         # EMPTY base = champion dropped this order. The champion routes LIVE, so a
-        # re-bench sometimes drops an order it SERVED at adoption -> that becomes a
-        # hard-veto "dropped" against us (the raptor-10 lesson: 6 chain-1 drops that
-        # the incumbent served). Give the champion's OWN routing a bounded retry
-        # FIRST: if it recovers, we deliver its exact route == parity, no veto. Only
-        # then fall through to our blind-fill cover. All never-regress (empty base).
-        for _ in range(2):
-            if _pmt.time() - _t0 > 3.0:
-                break
-            try:
-                b2 = super().generate_plan(intent, state, snapshot)
-            except Exception:
-                b2 = None
-            if self._pm_nonempty(b2):
-                return b2
+        # re-bench sometimes drops an order it SERVED at adoption -> a hard-veto
+        # "dropped" against us (the raptor-10 lesson: 6 chain-1 drops the incumbent
+        # served). If the drop was FAST (< 0.8s => a gate/flake, not a full-route
+        # miss), give the champion's OWN routing a couple of bounded retries: if it
+        # recovers we deliver its exact route == parity, no veto. Cost-bounded (only
+        # cheap drops retry; hard/slow drops fall straight through) so this can never
+        # blow the screening time budget. Then our blind-fill cover. All never-regress.
+        if base_dt < 0.8:
+            for _ in range(2):
+                if _pmt.time() - _t0 > 2.5:
+                    break
+                try:
+                    b2 = super().generate_plan(intent, state, snapshot)
+                except Exception:
+                    b2 = None
+                if self._pm_nonempty(b2):
+                    return b2
         try:
             mine = self._py_improve(intent, state, snapshot, base)
             if self._pm_nonempty(mine):
