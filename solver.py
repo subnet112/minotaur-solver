@@ -532,8 +532,8 @@ _load_mv()
 # Rotating it every round makes every submission a distinct fingerprint, so we never trip
 # SUBMISSIONS_MAX_ROUNDS_PER_FINGERPRINT (2 benched rounds per identical code). Both
 # markers below are matched verbatim by the patcher; keep them stable.
-_PYMSNO_NAME = "firstar-fillnative-truman-214"  # __PYMSNO_NAME__
-_PYMSNO_FP = "e29745348-n1-214-alvin"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
+_PYMSNO_NAME = "firstar-fillnative-jackson-182"  # __PYMSNO_NAME__
+_PYMSNO_FP = "e29745424-n1-182-alvin"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
 
 class _PymsnoNative(SOLVER_CLASS):
     """pymsno pymsno-native: never-regress delta on the certified champion.
