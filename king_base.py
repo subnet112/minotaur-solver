@@ -61,7 +61,6 @@ def _dr142():
     def _dr31():
         SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
         SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.1.2')
-
         def _fw46():
             SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'top')
             _FAST_DIRECT_INPUTS = frozenset({_USDBC})
@@ -70,7 +69,6 @@ def _dr142():
             _STATIC_EXOTIC_HIGH_MIN_OK = frozenset({(_USDC, _USDBC), (_USDC, _DAI), (_USDC, _T_USDS), (_USDC, _T_SUSDS), (_T_USDS, _USDC), (_T_SUSDS, _USDC)})
 
             def _dr162():
-
                 def _fw13():
                     _GAS_WEIGHT = float(os.environ.get('SOLVER_GAS_WEIGHT', '0.0'))
                     _NET_WETH_PLATFORM_FEE = os.environ.get('SOLVER_NET_WETH_PLATFORM_FEE', '0').lower() in {'1', 'true', 'yes'}
@@ -99,7 +97,6 @@ def _dr21():
     def _dr187():
         _AERO_TWOHOP_TICKS = ((100, 1), (1, 100), (100, 100), (1, 1))
         _KG_SET = frozenset({_WETH, _USDC, _DAI, _CBBTC, _AERO})
-
         def _fw7():
             _UNI_KG_TWOHOP_FEES = ((100, 100), (500, 100), (100, 500), (500, 500), (3000, 100), (100, 3000), (3000, 500), (500, 3000))
             _AERO_KG_TWOHOP_TICKS = ((1, 1), (100, 1), (1, 100), (100, 100), (200, 100), (100, 200), (200, 1), (1, 200))
@@ -109,7 +106,6 @@ def _dr21():
             return _fwr7[0]
     _AERO_KG_TWOHOP_TICKS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES = _dr187()
     return (_AERO_KG_TWOHOP_TICKS, _AERO_TICK_SPACINGS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES, _UNI_TWOHOP_FEES)
-
 def _dr21x():
     _AERO_KG_TWOHOP_TICKS, _AERO_TICK_SPACINGS, _AERO_TWOHOP_TICKS, _KG_SET, _UNI_KG_TWOHOP_FEES, _UNI_TWOHOP_FEES = _dr21()
     globals().update(locals())
@@ -119,7 +115,6 @@ def _dr82():
     _UNI_QUOTER_BY_CHAIN = {_ETH: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e'}
 
     def _dr330():
-
         def _fw6():
             _ETH_HUBS = (_ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_DAI, _ETH_WBTC)
             _ETH_UNI_FEES = (100, 500, 3000, 10000)
@@ -127,7 +122,6 @@ def _dr82():
 
             def _dr50():
                 _ETH_3POOL_IDX = {_ETH_DAI: 0, _ETH_USDC: 1, _ETH_USDT: 2}
-
                 def _fw99():
                     _OFFSET_UNI = int(os.environ.get('SOLVER_OFFSET_UNI', '285000'))
                     _OFFSET_AERO = int(os.environ.get('SOLVER_OFFSET_AERO', '318000'))
@@ -138,7 +132,6 @@ def _dr82():
                     def _dr164():
                         _QUOTE_BUDGET_S = float(os.environ.get('SOLVER_QUOTE_BUDGET_S', '14.0'))
                         _BASELINE_BUDGET_S = float(os.environ.get('SOLVER_BASELINE_BUDGET_S', '14.0'))
-
                         def _fw51():
                             _SELECT_BUDGET_S = float(os.environ.get('SOLVER_SELECT_BUDGET_S', '12.0'))
                             _QUOTER_MAX_WORKERS = int(os.environ.get('SOLVER_QUOTER_MAX_WORKERS', '48'))
@@ -196,7 +189,6 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
             def _dr177():
                 fast = self._enumerate_direct_singlehop(chain_id, tin, tout, amount_in)
                 fusable = [c for c in fast if min_out <= 0 or c['out'] >= min_out]
-
                 def _fw89():
                     if fusable:
                         fbest = max(fusable, key=lambda c: (c['out'], -c['gas_est']))
@@ -208,7 +200,6 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
                 if _fwr89 is not None:
                     return _fwr89[0]
             _dr178 = _dr177()
-
             def _fw94():
                 if _dr178 is not _DR_UNSET:
                     return (_dr178,)
@@ -244,7 +235,6 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
 
     def _sas_honor_baseline(self, base_plan, best, bp_out, min_out, raw_output_pair, tin, tout, score):
         raw_output_win = raw_output_pair and bp_out > 0 and (best['out'] * 10000 > bp_out * (10000 + _RAW_OUTPUT_EDGE_BPS))
-
         def _fw86():
             if base_plan is not None and bp_out > 0 and (min_out <= 0 or bp_out >= min_out) and (not raw_output_win):
                 m = base_plan.metadata or {}
@@ -285,7 +275,6 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
                 params = self._normalized_swap_params(intent, state)
 
                 def _dr361():
-
                     def _fw14():
                         tin = str(params.get('input_token', '') or '')
                         tout = str(params.get('output_token', '') or '')
@@ -317,7 +306,6 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
                         return self._sas_fast_direct(intent, state, snapshot, base_plan, tin, tout, amount_in, min_out, chain_id)
 
                     def _dr213():
-
                         def _fw98():
                             bp_hint = 0
                             if base_plan is not None:
@@ -359,10 +347,8 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
 
                 def _dr43():
                     nonlocal cands, usable
-
                     def _fw10(cands=cands):
                         cands = self._sas_crossvenue_waves(cands, chain_id, tin, tout, amount_in, _stage_t0)
-
                         def _fw18():
                             best_out = max((c['out'] for c in cands))
                             bp_out = 0
@@ -384,14 +370,12 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
                 bp_out, score = _dr43()
                 if not usable:
                     return base_plan
-
                 def _fw2(usable=usable):
                     core_usable = [c for c in usable if not c.get('extra_route')]
                     if core_usable:
                         core_best_out = max((c['out'] for c in core_usable))
                         usable = core_usable + [c for c in usable if c.get('extra_route') and c['out'] * 10000 > core_best_out * 10010]
                     return (usable,)
-
                 def _fw80():
                     usable, = _fw2()
                     best = max(usable, key=lambda c: (round(score(c['out'], c['gas_model']), 9), -c['gas_est']))
@@ -443,7 +427,6 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
         router = _PANCAKE_V2_ROUTER
         tokens = [_ck(t) for t in cand.get('tokens', (tin, tout))]
-
         def _fw32():
             if len(tokens) < 2:
                 raise ValueError('no pancake v2 path')
@@ -464,7 +447,6 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
             from eth_utils import keccak as _keccak, to_checksum_address as _ck
             router = _AERO_V2_ROUTER
             routes = [(_ck(a), _ck(b), bool(stable), _ck(factory)) for a, b, stable, factory in cand.get('routes', ())]
-
             def _fw27():
                 if not routes:
                     raise ValueError('no aerodrome v2 routes')
@@ -484,7 +466,6 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
         router = _UNIV2_ROUTER
         tokens = [_ck(t) for t in cand.get('tokens', (tin, tout))]
-
         def _fw31():
             if len(tokens) < 2:
                 raise ValueError('no uniswap v2 path')
@@ -497,7 +478,6 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
             return _fwr31[0]
 
 class __MinerSolverDR10_fz(_MinerSolverDR10DR170):
-
     def _shp_uniswap_v3_multihop(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
         from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
         from strategies.dex_aggregator.v3_codec import encode_exact_input, encode_swap_path
@@ -530,7 +510,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
 
             def _dr52():
                 nonlocal f
-
                 def _fw13():
                     sf = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
                     st = _kk(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
@@ -560,7 +539,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                             pb += bytes.fromhex(tk[2:])
                             if i < len(fees):
                                 pb += int(fees[i]).to_bytes(3, 'big')
-
                         def _fw59():
                             r = _call(q, sp + _enc(['bytes', 'uint256'], [pb, int(amt)]))
                             if r:
@@ -624,7 +602,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                 def _dr246():
                     for name, router in _SWEEP_V2_ROUTERS:
                         jobs.append((f'{name}-direct', ('v2', router, [tin, tout]), lambda r=router: q_v2(r, [tin, tout], amount_in)))
-
                         def _fw5():
                             if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
                                 jobs.append((f'{name}-viaWETH', ('v2', router, [tin, _SWEEP_WETH, tout]), lambda r=router: q_v2(r, [tin, _SWEEP_WETH, tout], amount_in)))
@@ -639,7 +616,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                             uni_v2 = _SWEEP_V2_ROUTERS[0][1]
                             if _SWEEP_VIRTUAL not in (tin, tout):
                                 jobs.append(('uniV2-viaVIRTUAL', ('v2', uni_v2, [tin, _SWEEP_VIRTUAL, tout]), lambda: q_v2(uni_v2, [tin, _SWEEP_VIRTUAL, tout], amount_in)))
-
                                 def _fw45():
                                     if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
                                         jobs.append(('uniV2-WETH-VIRTUAL', ('v2', uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout]), lambda: q_v2(uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout], amount_in)))
@@ -659,7 +635,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                                     pools = _dec(['address[]'], r)[0]
                                 except Exception:
                                     return (0, None)
-
                                 def _fw17():
                                     token_a_in = tin.lower() == lo.lower()
                                     tick = 2147483647 if token_a_in else -2147483648
@@ -706,7 +681,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                     futs = [(tag, route, ex.submit(fn)) for tag, route, fn in jobs]
                     return futs
                 futs = _dr143()
-
                 def _fwf(reach_best=reach_best):
                     for tag, route, fut in futs:
                         try:
@@ -763,7 +737,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
 
         def _dr299():
             call = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount_in), 0, [_ck(p) for p in path], _ck(recipient), int(deadline)]).hex()
-
             def _fw23():
                 ix = [Interaction(target=path[0], value='0', call_data=self._sweep_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
                 return (ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'sweep-v2', 'chain_id': chain_id}),)
@@ -783,7 +756,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
         def _dr286():
             recipient = self._sweep_recipient(state, params)
             deadline = self._sweep_deadline(snapshot)
-
             def _fw26():
                 call = '0x414bf389' + _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint256', 'uint160'], [_ck(tin), _ck(tout), int(fee), _ck(recipient), int(deadline), int(amount_in), 0, 0]).hex()
                 ix = [Interaction(target=tin, value='0', call_data=self._sweep_approve(_SWEEP_SUSHI_R, amount_in), chain_id=chain_id), Interaction(target=_SWEEP_SUSHI_R, value='0', call_data=call, chain_id=chain_id)]
@@ -803,7 +775,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
 
         def _dr273():
             call = '0x' + (sel + _enc(['address', 'address', 'bool', 'uint256', 'uint256'], [_ck(recipient), _ck(pool), bool(token_a_in), int(amount_in), 0])).hex()
-
             def _fw58():
                 ix = [Interaction(target=tin, value='0', call_data=self._sweep_approve(_SWEEP_MAV_R2, amount_in), chain_id=chain_id), Interaction(target=_SWEEP_MAV_R2, value='0', call_data=call, chain_id=chain_id)]
                 return (ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'sweep-maverick', 'chain_id': chain_id}),)
@@ -838,7 +809,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                     if spec.get('aero_routes'):
 
                         def _dr247():
-
                             def _fw93():
                                 aero_router = _ck(_AERO_V2_ROUTER)
                                 routes = [(_ck(a), _ck(b), bool(stable), _ck(_ZERO)) for a, b, stable in spec['aero_routes']]
@@ -861,7 +831,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                             path += bytes.fromhex(_ck(tok)[2:])
                             if i < len(v3_fees):
                                 path += int(v3_fees[i]).to_bytes(3, 'big')
-
                         def _fw43():
                             v3_recipient = _UR_ADDRESS_THIS if has_v4 or has_v2 else recipient
                             inputs.append(_abi_encode(['address', 'uint256', 'uint256', 'bytes', 'bool'], [_ck(v3_recipient), int(_UR_CONTRACT_BALANCE), 0, path, False]))
@@ -883,7 +852,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                         def _dr48():
 
                             def _dr200():
-
                                 def _fw50():
                                     if spec.get('pools'):
                                         legs = [(pk, bool(zfo)) for pk, zfo in spec['pools']]
@@ -901,7 +869,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                             return (action_list, settle, swaps)
                         action_list, settle, swaps = _dr48()
                         take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
-
                         def _fw22():
                             params_list = [settle] + swaps + [take]
                             if spec.get('sweep_settle'):
@@ -913,7 +880,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                     commands += bytes([16])
             _dr86()
             if has_v2:
-
                 def _fw53():
                     v2_tokens = [_ck(t) for t in spec['v2_tokens']]
                     inputs.append(_abi_encode(['address', 'uint256', 'uint256', 'address[]', 'bool'], [_ck(recipient), int(_UR_CONTRACT_BALANCE), 0, v2_tokens, False]))
@@ -929,7 +895,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                     if pre_interactions is not None:
                         interactions = pre_interactions + [Interaction(target=ur, value='0', call_data=exec_call, chain_id=chain_id)]
                     else:
-
                         def _fw49():
                             transfer_call = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [ur, int(amount_in)])).hex()
                             interactions = [Interaction(target=tin, value='0', call_data=transfer_call, chain_id=chain_id), Interaction(target=ur, value='0', call_data=exec_call, chain_id=chain_id)]
@@ -959,7 +924,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                 path += bytes.fromhex(_ck(t)[2:])
                 if i < len(fees):
                     path += int(fees[i]).to_bytes(3, 'big')
-
             def _fw21():
                 enc = _abi_encode(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)])
                 call = '0x' + ('b858183f' + enc.hex())
@@ -985,7 +949,6 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
                 path += bytes.fromhex(_ck(t)[2:])
                 if i < len(fees):
                     path += int(fees[i]).to_bytes(3, 'big')
-
             def _fw20():
                 enc = _abi_encode(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)])
                 call = '0x' + ('b858183f' + enc.hex())
@@ -995,6 +958,7 @@ class _MinerSolverDR10(__MinerSolverDR10_fz):
         call = _dr327()
         route_tag = 'uni_v3_path'
         return (router, call, route_tag)
+
 
 def _dr166():
     _MAJOR_HUB_PATHS = {('0x0555e30da8f98308edb960aa94c0db47230d2b9c', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'): (('0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', 100, 500), ('0x4200000000000000000000000000000000000006', 3000, 500)), ('0x0555e30da8f98308edb960aa94c0db47230d2b9c', '0x4200000000000000000000000000000000000006'): (('0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', 100, 500),)}
@@ -1020,7 +984,6 @@ def _dr166():
                 w3 = self._get_quoter_web3(int(chain_id))
                 if w3 is None:
                     return out
-
                 def _fw88():
                     for hub, f1, f2 in paths:
                         m = self._quote_one(w3, 'uniswap_v3', f1, tin, hub, int(amount_in))
@@ -1101,7 +1064,6 @@ class _MinerSolverDR11DR171(_MinerSolverDR10):
         return (router, call, route_tag)
 
 class __MinerSolverDR11_fz(_MinerSolverDR11DR171):
-
     def _shp_aerodrome_slipstream_alt(self, intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id):
         from strategies.dex_aggregator import aerodrome as _aero
         router = cand['router']
@@ -1119,7 +1081,6 @@ class __MinerSolverDR11_fz(_MinerSolverDR11DR171):
         from common.abi_utils import encode_approve
         params = self._normalized_swap_params(intent, state)
         recipient = state.contract_address or params.get('receiver') or state.owner
-
         def _fw47():
             deadline = 9999999999
             if cand['venue'] == 'pancake_v2':
@@ -1199,7 +1160,6 @@ class __MinerSolverDR11_fz(_MinerSolverDR11DR171):
                                                                                             if cand['venue'] == 'aerodrome_slipstream_alt':
                                                                                                 router, call, route_tag = self._shp_aerodrome_slipstream_alt(intent, state, snapshot, cand, tin, tout, amount_in, recipient, deadline, chain_id)
                                                                                             else:
-
                                                                                                 def _fw92():
                                                                                                     from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
                                                                                                     from strategies.dex_aggregator.v3_codec import encode_exact_input_single
@@ -1260,7 +1220,6 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
         import concurrent.futures
         results = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(cands)) as ex:
-
             def _fw14():
                 futs = {ex.submit(self._sweep_simulate_one, w3, app, tin, tout, amount_in, slot_idx, c): c for c in cands}
                 return (futs,)
@@ -1302,7 +1261,6 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
             return (deadline, kind, path, router)
         deadline, kind, path, router = _dr358()
         if kind == 'v2':
-
             def _fw30():
                 spender = router
                 call = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount_in), 0, [_ck(p) for p in path], _ck(app), deadline]).hex()
@@ -1344,12 +1302,10 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
                 slot = '0x' + _kk(_enc(['address', 'uint256'], [_ck(app), int(slot_idx)])).hex()
 
                 def _dr255():
-
                     def _fw3():
                         bal_hex = '0x' + (int(amount_in) * 2).to_bytes(32, 'big').hex()
                         return (bal_hex,)
                     bal_hex, = _fw3()
-
                     def _an1():
                         return w3.provider.make_request('eth_simulateV1', [{'blockStateCalls': [{'stateOverrides': {_ck(tin): {'stateDiff': {slot: bal_hex}}, _ck(app): {'balance': '0x' + (10 ** 18).to_bytes(32, 'big').hex()}}, 'calls': [{'from': _ck(app), 'to': _ck(tin), 'data': appr}, {'from': _ck(app), 'to': _ck(target), 'data': call}]}], 'validation': False, 'traceTransfers': False}, 'latest'])
                     res = _an1()
@@ -1364,7 +1320,6 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
                         def _dr219():
                             transfer_sig = '0x' + _kk(text='Transfer(address,address,uint256)').hex()
                             delivered = 0
-
                             def _match(lg):
                                 return lg.get('address', '').lower() == tout.lower() and lg['topics'][0] == transfer_sig and (lg['topics'][2][-40:] == app[2:].lower())
                             for lg in calls[-1].get('logs', []):
@@ -1409,15 +1364,12 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
             for (tgt, cd, kind, tag, route), (ok, ret) in zip(jobs, results):
                 if not ok or not ret:
                     continue
-
                 def _fw5(mav_pools=mav_pools):
                     out = 0
-
                     def _fw1(out=out, mav_pools=mav_pools):
                         try:
                             if kind == 'v3':
                                 out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], ret)[0])
-
                             def _fw2(out=out, mav_pools=mav_pools):
                                 if kind == 'path':
                                     out = int(_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], ret)[0])
@@ -1432,7 +1384,7 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
                                     return (1, (3, None, out, mav_pools), out, mav_pools)
                                 return (0, None, out, mav_pools)
                             _fwr2 = _fw2()
-                            out, mav_pools = (_fwr2[2], _fwr2[3])
+                            out, mav_pools = _fwr2[2], _fwr2[3]
                             if _fwr2[0]:
                                 if _fwr2[0] == 1:
                                     return _fwr2[1]
@@ -1440,7 +1392,7 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
                             return (3, None, out, mav_pools)
                         return (0, None, out, mav_pools)
                     _fwr1 = _fw1()
-                    out, mav_pools = (_fwr1[2], _fwr1[3])
+                    out, mav_pools = _fwr1[2], _fwr1[3]
                     return (out, _fwr1, mav_pools)
                 out, _fwr1, mav_pools = _fw5()
                 if _fwr1[0]:
@@ -1465,7 +1417,6 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
     def _swq_mav(self, mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, mc, _extras, extra_best, extra_tag, extra_route):
         if mav_pools:
             token_a_in = tin.lower() == lo.lower()
-
             def _fw16():
                 tick = 2147483647 if token_a_in else -2147483648
                 mjobs = [(_SWEEP_MAV_Q, calc + _enc(['address', 'uint128', 'bool', 'bool', 'int32'], [_ck(pool), int(amount_in), token_a_in, False, tick]), 'mav', 'maverick-direct', ('maverick', (pool, token_a_in), [tin, tout])) for pool in mav_pools]
@@ -1479,7 +1430,6 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
                         if not ok or not ret:
                             continue
                         try:
-
                             def _fw1():
                                 out = int(_dec(['uint256', 'uint256', 'uint256'], ret)[1])
                                 return (out,)
@@ -1505,12 +1455,10 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
 
             def _dr108():
                 nonlocal f
-
                 def _fw16():
                     sp = _kk(text='quoteExactInput(bytes,uint256)')[:4]
                     av2 = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
                     lk = _kk(text='lookup(address,address,uint256,uint256)')[:4]
-
                     def _fw74():
                         calc = _kk(text='calculateSwap(address,uint128,bool,bool,int32)')[:4]
                         agg3 = _kk(text='aggregate3((address,bool,bytes)[])')[:4]
@@ -1550,7 +1498,6 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
         for f in (100, 500, 2500, 10000):
             jobs.append((_SWEEP_PAN_Q, enc_v3(tin, tout, amount_in, f), 'v3', 'reach', None))
         for tk in (1, 50, 100, 200, 2000):
-
             def _fw57():
                 jobs.append((_SWEEP_AERO_Q, enc_v3(tin, tout, amount_in, tk, tick=True), 'v3', 'reach', None))
             _fw57()
@@ -1569,7 +1516,6 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
                         def _dr221():
                             for name, router in _SWEEP_V2_ROUTERS:
                                 jobs.append((router, enc_v2([tin, tout], amount_in), 'v2', f'{name}-direct', ('v2', router, [tin, tout])))
-
                                 def _fw48():
                                     if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
                                         jobs.append((router, enc_v2([tin, _SWEEP_WETH, tout], amount_in), 'v2', f'{name}-viaWETH', ('v2', router, [tin, _SWEEP_WETH, tout])))
@@ -1581,7 +1527,6 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
                     uni_v2 = _dr16()
                     if _SWEEP_VIRTUAL not in (tin, tout):
                         jobs.append((uni_v2, enc_v2([tin, _SWEEP_VIRTUAL, tout], amount_in), 'v2', 'uniV2-viaVIRTUAL', ('v2', uni_v2, [tin, _SWEEP_VIRTUAL, tout])))
-
                         def _fw69():
                             if tin != _SWEEP_WETH and tout != _SWEEP_WETH:
                                 jobs.append((uni_v2, enc_v2([tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout], amount_in), 'v2', 'uniV2-WETH-VIRTUAL', ('v2', uni_v2, [tin, _SWEEP_WETH, _SWEEP_VIRTUAL, tout])))
@@ -1601,9 +1546,7 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
                     raw = w3.eth.call({'to': _ck(self._MC3), 'data': '0x' + data.hex(), 'gas': 45000000})
                     return _dec(['(bool,bytes)[]'], raw)[0]
                 results = mc(jobs)
-
                 def _fw30():
-
                     def _fw12():
                         reach_best, extra_best, extra_tag, extra_route, _extras, mav_pools = self._swq_parse(jobs, results, _dec)
                         extra_best, extra_tag, extra_route = self._swq_mav(mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, mc, _extras, extra_best, extra_tag, extra_route)
@@ -1653,6 +1596,7 @@ class _MinerSolverDR11(__MinerSolverDR11_fz):
         route_tag = 'aerodrome_slipstream_multihop'
         return (router, call, route_tag)
 
+
 class _MinerSolverDR56(_MinerSolverDR11):
 
     def generate_plan(self, intent, state, snapshot=None):
@@ -1678,7 +1622,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
 
             def _dr136():
                 nonlocal ck
-
                 def _fw12():
                     p = self._normalized_swap_params(intent, state)
                     recip = state.contract_address or p.get('receiver') or getattr(state, 'owner', '')
@@ -1727,7 +1670,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
         if plan is None:
             return plan
         try:
-
             def _fw85():
                 old = plan.metadata or {}
                 cid = old.get('chain_id')
@@ -1758,7 +1700,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
             def _dr275():
                 amount_in = int(params.get('input_amount', 0) or 0)
                 amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-
                 def _fw42():
                     min_out = int(params.get('min_output_amount', 0) or 0)
                     chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
@@ -1827,9 +1768,7 @@ class _MinerSolverDR56(_MinerSolverDR11):
             def _dr171():
 
                 def _fwg():
-
                     def _dr32():
-
                         def _fw41():
                             tin = str(params.get('input_token', '') or '')
                             tout = str(params.get('output_token', '') or '')
@@ -1865,7 +1804,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
                         cand = {'venue': 'pancake_v3', 'param': int(param), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
                     _dr100()
                 elif kind == 'sushi_v3':
-
                     def _fw5():
                         cand = {'venue': 'sushi_v3', 'param': int(param), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
                         return (cand,)
@@ -1873,114 +1811,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 else:
 
                     def _dr123():
-
-                        def _dz15():
-                            if kind == 'hydrex' or kind == 'quickswap':
-
-                                def _fwq():
-                                    if kind == 'hydrex':
-
-                                        def _dr68():
-                                            nonlocal cand
-                                            if param is not None and tin.lower() not in {a.lower() for a in param}:
-                                                return None
-                                            cand = {'venue': 'hydrex_algebra', 'param': 'hydrex', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
-                                            return _DR_UNSET
-                                        _dr69 = _dr68()
-                                        if _dr69 is not _DR_UNSET:
-                                            return (_dr69,)
-                                    else:
-
-                                        def _dr78():
-                                            nonlocal cand
-                                            if param is not None and tin.lower() not in {a.lower() for a in param}:
-                                                return None
-                                            cand = {'venue': 'quickswap_algebra', 'param': 'quickswap', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
-                                            return _DR_UNSET
-                                        _dr79 = _dr78()
-                                        if _dr79 is not _DR_UNSET:
-                                            return (_dr79,)
-                                _fwqr = _fwq()
-                                if _fwqr is not None:
-                                    return (_fwqr[0],)
-                            elif kind == 'v2_router':
-                                router_addr, verified_input = (param[0], param[1])
-
-                                def _dr44():
-                                    nonlocal cand
-                                    if tin.lower() != verified_input.lower():
-                                        return None
-                                    tokens = (tin, param[2], tout) if len(param) > 2 else (tin, tout)
-                                    cand = {'venue': 'v2_fork', 'router': router_addr, 'tokens': tokens, 'param': router_addr, 'out': max(min_out, 1), 'gas_est': 150000 * (len(tokens) - 1), 'gas_model': 350000 + 150000 * (len(tokens) - 1)}
-                                    return _DR_UNSET
-                                _dr45 = _dr44()
-                                if _dr45 is not _DR_UNSET:
-                                    return (_dr45,)
-                            else:
-
-                                def _dr19():
-                                    nonlocal cand, verified_input
-                                    if kind == 'alien_v3':
-                                        fee_tier, verified_input = param
-                                        if tin.lower() != verified_input.lower():
-                                            return None
-                                        cand = {'venue': 'alien_v3', 'param': int(fee_tier), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
-                                    else:
-
-                                        def _dr338():
-                                            nonlocal cand
-                                            if kind == 'equalizer':
-                                                if param is not None and tin.lower() not in {a.lower() for a in param}:
-                                                    return None
-                                                cand = {'venue': 'equalizer', 'param': 'equalizer', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': 350000 + 200000}
-                                            else:
-
-                                                def _dr5():
-                                                    nonlocal cand, verified_input
-                                                    if kind == 'aero_v2':
-                                                        hub = None
-                                                        leg1_stable = False
-                                                        if len(param) == 4:
-                                                            factory_addr, verified_input, hub, leg1_stable = param
-                                                        else:
-
-                                                            def _dr357():
-                                                                nonlocal factory_addr, hub, verified_input
-                                                                if len(param) == 3:
-                                                                    factory_addr, verified_input, hub = param
-                                                                else:
-                                                                    factory_addr, verified_input = param
-                                                            _dr357()
-                                                        if tin.lower() != verified_input.lower():
-                                                            return None
-
-                                                        def _fw79():
-
-                                                            def _dr242():
-                                                                if hub is not None:
-                                                                    routes = ((tin, hub, bool(leg1_stable), factory_addr), (hub, tout, False, factory_addr))
-                                                                else:
-                                                                    routes = ((tin, tout, False, factory_addr),)
-                                                                return routes
-                                                            routes = _dr242()
-                                                            cand = {'venue': 'aerodrome_v2', 'routes': routes, 'param': factory_addr, 'out': max(min_out, 1), 'gas_est': 180000 * len(routes), 'gas_model': 350000 + 180000 * len(routes)}
-                                                            return (cand,)
-                                                        cand, = _fw79()
-                                                    else:
-                                                        return None
-                                                    return _DR_UNSET
-                                                _dr6 = _dr5()
-                                                if _dr6 is not _DR_UNSET:
-                                                    return _dr6
-                                            return _DR_UNSET
-                                        _dr339 = _dr338()
-                                        if _dr339 is not _DR_UNSET:
-                                            return _dr339
-                                    return _DR_UNSET
-                                _dr20 = _dr19()
-                                if _dr20 is not _DR_UNSET:
-                                    return (_dr20,)
-                            return _DR_UNSET
                         if kind == 'maverick':
 
                             def _dr54():
@@ -1991,15 +1821,114 @@ class _MinerSolverDR56(_MinerSolverDR11):
                                 if cap and amount_in > cap and (min_out <= 1):
                                     cand['spend_amount'] = int(cap)
                             _dr54()
+                        elif kind == 'hydrex' or kind == 'quickswap':
+
+                            def _fwq():
+                                if kind == 'hydrex':
+
+                                    def _dr68():
+                                        nonlocal cand
+                                        if param is not None and tin.lower() not in {a.lower() for a in param}:
+                                            return None
+                                        cand = {'venue': 'hydrex_algebra', 'param': 'hydrex', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
+                                        return _DR_UNSET
+                                    _dr69 = _dr68()
+                                    if _dr69 is not _DR_UNSET:
+                                        return (_dr69,)
+                                else:
+
+                                    def _dr78():
+                                        nonlocal cand
+                                        if param is not None and tin.lower() not in {a.lower() for a in param}:
+                                            return None
+                                        cand = {'venue': 'quickswap_algebra', 'param': 'quickswap', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': _OFFSET_UNI + 200000}
+                                        return _DR_UNSET
+                                    _dr79 = _dr78()
+                                    if _dr79 is not _DR_UNSET:
+                                        return (_dr79,)
+                            _fwqr = _fwq()
+                            if _fwqr is not None:
+                                return _fwqr[0]
+                        elif kind == 'v2_router':
+                            router_addr, verified_input = (param[0], param[1])
+
+                            def _dr44():
+                                nonlocal cand
+                                if tin.lower() != verified_input.lower():
+                                    return None
+                                tokens = (tin, param[2], tout) if len(param) > 2 else (tin, tout)
+                                cand = {'venue': 'v2_fork', 'router': router_addr, 'tokens': tokens, 'param': router_addr, 'out': max(min_out, 1), 'gas_est': 150000 * (len(tokens) - 1), 'gas_model': 350000 + 150000 * (len(tokens) - 1)}
+                                return _DR_UNSET
+                            _dr45 = _dr44()
+                            if _dr45 is not _DR_UNSET:
+                                return _dr45
                         else:
-                            _r_dz15 = _dz15()
-                            if _r_dz15 is not _DR_UNSET:
-                                return _r_dz15[0]
+
+                            def _dr19():
+                                nonlocal cand, verified_input
+                                if kind == 'alien_v3':
+                                    fee_tier, verified_input = param
+                                    if tin.lower() != verified_input.lower():
+                                        return None
+                                    cand = {'venue': 'alien_v3', 'param': int(fee_tier), 'out': max(min_out, 1), 'gas_est': 160000, 'gas_model': _OFFSET_UNI + 160000}
+                                else:
+
+                                    def _dr338():
+                                        nonlocal cand
+                                        if kind == 'equalizer':
+                                            if param is not None and tin.lower() not in {a.lower() for a in param}:
+                                                return None
+                                            cand = {'venue': 'equalizer', 'param': 'equalizer', 'out': max(min_out, 1), 'gas_est': 200000, 'gas_model': 350000 + 200000}
+                                        else:
+
+                                            def _dr5():
+                                                nonlocal cand, verified_input
+                                                if kind == 'aero_v2':
+                                                    hub = None
+                                                    leg1_stable = False
+                                                    if len(param) == 4:
+                                                        factory_addr, verified_input, hub, leg1_stable = param
+                                                    else:
+
+                                                        def _dr357():
+                                                            nonlocal factory_addr, hub, verified_input
+                                                            if len(param) == 3:
+                                                                factory_addr, verified_input, hub = param
+                                                            else:
+                                                                factory_addr, verified_input = param
+                                                        _dr357()
+                                                    if tin.lower() != verified_input.lower():
+                                                        return None
+
+                                                    def _fw79():
+                                                        def _dr242():
+                                                            if hub is not None:
+                                                                routes = ((tin, hub, bool(leg1_stable), factory_addr), (hub, tout, False, factory_addr))
+                                                            else:
+                                                                routes = ((tin, tout, False, factory_addr),)
+                                                            return routes
+                                                        routes = _dr242()
+                                                        cand = {'venue': 'aerodrome_v2', 'routes': routes, 'param': factory_addr, 'out': max(min_out, 1), 'gas_est': 180000 * len(routes), 'gas_model': 350000 + 180000 * len(routes)}
+                                                        return (cand,)
+                                                    cand, = _fw79()
+                                                else:
+                                                    return None
+                                                return _DR_UNSET
+                                            _dr6 = _dr5()
+                                            if _dr6 is not _DR_UNSET:
+                                                return _dr6
+                                        return _DR_UNSET
+                                    _dr339 = _dr338()
+                                    if _dr339 is not _DR_UNSET:
+                                        return _dr339
+                                return _DR_UNSET
+                            _dr20 = _dr19()
+                            if _dr20 is not _DR_UNSET:
+                                return _dr20
                         return _DR_UNSET
                     _dr170 = _dr123()
                     if _dr170 is not _DR_UNSET:
                         return _dr170
-
                 def _fwb():
                     return (self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amount_in, chain_id),)
                 return _fwb()[0]
@@ -2108,7 +2037,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
                                     return None
 
                                 def _fw17():
-
                                     def _dr269():
                                         if hub is not None:
                                             routes = ((tin, hub, bool(leg1_stable), factory_addr), (hub, tout, False, factory_addr))
@@ -2178,7 +2106,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
                                             def _dr306():
                                                 if kind == 'erc4626_wrap':
                                                     return self._erc4626_wrap_plan(intent, state, snapshot, tin, tout, amount_in, chain_id)
-
                                                 def _fw91():
                                                     if kind == 'sky_psm':
                                                         return (self._sky_psm_plan(intent, state, tin, tout, amount_in, chain_id),)
@@ -2225,7 +2152,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
             def _dr277():
                 amount_in = int(params.get('input_amount', 0) or 0)
                 amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-
                 def _fw40():
                     min_out = int(params.get('min_output_amount', 0) or 0)
                     chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
@@ -2276,7 +2202,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
             deadline = 9999999999
 
             def _dr172():
-
                 def _fw28():
                     xfer = '0x' + ('a9059cbb' + _enc(['address', 'uint256'], [_ck(pool_addr), int(amount_in)]).hex())
                     tick_limit = 2147483647 if token_a_in else -2147483648
@@ -2302,7 +2227,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
             from common.abi_utils import encode_approve
             from eth_abi import encode as _enc, decode as _dec
             from eth_utils import keccak as _kk, to_checksum_address as _ck
-
             def _fw10():
                 from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
                 from strategies.dex_aggregator.v3_codec import encode_exact_input_single
@@ -2325,7 +2249,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 sel = _dr207()
                 for fee in (500, 3000):
                     try:
-
                         def _fw8():
                             path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
                             d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
@@ -2352,7 +2275,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
                     leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=pool_addr, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
 
                     def _dr208():
-
                         def _fw65():
                             tick_limit = 2147483647 if token_a_in else -2147483648
                             mav = '0x' + ('3eece7db' + _enc(['address', '(uint256,bool,bool,int32)', 'bytes'], [_ck(recipient), (int(mav_in), bool(token_a_in), False, tick_limit), b'']).hex())
@@ -2389,7 +2311,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
             from strategies.dex_aggregator.v3_codec import encode_exact_input_single
             if tin.lower() == _WETH:
                 return None
-
             def _fw9():
                 w3 = self._get_web3(int(chain_id))
                 uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
@@ -2408,7 +2329,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 sel = _dr210()
                 for fee in (500, 3000):
                     try:
-
                         def _fw7():
                             path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
                             d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
@@ -2436,7 +2356,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
 
                     def _dr226():
                         dep = '0x' + ('6e553f65' + _enc(['uint256', 'address'], [int(dep_in), _ck(recipient)]).hex())
-
                         def _fw76():
                             ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=_WETH, value='0', call_data=encode_approve(tout, dep_in), chain_id=chain_id), Interaction(target=tout, value='0', call_data=dep, chain_id=chain_id)]
                             return (ix,)
@@ -2470,7 +2389,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
 
             def _dr256():
                 swap = '0x' + ('1a019e37' + _enc(['address', 'address', 'uint256', 'uint256', 'address', 'uint256'], [_ck(tin), _ck(tout), int(amount_in), 0, _ck(recipient), 0]).hex())
-
                 def _fw39():
                     deadline = 9999999999
                     ix = [Interaction(target=tin, value='0', call_data=encode_approve(_SKY_PSM3, amount_in), chain_id=chain_id), Interaction(target=_SKY_PSM3, value='0', call_data=swap, chain_id=chain_id)]
@@ -2493,7 +2411,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
         if cid in self._web3_cache:
             return self._web3_cache[cid]
         rpc_url = self._rpc_urls.get(cid)
-
         def _fw64():
             if not rpc_url:
                 return (None,)
@@ -2533,7 +2450,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
                     pass
             if cid in cache:
                 return cache[cid]
-
             def _fw38():
                 rpc_url = self._rpc_urls.get(cid)
                 if not rpc_url:
@@ -2591,7 +2507,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
         """
         if not _NET_WETH_PLATFORM_FEE or amount_in <= 0 or str(tin).lower() != _WETH:
             return amount_in
-
         def _fw82():
             try:
                 fee = int(params.get('platform_fee_wei', 0) or 0)
@@ -2614,7 +2529,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
             from eth_utils import keccak as _kk, to_checksum_address as _ck
             if int(amount_in) <= 0:
                 return None
-
             def _fw97():
                 w3 = self._get_web3(int(chain_id))
                 if w3 is None:
@@ -2660,7 +2574,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
             from eth_utils import keccak as _kk, to_checksum_address as _ck
             if int(amount_in) <= 0:
                 return None
-
             def _fw96():
                 w3 = self._get_web3(int(chain_id))
                 if w3 is None:
@@ -2717,7 +2630,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
                     path += bytes.fromhex(addr[2:] if addr.startswith('0x') else addr)
                     if i < len(tick_spacings):
                         path += (int(tick_spacings[i]) & 16777215).to_bytes(3, byteorder='big')
-
                 def _fw10():
                     sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
                     payload = _enc(['bytes', 'uint256'], [path, int(amount_in)])
@@ -2725,7 +2637,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
                     def _dr124():
                         raw = w3.eth.call({'to': _ck(_AERO_QUOTER), 'data': '0x' + (sel + payload).hex()})
                         out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)
-
                         def _fw4():
                             if int(out) <= 0:
                                 return (None,)
@@ -2752,7 +2663,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
             from eth_utils import keccak as _kk, to_checksum_address as _ck
             if int(amount_in) <= 0:
                 return None
-
             def _fw15():
                 w3 = self._get_web3(int(chain_id))
                 if w3 is None:
@@ -2821,7 +2731,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
         _dr139 = _dr138()
         if _dr139 is not _DR_UNSET:
             return _dr139
-
         def _fw13():
             if len(route) >= 3 and route[2] == 'pancake':
                 cand = self._quote_pancake_path_candidate(chain_id, route[0], route[1], amount_in)
@@ -2869,7 +2778,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
             w3 = self._get_quoter_web3(int(chain_id))
             if w3 is None:
                 return cands
-
             def _fw25():
                 for hub in self._XHOP_STABLES:
                     if hub in (tl, ol):
@@ -2901,7 +2809,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
         def _dr270():
             app = state.contract_address or params.get('receiver') or state.owner
             deadline = 9999999999
-
             def _fw61():
                 hub, l1, l2 = (cand['hub'], cand['leg1'], cand['leg2'])
 
@@ -2911,7 +2818,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
 
                     def _dr271():
                         r2, c2 = self._encode_v3_leg(l2['venue'], l2['param'], hub, tout, amount_in2, app, deadline, chain_id)
-
                         def _fw87():
                             interactions = [Interaction(target=tin, value='0', call_data=encode_approve(r1, amount_in), chain_id=chain_id), Interaction(target=r1, value='0', call_data=c1, chain_id=chain_id), Interaction(target=hub, value='0', call_data=encode_approve(r2, amount_in2), chain_id=chain_id), Interaction(target=r2, value='0', call_data=c2, chain_id=chain_id)]
                             return (interactions,)
@@ -2952,7 +2858,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
                         if len(top) == 2:
                             break
                     return top
-
                 def _pre():
                     top = _dr144()
                     if len(top) < 2:
@@ -2977,7 +2882,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
                     def _dr215():
                         quotes: dict[tuple, int] = {}
                         with concurrent.futures.ThreadPoolExecutor(max_workers=len(jobs)) as ex:
-
                             def _fw37():
                                 futs = {ex.submit(self._quote_one, w3, v['venue'], v['param'], tin, tout, a): (v['venue'], a) for v, a in jobs}
                                 for f in concurrent.futures.as_completed(futs):
@@ -3028,7 +2932,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
             return None
 
     def _build_split_plan(self, intent, state, snapshot, legs, tin, tout, amount_in, chain_id, exp_out, ref_out):
-
         def _fw15():
             from common.abi_utils import encode_approve
             params = self._normalized_swap_params(intent, state)
@@ -3037,7 +2940,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
                 recipient = state.contract_address or params.get('receiver') or state.owner
                 deadline = 9999999999
                 interactions = []
-
                 def _fw36():
                     for venue, param, amt in legs:
                         router, call = self._encode_v3_leg(venue, param, tin, tout, amt, recipient, deadline, chain_id)
@@ -3061,7 +2963,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
         if not _eth_uni_quoter:
             return []
         import concurrent.futures
-
         def _fw12():
             from eth_abi import encode as _enc, decode as _dec
             from eth_utils import keccak as _kk, to_checksum_address as _ck
@@ -3135,7 +3036,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
                 tj = _ETH_3POOL_IDX.get(tout_l)
                 if ti is None or tj is None or ti == tj:
                     return None
-
                 def _fw24():
                     try:
                         Z = '0x' + '0' * 40
@@ -3143,7 +3043,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
 
                         def _dr152():
                             swap = [[ti, tj, 1, 1, 3]] + [[0, 0, 0, 0, 0]] * 4
-
                             def _fw56():
                                 sel = _kk(text='get_dy(address[11],uint256[5][5],uint256)')[:4]
                                 p = _enc(['address[11]', 'uint256[5][5]', 'uint256'], [route, swap, int(amount_in)])
@@ -3167,7 +3066,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
 
         def _dr151():
             eth_mids = [h for h in _ETH_HUBS if h not in (tin_l, tout_l)]
-
             def _fw11():
                 uni_routes = [((tin, mid, tout), fees) for mid in eth_mids[:3] for fees in _ETH_UNI_FEES_TWOHOP]
                 jobs = [(_quote_eth_uni, f) for f in _ETH_UNI_FEES] + [(_quote_eth_pancake, f) for f in _ETH_UNI_FEES] + [(_quote_eth_uni_multihop, r) for r in uni_routes]
@@ -3194,23 +3092,19 @@ class _MinerSolverDR123(_MinerSolverDR77):
                 except Exception:
                     logger.exception('[solver] eth enumerate concurrent failed; sequential fallback')
                     for fn, arg in jobs:
-
                         def _fw4():
                             c = fn(arg)
                             if c is not None:
                                 cands.append(c)
                             return (c,)
                         c, = _fw4()
-
                 def _fw1():
                     curve_cand = _quote_eth_curve()
                     if curve_cand is not None:
                         cands.append(curve_cand)
                 _fw1()
                 try:
-
                     def _fw1():
-
                         def _v4call(to, data):
                             try:
                                 return w3.eth.call({'to': to, 'data': data})
@@ -3237,7 +3131,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
 
             def _dr290():
                 best_out = max((c['out'] for c in cands))
-
                 def _fw3():
                     bp_out = 0
                     if base_plan is not None:
@@ -3262,7 +3155,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
                         if base_plan is not None and bp_out > 0 and (min_out <= 0 or bp_out >= min_out):
                             if score(bp_out, _OFFSET_UNI + 100000) >= score(best['out'], best['gas_model']):
                                 return base_plan
-
                         def _fw68():
                             if best['venue'] == 'curve_ng':
                                 return (self._build_curve_plan(intent, state, snapshot, best, tin, tout, amount_in, chain_id),)
@@ -3294,7 +3186,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
         delivers exactly the get_dy quote. min_dy=0 — the harness enforces the
         order's min_output at the intent level, so this only removes spurious
         per-swap slippage reverts. No deadline param (Router-NG.exchange has none)."""
-
         def _fw75():
             from common.abi_utils import encode_approve
             from eth_abi import encode as _abi_encode
@@ -3305,7 +3196,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
             Z = '0x' + '0' * 40
 
             def _dr149():
-
                 def _fw9():
                     route = cand['curve_route']
                     swap = cand['curve_swap']
@@ -3328,7 +3218,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
             tin = str(params.get('input_token', '') or '')
 
             def _dr279():
-
                 def _fw23():
                     tout = str(params.get('output_token', '') or '')
                     amount_in = int(params.get('input_amount', 0) or 0)
@@ -3374,7 +3263,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
                     recipient = state.contract_address or params.get('receiver') or state.owner
 
                     def _dr281():
-
                         def _fw78():
                             deadline = 9999999999
                             from common.abi_utils import encode_approve
@@ -3422,7 +3310,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
             changed = False
             for ix in plan.interactions or []:
                 try:
-
                     def _fw4():
                         if int(getattr(ix, 'chain_id', 0) or 0) not in SWAP_ROUTER_V2_CHAINS:
                             return ('c',)
@@ -3431,7 +3318,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
                             return ('c',)
                     if _fw4() is not None:
                         continue
-
                     def _fw72():
                         cd = ix.call_data or ''
                         raw = bytes.fromhex(cd[2:] if cd.startswith('0x') else cd)
@@ -3472,7 +3358,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
             from strategies.dex_aggregator.v3_codec import encode_exact_input_single
             if tin.lower() == _WETH:
                 return None
-
             def _fw8():
                 w3 = self._get_web3(int(chain_id))
                 uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
@@ -3491,7 +3376,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                 sel = _dr212()
                 for fee in (500, 3000):
                     try:
-
                         def _fw6():
                             path = bytes.fromhex(_ck(tin)[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_ck(_WETH)[2:])
                             d = sel + _enc(['bytes', 'uint256'], [path, int(amount_in)])
@@ -3517,7 +3401,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                     def _dr199():
                         recipient = state.contract_address or params.get('receiver') or state.owner
                         deadline = 9999999999
-
                         def _fw55():
                             leg1 = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient='0x0000000000000000000000000000000000000001', deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
                             xchg = '0x' + (_kk(text='exchange(int128,int128,uint256,uint256,address)')[:4] + _enc(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(i), int(j), int(dx), 0, _ck(recipient)])).hex()
@@ -3559,7 +3442,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                             path += bytes.fromhex(_ck(t)[2:])
                             if i < len(fees):
                                 path += int(fees[i]).to_bytes(3, 'big')
-
                         def _fw18():
                             d = _kk(text='quoteExactInput(bytes,uint256)')[:4] + _enc(['bytes', 'uint256'], [path, int(amount_in)])
                             r = w3.eth.call({'to': _ck(_UNI_QUOTER), 'data': '0x' + d.hex()})
@@ -3581,7 +3463,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
 
             def _av2_quote(routes):
                 try:
-
                     def _fw67():
                         d = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), [(_ck(a), _ck(b), bool(s), _ck(_ZERO)) for a, b, s in routes]])
                         return (d,)
@@ -3596,7 +3477,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                 best = max(quotes, key=lambda k: quotes[k])
                 if quotes[best] <= 0:
                     return default
-
                 def _fw81():
                     if best == 'v3d':
                         return (default,)
@@ -3624,7 +3504,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
             def _dr262():
                 amount_in = int(params.get('input_amount', 0) or 0)
                 amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
-
                 def _fw8():
                     min_out = int(params.get('min_output_amount', 0) or 0)
                     chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
@@ -3655,7 +3534,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 return DiscoveryEngine(_call).discover(chain_id, tin.lower(), tout.lower(), amount_in, min_out)
                             cands = self._bounded_call(_run, timeout=8.0) or []
                             cands = [c for c in cands if c.get('out', 0) > 0]
-
                             def _fw17():
                                 if not cands:
                                     return (None,)
@@ -3701,7 +3579,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                 nonlocal plan
 
                 def _dr317():
-
                     def _fw27():
                         try:
                             _p1 = self._normalized_swap_params(intent, state)
@@ -3737,7 +3614,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                         logger.exception('[sweep] universal sweep failed; normal path')
 
                     def _fw60():
-
                         def _dr243():
                             _dyn = getattr(self, '_dyn_order_budget', None)
                             _sel_to = _SELECT_BUDGET_S if _dyn is None else min(_SELECT_BUDGET_S, _dyn)
@@ -3763,7 +3639,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                     return _dr23
                 plan = self._fix_multihop_v2(plan)
                 return _DR_UNSET
-
             def _fw3():
                 _dr71 = _dr70()
                 if _dr71 is not _DR_UNSET:
@@ -3778,7 +3653,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
 
                                 def _dr38():
                                     nonlocal _empty
-
                                     def _fw16():
                                         _p5 = self._normalized_swap_params(intent, state)
                                         _t0, _t1 = (str(_p5.get('input_token', '')), str(_p5.get('output_token', '')))
@@ -3854,7 +3728,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
         (missing tokens, non-positive amount, cross-chain eip155 address, or no
         router for the chain)."""
         params = self._normalized_swap_params(intent, state)
-
         def _fw71():
             tin = str(params.get('input_token', '') or '')
             tout = str(params.get('output_token', '') or '')
@@ -3882,7 +3755,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                     recipient = state.contract_address or params.get('receiver') or state.owner
 
                     def _dr301():
-
                         def _fw52():
                             deadline = 9999999999
                             interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=3000, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
@@ -3930,7 +3802,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
 
         def _dr248():
             from eth_utils import keccak as _kk, to_checksum_address as _ck
-
             def _fw29():
                 uni_sel = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
                 uni_exact_sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
@@ -4021,7 +3892,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                         def _dr283():
                             r = w3.eth.call({'to': _ck(_AERO_QUOTER), 'data': '0x' + (uni_exact_sel + p).hex()})
                             out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)
-
                             def _fw35():
                                 if int(out) > 0:
                                     ticks = tuple((int(t) for t in tick_spacings))
@@ -4083,7 +3953,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                             def _dr192():
                                 r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': '0x' + (aero_v2_sel + p).hex()})
                                 amounts = _dec(['uint256[]'], r)[0]
-
                                 def _fw2():
                                     if amounts:
                                         out = int(amounts[-1])
@@ -4104,7 +3973,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                         return self._quote_pancake_v2_path_candidate(chain_id, tokens, amount_in)
 
                     def _twohop_mids():
-
                         def _fw77():
                             tin_l, tout_l = (str(tin).lower(), str(tout).lower())
                             majors = {_WETH, _USDC, _DAI, _CBBTC, _USDBC}
@@ -4136,7 +4004,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                     if tin_l == _DAI and tout_l == _USDC:
                                         for token in (_USDBC, _WETH):
                                             add(token)
-
                                     def _fw15():
                                         if tin_l == _CBBTC and tout_l in {_WETH, _USDC}:
                                             add(_USDC)
@@ -4172,7 +4039,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                         tout_l = str(tout).lower()
                         if str(tin).lower() == _USDC and str(tout).lower() == _DAI and (int(amount_in) <= 10000):
                             pancake_v2_routes.append((tin, _WETH, tout))
-
                         def _fw22():
                             if tin_l == _USDC and tout_l == _WETH:
                                 pancake_routes.extend([((tin, _USDBC, tout), (100, 100)), ((tin, _DAI, tout), (100, 500)), ((tin, _USDBC, tout), (100, 2500))])
@@ -4182,7 +4048,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                 _quote_aero_v2, _quote_pancake, _quote_pancake_multihop, _quote_pancake_v2_path, core_v2_routes, extra_v2_routes, pancake_routes, pancake_v2_routes, twohop_mids = _dr42()
                 if not (str(tin).lower() == _WETH and str(tout).lower() == _DAI):
                     for stable in (False, True):
-
                         def _fw7():
                             core_v2_routes.append(((tin, tout, stable, _ZERO),))
                         _fw7()
@@ -4218,7 +4083,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
 
             def _dr133():
                 _kg_pair = str(tin).lower() in _KG_SET and str(tout).lower() in _KG_SET
-
                 def _fw66():
                     _mh_fees = _UNI_KG_TWOHOP_FEES if _kg_pair else _UNI_TWOHOP_FEES
                     _mh_ticks = _AERO_KG_TWOHOP_TICKS if _kg_pair else _AERO_TWOHOP_TICKS
@@ -4243,7 +4107,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                     aero_routes.extend([((tin, mid, tout), ticks) for ticks in _mh_ticks])
 
             def _dr272():
-
                 def _fw54():
                     extra_jobs = [(_quote_aero_v2, r) for r in extra_v2_routes] + [(_quote_uni_multihop, r) for r in uni_routes] + [(_quote_aero_multihop, r) for r in aero_routes] + [(_quote_pancake_multihop, r) for r in []]
 
@@ -4258,7 +4121,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
                                     futs = [ex.submit(fn, arg) for fn, arg in jobs]
                                     for fu in concurrent.futures.as_completed(futs):
-
                                         def _fw26():
                                             try:
                                                 c = fu.result()
@@ -4314,7 +4176,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
             from eth_utils import keccak as _kk, to_checksum_address as _ck
             uni_sel = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
             aero_sel = _kk(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
-
             def _fw34():
                 av2_sel = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
 
@@ -4375,7 +4236,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                         normalized = [(_ck(a), _ck(b), bool(s), _ck(f)) for a, b, s, f in routes]
 
                         def _dr231():
-
                             def _fw70():
                                 p = _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), normalized])
                                 r = w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': '0x' + (av2_sel + p).hex()})
@@ -4404,7 +4264,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                             with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
                                 futs = [ex.submit(fn, arg) for fn, arg in jobs]
                                 for fu in concurrent.futures.as_completed(futs):
-
                                     def _fw25():
                                         try:
                                             c = fu.result()
@@ -4433,10 +4292,8 @@ class _MinerSolverDR176(_MinerSolverDR123):
 
         def _dr90():
             tin = str(params.get('input_token', '') or '').lower()
-
             def _fw21():
                 tout = str(params.get('output_token', '') or '').lower()
-
                 def _fw14():
                     amount_in = int(params.get('input_amount', 0) or 0)
                     amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
@@ -4460,7 +4317,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
         _dr190 = _dr189()
         if _dr190 is not _DR_UNSET:
             return _dr190
-
         def _fw11():
             w3 = self._get_web3(chain_id)
             if w3 is None:
@@ -4503,7 +4359,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                 _dyn = getattr(self, '_dyn_order_budget', None)
                 if _dyn is None or _dyn >= _SWEEP_VERIFY_MIN_S:
                     try:
-
                         def _fw6():
                             _ver = self._sweep_verify_pick(w3, state, params, tin, tout, amount_in, min_out, reach)
                             return (_ver,)
@@ -4520,7 +4375,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                         kind, router, path = route
                         if kind == 'v2':
                             return self._sweep_v2_plan(intent, state, snapshot, router, path, amount_in, chain_id)
-
                         def _fw20():
                             if kind == 'sushi_v3':
                                 return (self._sweep_sushi_plan(intent, state, snapshot, path[0], path[1], int(router), amount_in, chain_id),)
@@ -4549,7 +4403,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
             return _fwr11[0]
 
 class _MinerSolver_fz(_MinerSolverDR176):
-
     def _build_2hop_plan(self, intent, state, snapshot, cand, tin, tout, amount_in, chain_id):
         """Cross-venue 2-hop via SwapRouter02 CONTRACT_BALANCE chaining:
           1. approve leg1 router for tin
@@ -4569,7 +4422,6 @@ class _MinerSolver_fz(_MinerSolverDR176):
             hub, l1, l2 = (cand['hub'], cand['leg1'], cand['leg2'])
 
             def _fw28():
-
                 def _dr95():
                     uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
                     if not uni_router:
@@ -4578,7 +4430,6 @@ class _MinerSolver_fz(_MinerSolverDR176):
 
                     def _dr266():
                         leg2_params = _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint160'], [_ck(hub), _ck(tout), int(l2['param']), _ck(app), 0, 0, 0])
-
                         def _fw83():
                             c2 = '0x04e45aaf' + leg2_params.hex()
                             interactions = [Interaction(target=tin, value='0', call_data=encode_approve(r1, amount_in), chain_id=chain_id), Interaction(target=r1, value='0', call_data=c1, chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=c2, chain_id=chain_id)]
@@ -4635,7 +4486,6 @@ class MinerSolver(_MinerSolver_fz):
             def _dr308():
                 tin = str(params.get('input_token', '') or '')
                 tout = str(params.get('output_token', '') or '')
-
                 def _fw19():
                     amount_in = int(params.get('input_amount', 0) or 0)
                     amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
@@ -4656,7 +4506,6 @@ class MinerSolver(_MinerSolver_fz):
 
                         def _dr233():
                             route = pool_math.find_best_route(pool_states, tin, tout, amount_in, intermediaries=mids)
-
                             def _fw95():
                                 if route is None:
                                     return (None,)
@@ -4743,7 +4592,6 @@ class MinerSolver(_MinerSolver_fz):
         try:
 
             def _dr292():
-
                 def _fw90():
                     if venue == 'aerodrome_slipstream':
                         sel = _kk(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
@@ -4784,7 +4632,6 @@ class MinerSolver(_MinerSolver_fz):
             from strategies.dex_aggregator.swap_solver import UNISWAP_V3_ROUTERS
             from strategies.dex_aggregator.v3_codec import encode_exact_input_single
             router = UNISWAP_V3_ROUTERS.get(chain_id)
-
             def _fw18():
                 if not router:
                     raise ValueError('no uniswap router')
@@ -4822,14 +4669,12 @@ class MinerSolver(_MinerSolver_fz):
                 return futs
             futs = _dr258()
             for f in concurrent.futures.as_completed(futs):
-
                 def _fw84():
                     v, p = futs[f]
                     try:
                         o = int(f.result())
                     except Exception:
                         o = 0
-
                     def _fw9(best=best):
                         if o > 0 and (best is None or o > best['out']):
                             best = {'venue': v, 'param': p, 'out': o}
@@ -4850,7 +4695,6 @@ class MinerSolver(_MinerSolver_fz):
             if w3 is None:
                 return cands
             tl, ol = (str(tin).lower(), str(tout).lower())
-
             def _fw24():
                 for hub in self._XHOP_HUBS:
                     if hub in (tl, ol):
@@ -4871,4 +4715,5 @@ class MinerSolver(_MinerSolver_fz):
         _dr337 = _dr336()
         if _dr337 is not _DR_UNSET:
             return _dr337
+
 SOLVER_CLASS = MinerSolver

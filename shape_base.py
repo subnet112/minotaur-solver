@@ -1,3 +1,4 @@
+# champion-baseline re-quote helpers
 import shape_lib as _sl
 
 def _pair_reserves(w3, pair):
@@ -22,7 +23,6 @@ plan's own aero router getAmountsOut, leg2 via the V2 pair's reserves."""
 
         def _dr332(cd1):
             amt_in, _mo, routes, _to, _dl = _dec(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], bytes.fromhex(cd1[10:]))
-
             def _fw1():
                 if len(routes) != 1 or routes[0][0].lower() != tin.lower() or routes[0][1].lower() != spec['base_mid'] or (int(amt_in) != int(amt)) or routes[0][2]:
                     return (False,)
@@ -47,11 +47,11 @@ plan's own aero router getAmountsOut, leg2 via the V2 pair's reserves."""
             res = _pair_reserves(w3, spec['base_pair'])
             rin, rout = (res[0], res[1]) if spec.get('base_mid_is_t0') else (res[1], res[0])
             ai = int(q1) * 997
-            return ai * rout // (rin * 1000 + ai) or None
+            return ((ai * rout) // (rin * 1000 + ai)) or None
 
         def _dr336():
             ixs = _dr331()
-            if not ixs or not _dr332(ixs[0].call_data) or (not _dr333(ixs[1].call_data)):
+            if not ixs or not _dr332(ixs[0].call_data) or not _dr333(ixs[1].call_data):
                 return None
             w3 = s._get_web3(int(chain_id))
             if w3 is None:
@@ -61,6 +61,7 @@ plan's own aero router getAmountsOut, leg2 via the V2 pair's reserves."""
         return _dr336()
     except Exception:
         return None
+
 
 def base_out(s, plan, chain_id):
     """Re-quote the BASE plan's OWN single-venue route live (uni router02
@@ -72,9 +73,8 @@ actually delivers at this block, never a guessed alternative."""
 
         def _dr300():
             swaps = []
-            for it in getattr(plan, 'interactions', None) or []:
+            for it in (getattr(plan, 'interactions', None) or []):
                 cd = str(getattr(it, 'call_data', '') or '')
-
                 def _fw1():
                     body = cd[2:] if cd.startswith('0x') else cd
                     if len(body) < 8 or body[:8].lower() == '095ea7b3':
@@ -89,18 +89,19 @@ actually delivers at this block, never a guessed alternative."""
         target, sel, args = swaps[0]
 
         def _dr301():
-
             def _w(i):
                 return int(args[i * 64:(i + 1) * 64], 16)
-
             def _a(i):
                 return '0x' + args[i * 64 + 24:(i + 1) * 64]
             if sel == '04e45aaf':
                 return s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': _w(2), 'mid': _a(1)}, _a(0), _w(4), chain_id)
             if sel == '414bf389':
+                # 8-field-with-deadline shape is shared by classic-uni AND
+                # pancake routers — quoter chosen by the TARGET router.
                 rtr = 'pancake' if target == '0x1b81d678ffb9c0263b24a97847620c99d213eb14' else 'uni'
                 return s._hydra_quote_leg1({'leg1_router': rtr, 'leg1_fee': _w(2), 'mid': _a(1)}, _a(0), _w(5), chain_id)
             return None
         return _dr301()
     except Exception:
         return None
+

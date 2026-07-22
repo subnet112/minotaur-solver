@@ -189,19 +189,15 @@ def _defs_alt():
 
     def _univ2_best(w3, tin, tout, amt, block):
         """Best v2 route over {UniV2,Sushi} x {direct, via-WETH}. Returns (out, router, path)."""
-
-        def _dz17():
-            nonlocal best
-            paths = [[tin, tout]]
-            if tin != _WETH.lower() and tout != _WETH.lower():
-                paths.append([tin, _WETH.lower(), tout])
-            for router in _V2ROUTERS:
-                for path in paths:
-                    out = _v2_out(w3, router, path, amt, block)
-                    if out > best[0]:
-                        best = (out, router, path)
         best = (0, None, None)
-        _dz17()
+        paths = [[tin, tout]]
+        if tin != _WETH.lower() and tout != _WETH.lower():
+            paths.append([tin, _WETH.lower(), tout])
+        for router in _V2ROUTERS:
+            for path in paths:
+                out = _v2_out(w3, router, path, amt, block)
+                if out > best[0]:
+                    best = (out, router, path)
         return best
 
     def _univ2_ix(router, path, amt, recipient):

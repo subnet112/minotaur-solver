@@ -9,6 +9,7 @@ _VIKING_CACHED_BARS = None
 _VIKING_FROZEN_INDEX = None
 _VIKING_REPLAY_CACHE = None
 
+
 def _v_gated_table():
     """Lazy gated_rows.json — 'tin|tout|amt' -> champion-route-gated row spec
     (own-built routes only; pool params machine-extracted from oracle route
@@ -51,7 +52,6 @@ def _viking_cached_bar(key):
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_cached.json')
             bars: dict = {}
             try:
-
                 def _fw1():
                     data = _json.load(open(path)) or {}
                     for k, v in data.items() if isinstance(data, dict) else []:
@@ -79,7 +79,6 @@ def _viking_frozen_index() -> dict:
         import json as _json
         idx: dict = {}
         here = os.path.dirname(os.path.abspath(__file__))
-
         def _fw2():
             for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
                 try:
@@ -116,7 +115,6 @@ def _viking_replay() -> dict:
             out: dict = {}
             try:
                 data = _json.load(open(path)) or {}
-
                 def _fw3():
                     for key, spec in data.items() if isinstance(data, dict) else []:
                         rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]

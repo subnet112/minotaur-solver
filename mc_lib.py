@@ -4,6 +4,7 @@ import os
 from mc_data import _MC_QUOTER, _MC_PANCAKE_Q
 _MC_DEAD_FILL_CACHE = None
 
+
 def dead_fill():
     """Lazy dead_fill.json — 'tin|tout|amt' keys where BOTH the champion tree
     and our base are executor-sim PROVEN to deliver 0 end-to-end. Treated as
@@ -29,7 +30,6 @@ def base_call(s, base_plan, tin, tout, amt):
     try:
         ix = base_plan.interactions[-1]
         cd = ix.call_data if ix.call_data.startswith('0x') else '0x' + ix.call_data
-
         def _fw1():
             sel = cd[:10]
             body = bytes.fromhex(cd[10:])
