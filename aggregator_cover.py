@@ -24,54 +24,59 @@ An empty/missing table makes this a pure passthrough => safe to wire before any
 harvest exists.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import json as _json
 import logging
 import os as _os
-
 logger = logging.getLogger(__name__)
-
-_TABLE_PATH = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "aggregator_wins.json")
+_TABLE_PATH = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'aggregator_wins.json')
 _TABLE_CACHE = None
 _FAR_DEADLINE = 9999999999
-
 
 def _load_table() -> dict:
     """Lazy, memoized {"chain|tin|tout|amount": {"interactions":[...]}}. Never raises;
     a broken/absent file just disables the layer (passthrough)."""
-    global _TABLE_CACHE
-    if _TABLE_CACHE is None:
-        out: dict = {}
+
+    def _dz7():
         try:
             data = _json.load(open(_TABLE_PATH)) or {}
             if isinstance(data, dict):
                 for k, spec in data.items():
                     try:
-                        ix = (spec or {}).get("interactions")
-                        if ix and str(k).count("|") == 3:
+                        ix = (spec or {}).get('interactions')
+                        if ix and str(k).count('|') == 3:
                             out[str(k).lower()] = spec
                     except Exception:
                         continue
         except FileNotFoundError:
             pass
         except Exception:
-            logger.exception("[aggregator] table parse failed; layer disabled")
+            logger.exception('[aggregator] table parse failed; layer disabled')
+    global _TABLE_CACHE
+    if _TABLE_CACHE is None:
+        out: dict = {}
+        _dz7()
         _TABLE_CACHE = out
     return _TABLE_CACHE
 
-
 def _order_key(state) -> str | None:
-    rp = getattr(state, "raw_params", None) or {}
-    tin = str(rp.get("input_token", "") or "").lower()
-    tout = str(rp.get("output_token", "") or "").lower()
-    try:
-        amt = int(rp.get("input_amount", 0) or 0)
-    except Exception:
-        amt = 0
-    cid = int(getattr(state, "chain_id", 0) or 0)
-    if not (tin.startswith("0x") and tout.startswith("0x") and amt > 0 and cid):
-        return None
-    return f"{cid}|{tin}|{tout}|{amt}"
 
+    def _dz6():
+        try:
+            amt = int(rp.get('input_amount', 0) or 0)
+        except Exception:
+            amt = 0
+        cid = int(getattr(state, 'chain_id', 0) or 0)
+        if not (tin.startswith('0x') and tout.startswith('0x') and (amt > 0) and cid):
+            return (None,)
+        return (f'{cid}|{tin}|{tout}|{amt}',)
+        return _DR_UNSET
+    rp = getattr(state, 'raw_params', None) or {}
+    tin = str(rp.get('input_token', '') or '').lower()
+    tout = str(rp.get('output_token', '') or '').lower()
+    _r_dz6 = _dz6()
+    if _r_dz6 is not _DR_UNSET:
+        return _r_dz6[0]
 
 def wrap(base_cls):
     from minotaur_subnet.shared.types import ExecutionPlan, Interaction
@@ -80,11 +85,39 @@ def wrap(base_cls):
         """Champion + offline-harvested aggregator blind-spot covers (serve-on-empty)."""
 
         def generate_plan(self, intent, state, snapshot=None):
+
+            def _dz4():
+                if base is not None and (getattr(base, 'interactions', None) or []):
+                    return (base,)
+                return _DR_UNSET
+
+            def _dz3(state):
+                cid = int(getattr(state, 'chain_id', 0) or 0)
+                ix = []
+                _r_dz2 = _dz2()
+                return (_r_dz2, cid, ix)
+
+            def _dz2():
+                _r_dz1 = _dz1()
+                if _r_dz1 is not _DR_UNSET:
+                    return (_r_dz1[0],)
+                plan = ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=ix, deadline=_FAR_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'aggregator-cover', 'chain_id': cid, 'src': row.get('src', 'agg')})
+                logger.info('[aggregator] blind-spot cover served src=%s key=%s legs=%d', row.get('src', 'agg'), key, len(ix))
+                return (plan,)
+                return _DR_UNSET
+
+            def _dz1():
+                for r in row['interactions']:
+                    cd = r.get('call_data') or r.get('data')
+                    if not r.get('target') or not cd:
+                        return (base,)
+                    ix.append(Interaction(target=r['target'], value=str(r.get('value', '0') or '0'), call_data=cd, chain_id=int(r.get('chain_id', cid) or cid)))
+                return _DR_UNSET
             base = super().generate_plan(intent, state, snapshot)
             try:
-                # Only ever act where the champion is EMPTY -> drop-safe, no regression.
-                if base is not None and (getattr(base, "interactions", None) or []):
-                    return base
+                _r_dz4 = _dz4()
+                if _r_dz4 is not _DR_UNSET:
+                    return _r_dz4[0]
                 table = _load_table()
                 if not table:
                     return base
@@ -92,26 +125,12 @@ def wrap(base_cls):
                 if not key:
                     return base
                 row = table.get(key)
-                if not (row and row.get("interactions")):
+                if not (row and row.get('interactions')):
                     return base
-                cid = int(getattr(state, "chain_id", 0) or 0)
-                ix = []
-                for r in row["interactions"]:
-                    cd = r.get("call_data") or r.get("data")
-                    if not r.get("target") or not cd:
-                        return base   # malformed row -> stay with the (empty) champion, never guess
-                    ix.append(Interaction(target=r["target"], value=str(r.get("value", "0") or "0"),
-                                          call_data=cd, chain_id=int(r.get("chain_id", cid) or cid)))
-                plan = ExecutionPlan(intent_id=getattr(intent, "app_id", "") or "",
-                                     interactions=ix, deadline=_FAR_DEADLINE,
-                                     nonce=int(getattr(state, "nonce", 0) or 0),
-                                     metadata={"solver": "aggregator-cover", "chain_id": cid,
-                                               "src": row.get("src", "agg")})
-                logger.info("[aggregator] blind-spot cover served src=%s key=%s legs=%d",
-                            row.get("src", "agg"), key, len(ix))
-                return plan
+                _r_dz2, cid, ix = _dz3(state)
+                if _r_dz2 is not _DR_UNSET:
+                    return _r_dz2[0]
             except Exception:
-                logger.exception("[aggregator] cover failed; deferring to champion")
+                logger.exception('[aggregator] cover failed; deferring to champion')
             return base
-
     return AggregatorCoverSolver

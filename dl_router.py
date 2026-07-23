@@ -31,7 +31,7 @@ def _dl_qsingle(url, tin, tout, amt, fee):
 
 def _dl_qpath(url, tokens, fees, amt):
 
-    def _dz13():
+    def _dz20():
         data = _dl_sel('quoteExactInput(bytes,uint256)') + encode(['bytes', 'uint256'], [b, int(amt)]).hex()
         r = _dl_ethcall(url, _ETH_QUOTER, data)
         return (int(r[2:66], 16) if r and len(r) >= 66 else 0,)
@@ -42,9 +42,9 @@ def _dl_qpath(url, tokens, fees, amt):
         b += bytes.fromhex(t[2:])
         if i < len(fees):
             b += int(fees[i]).to_bytes(3, 'big')
-    _r_dz13 = _dz13()
-    if _r_dz13 is not _DR_UNSET:
-        return _r_dz13[0]
+    _r_dz20 = _dz20()
+    if _r_dz20 is not _DR_UNSET:
+        return _r_dz20[0]
 
 def _dl_best_route(url, tin, tout, amt):
     best = (0, None)
@@ -56,18 +56,18 @@ def _dl_best_route(url, tin, tout, amt):
 
 def _dl_eth_ix(tin, tout, amt, recipient, route):
 
-    def _dz12(amt, recipient, route, tin, tout):
+    def _dz19(amt, recipient, route, tin, tout):
         fee = route[1][1]
         swap = _dl_sel('exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))') + encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(tin, tout, int(fee), recipient, 9999999999, amt, 1, 0)]).hex()
         return (fee, swap)
 
-    def _dz11(amt, route):
+    def _dz18(amt, route):
         amt = int(amt)
         approve = '0x095ea7b3' + _ETH_ROUTER[2:].rjust(64, '0').lower() + amt.to_bytes(32, 'big').hex()
         kind = route[1][0]
         return (amt, approve, kind)
 
-    def _dz10():
+    def _dz17():
         nonlocal swap
         b = b''
         for i, t in enumerate(tokens):
@@ -76,18 +76,18 @@ def _dl_eth_ix(tin, tout, amt, recipient, route):
                 b += int(fees[i]).to_bytes(3, 'big')
         swap = _dl_sel('exactInput((bytes,address,uint256,uint256,uint256))') + encode(['(bytes,address,uint256,uint256,uint256)'], [(b, recipient, 9999999999, amt, 1)]).hex()
     from eth_abi import encode
-    amt, approve, kind = _dz11(amt, route)
+    amt, approve, kind = _dz18(amt, route)
     if kind == 'single':
-        fee, swap = _dz12(amt, recipient, route, tin, tout)
+        fee, swap = _dz19(amt, recipient, route, tin, tout)
     else:
         tokens, fees = (route[1][1], route[1][2])
-        _dz10()
+        _dz17()
     return [(tin, approve), (_ETH_ROUTER, swap)]
 
 def _dl_flatten(ix):
     """Interaction calldatas, unwrapping one level of multicall(bytes[])."""
 
-    def _dz9():
+    def _dz16():
         if cd[:8] in _SEL_MC:
             try:
                 payload = bytes.fromhex(cd[8:])
@@ -110,19 +110,19 @@ def _dl_flatten(ix):
             datas.append(cd)
     flat = []
     for cd in datas:
-        _dz9()
+        _dz16()
     return flat
 
 def _dl_decode_path(body, sel, url):
     """Re-quote a decoded exactInput (path) champion swap."""
 
-    def _dz8(body, sel):
+    def _dz15(body, sel):
         path, _rec, amt, _mo = decode(['(bytes,address,uint256,uint256)'], body)[0] if sel == _SEL_EI_02 else decode(['(bytes,address,uint256,uint256,uint256)'], body)[0][:4]
         toks, fees = ([], [])
         p = path if isinstance(path, (bytes, bytearray)) else bytes.fromhex(str(path))
         return (_mo, _rec, amt, fees, p, path, toks)
 
-    def _dz7():
+    def _dz14():
         o = 0
         while o + 20 <= len(p):
             toks.append('0x' + p[o:o + 20].hex())
@@ -133,37 +133,37 @@ def _dl_decode_path(body, sel, url):
         return (_dl_qpath(url, toks, fees, amt),)
         return _DR_UNSET
     from eth_abi import decode
-    _mo, _rec, amt, fees, p, path, toks = _dz8(body, sel)
-    _r_dz7 = _dz7()
-    if _r_dz7 is not _DR_UNSET:
-        return _r_dz7[0]
+    _mo, _rec, amt, fees, p, path, toks = _dz15(body, sel)
+    _r_dz14 = _dz14()
+    if _r_dz14 is not _DR_UNSET:
+        return _r_dz14[0]
 
 def _dl_decode_one(cd, url):
     """Decode+re-quote one calldata. Returns ('ANSWER', q_or_None) if it's a UniV3
     swap (q>0 -> its output; else None so caller DEFERS, never treats as blind),
     ('SWAP', None) if a swap is present but undecodable, or ('SKIP', None)."""
 
-    def _dz6(cd):
+    def _dz13(cd):
         sel = cd[:8]
         body = bytes.fromhex(cd[8:]) if len(cd) > 8 else b''
         return (body, sel)
 
-    def _dz5(body, url):
+    def _dz12(body, url):
         tin, tout, fee, _r, amt, _m, _s = decode(['(address,address,uint24,address,uint256,uint256,uint160)'], body)[0]
         q = _dl_qsingle(url, tin, tout, amt, fee)
         return (_m, _r, _s, amt, fee, q, tin, tout)
 
-    def _dz4():
+    def _dz11():
         nonlocal q
-        _r_dz3 = _dz3()
-        if _r_dz3 is not _DR_UNSET:
-            return (_r_dz3[0],)
+        _r_dz10 = _dz10()
+        if _r_dz10 is not _DR_UNSET:
+            return (_r_dz10[0],)
         if sel in (_SEL_EI_02, _SEL_EI):
             q = _dl_decode_path(body, sel, url)
             return (('ANSWER', q if q > 0 else None),)
         return _DR_UNSET
 
-    def _dz3():
+    def _dz10():
         nonlocal _m, _r, _s, amt, fee, q, tin, tout
         if sel == _SEL_EIS:
             tin, tout, fee, _r, _d, amt, _m, _s = decode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], body)[0]
@@ -171,14 +171,14 @@ def _dl_decode_one(cd, url):
             return (('ANSWER', q if q > 0 else None),)
         return _DR_UNSET
     from eth_abi import decode
-    body, sel = _dz6(cd)
+    body, sel = _dz13(cd)
     try:
         if sel == _SEL_EIS_02:
-            _m, _r, _s, amt, fee, q, tin, tout = _dz5(body, url)
+            _m, _r, _s, amt, fee, q, tin, tout = _dz12(body, url)
             return ('ANSWER', q if q > 0 else None)
-        _r_dz4 = _dz4()
-        if _r_dz4 is not _DR_UNSET:
-            return _r_dz4[0]
+        _r_dz11 = _dz11()
+        if _r_dz11 is not _DR_UNSET:
+            return _r_dz11[0]
     except Exception:
         return ('SWAP', None)
     return ('SKIP', None)
@@ -203,7 +203,7 @@ def _dl_override(intent, state, rp, url, tin, tout, amt, co):
     and have a valid recipient. Returns a _DLPlan or None (None -> caller defers to
     champion). Split out of _dl_route1 so each region stays small (un-factorable)."""
 
-    def _dz2():
+    def _dz9():
         if recip.startswith('0x') and len(recip) == 42:
             pairs = _dl_eth_ix(tin, tout, amt, recip, (out, route))
             ix = [_DLIx(target=t, value='0', call_data=cd, chain_id=1) for t, cd in pairs]
@@ -212,7 +212,7 @@ def _dl_override(intent, state, rp, url, tin, tout, amt, co):
     out, route = _dl_best_route(url, tin, tout, amt)
     if out > 0 and route and (out * 10000 > co * (10000 + 30)):
         recip = str(getattr(state, 'contract_address', '') or rp.get('receiver', '') or '').lower()
-        _r_dz2 = _dz2()
-        if _r_dz2 is not _DR_UNSET:
-            return _r_dz2[0]
+        _r_dz9 = _dz9()
+        if _r_dz9 is not _DR_UNSET:
+            return _r_dz9[0]
     return None
