@@ -1,4 +1,5 @@
 FROM ghcr.io/subnet112/solver-base:v1
+ENV MINOTAUR_SOLVER_NAME=mam26
 
 COPY requirements.txt /app/solver/requirements.txt
 # solver-base already ships web3 (the SDK needs it); skip the pip/PyPI
