@@ -10,21 +10,28 @@ its candidate strictly beats the real base delivery. Delivered is summed over th
 app + executor tout balances so the router's recipient choice can't fool it. If
 the balance slot can't be found (unfamiliar token layout) sim_floor returns None
 and viking keeps deferring — the prior safe behavior, never a blind override."""
+
 _EXEC = '0x1111111111111111111111111111111111111111'
 _SLOTS = (0, 1, 2, 3, 9, 4, 5, 6, 7, 8, 51, 101)
+
 
 def _bkey(holder, slot):
     from eth_utils import keccak
     return '0x' + keccak(bytes.fromhex(holder[2:].rjust(64, '0')) + int(slot).to_bytes(32, 'big')).hex()
 
+
 def _bal(holder):
     return '0x70a08231' + holder[2:].rjust(64, '0')
+
 
 def _w(n):
     return '0x' + hex(int(n))[2:].rjust(64, '0')
 
+
 def _probe_bsc(token, slot, big):
-    return {'stateOverrides': {token: {'stateDiff': {_bkey(_EXEC, slot): _w(big)}}}, 'calls': [{'from': _EXEC, 'to': token, 'data': _bal(_EXEC)}]}
+    return {'stateOverrides': {token: {'stateDiff': {_bkey(_EXEC, slot): _w(big)}}},
+            'calls': [{'from': _EXEC, 'to': token, 'data': _bal(_EXEC)}]}
+
 
 def _detect_slot(w3, token, amt):
     """The ERC20 balanceOf storage slot for `token` (probed in ONE simulateV1
@@ -41,23 +48,28 @@ def _detect_slot(w3, token, amt):
             return s
     return None
 
+
 def _plan_calls(ixs, tout, app):
     """balanceOf(app),balanceOf(exec) BEFORE + the plan + the same two AFTER, so
     delivered is measured as a DELTA (the app is a live contract that already
     holds token balances — absolute reads would count those as delivery)."""
     bals = [{'from': _EXEC, 'to': tout, 'data': _bal(app)}, {'from': _EXEC, 'to': tout, 'data': _bal(_EXEC)}]
-    mid = [{'from': _EXEC, 'to': x.target, 'data': x.call_data, 'gas': hex(8000000)} for x in ixs]
+    mid = [{'from': _EXEC, 'to': x.target, 'data': x.call_data, 'gas': hex(8_000_000)} for x in ixs]
     return bals + mid + bals
+
 
 def _fund_ovr(tin, slot, amt):
     return {tin: {'stateDiff': {_bkey(_EXEC, slot): _w(amt * 100)}}, _EXEC: {'balance': _w(10 ** 18)}}
 
+
 def _rd(c):
     return int(c.get('returnData') or '0x0', 16)
+
 
 def _delta(cs):
     """delivered = (app after-before) + (exec after-before), floored at 0."""
     return max(0, _rd(cs[-2]) - _rd(cs[0])) + max(0, _rd(cs[-1]) - _rd(cs[1]))
+
 
 def _delivered(w3, ixs, tin, amt, tout, slot, app):
     """Run the base plan funded; delivered tout measured as an app+exec delta."""
@@ -68,6 +80,7 @@ def _delivered(w3, ixs, tin, amt, tout, slot, app):
     except Exception:
         return None
 
+
 def sim_floor(w3, plan, tin, tout, amt, app):
     """True delivered tout of an undecodable base plan, or None if unfundable
     (-> viking keeps deferring). 0 means the base plan is a drop."""
@@ -75,7 +88,7 @@ def sim_floor(w3, plan, tin, tout, amt, app):
     if not ixs or not app:
         return None
     from eth_utils import to_checksum_address as _ck
-    tin, tout, app = (_ck(tin), _ck(tout), _ck(app))
+    tin, tout, app = _ck(tin), _ck(tout), _ck(app)
     slot = _detect_slot(w3, tin, amt)
     if slot is None:
         return None

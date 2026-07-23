@@ -20,7 +20,6 @@ import logging
 import time
 from typing import Any, Callable
 from eth_abi.abi import encode as abi_encode
-
 def _aero_c():
     logger = logging.getLogger(__name__)
     AERODROME_SLIPSTREAM_FACTORY: dict[int, str] = {8453: '0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A'}
@@ -30,7 +29,6 @@ def _aero_c():
 _aero_c()
 
 def _dr4():
-
     def _fw2():
         _FACTORY_ABI = [{'inputs': [{'internalType': 'address', 'name': 'tokenA', 'type': 'address'}, {'internalType': 'address', 'name': 'tokenB', 'type': 'address'}, {'internalType': 'int24', 'name': 'tickSpacing', 'type': 'int24'}], 'name': 'getPool', 'outputs': [{'internalType': 'address', 'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
         return (_FACTORY_ABI,)
@@ -41,10 +39,8 @@ def _dr4():
 
         def _dr11():
             nonlocal discover_pools_for_pair
-
             def _fh1():
                 return [{'inputs': [], 'name': 'slot0', 'outputs': [{'internalType': 'uint160', 'name': 'sqrtPriceX96', 'type': 'uint160'}, {'internalType': 'int24', 'name': 'tick', 'type': 'int24'}, {'internalType': 'uint16', 'name': 'observationIndex', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinality', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinalityNext', 'type': 'uint16'}, {'internalType': 'bool', 'name': 'unlocked', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'liquidity', 'outputs': [{'internalType': 'uint128', 'name': '', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'fee', 'outputs': [{'internalType': 'uint24', 'name': '', 'type': 'uint24'}], 'stateMutability': 'view', 'type': 'function'}]
-
             def _fh2():
                 return [{'inputs': [], 'name': 'token0', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token1', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'tickSpacing', 'outputs': [{'internalType': 'int24', 'name': '', 'type': 'int24'}], 'stateMutability': 'view', 'type': 'function'}]
             _POOL_ABI = _fh1() + _fh2()
@@ -71,7 +67,6 @@ def _dr4():
                         def _dr9():
                             pool = w3.eth.contract(address=w3.to_checksum_address(pool_address), abi=_POOL_ABI)
                             slot0 = pool.functions.slot0().call()
-
                             def _fw3():
                                 liquidity = pool.functions.liquidity().call()
                                 fee = pool.functions.fee().call()
@@ -127,7 +122,6 @@ def _dr4():
                                             logger.debug('Aerodrome factory.getPool(%s, %s, ts=%d) failed: %s', token_a[:10], token_b[:10], ts, exc)
                                             rpc_errors += 1
                                             continue
-
                                         def _fw3():
                                             if not pool_addr or pool_addr == _ZERO_ADDRESS:
                                                 return ('c',)
@@ -149,7 +143,6 @@ def _dr4():
                                 if discovery_cache is not None and rpc_errors < len(AERODROME_TICK_SPACINGS):
                                     discovery_cache[cache_key] = now
                                 return discovered
-
                             def _fw1():
                                 discovered = _dr3()
                                 if discovered > 0:
@@ -189,7 +182,6 @@ def _dr4():
     """
         if len(tokens) < 2 or len(tick_spacings) != len(tokens) - 1:
             raise ValueError('encode_path: need len(tokens) == len(tick_spacings) + 1')
-
         def _fw1():
             out = bytearray()
             for i, tok in enumerate(tokens):

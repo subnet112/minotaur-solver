@@ -1,3 +1,4 @@
+# SN112 shape library — pair/composite row builders.
 from shape_lib2 import _V_V3_ROUTERS
 
 def _xfer_cd(pair, amt):
@@ -27,7 +28,7 @@ def _sv3_parts(spec, tin, tout, amt, exec_addr, chain_id):
     from strategies.dex_aggregator import aerodrome as _aero
     slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
     leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid1'], tick_spacing=int(spec['slip_ts']), recipient=exec_addr, deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
-    return (slip_router, leg1, _sv3_path(spec, tout))
+    return slip_router, leg1, _sv3_path(spec, tout)
 
 def _sv3_leg2(path, q1, rcpt):
     from eth_abi import encode as _enc
@@ -36,7 +37,6 @@ def _sv3_leg2(path, q1, rcpt):
     return '0x' + (sel + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(rcpt), int(q1), 0)])).hex()
 
 def _fw2():
-
     def _v_build_sv3(spec, tin, tout, amt, q1, exec_addr, chain_id):
         """3-leg sv3 row builder (slipstream leg1 to executor, uni 2-hop leg2)."""
         from eth_utils import to_checksum_address as _ck
@@ -68,7 +68,6 @@ def _fw2():
 
         def _dr343(rcpt):
             leg2 = _aero.encode_exact_input_single(token_in=spec['mid'], token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=rcpt, deadline=9999999999, amount_in=int(q1), amount_out_minimum=0)
-
             def _fw1():
                 return ([_IX(target=tin, value='0', call_data=encode_approve(_ck(uni_r), int(amt)), chain_id=chain_id), _IX(target=uni_r, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id)],)
             _fwr1 = _fw1()
@@ -118,7 +117,6 @@ def _fw2():
         from common.abi_utils import encode_approve
         from minotaur_subnet.shared.types import Interaction as _IX
         leg1, slip_router, leg2, a0, a1 = parts
-
         def _fw4():
             tail = [_IX(target=spec['mid1'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id), _IX(target=spec['pair'], value='0', call_data=_swap_cd(a0, a1, rcpt), chain_id=chain_id)]
             return (tail,)
@@ -140,7 +138,6 @@ def _fw2():
         from common.abi_utils import encode_approve
         from minotaur_subnet.shared.types import Interaction as _IX
         slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
-
         def _fw3():
             leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid'], tick_spacing=int(spec['slip_ts']), recipient=spec['pair'], deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
             a0, a1 = (int(est), 0) if int(spec['out_index']) == 0 else (0, int(est))
