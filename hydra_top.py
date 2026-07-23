@@ -37,8 +37,8 @@ def _dr71():
     from champ_top import SOLVER_CLASS as _ChampBase
     from minotaur_subnet.sdk.intent_solver import SolverMetadata
     logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'hydra-sov-l-router')
-    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.12.3')
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '4.0.0-c13')
     return dict(locals())
 globals().update(_dr71())
 

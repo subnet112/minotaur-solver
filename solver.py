@@ -25,7 +25,7 @@ row at a time.
 from __future__ import annotations
 _DR_UNSET = object()
 import logging
-_REFORK_LANE = "rise03"  # lane marker
+_REFORK_LANE = "rise05"  # lane marker
 import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
@@ -34,7 +34,7 @@ def _solver_c():
     logger = logging.getLogger(__name__)
     _PUTTY_FINAL_BRAND = 'hydra-thread-router'
     SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
-    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.12.3')
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.8.1c')
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'wisedev0103')
     globals().update(locals())
 _solver_c()
@@ -523,58 +523,3 @@ def _load_mv():
         _mvlog.getLogger(__name__).exception('[mv] curve win layer failed to load; using GoranSolver')
 _load_mv()
 
-# ===== SPLIT-REFINE LAYER (outermost) — finer-grid 2-venue split refinement. =====
-# The champion's king_base._try_split_plan probes only a coarse 3-point ratio grid
-# {amount/3, amount/2, 2*amount/3}. This layer overrides it with a finer concurrent
-# ratio search and serves the refined split ONLY when its re-quoted summed output
-# strictly beats the champion's own chosen output by a buffer; otherwise it returns
-# the champion plan verbatim (defer-on-doubt) => output >= champion on every order,
-# zero regression/drop risk. Pure subclass; every other path is inherited unchanged.
-def _load_split_refine():
-    try:
-        import split_refine as _sr
-        globals()['SOLVER_CLASS'] = _sr.install(globals()['SOLVER_CLASS'])
-    except Exception:  # any import problem -> keep prior SOLVER_CLASS, never crash
-        import logging as _srlog
-        _srlog.getLogger(__name__).exception('[split-refine] layer failed to load; using prior SOLVER_CLASS')
-_load_split_refine()
-
-
-
-# ===== CROWN LAYER (re-based on Stalker 331e5d7) — blind-spot cover + gas-Pareto =====
-# viking_fastpath.cover_lift fires ONLY on true blind spots (champion produced no
-# plan) => can add wins, never drop/regress. viking_gaslift rewrites approve+v2/
-# aero-router plans to direct pool swaps (identical output, less gas). Both defer
-# to the champion plan on any doubt: WIN or TIE only, never a regression.
-def _build_crown():
-    _CROWN_BASE = globals()['SOLVER_CLASS']
-
-    class CrownSolver(_CROWN_BASE):
-
-        def _crown_cover(self, plan, intent, state, snapshot):
-            try:
-                import viking_fastpath as _fp
-                lift = _fp.cover_lift(self, intent, state, snapshot, plan)
-                return lift if lift is not None else plan
-            except Exception:
-                return plan
-
-        def _crown_gas(self, plan, intent, state):
-            try:
-                import viking_gaslift as _gl
-                return _gl.gas_lift(self, plan, intent, state)
-            except Exception:
-                return plan
-
-        def generate_plan(self, intent, state, snapshot=None):
-            try:
-                plan = super().generate_plan(intent, state, snapshot)
-            except Exception:
-                plan = None
-            lifted = self._crown_cover(plan, intent, state, snapshot)
-            return self._crown_gas(lifted, intent, state)
-
-    CrownSolver._crown_orig = _CROWN_BASE.generate_plan
-    CrownSolver._crown_installed = True
-    globals()['SOLVER_CLASS'] = CrownSolver
-_build_crown()
