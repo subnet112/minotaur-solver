@@ -523,3 +523,22 @@ def _load_mv():
         _mvlog.getLogger(__name__).exception('[mv] curve win layer failed to load; using GoranSolver')
 _load_mv()
 
+
+# ===== APEX-MINOTAUR LAYER (outermost) — payload_cover + apex_star_001 branding =====
+def _apex_load():
+    try:
+        import payload_cover as _p
+        globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover load failed')
+_apex_load()
+
+class _ApexBrand(SOLVER_CLASS):
+    def metadata(self):
+        m = super().metadata()
+        try:
+            m.name = 'apex_star_001'
+        except Exception:
+            pass
+        return m
+SOLVER_CLASS = _ApexBrand
