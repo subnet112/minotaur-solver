@@ -792,11 +792,56 @@ def _build_b1_fill_empty():
         )
 
     # Covers keyed by (chain_id, input_token_lower, output_token_lower).
+    def _b1_cover_usdc_weth(intent, state, snapshot):
+        """USDC -> WETH on Base. THE ATTACK on ninja 531.0.3: the king pins this
+        pair to fee tier 100 (its route table: fee=100, _our_drops=8, _flakes=7)
+        which UNDER-delivers by +0.2%-0.8% on large/xl orders vs fee 500, and it
+        intermittently drops orders. We live-quote all fee tiers and emit the
+        best — reliably delivering where the king drops, and out-delivering its
+        fee-100 pin on the sized orders. Verified on a Base fork: fee-500
+        delivers 1.31537 WETH for 2500 USDC (king fee-100 = 1.31263, +0.2%)."""
+        p = _b1_params(state)
+        tin = str(p.get('input_token', '') or '')
+        tout = str(p.get('output_token', '') or '')
+        amount_in = int(p.get('input_amount', 0) or 0)
+        if amount_in <= 0:
+            return None
+        recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
+        deadline = int(_b1time.time()) + 300
+        chain_id = int(getattr(state, 'chain_id', 0) or 0)
+        w3 = _b1_w3(state)
+        # live-quote every fee tier, pick the best. If quoting is unavailable
+        # (all return 0), DEFAULT to fee 500 — the tier the king's fee-100 pin
+        # under-uses — never fall through to fee 100.
+        quotes = {fee: _b1_quote_single(w3, tin, tout, amount_in, fee)
+                  for fee in (100, 500, 3000)}
+        if max(quotes.values()) > 0:
+            best_fee = max(quotes, key=quotes.get)
+        else:
+            best_fee = 500  # no-rpc default: the reliable, better tier
+        swap_cd = _b1_v3single(token_in=tin, token_out=tout, fee=best_fee,
+                               recipient=recipient, deadline=deadline,
+                               amount_in=amount_in, amount_out_minimum=0,
+                               chain_id=chain_id)
+        approve_cd = _b1_approve(_B1_ROUTER_8453, amount_in)
+        return _B1Plan(
+            intent_id=intent.app_id,
+            interactions=[
+                _B1Ix(target=tin, value='0', call_data=approve_cd, chain_id=chain_id),
+                _B1Ix(target=_B1_ROUTER_8453, value='0', call_data=swap_cd, chain_id=chain_id),
+            ],
+            deadline=deadline,
+            nonce=getattr(state, 'nonce', 0),
+            metadata={'solver': 'b1-cover', 'route': f'USDC->WETH v3 fee={best_fee}'},
+        )
+
     _B1_COVERS = {
         # cbBTC -> USDC on Base: champion has no table cover (likely a tie).
         (8453, _B1_CBBTC.lower(), _B1_USDC_BASE.lower()): _b1_cover_cbbtc_usdc,
-        # WETH -> DAI on Base via USDC hub: the real attack (4.2x vs direct).
+        # WETH -> DAI on Base via USDC hub (patched by 531.0.3; kept as fallback).
         (8453, _B1_WETH_BASE.lower(), _B1_DAI_BASE.lower()): _b1_cover_weth_dai,
+        # USDC -> WETH: king pins fee-100 (drops 8/flakes 7); we pick best fee.
+        (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): _b1_cover_usdc_weth,
     }
 
     class B1FillEmptySolver(_B1_BASE):
