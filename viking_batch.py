@@ -9,18 +9,13 @@ drop). Route selection is IDENTICAL to the per-call form (same tiers/hubs/paths,
 same first-max tie-break, same v3d/v3h/v2 order) — verified route-for-route at a
 pinned block; only the round-trip count drops ~30x. Primitives live in viking_quote."""
 import logging
-
-from viking_quote import (_FEES, _QUOTERS, _V2ROUTER, _HUBS, _v2_paths,
-                          _agg3, _enc_single, _enc_v2, _dec_single, _dec_v2out)
-
+from viking_quote import _FEES, _QUOTERS, _V2ROUTER, _HUBS, _v2_paths, _agg3, _enc_single, _enc_v2, _dec_single, _dec_v2out
 logger = logging.getLogger('solver')
-
 
 def _add_direct(calls, tags, q, tin, tout, amt):
     for fee in _FEES:
         calls.append((q, _enc_single(tin, tout, amt, fee)))
         tags.append(('v3d', fee, None))
-
 
 def _add_leg1(calls, tags, chain, q, tin, tout, amt):
     for hub in _HUBS.get(int(chain), ()):
@@ -30,7 +25,6 @@ def _add_leg1(calls, tags, chain, q, tin, tout, amt):
             calls.append((q, _enc_single(tin, hub, amt, f1)))
             tags.append(('leg1', hub, f1))
 
-
 def _add_v2(calls, tags, chain, v2r, tin, tout, amt):
     if not v2r:
         return
@@ -38,17 +32,15 @@ def _add_v2(calls, tags, chain, v2r, tin, tout, amt):
         calls.append((v2r, _enc_v2(amt, path)))
         tags.append(('v2', tuple(path), None))
 
-
 def _round1(chain, tin, tout, amt):
     """Round-1 (calls, tags): v3-direct + v3-leg1(tin->hub) + v2."""
     q = _QUOTERS.get(int(chain))
     v2r = _V2ROUTER.get(int(chain))
-    calls, tags = [], []
+    calls, tags = ([], [])
     _add_direct(calls, tags, q, tin, tout, amt)
     _add_leg1(calls, tags, chain, q, tin, tout, amt)
     _add_v2(calls, tags, chain, v2r, tin, tout, amt)
-    return calls, tags
-
+    return (calls, tags)
 
 def _best_direct(pairs):
     """Best v3 direct: (out, (fee,)) or None. First-max tie-break in _FEES order."""
@@ -60,7 +52,6 @@ def _best_direct(pairs):
                 best = (o, (a,))
     return best
 
-
 def _best_v2(pairs):
     """Best v2: (out, path_list) or None. Direct scanned first => wins ties."""
     best = None
@@ -71,7 +62,6 @@ def _best_v2(pairs):
                 best = (o, list(a))
     return best
 
-
 def _leg1_map(pairs):
     """Positive leg1 outputs: {(hub, f1): out}."""
     m = {}
@@ -79,18 +69,16 @@ def _leg1_map(pairs):
         if kind == 'leg1':
             o = _dec_single(ok, rb)
             if o > 0:
-                m[(a, b)] = o
+                m[a, b] = o
     return m
 
-
 def _leg2_calls(q, tout, l1):
-    calls, tags = [], []
+    calls, tags = ([], [])
     for (hub, f1), amt1 in l1.items():
         for f2 in _FEES:
             calls.append((q, _enc_single(hub, tout, amt1, f2)))
             tags.append((hub, f1, f2))
-    return calls, tags
-
+    return (calls, tags)
 
 def _pick_2hop(tags, res):
     best = None
@@ -99,7 +87,6 @@ def _pick_2hop(tags, res):
         if o > 0 and (best is None or o > best[0]):
             best = (o, (hub, f1, f2))
     return best
-
 
 def _best_2hop(w3, chain, tout, l1):
     """Round-2 aggregate3: v3-leg2(hub->tout) for each positive leg1 -> best 2hop."""
@@ -112,7 +99,6 @@ def _best_2hop(w3, chain, tout, l1):
         return None
     return _pick_2hop(tags, res)
 
-
 def _assemble(best_d, best_h, best_v2):
     out = []
     if best_d is not None:
@@ -122,7 +108,6 @@ def _assemble(best_d, best_h, best_v2):
     if best_v2 is not None:
         out.append((best_v2[0], 'v2', best_v2[1]))
     return out
-
 
 def candidates(w3, chain, tin, tout, amt):
     """All strict-better route candidates [(out, kind, det), ...], v3d/v3h/v2 order.
