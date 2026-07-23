@@ -18,29 +18,25 @@ behavior. Disable with MINOTAUR_NO_COAL=1."""
 import os
 import threading
 import time
-
-_MC3 = '0xcA11bde05977b3631167028862bE2a173976CA11'   # Multicall3 (all chains)
-_SEL = '0x82ad56cb'                                    # aggregate3((address,bool,bytes)[])
+_MC3 = '0xcA11bde05977b3631167028862bE2a173976CA11'
+_SEL = '0x82ad56cb'
 _WIN_S = 0.012
 _CHUNK = 16
 _ON = os.environ.get('MINOTAUR_NO_COAL', '') != '1'
-
 
 def _plain_call(c):
     """A bare {'to','data'} read — no gas/from/value keys — and never Multicall3
     itself (self-managed batches pass through)."""
     if not isinstance(c, dict) or set(c) - {'to', 'data'}:
         return False
-    to, da = c.get('to'), c.get('data')
-    return bool(to) and isinstance(da, str) and da.startswith('0x') and to.lower() != _MC3.lower()
-
+    to, da = (c.get('to'), c.get('data'))
+    return bool(to) and isinstance(da, str) and da.startswith('0x') and (to.lower() != _MC3.lower())
 
 def _eligible(method, params):
     """Only plain latest-block eth_calls coalesce; everything else passes through."""
     if method != 'eth_call' or not isinstance(params, (list, tuple)) or len(params) != 2:
         return False
     return params[1] == 'latest' and _plain_call(params[0])
-
 
 def _state(prov):
     st = getattr(prov, '_coal_st', None)
@@ -52,27 +48,20 @@ def _state(prov):
             return None
     return st
 
-
 def _pack(chunk):
     from eth_abi import encode as _enc
     arr = [(w['c']['to'], True, bytes.fromhex(w['c']['data'][2:])) for w in chunk]
     return _SEL + _enc(['(address,bool,bytes)[]'], [arr]).hex()
 
-
 def _ok_resp(rb):
     return {'jsonrpc': '2.0', 'id': 1, 'result': '0x' + bytes(rb).hex()}
 
-
 def _rev_resp(rb):
-    return {'jsonrpc': '2.0', 'id': 1,
-            'error': {'code': 3, 'message': 'execution reverted',
-                      'data': '0x' + bytes(rb).hex()}}
-
+    return {'jsonrpc': '2.0', 'id': 1, 'error': {'code': 3, 'message': 'execution reverted', 'data': '0x' + bytes(rb).hex()}}
 
 def _fill(chunk, rows):
     for w, (ok, rb) in zip(chunk, rows):
         w['r'] = _ok_resp(rb) if ok else _rev_resp(rb)
-
 
 def _exec_chunk(orig, prov, chunk):
     """One aggregate3 for a chunk; each waiter gets a synthesized response, or
@@ -88,16 +77,14 @@ def _exec_chunk(orig, prov, chunk):
         for w in chunk:
             w['r'] = None
 
-
 def _flush(orig, prov, batch):
     if len(batch) == 1:
-        batch[0]['r'] = None          # lone call: no batching benefit — direct
+        batch[0]['r'] = None
     else:
         for i in range(0, len(batch), _CHUNK):
             _exec_chunk(orig, prov, batch[i:i + _CHUNK])
     for w in batch:
         w['e'].set()
-
 
 def _resolve(orig, prov, w, method, params):
     """One waiter's answer: the synthesized batch response, else the original call."""
@@ -105,21 +92,18 @@ def _resolve(orig, prov, w, method, params):
         return orig(prov, method, params)
     return w['r']
 
-
 def _enqueue(st, w):
     """Append a waiter; True if it is the window leader (first in)."""
     with st['lock']:
         st['wait'].append(w)
         return len(st['wait']) == 1
 
-
 def _lead_flush(orig, prov, st):
     """Leader: hold the window open briefly, then take and flush the batch."""
     time.sleep(_WIN_S)
     with st['lock']:
-        batch, st['wait'] = st['wait'], []
+        batch, st['wait'] = (st['wait'], [])
     _flush(orig, prov, batch)
-
 
 def install():
     """Wrap HTTPProvider.make_request once (composes over the chainId cache)."""
@@ -139,6 +123,5 @@ def install():
         if _enqueue(st, w):
             _lead_flush(orig, self, st)
         return _resolve(orig, self, w, method, params)
-
     hp.make_request = _mr
     hp._coal_wrapped = True
