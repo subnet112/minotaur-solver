@@ -33,6 +33,7 @@ def _dr7():
         Output amount as integer (in output token's smallest unit).
         Returns 0 if inputs are invalid.
     """
+
         def _setup():
             if liquidity <= 0 or amount_in <= 0 or sqrt_price_x96 <= 0:
                 return (0,)
@@ -44,7 +45,7 @@ def _dr7():
         _s = _setup()
         if _s[0] is not None:
             return _s[0]
-        amount_after_fee, MAX_SQRT_PRICE_IMPACT = _s[1], _s[2]
+        amount_after_fee, MAX_SQRT_PRICE_IMPACT = (_s[1], _s[2])
         if zero_for_one:
 
             def _dr4():
@@ -62,6 +63,7 @@ def _dr7():
             if _dr5 is not _DR_UNSET:
                 return _dr5
         else:
+
             def _fwe():
                 delta_sqrt_price = amount_after_fee * Q96 // liquidity
                 if delta_sqrt_price > MAX_SQRT_PRICE_IMPACT:
@@ -107,6 +109,7 @@ def _dr7():
             candidates = _dr8()
             max_liquidity = 0
             for pool_addr, pool in pool_states.items():
+
                 def _fw4():
                     t0 = pool.get('token0', '').lower()
                     t1 = pool.get('token1', '').lower()
@@ -158,10 +161,12 @@ def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token
         if intermediaries is None:
             intermediaries = []
         token_in_lower = token_in.lower()
+
         def _fw3():
             token_out_lower = token_out.lower()
             best_output = 0
             best_description = ''
+
             def _fw2(best_output=best_output, best_description=best_description):
                 best_hops = []
                 direct = find_best_pool(pool_states, token_in, token_out, amount_in)
@@ -177,6 +182,7 @@ def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token
         token_out_lower, best_output, best_description, best_hops = _fw3()
         return (token_in_lower, token_out_lower)
     token_in_lower, token_out_lower = _dr1()
+
     def _fw2(best_description=best_description, best_hops=best_hops, best_output=best_output):
         for mid in intermediaries:
             mid_lower = mid.lower()
@@ -184,12 +190,15 @@ def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token
                 continue
 
             def _fw2(best_description=best_description, best_hops=best_hops, best_output=best_output):
+
                 def _fw1(best_description=best_description, best_hops=best_hops, best_output=best_output):
+
                     def _miss():
                         return (3, None, best_description, best_hops, best_output)
                     hop1 = find_best_pool(pool_states, token_in, mid, amount_in)
                     if hop1 is None:
                         return _miss()
+
                     def _fw1():
                         _, state1, mid_amount = hop1
                         hop2 = find_best_pool(pool_states, mid, token_out, mid_amount)
@@ -218,6 +227,7 @@ def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token
                     return (0, None, best_description, best_hops, best_output)
                 _fwr1 = _fw1()
                 best_description, best_hops, best_output = (_fwr1[2], _fwr1[3], _fwr1[4])
+
                 def _fw1():
                     if _fwr1[0]:
                         if _fwr1[0] == 1:
@@ -232,7 +242,8 @@ def find_best_route(pool_states: dict[str, dict[str, Any]], token_in: str, token
                 continue
         return (0, None, best_description, best_hops, best_output)
     _fwr2 = _fw2()
-    best_description, best_hops, best_output = _fwr2[2], _fwr2[3], _fwr2[4]
+    best_description, best_hops, best_output = (_fwr2[2], _fwr2[3], _fwr2[4])
+
     def _fw3():
         if _fwr2[0]:
             if _fwr2[0] == 1:
