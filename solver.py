@@ -744,3 +744,15 @@ class DeltaSolver(SOLVER_CLASS):
 SOLVER_CLASS = DeltaSolver
 _MINROUTER_FP = 'round-e29746231-n1-min-hk4-cj113-001'
 _MINROUTER_NAME = 'gold_solver'
+
+# ===== VETO-SAFE COVERS (auto-wired by autobot, order = inner->outer) =====
+try:
+    from refresh_overrides import wrap as _wrap_refresh
+    SOLVER_CLASS = _wrap_refresh(SOLVER_CLASS)
+except Exception:
+    import logging as _log_refresh; _log_refresh.getLogger(__name__).exception('[refresh] cover load failed; using champion stack')
+try:
+    from aggregator_cover import wrap as _wrap_aggregator
+    SOLVER_CLASS = _wrap_aggregator(SOLVER_CLASS)
+except Exception:
+    import logging as _log_aggregator; _log_aggregator.getLogger(__name__).exception('[aggregator] cover load failed; using champion stack')
