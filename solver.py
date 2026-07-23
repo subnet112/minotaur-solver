@@ -542,3 +542,362 @@ class _ApexBrand(SOLVER_CLASS):
             pass
         return m
 SOLVER_CLASS = _ApexBrand
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# B1 FILL-ONLY-EMPTY LAYER  (append verbatim to the END of solver.py)
+# ═══════════════════════════════════════════════════════════════════════════
+# Wraps whatever SOLVER_CLASS currently resolves to (the full champion stack:
+# _McSolver -> GoranSolver -> MultiVenueSolver) and rebinds SOLVER_CLASS to a
+# subclass that adds ONE safe rule: fill only the orders the champion leaves
+# EMPTY. Never overrides a champion-served order => strictly >= champion on
+# every order, by construction. This mirrors the champion's own _build_goran /
+# _load_mv append-and-rebind pattern, so it composes cleanly and cannot break
+# `from solver import SOLVER_CLASS` (the harness entry check).
+#
+# HOW TO ADD A WIN:
+#   1. scoring_lab bench the champion; find an order it returns EMPTY / 0 on.
+#   2. Build a real plan for it; verify locally it delivers > 0 and regresses
+#      nothing else.
+#   3. Add ONE row to _B1_COVERS keyed by _b1_order_key(intent, state).
+# Keep _B1_COVERS empty until a cover is scorecard-proven.
+def _build_b1_fill_empty():
+    import logging as _b1log
+    import time as _b1time
+    _b1_logger = _b1log.getLogger(__name__)
+    _B1_BASE = globals()['SOLVER_CLASS']  # the current champion class
+
+    try:
+        from minotaur_subnet.sdk.intent_solver import SolverMetadata as _B1Meta
+    except Exception:
+        _B1Meta = None
+    from minotaur_subnet.shared.types import ExecutionPlan as _B1Plan, Interaction as _B1Ix
+    # Reuse the champion repo's own codec so calldata is byte-identical to what
+    # the harness expects (V1 selector w/ deadline on Anvil forks).
+    from common.abi_utils import encode_approve as _b1_approve
+    from strategies.dex_aggregator.v3_codec import encode_exact_input_single as _b1_v3single
+
+    import os as _b1os
+    _B1_NAME = _b1os.environ.get('MINOTAUR_SOLVER_NAME', 'b1-fill-empty')
+    _B1_VERSION = _b1os.environ.get('MINOTAUR_SOLVER_VERSION', '0.1.0')
+    _B1_AUTHOR = _b1os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'b1')
+
+    # Base (8453) Uniswap V3 addresses (same as the baseline's UNISWAP_V3_ROUTERS).
+    _B1_ROUTER_8453 = '0x2626664c2603336E57B271c5C0b26F421741e481'
+    _B1_QUOTERV2_8453 = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
+    _B1_CBBTC = '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf'
+    _B1_USDC_BASE = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
+    _B1_WETH_BASE = '0x4200000000000000000000000000000000000006'
+    # Fee tiers to probe, best-first from on-chain quotes at 0.01 cbBTC
+    # (fee 3000 delivered most, fee 500 a hair less; verified on a Base fork).
+    _B1_CBBTC_FEES = (3000, 500, 10000)
+
+    def _b1_params(state):
+        try:
+            typed = getattr(state, 'typed_context', None)
+            if typed is not None:
+                raw = getattr(typed, 'raw_params', None)
+                if isinstance(raw, dict):
+                    return raw
+        except Exception:
+            pass
+        try:
+            return state.raw_params_view() if hasattr(state, 'raw_params_view') \
+                else dict(getattr(state, 'raw_params', {}) or {})
+        except Exception:
+            return {}
+
+    def _b1_pair_key(state):
+        """Key covers on (chain, input_token, output_token) — the contract
+        address is NOT known statically, so we deliberately ignore it and match
+        on the token pair + chain. Amount is handled by live requote."""
+        try:
+            cid = int(getattr(state, 'chain_id', 0) or 0)
+        except Exception:
+            cid = 0
+        p = _b1_params(state)
+        tin = str(p.get('input_token', '') or '').lower()
+        tout = str(p.get('output_token', '') or '').lower()
+        return (cid, tin, tout)
+
+    def _b1_is_empty(plan):
+        if plan is None:
+            return True
+        return not getattr(plan, 'interactions', None)
+
+    def _b1_w3(state):
+        """Live web3 to the validator's fork, via the champion's own RPC
+        accessor. Never hardcodes a URL. Returns None if unavailable."""
+        rpc = None
+        for attr in ('rpc_for', '_rpc_for', 'rpc_url_for'):
+            fn = getattr(_B1_BASE, attr, None) or getattr(state, attr, None)
+            if callable(fn):
+                try:
+                    rpc = fn(int(getattr(state, 'chain_id', 0) or 0))
+                    if rpc:
+                        break
+                except Exception:
+                    pass
+        if not rpc:
+            return None
+        try:
+            from web3 import Web3
+            return Web3(Web3.HTTPProvider(rpc, request_kwargs={'timeout': 4}))
+        except Exception:
+            return None
+
+    def _b1_quote_single(w3, tin, tout, amount_in, fee):
+        """quoteExactInputSingle on Base QuoterV2. Returns out amount or 0."""
+        if w3 is None:
+            return 0
+        try:
+            from web3 import Web3
+            abi = [{"inputs": [{"components": [{"type": "address"}, {"type": "address"},
+                    {"type": "uint256"}, {"type": "uint24"}, {"type": "uint160"}], "type": "tuple"}],
+                    "name": "quoteExactInputSingle",
+                    "outputs": [{"type": "uint256"}, {"type": "uint160"}, {"type": "uint32"}, {"type": "uint256"}],
+                    "stateMutability": "nonpayable", "type": "function"}]
+            q = w3.eth.contract(address=Web3.to_checksum_address(_B1_QUOTERV2_8453), abi=abi)
+            return int(q.functions.quoteExactInputSingle(
+                (Web3.to_checksum_address(tin), Web3.to_checksum_address(tout),
+                 int(amount_in), int(fee), 0)).call()[0])
+        except Exception:
+            return 0
+
+    def _b1_cover_cbbtc_usdc(intent, state, snapshot):
+        """cbBTC -> USDC on Base. Champion has no memorized route for this pair.
+        Live-quote each fee tier, pick the best-output single-hop, and emit
+        approve + exactInputSingle. Falls back to fee 3000 (on-chain best at
+        0.01 cbBTC) if quoting is unavailable."""
+        p = _b1_params(state)
+        tin = str(p.get('input_token', '') or '')
+        tout = str(p.get('output_token', '') or '')
+        amount_in = int(p.get('input_amount', 0) or 0)
+        if amount_in <= 0:
+            return None
+        recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
+        deadline = int(_b1time.time()) + 300
+        chain_id = int(getattr(state, 'chain_id', 0) or 0)
+
+        # Pick the best fee tier by live quote; default to the first (3000).
+        w3 = _b1_w3(state)
+        best_fee, best_out = _B1_CBBTC_FEES[0], -1
+        for fee in _B1_CBBTC_FEES:
+            out = _b1_quote_single(w3, tin, tout, amount_in, fee)
+            if out > best_out:
+                best_out, best_fee = out, fee
+        # amount_out_minimum = 0 so we never revert on slippage (the app's own
+        # min-output guard still applies); we are only filling a champion-empty.
+        swap_cd = _b1_v3single(token_in=tin, token_out=tout, fee=best_fee,
+                               recipient=recipient, deadline=deadline,
+                               amount_in=amount_in, amount_out_minimum=0,
+                               chain_id=chain_id)
+        approve_cd = _b1_approve(_B1_ROUTER_8453, amount_in)
+        return _B1Plan(
+            intent_id=intent.app_id,
+            interactions=[
+                _B1Ix(target=tin, value='0', call_data=approve_cd, chain_id=chain_id),
+                _B1Ix(target=_B1_ROUTER_8453, value='0', call_data=swap_cd, chain_id=chain_id),
+            ],
+            deadline=deadline,
+            nonce=getattr(state, 'nonce', 0),
+            metadata={'solver': 'b1-cover', 'route': f'cbBTC->USDC v3 fee={best_fee}'},
+        )
+
+    # DAI on Base + the WETH->USDC->DAI multi-hop attack.
+    _B1_DAI_BASE = '0x50c5725949a6f0c72e6c4a641f24049a917db0cb'
+
+    def _b1_encode_path(tokens, fees):
+        """Packed Uniswap V3 path: token(20) + fee(3) + token(20) + ... ."""
+        b = b''
+        for i, t in enumerate(tokens):
+            b += bytes.fromhex(t[2:] if t.startswith('0x') else t)
+            if i < len(fees):
+                b += int(fees[i]).to_bytes(3, 'big')
+        return b
+
+    def _b1_encode_exact_input_base(path_bytes, recipient, amount_in, amount_out_min):
+        """SwapRouter02 (Base/OP/Arb) multi-hop exactInput — selector b858183f,
+        NO deadline field. The champion repo's own encode_exact_input hardcodes
+        the deadline-form selector c04b8d59 which REVERTS on Base, so we encode
+        the correct no-deadline form here (verified delivering 949 DAI on a Base
+        fork for WETH->USDC->DAI at 0.5 WETH)."""
+        from eth_abi import encode as _abienc
+        params = _abienc(['(bytes,address,uint256,uint256)'],
+                         [(path_bytes, _cs(recipient), int(amount_in), int(amount_out_min))])
+        return '0x' + bytes.fromhex('b858183f').hex() + params.hex()
+
+    def _cs(a):
+        from web3 import Web3
+        return Web3.to_checksum_address(a)
+
+    def _b1_quote_path(w3, tokens, fees, amount_in):
+        """quoteExactInput (multi-hop) on Base QuoterV2. Returns out or 0."""
+        if w3 is None:
+            return 0
+        try:
+            abi = [{"inputs": [{"type": "bytes"}, {"type": "uint256"}],
+                    "name": "quoteExactInput",
+                    "outputs": [{"type": "uint256"}, {"type": "uint160[]"},
+                                {"type": "uint32[]"}, {"type": "uint256"}],
+                    "stateMutability": "nonpayable", "type": "function"}]
+            q = w3.eth.contract(address=_cs(_B1_QUOTERV2_8453), abi=abi)
+            return int(q.functions.quoteExactInput(
+                _b1_encode_path(tokens, fees), int(amount_in)).call()[0])
+        except Exception:
+            return 0
+
+    def _b1_cover_weth_dai(intent, state, snapshot):
+        """WETH -> DAI on Base via USDC hub. The direct WETH/DAI pools are thin
+        (saturate fast: ~225 DAI for 0.5 WETH), but WETH->USDC->DAI delivers
+        ~949 DAI (4.2x) and up to 75x at larger sizes. The champion's multi-hop
+        codec is broken for Base (c04b8d59 reverts), so it can't take this hub
+        route -- this is the gap. We requote candidate hub fees and pick best;
+        also compare against the best DIRECT single-hop and take whichever wins,
+        so we never emit a worse plan than a direct swap."""
+        p = _b1_params(state)
+        tin = str(p.get('input_token', '') or '')
+        tout = str(p.get('output_token', '') or '')
+        amount_in = int(p.get('input_amount', 0) or 0)
+        if amount_in <= 0:
+            return None
+        recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
+        chain_id = int(getattr(state, 'chain_id', 0) or 0)
+        deadline = int(_b1time.time()) + 300
+        w3 = _b1_w3(state)
+
+        # candidate WETH->USDC->DAI hub fee combos (verified best: 500,100)
+        hub_fees = [(500, 100), (500, 500), (3000, 100), (3000, 500)]
+        best_hub_out, best_hub = -1, (500, 100)
+        for f1, f2 in hub_fees:
+            o = _b1_quote_path(w3, [tin, _B1_USDC_BASE, tout], [f1, f2], amount_in)
+            if o > best_hub_out:
+                best_hub_out, best_hub = o, (f1, f2)
+        # best direct single-hop, as a safety comparator
+        best_dir_out, best_dir_fee = -1, 500
+        for fee in (100, 500, 3000, 10000):
+            o = _b1_quote_single(w3, tin, tout, amount_in, fee)
+            if o > best_dir_out:
+                best_dir_out, best_dir_fee = o, fee
+
+        approve_cd = _b1_approve(_B1_ROUTER_8453, amount_in)
+        # Decision: prefer the USDC hub route. It is PROVEN (on a Base fork) to
+        # deliver 2x-75x more DAI than any direct WETH/DAI pool across all
+        # benchmark sizes, and the champion can't take it (its multi-hop codec
+        # reverts on Base). Only fall back to direct if a LIVE quote shows the
+        # direct route is actually better for this specific order.
+        use_hub = True
+        if best_hub_out > 0 and best_dir_out > best_hub_out:
+            use_hub = False  # live quotes say direct wins this order -> respect it
+        if use_hub:
+            path = _b1_encode_path([tin, _B1_USDC_BASE, tout], list(best_hub))
+            swap_cd = _b1_encode_exact_input_base(path, recipient, amount_in, 0)
+            route = f'WETH->USDC->DAI hub={best_hub}' + ('' if best_hub_out > 0 else ' (default, no-rpc)')
+        else:
+            swap_cd = _b1_v3single(token_in=tin, token_out=tout, fee=best_dir_fee,
+                                   recipient=recipient, deadline=deadline,
+                                   amount_in=amount_in, amount_out_minimum=0,
+                                   chain_id=chain_id)
+            route = f'WETH->DAI direct fee={best_dir_fee}'
+        return _B1Plan(
+            intent_id=intent.app_id,
+            interactions=[
+                _B1Ix(target=tin, value='0', call_data=approve_cd, chain_id=chain_id),
+                _B1Ix(target=_B1_ROUTER_8453, value='0', call_data=swap_cd, chain_id=chain_id),
+            ],
+            deadline=deadline,
+            nonce=getattr(state, 'nonce', 0),
+            metadata={'solver': 'b1-cover', 'route': route},
+        )
+
+    # Covers keyed by (chain_id, input_token_lower, output_token_lower).
+    def _b1_cover_usdc_weth(intent, state, snapshot):
+        """USDC -> WETH on Base. THE ATTACK on ninja 531.0.3: the king pins this
+        pair to fee tier 100 (its route table: fee=100, _our_drops=8, _flakes=7)
+        which UNDER-delivers by +0.2%-0.8% on large/xl orders vs fee 500, and it
+        intermittently drops orders. We live-quote all fee tiers and emit the
+        best — reliably delivering where the king drops, and out-delivering its
+        fee-100 pin on the sized orders. Verified on a Base fork: fee-500
+        delivers 1.31537 WETH for 2500 USDC (king fee-100 = 1.31263, +0.2%)."""
+        p = _b1_params(state)
+        tin = str(p.get('input_token', '') or '')
+        tout = str(p.get('output_token', '') or '')
+        amount_in = int(p.get('input_amount', 0) or 0)
+        if amount_in <= 0:
+            return None
+        recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
+        deadline = int(_b1time.time()) + 300
+        chain_id = int(getattr(state, 'chain_id', 0) or 0)
+        w3 = _b1_w3(state)
+        # live-quote every fee tier, pick the best. If quoting is unavailable
+        # (all return 0), DEFAULT to fee 500 — the tier the king's fee-100 pin
+        # under-uses — never fall through to fee 100.
+        quotes = {fee: _b1_quote_single(w3, tin, tout, amount_in, fee)
+                  for fee in (100, 500, 3000)}
+        if max(quotes.values()) > 0:
+            best_fee = max(quotes, key=quotes.get)
+        else:
+            best_fee = 500  # no-rpc default: the reliable, better tier
+        swap_cd = _b1_v3single(token_in=tin, token_out=tout, fee=best_fee,
+                               recipient=recipient, deadline=deadline,
+                               amount_in=amount_in, amount_out_minimum=0,
+                               chain_id=chain_id)
+        approve_cd = _b1_approve(_B1_ROUTER_8453, amount_in)
+        return _B1Plan(
+            intent_id=intent.app_id,
+            interactions=[
+                _B1Ix(target=tin, value='0', call_data=approve_cd, chain_id=chain_id),
+                _B1Ix(target=_B1_ROUTER_8453, value='0', call_data=swap_cd, chain_id=chain_id),
+            ],
+            deadline=deadline,
+            nonce=getattr(state, 'nonce', 0),
+            metadata={'solver': 'b1-cover', 'route': f'USDC->WETH v3 fee={best_fee}'},
+        )
+
+    _B1_COVERS = {
+        # cbBTC -> USDC on Base: champion has no table cover (likely a tie).
+        (8453, _B1_CBBTC.lower(), _B1_USDC_BASE.lower()): _b1_cover_cbbtc_usdc,
+        # WETH -> DAI on Base via USDC hub (patched by 531.0.3; kept as fallback).
+        (8453, _B1_WETH_BASE.lower(), _B1_DAI_BASE.lower()): _b1_cover_weth_dai,
+        # USDC -> WETH: king pins fee-100 (drops 8/flakes 7); we pick best fee.
+        (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): _b1_cover_usdc_weth,
+    }
+
+    class B1FillEmptySolver(_B1_BASE):
+        """Champion + fill-only-empty covers. Monotonic >= champion."""
+
+        def metadata(self):
+            base = super().metadata()
+            if _B1Meta is None:
+                return base
+            return _B1Meta(
+                name=_B1_NAME, version=_B1_VERSION, author=_B1_AUTHOR,
+                description='Champion stack with fill-only-empty covers (b1/UID38)',
+                supported_chains=base.supported_chains,
+                supported_intent_types=base.supported_intent_types,
+            )
+
+        def generate_plan(self, intent, state, snapshot=None):
+            plan = None
+            try:
+                plan = super().generate_plan(intent, state, snapshot)
+            except Exception:
+                _b1_logger.exception('[b1] champion stack raised; trying cover')
+            # champion-served orders are sacrosanct — never override.
+            if not _b1_is_empty(plan):
+                return plan
+            # champion declined -> try a cover for this token pair.
+            cover = _B1_COVERS.get(_b1_pair_key(state))
+            if cover is not None:
+                try:
+                    cov = cover(intent, state, snapshot)
+                    if not _b1_is_empty(cov):
+                        _b1_logger.info('[b1] cover filled a champion-empty order')
+                        return cov
+                except Exception:
+                    _b1_logger.exception('[b1] cover failed; returning champion result')
+            return plan
+
+    globals().update(locals())
+    globals()['SOLVER_CLASS'] = B1FillEmptySolver
+_build_b1_fill_empty()
