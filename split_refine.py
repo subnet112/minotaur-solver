@@ -34,36 +34,23 @@ inherited unchanged. Every named region is kept <=110 AST nodes to match the
 codebase's factorization discipline (see harness/screening.max_region_nodes).
 """
 from __future__ import annotations
-
 import logging
-
 logger = logging.getLogger(__name__)
-
-# Same min-gain-over-single-route threshold the champion's split uses.
 _SPLIT_MIN_GAIN = 1.0005
-# Extra buffer the refined split must clear OVER the champion's own chosen
-# output before we deviate from it (3 bps: inside the 10-bps adoption noise band
-# so slippage can't turn a deviation into a regression).
 _REFINE_EDGE = 1.0003
-# Probe a split whenever the runner-up venue is within this of the leader
-# (champion uses 0.98; widened so champion-skipped orders still get a probe).
 _REFINE_WINDOW = 0.95
-# Coarse a1/amount grid. Superset of the champion's {1/3,1/2,2/3} (8/24,12/24,16/24).
-_COARSE_FRACS = tuple(n / 24 for n in (3, 6, 8, 10, 12, 14, 16, 18, 21))
-# Local-refine offsets (fraction of amount_in) around the best coarse point.
-_REFINE_OFFS = tuple(n / 48 for n in (1, 2, 4))
+_COARSE_FRACS = tuple((n / 24 for n in (3, 6, 8, 10, 12, 14, 16, 18, 21)))
+_REFINE_OFFS = tuple((n / 48 for n in (1, 2, 4)))
 _MAX_WORKERS = 16
-
 
 def _clamp(a, amount_in):
     return max(1, min(amount_in - 1, int(a)))
 
-
 def _dedup_top2(sorted_cands):
     """First two distinct-venue candidates from an out-desc-sorted list."""
-    top, seen = [], set()
+    top, seen = ([], set())
     for c in sorted_cands:
-        v = c.get("venue")
+        v = c.get('venue')
         if v in seen:
             continue
         seen.add(v)
@@ -72,24 +59,21 @@ def _dedup_top2(sorted_cands):
             return (top[0], top[1])
     return None
 
-
 def _top2_splittable(splittable, cands):
     """The top-2 DISTINCT splittable venues by full-amount output, or None."""
-    sp = [c for c in cands if c.get("venue") in splittable]
-    sp.sort(key=lambda c: int(c.get("out", 0) or 0), reverse=True)
+    sp = [c for c in cands if c.get('venue') in splittable]
+    sp.sort(key=lambda c: int(c.get('out', 0) or 0), reverse=True)
     return _dedup_top2(sp)
-
 
 def _champ_output(champ_plan, ref_out):
     """Champion's own chosen output: its split's expected_output, else ref_out."""
     if champ_plan is None:
         return ref_out
-    meta = getattr(champ_plan, "metadata", None) or {}
+    meta = getattr(champ_plan, 'metadata', None) or {}
     try:
-        return max(ref_out, int(meta.get("expected_output", ref_out)))
+        return max(ref_out, int(meta.get('expected_output', ref_out)))
     except (TypeError, ValueError):
         return ref_out
-
 
 class _Refiner:
     """Concurrent finer-grid search for the best a1 of a 2-venue split, with a
@@ -120,9 +104,9 @@ class _Refiner:
         a2 = self.amount_in - a1
         out = []
         if 0 < a1 < self.amount_in:
-            out.append((self.v1["venue"], self.v1["param"], a1))
+            out.append((self.v1['venue'], self.v1['param'], a1))
         if 0 < a2 < self.amount_in:
-            out.append((self.v2["venue"], self.v2["param"], a2))
+            out.append((self.v2['venue'], self.v2['param'], a2))
         return out
 
     def _jobs_for(self, a1_values):
@@ -134,13 +118,12 @@ class _Refiner:
     def _prime(self, a1_values):
         """Fire needed quotes concurrently (mirrors the champion's ThreadPool)."""
         import concurrent.futures
-
         need = self._jobs_for(a1_values)
         if not need:
             return
         workers = min(_MAX_WORKERS, len(need))
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
-            futs = [ex.submit(self._quote, v, p, a) for (v, p, a) in need]
+            futs = [ex.submit(self._quote, v, p, a) for v, p, a in need]
             for f in concurrent.futures.as_completed(futs):
                 try:
                     f.result()
@@ -148,15 +131,15 @@ class _Refiner:
                     pass
 
     def _total(self, a1):
-        o1 = self._quote(self.v1["venue"], self.v1["param"], a1)
-        o2 = self._quote(self.v2["venue"], self.v2["param"], self.amount_in - a1)
-        return o1 + o2 if (o1 > 0 and o2 > 0) else 0
+        o1 = self._quote(self.v1['venue'], self.v1['param'], a1)
+        o2 = self._quote(self.v2['venue'], self.v2['param'], self.amount_in - a1)
+        return o1 + o2 if o1 > 0 and o2 > 0 else 0
 
     def _best_over(self, a1_values, best_a1, best_total):
         for a1 in a1_values:
             t = self._total(a1)
             if t > best_total:
-                best_a1, best_total = a1, t
+                best_a1, best_total = (a1, t)
         return (best_a1, best_total)
 
     def _coarse_grid(self):
@@ -183,36 +166,25 @@ class _Refiner:
         self._prime(refine)
         return self._best_over(refine, best_a1, best_total)
 
-
 def _pick_pair(solver, cands, best, amount_in):
     """Validate the order and pick the top-2 splittable venues, or None."""
-    ref_out = int(best.get("out", 0) or 0)
+    ref_out = int(best.get('out', 0) or 0)
     if ref_out <= 0 or amount_in < 8:
         return None
     pair = _top2_splittable(solver._SPLITTABLE, cands)
     if pair is None:
         return None
     v1, v2 = pair
-    if int(v2.get("out", 0) or 0) < int(v1.get("out", 0) or 0) * _REFINE_WINDOW:
+    if int(v2.get('out', 0) or 0) < int(v1.get('out', 0) or 0) * _REFINE_WINDOW:
         return None
     return (v1, v2, ref_out)
-
 
 def _emit_split(solver, ctx, v1, v2, best_a1, best_total, ref_out, champ_out):
     """Assemble the two legs and build the split plan (champion's builder)."""
     intent, state, snapshot, tin, tout, amount_in, chain_id = ctx
-    legs = [
-        (v1["venue"], v1["param"], best_a1),
-        (v2["venue"], v2["param"], amount_in - best_a1),
-    ]
-    logger.info(
-        "[split-refine] override: total=%d > champ=%d (single=%d) a1=%d/%d",
-        best_total, champ_out, ref_out, best_a1, amount_in,
-    )
-    return solver._build_split_plan(
-        intent, state, snapshot, legs, tin, tout, amount_in, chain_id, best_total, ref_out
-    )
-
+    legs = [(v1['venue'], v1['param'], best_a1), (v2['venue'], v2['param'], amount_in - best_a1)]
+    logger.info('[split-refine] override: total=%d > champ=%d (single=%d) a1=%d/%d', best_total, champ_out, ref_out, best_a1, amount_in)
+    return solver._build_split_plan(intent, state, snapshot, legs, tin, tout, amount_in, chain_id, best_total, ref_out)
 
 def _gated_plan(solver, ctx, v1, v2, found, ref_out, champ_plan):
     """Build the refined split iff it strictly beats the champion, else None."""
@@ -223,15 +195,13 @@ def _gated_plan(solver, ctx, v1, v2, found, ref_out, champ_plan):
         return None
     return _emit_split(solver, ctx, v1, v2, best_a1, best_total, ref_out, champ_out)
 
-
 def _run_search(solver, ctx, v1, v2):
     """Fork web3 + finer-grid search -> (best_a1, best_total), or None on no fork."""
-    tin, tout, amount_in, chain_id = ctx[3], ctx[4], ctx[5], ctx[6]
+    tin, tout, amount_in, chain_id = (ctx[3], ctx[4], ctx[5], ctx[6])
     w3 = solver._get_web3(int(chain_id))
     if w3 is None:
         return None
     return _Refiner(solver, w3, v1, v2, tin, tout, amount_in).search()
-
 
 def _refine_split(solver, ctx, cands, best, champ_plan):
     """Orchestrate: pick pair -> fork web3 -> finer search -> gated build.
@@ -245,7 +215,6 @@ def _refine_split(solver, ctx, cands, best, champ_plan):
         return None
     return _gated_plan(solver, ctx, v1, v2, found, ref_out, champ_plan)
 
-
 def install(base_cls):
     """Return a subclass of `base_cls` that refines the champion's split.
 
@@ -257,15 +226,12 @@ def install(base_cls):
         defers to the champion's own split on any doubt)."""
 
         def _try_split_plan(self, intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best):
-            champ_plan = super()._try_split_plan(
-                intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best
-            )
+            champ_plan = super()._try_split_plan(intent, state, snapshot, cands, tin, tout, amount_in, chain_id, best)
             try:
                 ctx = (intent, state, snapshot, tin, tout, amount_in, chain_id)
                 refined = _refine_split(self, ctx, cands, best, champ_plan)
                 return refined if refined is not None else champ_plan
             except Exception:
-                logger.exception("[split-refine] refine failed; keeping champion split")
+                logger.exception('[split-refine] refine failed; keeping champion split')
                 return champ_plan
-
     return _MinoSplitRefine
