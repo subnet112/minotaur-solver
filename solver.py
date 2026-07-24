@@ -1046,7 +1046,7 @@ def _build_b1_fill_empty():
         except Exception:
             return 0
 
-    def _b1_cover_cbbtc_usdc(intent, state, snapshot):
+    def _b1_cover_cbbtc_usdc(intent, state, snapshot, inst=None):
         """cbBTC -> USDC on Base. Champion has no memorized route for this pair.
         Live-quote each fee tier, pick the best-output single-hop, and emit
         approve + exactInputSingle. Falls back to fee 3000 (on-chain best at
@@ -1062,7 +1062,7 @@ def _build_b1_fill_empty():
         chain_id = int(getattr(state, 'chain_id', 0) or 0)
 
         # Pick the best fee tier by live quote; default to the first (3000).
-        w3 = _b1_w3(state)
+        w3 = _b1_w3(state, inst)
         best_fee, best_out = _B1_CBBTC_FEES[0], -1
         for fee in _B1_CBBTC_FEES:
             out = _b1_quote_single(w3, tin, tout, amount_in, fee)
@@ -1129,7 +1129,7 @@ def _build_b1_fill_empty():
         except Exception:
             return 0
 
-    def _b1_cover_weth_dai(intent, state, snapshot):
+    def _b1_cover_weth_dai(intent, state, snapshot, inst=None):
         """WETH -> DAI on Base via USDC hub. The direct WETH/DAI pools are thin
         (saturate fast: ~225 DAI for 0.5 WETH), but WETH->USDC->DAI delivers
         ~949 DAI (4.2x) and up to 75x at larger sizes. The champion's multi-hop
@@ -1146,7 +1146,7 @@ def _build_b1_fill_empty():
         recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
         chain_id = int(getattr(state, 'chain_id', 0) or 0)
         deadline = int(_b1time.time()) + 300
-        w3 = _b1_w3(state)
+        w3 = _b1_w3(state, inst)
 
         # candidate WETH->USDC->DAI hub fee combos (verified best: 500,100)
         hub_fees = [(500, 100), (500, 500), (3000, 100), (3000, 500)]
@@ -1193,14 +1193,19 @@ def _build_b1_fill_empty():
         )
 
     # Covers keyed by (chain_id, input_token_lower, output_token_lower).
-    def _b1_cover_usdc_weth(intent, state, snapshot):
+    def _b1_cover_usdc_weth(intent, state, snapshot, amount_out_min_floor=0, inst=None):
         """USDC -> WETH on Base. THE ATTACK on ninja 531.0.3: the king pins this
         pair to fee tier 100 (its route table: fee=100, _our_drops=8, _flakes=7)
         which UNDER-delivers by +0.2%-0.8% on large/xl orders vs fee 500, and it
         intermittently drops orders. We live-quote all fee tiers and emit the
         best — reliably delivering where the king drops, and out-delivering its
         fee-100 pin on the sized orders. Verified on a Base fork: fee-500
-        delivers 1.31537 WETH for 2500 USDC (king fee-100 = 1.31263, +0.2%)."""
+        delivers 1.31537 WETH for 2500 USDC (king fee-100 = 1.31263, +0.2%).
+
+        amount_out_min_floor: when >0 (set by the OVERRIDE path), the emitted
+        swap carries this as amount_out_minimum, so it either delivers at least
+        this much or reverts back to the champion's baseline delivery. On the
+        fill-empty path it stays 0 (any delivery beats a champion-0)."""
         p = _b1_params(state)
         tin = str(p.get('input_token', '') or '')
         tout = str(p.get('output_token', '') or '')
@@ -1210,7 +1215,7 @@ def _build_b1_fill_empty():
         recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
         deadline = int(_b1time.time()) + 300
         chain_id = int(getattr(state, 'chain_id', 0) or 0)
-        w3 = _b1_w3(state)
+        w3 = _b1_w3(state, inst)
         # live-quote every fee tier, pick the best. If quoting is unavailable
         # (all return 0), DEFAULT to fee 500 — the tier the king's fee-100 pin
         # under-uses — never fall through to fee 100.
@@ -1220,9 +1225,15 @@ def _build_b1_fill_empty():
             best_fee = max(quotes, key=quotes.get)
         else:
             best_fee = 500  # no-rpc default: the reliable, better tier
+        # Safety floor (override path only): our best live quote must clear the
+        # floor too, else emitting this swap could revert unconditionally. If the
+        # chosen tier can't beat the floor, decline (defer to champion).
+        if amount_out_min_floor > 0 and quotes.get(best_fee, 0) < amount_out_min_floor:
+            return None
         swap_cd = _b1_v3single(token_in=tin, token_out=tout, fee=best_fee,
                                recipient=recipient, deadline=deadline,
-                               amount_in=amount_in, amount_out_minimum=0,
+                               amount_in=amount_in,
+                               amount_out_minimum=int(amount_out_min_floor),
                                chain_id=chain_id)
         approve_cd = _b1_approve(_B1_ROUTER_8453, amount_in)
         return _B1Plan(
@@ -1267,9 +1278,13 @@ def _build_b1_fill_empty():
     _B1_OVERRIDE_MARGIN = 1.001  # our route must beat the pinned-fee quote by >0.1%
 
     def _b1_should_override(state, inst=None):
-        """Return the cover fn if our best live quote strictly beats the
-        champion's pinned-fee route for this pair by the margin; else None.
-        Conservative: any doubt / no RPC -> None (defer to champion)."""
+        """Return (cover_fn, amount_out_min_floor) if our best live quote strictly
+        beats the champion's pinned-fee route for this pair by the margin; else
+        None. The floor is the champion's proven output scaled by the margin — the
+        override cover carries it as amount_out_minimum so the override can only
+        deliver MORE than the champion or revert to the champion's baseline (it
+        can never regress a champion delivery). Conservative: any doubt / no RPC
+        -> None (defer to champion)."""
         key = _b1_pair_key(state)
         pinned = _B1_OVERRIDE.get(key)
         if pinned is None:
@@ -1290,7 +1305,13 @@ def _build_b1_fill_empty():
             if o > best_out:
                 best_out = o
         if champ_out > 0 and best_out > int(champ_out * _B1_OVERRIDE_MARGIN):
-            return _B1_COVERS.get(key)
+            # Floor the override at the champion's proven output: strictly more
+            # than what the champion would deliver, or the swap reverts and we
+            # fall back to the champion plan. Never regress a served order.
+            floor = int(champ_out * _B1_OVERRIDE_MARGIN)
+            cover = _B1_COVERS.get(key)
+            if cover is not None:
+                return (cover, floor)
         return None
 
     class B1FillEmptySolver(_B1_BASE):
@@ -1315,14 +1336,21 @@ def _build_b1_fill_empty():
                 _b1_logger.exception('[b1] champion stack raised; trying cover')
             # champion served this order: normally sacrosanct, BUT for
             # override-eligible pairs, if our live quote strictly beats the
-            # champion's pinned-fee route, override with our better plan.
+            # champion's pinned-fee route, override with our better plan. The
+            # override cover carries amount_out_minimum = champ_out * margin, so
+            # it delivers strictly more than the champion or reverts to the
+            # champion baseline — a served order can never be regressed.
             if not _b1_is_empty(plan):
                 try:
                     ov = _b1_should_override(state, self)
                     if ov is not None:
-                        cov = ov(intent, state, snapshot)
+                        cover_fn, floor = ov
+                        cov = cover_fn(intent, state, snapshot,
+                                       amount_out_min_floor=floor, inst=self)
                         if not _b1_is_empty(cov):
-                            _b1_logger.info('[b1] OVERRIDE: our route beats champion pinned-fee')
+                            _b1_logger.info(
+                                '[b1] OVERRIDE: our route beats champion pinned-fee '
+                                '(min-out floored at champion output)')
                             return cov
                 except Exception:
                     _b1_logger.exception('[b1] override check failed; keeping champion plan')
@@ -1331,7 +1359,7 @@ def _build_b1_fill_empty():
             cover = _B1_COVERS.get(_b1_pair_key(state))
             if cover is not None:
                 try:
-                    cov = cover(intent, state, snapshot)
+                    cov = cover(intent, state, snapshot, inst=self)
                     if not _b1_is_empty(cov):
                         _b1_logger.info('[b1] cover filled a champion-empty order')
                         return cov
