@@ -998,19 +998,28 @@ def _build_b1_fill_empty():
             return True
         return not getattr(plan, 'interactions', None)
 
-    def _b1_w3(state):
+    def _b1_w3(state, inst=None):
         """Live web3 to the validator's fork, via the champion's own RPC
-        accessor. Never hardcodes a URL. Returns None if unavailable."""
+        accessor. Never hardcodes a URL. Returns None if unavailable.
+        `inst` is the solver instance (self) — its bound rpc_for is the real
+        production accessor, so we check it first."""
+        cid = int(getattr(state, 'chain_id', 0) or 0)
         rpc = None
-        for attr in ('rpc_for', '_rpc_for', 'rpc_url_for'):
-            fn = getattr(_B1_BASE, attr, None) or getattr(state, attr, None)
-            if callable(fn):
-                try:
-                    rpc = fn(int(getattr(state, 'chain_id', 0) or 0))
-                    if rpc:
-                        break
-                except Exception:
-                    pass
+        sources = [inst, state, _B1_BASE]
+        for src in sources:
+            if src is None:
+                continue
+            for attr in ('rpc_for', '_rpc_for', 'rpc_url_for'):
+                fn = getattr(src, attr, None)
+                if callable(fn):
+                    try:
+                        rpc = fn(cid)
+                        if rpc:
+                            break
+                    except Exception:
+                        pass
+            if rpc:
+                break
         if not rpc:
             return None
         try:
@@ -1236,6 +1245,45 @@ def _build_b1_fill_empty():
         (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): _b1_cover_usdc_weth,
     }
 
+    # OVERRIDE-eligible pairs: (chain, tin, tout) -> champion's known pinned fee.
+    # For these, when the champion DOES serve, we still compare our best live
+    # quote vs the champion's PINNED-fee quote; if ours strictly beats it by the
+    # margin below, we override with our plan (capturing the edge on served
+    # orders, not just champion-empties). Safe: gated on a same-block live
+    # comparison — we only override when we can PROVE more output.
+    _B1_OVERRIDE = {
+        # king pins USDC->WETH to fee-100; fee-500 delivers +0.2-0.8% on large/xl
+        (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): 100,
+    }
+    _B1_OVERRIDE_MARGIN = 1.001  # our route must beat the pinned-fee quote by >0.1%
+
+    def _b1_should_override(state, inst=None):
+        """Return the cover fn if our best live quote strictly beats the
+        champion's pinned-fee route for this pair by the margin; else None.
+        Conservative: any doubt / no RPC -> None (defer to champion)."""
+        key = _b1_pair_key(state)
+        pinned = _B1_OVERRIDE.get(key)
+        if pinned is None:
+            return None
+        p = _b1_params(state)
+        tin = str(p.get('input_token', '') or '')
+        tout = str(p.get('output_token', '') or '')
+        amt = int(p.get('input_amount', 0) or 0)
+        if amt <= 0:
+            return None
+        w3 = _b1_w3(state, inst)
+        if w3 is None:
+            return None  # can't prove an edge without live quotes -> don't override
+        champ_out = _b1_quote_single(w3, tin, tout, amt, pinned)
+        best_out = 0
+        for fee in (100, 500, 3000):
+            o = _b1_quote_single(w3, tin, tout, amt, fee)
+            if o > best_out:
+                best_out = o
+        if champ_out > 0 and best_out > int(champ_out * _B1_OVERRIDE_MARGIN):
+            return _B1_COVERS.get(key)
+        return None
+
     class B1FillEmptySolver(_B1_BASE):
         """Champion + fill-only-empty covers. Monotonic >= champion."""
 
@@ -1256,10 +1304,21 @@ def _build_b1_fill_empty():
                 plan = super().generate_plan(intent, state, snapshot)
             except Exception:
                 _b1_logger.exception('[b1] champion stack raised; trying cover')
-            # champion-served orders are sacrosanct — never override.
+            # champion served this order: normally sacrosanct, BUT for
+            # override-eligible pairs, if our live quote strictly beats the
+            # champion's pinned-fee route, override with our better plan.
             if not _b1_is_empty(plan):
+                try:
+                    ov = _b1_should_override(state, self)
+                    if ov is not None:
+                        cov = ov(intent, state, snapshot)
+                        if not _b1_is_empty(cov):
+                            _b1_logger.info('[b1] OVERRIDE: our route beats champion pinned-fee')
+                            return cov
+                except Exception:
+                    _b1_logger.exception('[b1] override check failed; keeping champion plan')
                 return plan
-            # champion declined -> try a cover for this token pair.
+            # champion declined -> try a cover for this token pair (fill-empty).
             cover = _B1_COVERS.get(_b1_pair_key(state))
             if cover is not None:
                 try:
