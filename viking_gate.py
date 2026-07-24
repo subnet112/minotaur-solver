@@ -1,7 +1,5 @@
-# gated-tier evaluation (z / baseline-proxy / margin gates)
 import logging
 import shape_base as _sba
-
 logger = logging.getLogger('viking')
 
 def _gate_z(s, spec, tin, tout, amt, key, chain_id):
