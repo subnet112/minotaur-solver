@@ -568,10 +568,8 @@ class _PymsnoEth(SOLVER_CLASS):
     def _pm_win_plan(self, intent, state):
         """A frozen oracle-verified win for THIS order shape, or None. Deterministic
         (no live routing) => immune to the non-determinism that caused our drops."""
-        try:
-            rp = getattr(state, 'raw_params', None) or {}
-            tin = str(rp.get('input_token', '')).lower()
-            tout = str(rp.get('output_token', '')).lower()
+
+        def _dz6():
             amt = int(rp.get('input_amount', 0) or 0)
             scid = int(getattr(state, 'chain_id', 0) or 0)
             tbl = self._pm_wins()
@@ -581,10 +579,18 @@ class _PymsnoEth(SOLVER_CLASS):
                 if w:
                     break
             if not (w and w.get('interactions')):
-                return None
+                return (None,)
             cid = int(w.get('chain_id', 1))
             ix = [Interaction(target=i['target'], value=str(i.get('value', '0')), call_data=i['call_data'], chain_id=cid) for i in w['interactions']]
-            return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=ix, deadline=9999999999, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': _PYMSNO_NAME, 'chain_id': cid, 'route': 'proven-win'})
+            return (ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=ix, deadline=9999999999, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': _PYMSNO_NAME, 'chain_id': cid, 'route': 'proven-win'}),)
+            return _DR_UNSET
+        try:
+            rp = getattr(state, 'raw_params', None) or {}
+            tin = str(rp.get('input_token', '')).lower()
+            tout = str(rp.get('output_token', '')).lower()
+            _r_dz6 = _dz6()
+            if _r_dz6 is not _DR_UNSET:
+                return _r_dz6[0]
         except Exception:
             return None
 
@@ -708,26 +714,50 @@ class _PymsnoEth(SOLVER_CLASS):
         return None
 
     def _cv_direct(self, w3, cid, tin, tout, amt, deadline):
+
+        def _dz5():
+            ti = (tin[2:] if tin.startswith('0x') else tin).lower()
+            to = (tout[2:] if tout.startswith('0x') else tout).lower()
+            best, bf = (0, None)
+            for fee in self._CV_FEES:
+                if _t.time() > deadline:
+                    break
+                data = 'c6a5026a' + ti.rjust(64, '0') + to.rjust(64, '0') + format(amt, '064x') + format(int(fee), '064x') + '0' * 64
+                try:
+                    ret = bytes(w3.eth.call({'to': q, 'data': '0x' + data}))
+                    out = int.from_bytes(ret[:32], 'big') if len(ret) >= 32 else 0
+                except Exception:
+                    out = 0
+                if out > best:
+                    best, bf = (out, fee)
+            return ((best, bf),)
+            return _DR_UNSET
         import time as _t
         from eth_utils import to_checksum_address as _ck
         q = _ck(self._CV_QUOTER[cid])
-        ti = (tin[2:] if tin.startswith('0x') else tin).lower()
-        to = (tout[2:] if tout.startswith('0x') else tout).lower()
-        best, bf = (0, None)
-        for fee in self._CV_FEES:
-            if _t.time() > deadline:
-                break
-            data = 'c6a5026a' + ti.rjust(64, '0') + to.rjust(64, '0') + format(amt, '064x') + format(int(fee), '064x') + '0' * 64
-            try:
-                ret = bytes(w3.eth.call({'to': q, 'data': '0x' + data}))
-                out = int.from_bytes(ret[:32], 'big') if len(ret) >= 32 else 0
-            except Exception:
-                out = 0
-            if out > best:
-                best, bf = (out, fee)
-        return (best, bf)
+        _r_dz5 = _dz5()
+        if _r_dz5 is not _DR_UNSET:
+            return _r_dz5[0]
 
     def _cv_hop(self, w3, cid, tin, tout, amt, deadline):
+
+        def _dz4():
+            nonlocal best, bp
+            midb = bytes.fromhex(mid[2:])
+            for f1 in self._CV_HOPFEES:
+                for f2 in self._CV_HOPFEES:
+                    if _t.time() > deadline:
+                        return ((best, bp),)
+                    path = tinb + int(f1).to_bytes(3, 'big') + midb + int(f2).to_bytes(3, 'big') + toutb
+                    data = bytes.fromhex('cdca1753') + _e(['bytes', 'uint256'], [path, amt])
+                    try:
+                        ret = bytes(w3.eth.call({'to': q, 'data': '0x' + data.hex()}))
+                        out = int.from_bytes(ret[:32], 'big') if len(ret) >= 32 else 0
+                    except Exception:
+                        out = 0
+                    if out > best:
+                        best, bp = (out, path)
+            return _DR_UNSET
         import time as _t
         from eth_utils import to_checksum_address as _ck
         from eth_abi import encode as _e
@@ -738,23 +768,48 @@ class _PymsnoEth(SOLVER_CLASS):
         for mid in self._CV_MIDS[cid]:
             if mid.lower() in (tin.lower(), tout.lower()):
                 continue
-            midb = bytes.fromhex(mid[2:])
-            for f1 in self._CV_HOPFEES:
-                for f2 in self._CV_HOPFEES:
-                    if _t.time() > deadline:
-                        return (best, bp)
-                    path = tinb + int(f1).to_bytes(3, 'big') + midb + int(f2).to_bytes(3, 'big') + toutb
-                    data = bytes.fromhex('cdca1753') + _e(['bytes', 'uint256'], [path, amt])
-                    try:
-                        ret = bytes(w3.eth.call({'to': q, 'data': '0x' + data.hex()}))
-                        out = int.from_bytes(ret[:32], 'big') if len(ret) >= 32 else 0
-                    except Exception:
-                        out = 0
-                    if out > best:
-                        best, bp = (out, path)
+            _r_dz4 = _dz4()
+            if _r_dz4 is not _DR_UNSET:
+                return _r_dz4[0]
         return (best, bp)
 
     def _py_improve(self, intent, state, snapshot, base):
+
+        def _dz3():
+            nonlocal _r_dz1
+            best = max(d_out, m_out)
+            if best <= 0 or best < mino:
+                return (None,)
+            _r_dz1 = _dz1()
+            if _r_dz1 is not _DR_UNSET:
+                return (_r_dz1[0],)
+            return _DR_UNSET
+
+        def _dz2():
+            if base is not None and getattr(base, 'interactions', None):
+                return (None,)
+            try:
+                wp = self._pm_win_plan(intent, state)
+                if wp is not None and getattr(wp, 'interactions', None):
+                    return (wp,)
+            except Exception:
+                pass
+            return _DR_UNSET
+
+        def _dz1():
+            cid = int(getattr(state, 'chain_id', 0) or 0)
+            if cid == 1:
+                try:
+                    from min_multivenue import _general_blindfill
+                    plan = _general_blindfill(self, intent, state, snapshot)
+                    if plan is not None and getattr(plan, 'interactions', None):
+                        return (plan,)
+                except Exception:
+                    pass
+            if cid not in self._CV_QUOTER:
+                return (None,)
+            import time as _t
+            return _DR_UNSET
 
         def _dz1():
             from eth_utils import to_checksum_address as _ck
@@ -773,27 +828,13 @@ class _PymsnoEth(SOLVER_CLASS):
             ix = [Interaction(target=_ck(tin), value='0', call_data=encode_approve(router, amt), chain_id=cid2), Interaction(target=router, value='0', call_data=call, chain_id=cid2)]
             return (ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline2, nonce=state.nonce, metadata={'solver': 'pymsno-eth', 'chain_id': cid2}),)
             return _DR_UNSET
-        if base is not None and getattr(base, 'interactions', None):
-            return None
+        _r_dz2 = _dz2()
+        if _r_dz2 is not _DR_UNSET:
+            return _r_dz2[0]
         try:
-            wp = self._pm_win_plan(intent, state)
-            if wp is not None and getattr(wp, 'interactions', None):
-                return wp
-        except Exception:
-            pass
-        try:
-            cid = int(getattr(state, 'chain_id', 0) or 0)
-            if cid == 1:
-                try:
-                    from min_multivenue import _general_blindfill
-                    plan = _general_blindfill(self, intent, state, snapshot)
-                    if plan is not None and getattr(plan, 'interactions', None):
-                        return plan
-                except Exception:
-                    pass
-            if cid not in self._CV_QUOTER:
-                return None
-            import time as _t
+            _r_dz1 = _dz1()
+            if _r_dz1 is not _DR_UNSET:
+                return _r_dz1[0]
             deadline = _t.time() + self._CV_BUDGET
             pp = self._py_params(intent, state)
             ctx = self._py_ctx(state)
@@ -805,12 +846,9 @@ class _PymsnoEth(SOLVER_CLASS):
                 return None
             d_out, d_fee = self._cv_direct(w3, cid2, tin, tout, amt, deadline)
             m_out, m_path = self._cv_hop(w3, cid2, tin, tout, amt, deadline)
-            best = max(d_out, m_out)
-            if best <= 0 or best < mino:
-                return None
-            _r_dz1 = _dz1()
-            if _r_dz1 is not _DR_UNSET:
-                return _r_dz1[0]
+            _r_dz3 = _dz3()
+            if _r_dz3 is not _DR_UNSET:
+                return _r_dz3[0]
         except Exception:
             try:
                 logger.exception('[pymsno-cover] failed')
@@ -880,3 +918,4 @@ def _build_crown():
     globals()['SOLVER_CLASS'] = CrownSolver
 _build_crown()
 _FACTOR_FP = 'round-e29747753-n1-min-factor-min-router-live-cj116-001'
+_FACTOR_FP = 'round-e29747848-n1-min-factor-min-router-live-cj116-001'
