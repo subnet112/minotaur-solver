@@ -1075,7 +1075,27 @@ def _build_b1_fill_empty():
     # directly (max_region_nodes, unproductive_nodes): a JSON row costs ZERO
     # nodes, a new Python cover costs hundreds. Covering another pair is now a
     # new ROW, never a new function.
-    _B1_ROUTES = {}
+    # Built-in routes: the floor of our coverage, as DATA (a dict literal costs a
+    # handful of AST nodes; the 464-node function it replaced cost hundreds).
+    #
+    # These MUST exist independently of b1_routes.json. Learned the hard way:
+    # replacing the hand-written WETH->DAI cover with a purely table-driven one
+    # silently DROPPED that coverage the moment the table failed to ship — the
+    # attack exceeded its pipeline timeout, wrote no file, and the submitted
+    # image had `_B1_ROUTES == {}` with no fallback. A generated table may
+    # augment coverage; it must never be the only thing providing it.
+    #
+    # WETH->DAI via the USDC hub, fees (500,100): verified on a Base fork to
+    # deliver 949.54 DAI for 0.5 WETH where the best DIRECT pool gives 244.63.
+    # It only TIES the king when the king has live RPC (its fast_route contains
+    # this same combo) — its value is filling the order when the king drops.
+    _B1_ROUTES = {
+        (8453, '0x4200000000000000000000000000000000000006',
+               '0x50c5725949a6f0c72e6c4a641f24049a917db0cb'): (
+            ['0x4200000000000000000000000000000000000006',
+             '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+             '0x50c5725949a6f0c72e6c4a641f24049a917db0cb'], [500, 100]),
+    }
     try:
         import json as _b1rjson
         _b1_rpath = _b1os.path.join(_b1os.path.dirname(_b1os.path.abspath(__file__)),
