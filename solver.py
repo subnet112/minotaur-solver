@@ -822,3 +822,44 @@ SOLVER_CLASS = DeltaSolver
 
 _MINROUTER_FP = 'round-e29748645-n1-min-hk4-cj113-001'
 _MINROUTER_NAME = 'gold_solver'
+
+# ===== VETO-SAFE COVERS (auto-wired by autobot, order = inner->outer) =====
+try:
+    from twohop_cover import wrap as _wrap_twohop
+    SOLVER_CLASS = _wrap_twohop(SOLVER_CLASS)
+except Exception:
+    import logging as _log_twohop; _log_twohop.getLogger(__name__).exception('[twohop] cover load failed; using champion stack')
+try:
+    from curve_cover import wrap as _wrap_curve
+    SOLVER_CLASS = _wrap_curve(SOLVER_CLASS)
+except Exception:
+    import logging as _log_curve; _log_curve.getLogger(__name__).exception('[curve] cover load failed; using champion stack')
+try:
+    from curve_refresh import wrap as _wrap_curve_refresh
+    SOLVER_CLASS = _wrap_curve_refresh(SOLVER_CLASS)
+except Exception:
+    import logging as _log_curve_refresh; _log_curve_refresh.getLogger(__name__).exception('[curve_refresh] cover load failed; using champion stack')
+try:
+    from blindfill_cover import wrap as _wrap_blindfill
+    SOLVER_CLASS = _wrap_blindfill(SOLVER_CLASS)
+except Exception:
+    import logging as _log_blindfill; _log_blindfill.getLogger(__name__).exception('[blindfill] cover load failed; using champion stack')
+
+# ===== identity: coin THIS miner's own solver name (cover-set independent) =====
+try:
+    class _BrandedSolver(SOLVER_CLASS):
+        def metadata(self):
+            m = super().metadata()
+            try:
+                m.name = 'Joseff'
+            except Exception:
+                try:
+                    import dataclasses as _dc
+                    if _dc.is_dataclass(m):
+                        return _dc.replace(m, name='Joseff')
+                except Exception:
+                    pass
+            return m
+    SOLVER_CLASS = _BrandedSolver
+except Exception:
+    import logging as _brlog; _brlog.getLogger(__name__).exception('[brand] shim failed')
