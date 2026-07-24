@@ -39,12 +39,14 @@ def _load_agent_strategies() -> dict:
         return out
     for app_dir in _STRATEGIES_DIR.iterdir():
         strat_file = app_dir / 'strategy.py'
+
         def _fw1():
             if not (app_dir.is_dir() and app_dir.name.startswith('app_') and strat_file.is_file()):
                 return ('c',)
         if _fw1() is not None:
             continue
         try:
+
             def _fw1():
                 spec = importlib.util.spec_from_file_location(f'agent_strategy_{app_dir.name}', strat_file)
                 mod = importlib.util.module_from_spec(spec)
@@ -53,6 +55,7 @@ def _load_agent_strategies() -> dict:
                 return (mod, Strategy)
             mod, Strategy = _fw1()
             for obj in vars(mod).values():
+
                 def _fw3():
                     if isinstance(obj, type) and issubclass(obj, Strategy) and (obj is not Strategy):
                         out[app_dir.name] = obj()
@@ -117,6 +120,7 @@ class _JamesSolverDR17(KingSolver):
 
     def _jq_aero(self, w3, pairs, amt):
         from eth_abi import encode as _enc, decode as _dec
+
         def _fw2():
             from eth_utils import keccak as _kk, to_checksum_address as _ck
             sel = _kk(b'getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
@@ -137,6 +141,7 @@ class _JamesSolverDR17(KingSolver):
             from eth_abi import encode as _enc
             from eth_utils import keccak as _kk, to_checksum_address as _ck
             c0, c1 = (tin, tout) if int(tin, 16) < int(tout, 16) else (tout, tin)
+
             def _fw1():
                 sel = _kk(b'quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4]
                 r = self._james_call(w3, self._JV4_QUOTER, sel + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), fee, tick, _ck(hook)), c0.lower() == tin.lower(), amt, b'')]))
@@ -147,6 +152,7 @@ class _JamesSolverDR17(KingSolver):
         return int.from_bytes(r[:32], 'big') if r else 0
 
 class _JamesSolver_fz(_JamesSolverDR17):
+
     def generate_plan(self, intent, state, snapshot=None):
 
         def _dr8():
@@ -154,6 +160,7 @@ class _JamesSolver_fz(_JamesSolverDR17):
             self._dyn_order_budget = None
 
             def _dr20():
+
                 def _fw4():
                     if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
                         import time as _t
@@ -179,6 +186,7 @@ class _JamesSolver_fz(_JamesSolverDR17):
         except Exception:
             logger.exception('[james] king generate_plan raised')
             plan = None
+
         def _fw3():
             try:
                 better = self._james_v4_edge(intent, state, snapshot)
@@ -251,6 +259,7 @@ class _JamesSolver_fz(_JamesSolverDR17):
             return None
 
         def _fw2():
+
             def _dr6():
                 chain_id = int(getattr(state, 'chain_id', 0) or 0)
                 if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())) or ((tin, tout) in table):
@@ -276,6 +285,7 @@ class _JamesSolver_fz(_JamesSolverDR17):
 
                             def _dr14():
                                 c0, c1 = (self._JWETH, tout) if int(self._JWETH, 16) < int(tout, 16) else (tout, self._JWETH)
+
                                 def _fw5():
                                     spec = {'pool': (c0, c1, self._JV4_DYN_FEE, 200, hook), 'settle': self._JWETH, 'zero_for_one': c0.lower() == self._JWETH.lower()}
                                     if tin == self._JUSDC.lower():
@@ -307,6 +317,7 @@ class _JamesSolver_fz(_JamesSolverDR17):
                     def _dr16():
                         nonlocal proxy
                         for router in (self._JUNIV2, self._JPANCV2):
+
                             def _fw2(proxy=proxy):
                                 proxy = max(proxy, self._jq_v2(w3, router, [tin, tout], amt))
                                 if tin != self._JWETH.lower():
@@ -322,6 +333,7 @@ class _JamesSolver_fz(_JamesSolverDR17):
                 def _dr18():
                     if best_out <= max(proxy, min_out, 1) * self._JAMES_MARGIN:
                         return None
+
                     def _fw3():
                         logger.info('[james] V4 edge fires %s->%s: v4=%d proxy=%d (x%.2f) hook=%s', tin[:8], tout[:8], best_out, proxy, best_out / max(proxy, 1), best_spec['pool'][4][:10])
                         table[tin, tout] = ('uniswap_v4_ur', best_spec)
@@ -424,5 +436,4 @@ class JamesSolver(_JamesSolver_fz):
             return plan is None or not getattr(plan, 'interactions', None)
         except Exception:
             return True
-
 SOLVER_CLASS = JamesSolver
