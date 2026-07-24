@@ -92,8 +92,10 @@ def _dr81():
                         return loop.run_until_complete(coro)
                     finally:
                         loop.close()
+
             def _fh1():
                 return [{'inputs': [], 'name': 'slot0', 'outputs': [{'internalType': 'uint160', 'name': 'sqrtPriceX96', 'type': 'uint160'}, {'internalType': 'int24', 'name': 'tick', 'type': 'int24'}, {'internalType': 'uint16', 'name': 'observationIndex', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinality', 'type': 'uint16'}, {'internalType': 'uint16', 'name': 'observationCardinalityNext', 'type': 'uint16'}, {'internalType': 'uint8', 'name': 'feeProtocol', 'type': 'uint8'}, {'internalType': 'bool', 'name': 'unlocked', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'liquidity', 'outputs': [{'internalType': 'uint128', 'name': '', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}]
+
             def _fh2():
                 return [{'inputs': [], 'name': 'fee', 'outputs': [{'internalType': 'uint24', 'name': '', 'type': 'uint24'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token0', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'token1', 'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
             _POOL_ABI = _fh1() + _fh2()
@@ -105,6 +107,7 @@ def _dr81():
     _FACTORY_ABI, _FACTORY_ADDRESSES, _POOL_ABI, _cross_chain_compat_params, _intent_function_from_state, _run_coro, _state_params = _dr40()
 
     def _fw5():
+
         def _dr1():
             _FACTORY_ADDRESSES[31337] = _FACTORY_ADDRESSES[1]
             _FEE_TIERS = [100, 500, 3000, 10000]
@@ -112,6 +115,7 @@ def _dr81():
 
             def _dr56():
                 _KNOWN_POOLS: dict[int, list[str]] = {1: ['0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8', '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640', '0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36', '0xCBCdF9626bC03E24f779434178A73a0B4bad62eD', '0x6c6Bc977E13Df9b0de53b251522280BB72383700', '0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8'], 8453: ['0xd0b53D9277642d899DF5C87A3966A349A798F224'], 964: ['0x6647dcbeb030dc8E227D8B1A2Cb6A49F3C887E3c']}
+
                 def _fw6():
                     _KNOWN_POOLS[31337] = list(_KNOWN_POOLS[1])
                     _DISCOVERY_SEED_TOKENS: dict[int, list[str]] = {8453: ['0x4200000000000000000000000000000000000006', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb', '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', '0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22', '0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452', '0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA', '0x78a087d713Be963Bf307b18F2Ff8122EF9A63ae9', '0x0578d8A44db98B23BF096A382e016e29a5Ce0ffe', '0x532f27101965dd16442E59d40670FaF5eBB142E4', '0x940181a94A35A4569E4529A3CDfB74e38FD98631', '0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c', '0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A', '0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b', '0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b', '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44', '0xdC46C1E93B71fF9209A0F8076a9951569DC35855'], 1: ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0xdAC17F958D2ee523a2206206994597C13D831ec7', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', '0x6B175474E89094C44Da98b954EedeAC495271d0F', '0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44'], 964: ['0x9Dc08C6e2BF0F1eeD1E00670f80Df39145529F81', '0xB833E8137FEDf80de7E908dc6fea43a029142F20']}
@@ -305,6 +309,7 @@ class _BaselineSwapSolverDR1(_BaselineSwapSolverDR1DR49):
         return result
 
     def _fw11():
+
         def _cross_chain_params(self, intent: AppIntentDefinition, state: IntentState) -> dict[str, Any]:
             swap_params = self._normalized_swap_params(intent, state)
             extra = _cross_chain_compat_params(state)
@@ -356,6 +361,7 @@ class _BaselineSwapSolverDR1(_BaselineSwapSolverDR1DR49):
                         logger.debug('Factory.getPool(%s, %s, %d) failed: %s', token_a[:10], token_b[:10], fee, exc)
                         rpc_errors += 1
                         continue
+
                     def _fw12():
                         if not pool_addr or pool_addr == _ZERO_ADDRESS:
                             return ('c',)
@@ -425,6 +431,7 @@ class _BaselineSwapSolverDR2DR30(_BaselineSwapSolverDR1):
             nonlocal chain_id
             swap_params = self._normalized_swap_params(intent, state)
             dest_chain_id = _cross_chain_compat_params(state).get('dest_chain_id')
+
             def _fwd(dest_chain_id=dest_chain_id, chain_id=chain_id):
                 if not dest_chain_id:
                     output_chain = swap_params.get('_output_chain')
@@ -485,6 +492,7 @@ class _BaselineSwapSolverDR2DR30(_BaselineSwapSolverDR1):
                                     if _dr99 is not _DR_UNSET:
                                         return _dr99
                                     discovered_fee = hops[0].get('fee')
+
                                     def _fws(state=state):
                                         if discovered_fee and discovered_fee != self._processor.default_fee_tier:
                                             state = self._state_with_extra(intent, state, chain_id=state.chain_id, extra_updates={'fee_tier': discovered_fee})
@@ -547,6 +555,7 @@ class _BaselineSwapSolverDR2DR31(_BaselineSwapSolverDR2DR30):
 
         def _dr51():
             output_token = params.get('output_token', '')
+
             def _fw10():
                 min_output = int(params.get('min_output_amount', 0))
                 dest_chain_id = int(params.get('dest_chain_id', 1))
@@ -619,6 +628,7 @@ class _BaselineSwapSolverDR2DR31(_BaselineSwapSolverDR2DR30):
         fees: list[int] = []
 
         def _dr48():
+
             def _fw9():
                 for hop in hops:
                     pool = hop['pool_state']
@@ -645,6 +655,7 @@ class _BaselineSwapSolverDR2DR31(_BaselineSwapSolverDR2DR30):
         def _dr20():
 
             def _dr76():
+
                 def _fw8():
                     deadline = context.timestamp + self._processor.deadline_offset
                     recipient = state.contract_address or swap_params.get('receiver', state.owner)
@@ -698,6 +709,7 @@ class _BaselineSwapSolverDR2DR88(_BaselineSwapSolverDR2DR31):
                 sqrt_price_raw = state.get('sqrtPriceX96')
                 return (sqrt_price_raw, token0, token1)
             sqrt_price_raw, token0, token1 = _dr82()
+
             def _fw1():
                 if not sqrt_price_raw:
                     return ('c',)
@@ -797,6 +809,7 @@ class _BaselineSwapSolverDR2(_BaselineSwapSolverDR2DR88):
                 zero_for_one = True
                 return (amount_in, deadline, min_output, recipient)
             amount_in, deadline, min_output, recipient = _dr65()
+
             def _fwp(pool_address=pool_address, zero_for_one=zero_for_one):
                 for addr, ps in pool_states.items():
                     t0 = ps.get('token0', '').lower()
@@ -836,6 +849,7 @@ class _BaselineSwapSolverDR2(_BaselineSwapSolverDR2DR88):
             def _dr35():
 
                 def _fw4():
+
                     def _dr8():
                         MIN_SQRT_RATIO = 4295128739
                         MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342
@@ -1006,6 +1020,7 @@ class _BaselineSwapSolverDR34(_BaselineSwapSolverDR31):
                 bridge_requests.append(BridgeRequest(token=bridge_token, amount=bridge_amount, src_chain_id=src_chain, dst_chain_id=dst_chain, recipient=recipient, purpose=f'bridge {bridge_token[:10]}.. for dest action'))
             _dr55()
             dest_interactions = self._build_dest_swap_interactions(intent, state, snapshot, dst_chain, output_token, recipient)
+
             def _fwc():
                 chain_legs.append(ChainLeg(chain_id=dst_chain, interactions=dest_interactions, intent_selector=swap_sel, metadata={'type': 'destination_action'}))
             _fwc()
@@ -1039,6 +1054,7 @@ class _BaselineSwapSolverDR34(_BaselineSwapSolverDR31):
                     if snapshot and snapshot.pool_states and (pool_states is snapshot.pool_states):
                         pool_states = dict(pool_states)
                     self._ensure_pools_for_route(src_chain, pool_states, input_token, output_token)
+
                 def _fw7():
                     prices = self._derive_prices(pool_states, src_chain) if pool_states else {}
                     context = ProcessorContext(chain_id=src_chain, timestamp=int(time.time()), block_number=0, rpc_url=self._rpc_urls.get(src_chain, ''), prices=prices)
@@ -1169,6 +1185,7 @@ class _BaselineSwapSolverDR34(_BaselineSwapSolverDR31):
         bridgeable_token = _dr16()
         route = route_desc = hops = bridge_quote_b = None
         if bridgeable_token:
+
             def _fwz():
 
                 def _dr87():
@@ -1357,6 +1374,7 @@ class BaselineSwapSolver(_BaselineSwapSolverDR89):
             min_output = swap_params.get('min_output_amount', 0)
             return (path, tick_spacings)
         path, tick_spacings = _dr43()
+
         def _fw3(min_output=min_output):
             if not min_output:
                 slippage_bps = self._processor.slippage_bps
