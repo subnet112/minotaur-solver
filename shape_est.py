@@ -1,4 +1,3 @@
-# SN112 per-shape estimators + gated-row dispatch (split from shape_lib).
 import shape_lib as _sl
 
 def est_v3s(s, spec, tin, amt, chain_id):
@@ -6,6 +5,7 @@ def est_v3s(s, spec, tin, amt, chain_id):
 
 def est_a3(s, spec, tin, amt, chain_id):
     q1 = s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['l1_fee'], 'mid': spec['mid1']}, tin, amt, chain_id)
+
     def _fw1():
         q2 = _sl.slip_quote(s, spec['slip_ts'], spec['mid1'], spec['mid2'], q1, chain_id) if q1 else None
         q3 = _sl.pair_out(s, spec['pair'], q2, spec['mid2'], chain_id) if q2 else None
@@ -37,4 +37,3 @@ def est_sgs(s, spec, tin, amt, chain_id):
 def est_v2p(s, spec, tin, amt, chain_id):
     q = _sl._v_pair_gao(s, spec['pair'], amt, tin, chain_id)
     return (q, None) if q else (None, None)
-
