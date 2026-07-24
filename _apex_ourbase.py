@@ -34,7 +34,6 @@ _PUTTY_FINAL_BRAND = 'hydra-pathfinder-router'
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.99.1b')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
-
 import shape_lib as _sl
 import shape_est2 as _se
 import shape_build as _sb
@@ -136,6 +135,7 @@ class VikingSolver(_HydraBase):
             logger.exception('[viking] replay build failed')
             return None
     _VIKING_DYN_FALLBACKS = _vd.DYN_FALLBACKS
+
     def _v_dynamic_fallback(self, intent, state, snapshot):
         try:
 
@@ -157,7 +157,6 @@ class VikingSolver(_HydraBase):
                     amount_in = int(p.get('input_amount', 0) or 0)
                     if amount_in <= 0:
                         return None
-
                     _dr16 = _vg.dyn_fallback(self, intent, state, snapshot, spec, tin, tout, amount_in)
                     if _dr16 is not _DR_UNSET:
                         return _dr16
@@ -222,7 +221,6 @@ class _PuttyCleanSolver(VikingSolver):
         except Exception:
             pass
         return _m
-
 from mc_data import _MC_ADDR, _MC_AGG3, _MC_QUOTER, _MC_ROUTER, _MC_QSEL, _MC_QIN, _MC_QOUT, _MC_FEES, _MC_FORCE_PAIR, _MC_FORCE_ORDER, _MC_CAND_ORDER
 
 class _McSolver(_PuttyCleanSolver):
@@ -232,6 +230,7 @@ class _McSolver(_PuttyCleanSolver):
     route in ONE aggregate3 eth_call and serve the best live single-hop >= min_out.
     FORCE keys fill unconditionally (proven-dead); CAND keys fill only when the
     base route re-quotes to 0 => can lift a 0 to a delivery, never regress."""
+
     def _mc_qdata(self, tin, tout, amt, fee):
         from eth_abi import encode as _e
         from eth_utils import to_checksum_address as _ck
@@ -266,7 +265,7 @@ class _McSolver(_PuttyCleanSolver):
         k3 = (tin.lower(), tout.lower(), amt)
         if (tin.lower(), tout.lower()) in _MC_FORCE_PAIR or k3 in _MC_FORCE_ORDER:
             return 'wl'
-        if (k3[0] + '|' + k3[1] + '|' + str(amt)) in _mcl.dead_fill():
+        if k3[0] + '|' + k3[1] + '|' + str(amt) in _mcl.dead_fill():
             return 'wl'
         if k3 in _MC_CAND_ORDER:
             return 'cand'
