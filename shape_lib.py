@@ -40,13 +40,9 @@ def _v_sng_dy(s, pool, i, j, dx, chain_id):
         w3 = s._get_web3(int(chain_id))
         if w3 is None:
             return None
-        def _fw1():
-            sel = _keccak(text='get_dy(int128,int128,uint256)')[:4]
-            r = w3.eth.call({'to': _ck(pool), 'data': '0x' + (sel + _enc(['int128', 'int128', 'uint256'], [int(i), int(j), int(dx)])).hex()})
-            return (_dec(['uint256'], r)[0] or None,)
-        _fwr1 = _fw1()
-        if _fwr1 is not None:
-            return _fwr1[0]
+        sel = _keccak(text='get_dy(int128,int128,uint256)')[:4]
+        r = w3.eth.call({'to': _ck(pool), 'data': '0x' + (sel + _enc(['int128', 'int128', 'uint256'], [int(i), int(j), int(dx)])).hex()})
+        return _dec(['uint256'], r)[0] or None
     except Exception:
         return None
 
@@ -56,15 +52,11 @@ def _v_pair_gao(s, pair, amt, tin, chain_id):
         from eth_abi import encode as _enc, decode as _dec
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
         w3 = s._get_web3(int(chain_id))
-        def _fw2():
-            if w3 is None:
-                return (None,)
-            sel = _keccak(text='getAmountOut(uint256,address)')[:4]
-            r = w3.eth.call({'to': _ck(pair), 'data': '0x' + (sel + _enc(['uint256', 'address'], [int(amt), _ck(tin)])).hex()})
-            return (_dec(['uint256'], r)[0] or None,)
-        _fwr2 = _fw2()
-        if _fwr2 is not None:
-            return _fwr2[0]
+        if w3 is None:
+            return None
+        sel = _keccak(text='getAmountOut(uint256,address)')[:4]
+        r = w3.eth.call({'to': _ck(pair), 'data': '0x' + (sel + _enc(['uint256', 'address'], [int(amt), _ck(tin)])).hex()})
+        return _dec(['uint256'], r)[0] or None
     except Exception:
         return None
 
@@ -106,13 +98,9 @@ def _slip_call(s, ts, tin, tout, amt, chain_id, quoter):
     w3 = s._get_web3(int(chain_id))
     if w3 is None:
         return None
-    def _fw3():
-        sel = _keccak(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
-        params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amt), int(ts), 0)])
-        return (w3.eth.call({'to': _ck(quoter or _AERO_QUOTER), 'data': '0x' + (sel + params).hex()}),)
-    _fwr3 = _fw3()
-    if _fwr3 is not None:
-        return _fwr3[0]
+    sel = _keccak(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
+    params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amt), int(ts), 0)])
+    return w3.eth.call({'to': _ck(quoter or _AERO_QUOTER), 'data': '0x' + (sel + params).hex()})
 
 def slip_quote(s, ts, tin, tout, amt, chain_id, quoter=None):
     """Slipstream-family quoter exact-in single — int24 tickSpacing selector

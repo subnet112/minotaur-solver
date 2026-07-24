@@ -26,8 +26,6 @@ blind-spot win, a miss simulates to 0 = parity. The instant return also
 run budget.
 """
 from __future__ import annotations
-def _lh1():
-    return {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
 _DR_UNSET = object()
 
 def _dr71():
@@ -56,8 +54,8 @@ def _dr20():
     _HYDRA_STATIC_COVERS, _HYDRA_QUALITY_OVERRIDES, _HYDRA_FLAKE_PREEMPT = _fwh()
     _USDC_L = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
 
-    _PCS_INFINITY_UR = '0xd9C500DfF816a1Da21A48A732d3498Bf09dc9AEB'
     def _dr48():
+        _PCS_INFINITY_UR = '0xd9C500DfF816a1Da21A48A732d3498Bf09dc9AEB'
 
         def _build_infinity_cl_ix(spec, tin, tout, amount_in, recipient, chain_id):
             """PancakeSwap Infinity CL exact-in single via UniversalRouter2, mirroring
@@ -76,27 +74,21 @@ def _dr20():
             def _dr90():
                 c0, c1, hooks, pool_mgr, fee, params_hex = spec['pool']
                 def _fw16():
-                    def _fw11():
-                        pool_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee), bytes.fromhex(params_hex[2:] if params_hex.startswith('0x') else params_hex))
+                    pool_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee), bytes.fromhex(params_hex[2:] if params_hex.startswith('0x') else params_hex))
 
-                        def _dr27():
-                            settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), 1 << 255, False])
+                    def _dr27():
+                        settle = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['settle']), 1 << 255, False])
 
-                            def _dr73():
-                                swap = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(pool_key, bool(spec['zero_for_one']), 0, 0, b'')])
-                                def _fw26():
-                                    take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
-                                    sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
-                                    plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
-                                    return (plan,)
-                                plan, = _fw26()
-                                return plan
-                            plan = _dr73()
-                            exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
-                            return exec_call
-                        exec_call = _dr27()
-                        return (exec_call,)
-                    exec_call, = _fw11()
+                        def _dr73():
+                            swap = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(pool_key, bool(spec['zero_for_one']), 0, 0, b'')])
+                            take = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
+                            sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
+                            plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
+                            return plan
+                        plan = _dr73()
+                        exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
+                        return exec_call
+                    exec_call = _dr27()
                     transfer_call = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [_ck(_PCS_INFINITY_UR), int(amount_in)])).hex()
                     return (exec_call, transfer_call)
                 exec_call, transfer_call = _fw16()
@@ -117,27 +109,21 @@ def _dr20():
                 from eth_utils import keccak as _keccak, to_checksum_address as _ck
                 c0, c1, hooks, pool_mgr, fee, params_hex = spec['inf_pool']
                 def _fw10():
-                    def _fw10():
-                        inf_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee), bytes.fromhex(params_hex[2:] if params_hex.startswith('0x') else params_hex))
+                    inf_key = (_ck(c0), _ck(c1), _ck(hooks), _ck(pool_mgr), int(fee), bytes.fromhex(params_hex[2:] if params_hex.startswith('0x') else params_hex))
 
-                        def _dr30():
-                            settle1 = _abi_encode(['address', 'uint256', 'bool'], [_ck(tin), 1 << 255, False])
+                    def _dr30():
+                        settle1 = _abi_encode(['address', 'uint256', 'bool'], [_ck(tin), 1 << 255, False])
 
-                            def _dr76():
-                                swap1 = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(inf_key, bool(spec['inf_zfo']), 0, 0, b'')])
-                                def _fw25():
-                                    take1 = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['mid']), _ck(_UNIV4_UR), 0])
-                                    sweep1 = _abi_encode(['address', 'address', 'uint256'], [_ck(tin), _ck(recipient), 0])
-                                    plan1 = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle1, swap1, take1, sweep1]])
-                                    return (plan1,)
-                                plan1, = _fw25()
-                                return plan1
-                            plan1 = _dr76()
-                            exec1 = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan1], 9999999999])).hex()
-                            return exec1
-                        exec1 = _dr30()
-                        return (exec1,)
-                    exec1, = _fw10()
+                        def _dr76():
+                            swap1 = _abi_encode(['((address,address,address,address,uint24,bytes32),bool,uint128,uint128,bytes)'], [(inf_key, bool(spec['inf_zfo']), 0, 0, b'')])
+                            take1 = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['mid']), _ck(_UNIV4_UR), 0])
+                            sweep1 = _abi_encode(['address', 'address', 'uint256'], [_ck(tin), _ck(recipient), 0])
+                            plan1 = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle1, swap1, take1, sweep1]])
+                            return plan1
+                        plan1 = _dr76()
+                        exec1 = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan1], 9999999999])).hex()
+                        return exec1
+                    exec1 = _dr30()
                     transfer1 = '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _abi_encode(['address', 'uint256'], [_ck(_PCS_INFINITY_UR), int(amount_in)])).hex()
                     return (exec1, transfer1)
                 exec1, transfer1 = _fw10()
@@ -151,12 +137,9 @@ def _dr20():
                 settle2 = _abi_encode(['address', 'uint256', 'bool'], [_ck(spec['mid']), 1 << 255, False])
 
                 def _dr58():
-                    def _fw15():
-                        swap2 = _abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [(v4_key, bool(spec['v4_zfo']), 0, 0, b'')])
-                        take2 = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
-                        plan2 = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14]), [settle2, swap2, take2]])
-                        return (plan2,)
-                    plan2, = _fw15()
+                    swap2 = _abi_encode(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [(v4_key, bool(spec['v4_zfo']), 0, 0, b'')])
+                    take2 = _abi_encode(['address', 'address', 'uint256'], [_ck(tout), _ck(recipient), 0])
+                    plan2 = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14]), [settle2, swap2, take2]])
                     return '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan2], 9999999999])).hex()
                     return _DR_UNSET
                 _dr59 = _dr58()
@@ -244,11 +227,8 @@ def _dr20():
 
                     def _dr35():
                         sweep = _abi_encode(['address', 'address', 'uint256'], [_ck(spec['settle']), _ck(recipient), 0])
-                        def _fw17():
-                            plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
-                            exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
-                            return (exec_call,)
-                        exec_call, = _fw17()
+                        plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14, 14]), [settle, swap, take, sweep]])
+                        exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([16]), [plan], 9999999999])).hex()
                         ix.append(_IX(target=ur, value='0', call_data=exec_call, chain_id=chain_id))
 
                     def _dr37():
@@ -256,11 +236,9 @@ def _dr20():
                         # V4 plan settling currency-0 from router balance (no sweep —
                         # SETTLE CONTRACT_BALANCE consumes the full unwrapped mid).
                         plan = _abi_encode(['bytes', 'bytes[]'], [bytes([11, 6, 14]), [settle, swap, take]])
-                        def _fw36():
-                            unwrap_in = _abi_encode(['address', 'uint256'], ['0x0000000000000000000000000000000000000002', 0])
-                            exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([12, 16]), [unwrap_in, plan], 9999999999])).hex()
-                            ix.append(_IX(target=ur, value='0', call_data=exec_call, chain_id=chain_id))
-                        _fw36()
+                        unwrap_in = _abi_encode(['address', 'uint256'], ['0x0000000000000000000000000000000000000002', 0])
+                        exec_call = '0x' + (_keccak(text='execute(bytes,bytes[],uint256)')[:4] + _abi_encode(['bytes', 'bytes[]', 'uint256'], [bytes([12, 16]), [unwrap_in, plan], 9999999999])).hex()
+                        ix.append(_IX(target=ur, value='0', call_data=exec_call, chain_id=chain_id))
                     _dr37() if spec.get('unwrap') else _dr35()
                 _fw6()
             _dr91()
@@ -275,11 +253,8 @@ def _dr20():
             ix = _leg1_swap_ix(spec, tin, amount_in, spec['pair'], chain_id)
 
             def _dr111():
-                def _fw7():
-                    a0, a1 = (0, int(spec['fixed_out'])) if int(spec['out_index']) == 1 else (int(spec['fixed_out']), 0)
-                    swap = '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(recipient), b''])).hex()
-                    return (swap,)
-                swap, = _fw7()
+                a0, a1 = (0, int(spec['fixed_out'])) if int(spec['out_index']) == 1 else (int(spec['fixed_out']), 0)
+                swap = '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(recipient), b''])).hex()
                 ix.append(_IX(target=spec['pair'], value='0', call_data=swap, chain_id=chain_id))
             _dr111()
             return ix
@@ -302,10 +277,7 @@ def _dr20():
                 for t, f in zip(tokens[:-1], fees):
                     path += bytes.fromhex(_ck(t)[2:]) + int(f).to_bytes(3, 'big')
                 path += bytes.fromhex(_ck(tokens[-1])[2:])
-                def _fw8():
-                    call = '0x' + (_keccak(text='exactInput((bytes,address,uint256,uint256))')[:4] + _abi_encode(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)])).hex()
-                    return (call,)
-                call, = _fw8()
+                call = '0x' + (_keccak(text='exactInput((bytes,address,uint256,uint256))')[:4] + _abi_encode(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)])).hex()
                 return call
             call = _dr62()
             return [_IX(target=tin, value='0', call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id), _IX(target=_UNI_ROUTER02, value='0', call_data=call, chain_id=chain_id)]
@@ -344,10 +316,7 @@ def _dr20():
             from common.abi_utils import encode_approve
 
             def _dr240():
-                def _fw34():
-                    xchg = '0x' + (_keccak(text='exchange(int128,int128,uint256,uint256,address)')[:4] + _abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(amount_in), 0, _ck(recipient)])).hex()
-                    return (xchg,)
-                xchg, = _fw34()
+                xchg = '0x' + (_keccak(text='exchange(int128,int128,uint256,uint256,address)')[:4] + _abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(amount_in), 0, _ck(recipient)])).hex()
                 return [_IX(target=tin, value='0', call_data=encode_approve(_ck(spec['pool']), int(amount_in)), chain_id=chain_id), _IX(target=spec['pool'], value='0', call_data=xchg, chain_id=chain_id)]
             return _dr240()
 
@@ -376,12 +345,8 @@ def _dr20():
             def _enc_x(amt, rcv):
                 # rcv None -> 4-arg overload (output to msg.sender = executor,
                 # inner leg); rcv set -> 5-arg overload delivering to the app.
-                def _fw21():
-                    if rcv is None:
-                        return ('0x' + (_keccak(text='exchange(int128,int128,uint256,uint256)')[:4] + _abi_encode(['int128', 'int128', 'uint256', 'uint256'], [int(spec['i']), int(spec['j']), int(amt), 0])).hex(),)
-                _fwr21 = _fw21()
-                if _fwr21 is not None:
-                    return _fwr21[0]
+                if rcv is None:
+                    return '0x' + (_keccak(text='exchange(int128,int128,uint256,uint256)')[:4] + _abi_encode(['int128', 'int128', 'uint256', 'uint256'], [int(spec['i']), int(spec['j']), int(amt), 0])).hex()
                 return '0x' + (_keccak(text='exchange(int128,int128,uint256,uint256,address)')[:4] + _abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(amt), 0, _ck(rcv)])).hex()
 
             def _dr245():
@@ -401,22 +366,15 @@ def _dr20():
             from eth_abi import encode as _abi_encode
             from eth_utils import keccak as _keccak, to_checksum_address as _ck
             from minotaur_subnet.shared.types import Interaction as _IX
-            def _fw28():
-                from common.abi_utils import encode_approve
-                from strategies.dex_aggregator import aerodrome as _aero
-                leg1 = '0x' + (_keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4] + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['leg1_fee']), '0x0000000000000000000000000000000000000001', int(amount_in), 0, 0)])).hex()
-                slip_router = spec.get('slip_router') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+            from common.abi_utils import encode_approve
+            from strategies.dex_aggregator import aerodrome as _aero
+            leg1 = '0x' + (_keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4] + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['leg1_fee']), '0x0000000000000000000000000000000000000001', int(amount_in), 0, 0)])).hex()
+            slip_router = spec.get('slip_router') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
 
-                def _dr55():
-                    leg2 = _aero.encode_exact_input_single(token_in=spec['mid'], token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=recipient, deadline=9999999999, amount_in=int(mid_amount), amount_out_minimum=0)
-                    def _fw14():
-                        return ([_IX(target=tin, value='0', call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id), _IX(target=_UNI_ROUTER02, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(slip_router, int(mid_amount)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id)],)
-                        return (_DR_UNSET,)
-                    _fwr14 = _fw14()
-                    if _fwr14 is not None:
-                        return _fwr14[0]
-                return (_dr55,)
-            _dr55, = _fw28()
+            def _dr55():
+                leg2 = _aero.encode_exact_input_single(token_in=spec['mid'], token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=recipient, deadline=9999999999, amount_in=int(mid_amount), amount_out_minimum=0)
+                return [_IX(target=tin, value='0', call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id), _IX(target=_UNI_ROUTER02, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(slip_router, int(mid_amount)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id)]
+                return _DR_UNSET
             _dr56 = _dr55()
             if _dr56 is not _DR_UNSET:
                 return _dr56
@@ -441,19 +399,13 @@ strand the order with the (budget-exposed) engine re-run."""
         from common.abi_utils import encode_approve
 
         def _dr255():
-            def _fw6():
-                sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))')[:4]
-                call = '0x' + (sel + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(spec['alt_fee']), _ck(recipient), 9999999999, int(amount_in), 0, 0)])).hex()
-                return (call,)
-            call, = _fw6()
+            sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))')[:4]
+            call = '0x' + (sel + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(spec['alt_fee']), _ck(recipient), 9999999999, int(amount_in), 0, 0)])).hex()
             return [_IX(target=tin, value='0', call_data=encode_approve(_PANCAKE_SMART_ROUTER, int(amount_in)), chain_id=chain_id), _IX(target=_PANCAKE_SMART_ROUTER, value='0', call_data=call, chain_id=chain_id)]
 
         def _dr253():
-            def _fw9():
-                sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4]
-                call = '0x' + (sel + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(spec['alt_fee']), _ck(recipient), int(amount_in), 0, 0)])).hex()
-                return (call,)
-            call, = _fw9()
+            sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4]
+            call = '0x' + (sel + _abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(tout), int(spec['alt_fee']), _ck(recipient), int(amount_in), 0, 0)])).hex()
             return [_IX(target=tin, value='0', call_data=encode_approve(_UNI_ROUTER02, int(amount_in)), chain_id=chain_id), _IX(target=_UNI_ROUTER02, value='0', call_data=call, chain_id=chain_id)]
         return _dr255() if spec.get('alt_router') == 'pancake' else _dr253()
     def _build_v3_v3_chain_ix(spec, tin, tout, amount_in, mid_amount, recipient, chain_id):
@@ -566,18 +518,15 @@ def _load_census():
         return {}
 
     def _dr92():
-        def _fw35():
-            import re as _re
-            baked = set()
-            here = os.path.dirname(os.path.abspath(__file__))
-            for fn in ('james_base.py', 'king_solver.py', 'king_base.py', '_apex_champ.py', 'apex_routes.json'):
-                try:
-                    src = open(os.path.join(here, fn)).read()
-                    baked.update((t.lower() for t in _re.findall('0x[0-9a-fA-F]{40}', src)))
-                except Exception:
-                    continue
-            return (baked,)
-        baked, = _fw35()
+        import re as _re
+        baked = set()
+        here = os.path.dirname(os.path.abspath(__file__))
+        for fn in ('james_base.py', 'king_solver.py', 'king_base.py', '_apex_champ.py', 'apex_routes.json'):
+            try:
+                src = open(os.path.join(here, fn)).read()
+                baked.update((t.lower() for t in _re.findall('0x[0-9a-fA-F]{40}', src)))
+            except Exception:
+                continue
 
         def _dr28():
             head = int(raw.pop('_head', 0) or 0)
@@ -671,18 +620,11 @@ class MinerSolver(_ChampBase):
 
         def _dr101():
             if qcand is not None:
-                def _fw5():
-                    chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                    def _fw11():
-                        if chain_id == 8453:
-                            qplan = self._hydra_serve_quality(intent, state, snapshot, p, qkey, qcand, chain_id)
-                            if qplan is not None:
-                                return (qplan,)
-                    _fwr11 = _fw11()
-                    return (chain_id, _fwr11)
-                chain_id, _fwr11 = _fw5()
-                if _fwr11 is not None:
-                    return _fwr11[0]
+                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+                if chain_id == 8453:
+                    qplan = self._hydra_serve_quality(intent, state, snapshot, p, qkey, qcand, chain_id)
+                    if qplan is not None:
+                        return qplan
             if qkey in _HYDRA_FLAKE_PREEMPT and _hydra_frozen_ok(state):
                 chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
 
@@ -692,11 +634,7 @@ class MinerSolver(_ChampBase):
                         from minotaur_subnet.shared.types import ExecutionPlan as _EP
                         from minotaur_subnet.shared.types import Interaction as _IX
                         logger.info('[hydra] flake pre-empt %s->%s amt=%s (%d ix)', qkey[0][:8], qkey[1][:8], qkey[2], len(ix))
-                        def _fw7():
-                            return (_EP(intent_id=intent.app_id, interactions=[_IX(target=i['target'], value=str(i.get('value', '0') or '0'), call_data=i['data'], chain_id=8453) for i in ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-flake-preempt', 'chain_id': 8453}),)
-                        _fwr7 = _fw7()
-                        if _fwr7 is not None:
-                            return _fwr7[0]
+                        return _EP(intent_id=intent.app_id, interactions=[_IX(target=i['target'], value=str(i.get('value', '0') or '0'), call_data=i['data'], chain_id=8453) for i in ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-flake-preempt', 'chain_id': 8453})
                     return _DR_UNSET
                 _dr43 = _dr42()
                 if _dr43 is not _DR_UNSET:
@@ -754,25 +692,19 @@ class MinerSolver(_ChampBase):
                             spec = qcand['spec']
                             if spec.get('size_pct'):
                                 try:
-                                    def _fw20(spec=spec):
-                                        q = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
-                                        if q:
-                                            spec = dict(spec)
-                                            spec['swap_amount'] = q * int(spec['size_pct']) // 1000
-                                            logger.info('[hydra] dynamic push size %s (leg1 %s)', spec['swap_amount'], q)
-                                        return (q, spec)
-                                    q, spec = _fw20()
+                                    q = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
+                                    if q:
+                                        spec = dict(spec)
+                                        spec['swap_amount'] = q * int(spec['size_pct']) // 1000
+                                        logger.info('[hydra] dynamic push size %s (leg1 %s)', spec['swap_amount'], q)
                                 except Exception:
                                     logger.exception('[hydra] leg1 quote failed; frozen size')
                             return builder
                         builder = _dr31()
                         if spec.get('dyn_reserves'):
                             try:
-                                def _fw6():
-                                    q = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
-                                    out = self._hydra_v2_reserves_out(spec, q, chain_id) if q else None
-                                    return (q, out)
-                                q, out = _fw6()
+                                q = self._hydra_quote_leg1(spec, qkey[0], qkey[2], chain_id)
+                                out = self._hydra_v2_reserves_out(spec, q, chain_id) if q else None
                                 if out:
                                     spec = dict(spec)
 
@@ -784,34 +716,22 @@ class MinerSolver(_ChampBase):
                                 logger.exception('[hydra] dyn reserves failed; frozen out')
                         ix = builder(spec, qkey[0], qkey[2], recipient, chain_id)
                     from minotaur_subnet.shared.types import ExecutionPlan as _EP
-                def _fw23():
-                    _dr1()
-                    logger.info('[hydra] QUALITY %s %s->%s amt=%s', qcand['venue'], qkey[0][:8], qkey[1][:8], qkey[2])
-                    return (_EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-push', 'chain_id': chain_id}),)
-                _fwr23 = _fw23()
-                if _fwr23 is not None:
-                    return _fwr23[0]
+                _dr1()
+                logger.info('[hydra] QUALITY %s %s->%s amt=%s', qcand['venue'], qkey[0][:8], qkey[1][:8], qkey[2])
+                return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-push', 'chain_id': chain_id})
             return _DR_UNSET
-        def _fw3():
-            _dr24 = _dr23()
-            if _dr24 is not _DR_UNSET:
-                return (_dr24,)
-            if qcand.get('venue') == 'slip_v3path_chain':
+        _dr24 = _dr23()
+        if _dr24 is not _DR_UNSET:
+            return _dr24
+        if qcand.get('venue') == 'slip_v3path_chain':
 
-                def _dr221():
-
-                    def _fw33():
-                        recipient = state.contract_address or p.get('receiver') or state.owner
-                        ix = _build_slip_v3path_ix(qcand['spec'], qkey[0], qkey[1], qkey[2], recipient, chain_id)
-                        from minotaur_subnet.shared.types import ExecutionPlan as _EP4
-                        logger.info('[hydra] QUALITY slip-v3path %s->%s amt=%s', qkey[0][:8], qkey[1][:8], qkey[2])
-                        return (ix, _EP4)
-                    ix, _EP4 = _fw33()
-                    return _EP4(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-slip-v3path', 'chain_id': chain_id})
-                return (_dr221(),)
-        _fwr3 = _fw3()
-        if _fwr3 is not None:
-            return _fwr3[0]
+            def _dr221():
+                recipient = state.contract_address or p.get('receiver') or state.owner
+                ix = _build_slip_v3path_ix(qcand['spec'], qkey[0], qkey[1], qkey[2], recipient, chain_id)
+                from minotaur_subnet.shared.types import ExecutionPlan as _EP4
+                logger.info('[hydra] QUALITY slip-v3path %s->%s amt=%s', qkey[0][:8], qkey[1][:8], qkey[2])
+                return _EP4(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-slip-v3path', 'chain_id': chain_id})
+            return _dr221()
         if qcand.get('venue') == 'v3_slip_chain':
             spec = qcand['spec']
 
@@ -866,10 +786,7 @@ class MinerSolver(_ChampBase):
                 # quote the chain same-block: (mid_amt, chain estimate).
                 # v3c leg1 quotes UNI (the built route); cv3 leg2 quotes pancake.
                 if spec.get('shape') == 'v3c':
-                    def _fw13():
-                        mid_amt = self._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['v3_fee'], 'mid': spec['mid']}, qkey[0], qkey[2], chain_id)
-                        return (mid_amt,)
-                    mid_amt, = _fw13()
+                    mid_amt = self._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['v3_fee'], 'mid': spec['mid']}, qkey[0], qkey[2], chain_id)
                     return (mid_amt, self._hydra_curve_dy(spec, mid_amt, chain_id) if mid_amt else None)
                 mid_amt = self._hydra_curve_dy(spec, qkey[2], chain_id)
                 return (mid_amt, self._hydra_quote_leg1({'leg1_router': 'pancake', 'leg1_fee': spec['v3_fee'], 'mid': qkey[1]}, spec['mid'], mid_amt, chain_id) if mid_amt else None)
@@ -934,38 +851,31 @@ class MinerSolver(_ChampBase):
                                         return (None, None)
                                 out_pair = _dr201()
                                 mid_amount, out_chain = _dr202()
-                                def _fw32():
-                                    if not out_pair and (not out_chain):
-                                        return (None,)
-                                    rcpt = state.contract_address or p.get('receiver') or state.owner
+                                if not out_pair and not out_chain:
+                                    return None
+                                rcpt = state.contract_address or p.get('receiver') or state.owner
 
-                                    def _dr203():
-                                        if out_chain and (not out_pair or out_chain > out_pair):
-                                            return _build_v3_v3_chain_ix(spec, qkey[0], qkey[1], qkey[2], mid_amount, rcpt, chain_id)
-                                        return _build_v2_direct_ix(spec, qkey[0], qkey[2], rcpt, chain_id, out_pair)
-                                    ix2 = _dr203()
-                                    logger.info('[hydra] QUALITY v2ovc chain=%s pair=%s', out_chain, out_pair)
-                                    from minotaur_subnet.shared.types import ExecutionPlan as _EP2
-                                    return (_EP2(intent_id=intent.app_id, interactions=ix2, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-v2ovc', 'chain_id': chain_id}),)
-                                _fwr32 = _fw32()
-                                if _fwr32 is not None:
-                                    return _fwr32[0]
+                                def _dr203():
+                                    if out_chain and (not out_pair or out_chain > out_pair):
+                                        return _build_v3_v3_chain_ix(spec, qkey[0], qkey[1], qkey[2], mid_amount, rcpt, chain_id)
+                                    return _build_v2_direct_ix(spec, qkey[0], qkey[2], rcpt, chain_id, out_pair)
+                                ix2 = _dr203()
+                                logger.info('[hydra] QUALITY v2ovc chain=%s pair=%s', out_chain, out_pair)
+                                from minotaur_subnet.shared.types import ExecutionPlan as _EP2
+                                return _EP2(intent_id=intent.app_id, interactions=ix2, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-v2ovc', 'chain_id': chain_id})
                             return _dr200()
                         if qcand.get('venue') == 'v2_direct':
                             out = self._hydra_v2_reserves_out(qcand['spec'], qkey[2], chain_id)
                             if out:
-                                def _fw12():
-                                    recipient = state.contract_address or p.get('receiver') or state.owner
-                                    ix = _build_v2_direct_ix(qcand['spec'], qkey[0], qkey[2], recipient, chain_id, out)
-                                    from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                                recipient = state.contract_address or p.get('receiver') or state.owner
+                                ix = _build_v2_direct_ix(qcand['spec'], qkey[0], qkey[2], recipient, chain_id, out)
+                                from minotaur_subnet.shared.types import ExecutionPlan as _EP
 
-                                    def _dr104():
-                                        logger.info('[hydra] QUALITY v2-direct %s->%s amt=%s out=%s', qkey[0][:8], qkey[1][:8], qkey[2], out)
-                                        return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-v2-direct', 'chain_id': chain_id})
-                                        return _DR_UNSET
-                                    _dr105 = _dr104()
-                                    return (recipient, ix, _EP, _dr105)
-                                recipient, ix, _EP, _dr105 = _fw12()
+                                def _dr104():
+                                    logger.info('[hydra] QUALITY v2-direct %s->%s amt=%s out=%s', qkey[0][:8], qkey[1][:8], qkey[2], out)
+                                    return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-v2-direct', 'chain_id': chain_id})
+                                    return _DR_UNSET
+                                _dr105 = _dr104()
                                 if _dr105 is not _DR_UNSET:
                                     return _dr105
                             return None
@@ -989,20 +899,18 @@ class MinerSolver(_ChampBase):
                 _dr10 = _dr9()
                 if _dr10 is not _DR_UNSET:
                     return _dr10
-                def _h14():
-                    if qcand.get('venue') == 'infinity_v4_chain':
-                        recipient = state.contract_address or p.get('receiver') or state.owner
-                        ix = _build_infinity_v4_chain_ix(qcand['spec'], qkey[0], qkey[1], qkey[2], recipient, chain_id)
-                        from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                if qcand.get('venue') == 'infinity_v4_chain':
+                    recipient = state.contract_address or p.get('receiver') or state.owner
+                    ix = _build_infinity_v4_chain_ix(qcand['spec'], qkey[0], qkey[1], qkey[2], recipient, chain_id)
+                    from minotaur_subnet.shared.types import ExecutionPlan as _EP
 
-                        def _dr94():
-                            logger.info('[hydra] QUALITY infinity-v4-chain %s->%s amt=%s', qkey[0][:8], qkey[1][:8], qkey[2])
-                            return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-inf-v4-chain', 'chain_id': chain_id})
-                        return _dr94()
-                    return _DR_UNSET
-                _h14r = _h14()
-                if _h14r is not _DR_UNSET:
-                    return _h14r
+                    def _dr94():
+                        logger.info('[hydra] QUALITY infinity-v4-chain %s->%s amt=%s', qkey[0][:8], qkey[1][:8], qkey[2])
+                        return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-inf-v4-chain', 'chain_id': chain_id})
+                        return _DR_UNSET
+                    _dr95 = _dr94()
+                    if _dr95 is not _DR_UNSET:
+                        return _dr95
 
                 def _dr39():
                     nonlocal _EP, ix, recipient
@@ -1045,36 +953,29 @@ class MinerSolver(_ChampBase):
         w3 = self._get_web3(int(chain_id))
         if w3 is None:
             return None
-        def _fw4(w3=w3):
-            try:
-                from web3 import HTTPProvider, Web3 as _W3
-                url = getattr(w3.provider, 'endpoint_uri', None)
-                if url:
-                    w3 = _W3(HTTPProvider(url, request_kwargs={'timeout': 8}))
-            except Exception:
-                pass
-            quoter = {'pancake': _PANCAKE_QUOTER, 'slip': _AERO_QUOTER}.get(spec.get('leg1_router'), _UNI_QUOTER)
-            sel = _keccak(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
+        try:
+            from web3 import HTTPProvider, Web3 as _W3
+            url = getattr(w3.provider, 'endpoint_uri', None)
+            if url:
+                w3 = _W3(HTTPProvider(url, request_kwargs={'timeout': 8}))
+        except Exception:
+            pass
+        quoter = {'pancake': _PANCAKE_QUOTER, 'slip': _AERO_QUOTER}.get(spec.get('leg1_router'), _UNI_QUOTER)
+        sel = _keccak(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
 
-            def _dr50():
-                params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(spec['mid']), int(amount_in), int(spec['leg1_fee']), 0)])
-                def _fw5():
-                    for attempt in (1, 2):
-                        try:
-                            r = w3.eth.call({'to': _ck(quoter), 'data': '0x' + (sel + params).hex()})
-                            out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], r)[0])
-                            return (out if out > 0 else None,)
-                        except Exception:
-                            if attempt == 2:
-                                raise
-                    return (None,)
-                    return (_DR_UNSET,)
-                _fwr5 = _fw5()
-                if _fwr5 is not None:
-                    return _fwr5[0]
-            _dr51 = _dr50()
-            return (w3, _dr51)
-        w3, _dr51 = _fw4()
+        def _dr50():
+            params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(spec['mid']), int(amount_in), int(spec['leg1_fee']), 0)])
+            for attempt in (1, 2):
+                try:
+                    r = w3.eth.call({'to': _ck(quoter), 'data': '0x' + (sel + params).hex()})
+                    out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], r)[0])
+                    return out if out > 0 else None
+                except Exception:
+                    if attempt == 2:
+                        raise
+            return None
+            return _DR_UNSET
+        _dr51 = _dr50()
         if _dr51 is not _DR_UNSET:
             return _dr51
 
@@ -1198,12 +1099,9 @@ class MinerSolver(_ChampBase):
 
                     def _dr67():
                         if ix and chain_id == 8453 and _hydra_frozen_ok(state):
-                            def _fw10():
-                                from minotaur_subnet.shared.types import ExecutionPlan as _EP
-                                from minotaur_subnet.shared.types import Interaction as _IX
-                                rplan = _EP(intent_id=intent.app_id, interactions=[_IX(target=i['target'], value=str(i.get('value', '0') or '0'), call_data=i['data'], chain_id=8453) for i in ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-replay', 'chain_id': 8453})
-                                return (rplan,)
-                            rplan, = _fw10()
+                            from minotaur_subnet.shared.types import ExecutionPlan as _EP
+                            from minotaur_subnet.shared.types import Interaction as _IX
+                            rplan = _EP(intent_id=intent.app_id, interactions=[_IX(target=i['target'], value=str(i.get('value', '0') or '0'), call_data=i['data'], chain_id=8453) for i in ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-replay', 'chain_id': 8453})
                             logger.info('[hydra] replay serve %s->%s amt=%s (%d ix)', rkey[0][:8], rkey[1][:8], rkey[2], len(ix))
                             return rplan
                         return _DR_UNSET
@@ -1243,18 +1141,9 @@ class MinerSolver(_ChampBase):
         from eth_abi import encode as _enc
         from eth_utils import to_checksum_address as _ck
         from minotaur_subnet.shared.types import ExecutionPlan as _EP, Interaction as _IX
-        def _fw1():
-            p = self._normalized_swap_params(intent, state)
-            tin = str(p.get('input_token', '') or '').lower()
-            tout = str(p.get('output_token', '') or '').lower()
-            # Serve only major-hub pairs here; other pairs defer to the score-aware
-            # engine, which quotes each venue directly.
-            from king_consts import _ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_WBTC, _ETH_DAI
-            _MAJ = {_ETH_WETH.lower(), _ETH_USDC.lower(), _ETH_USDT.lower(), _ETH_WBTC.lower(), _ETH_DAI.lower()}
-            return (p, tin, tout, _MAJ)
-        p, tin, tout, _MAJ = _fw1()
-        if tin not in _MAJ or tout not in _MAJ:
-            return None
+        p = self._normalized_swap_params(intent, state)
+        tin = str(p.get('input_token', '') or '').lower()
+        tout = str(p.get('output_token', '') or '').lower()
 
         def _dr77():
             amt = int(p.get('input_amount', 0) or 0)
@@ -1264,12 +1153,9 @@ class MinerSolver(_ChampBase):
             FEE = {frozenset((WETH, '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')): 500, frozenset((WETH, '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599')): 500}
 
             def _dr32():
-                def _fw3():
-                    ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
-                    recip = str(p.get('receiver', '') or '0x0000000000000000000000000000000000000001')
-                    approve = _IX(target=_ck(tin), value='0', call_data='0x095ea7b3' + _enc(['address', 'uint256'], [_ck(ROUTER), amt]).hex(), chain_id=1)
-                    return (ROUTER, recip, approve)
-                ROUTER, recip, approve = _fw3()
+                ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+                recip = str(p.get('receiver', '') or '0x0000000000000000000000000000000000000001')
+                approve = _IX(target=_ck(tin), value='0', call_data='0x095ea7b3' + _enc(['address', 'uint256'], [_ck(ROUTER), amt]).hex(), chain_id=1)
 
                 def _dr16():
 
@@ -1300,13 +1186,9 @@ class MinerSolver(_ChampBase):
                 logger.info('[hydra] eth fastpath %s->%s amt=%s hops=%d', tin[:8], tout[:8], amt, len(fees))
                 return (approve, swap)
             approve, swap = _dr32()
-            def _fw16():
-                self._bm_done = getattr(self, '_bm_done', 0) + 1
-                return (_EP(intent_id=intent.app_id, interactions=[approve, swap], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-eth-fastpath', 'chain_id': 1}),)
-                return (_DR_UNSET,)
-            _fwr16 = _fw16()
-            if _fwr16 is not None:
-                return _fwr16[0]
+            self._bm_done = getattr(self, '_bm_done', 0) + 1
+            return _EP(intent_id=intent.app_id, interactions=[approve, swap], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-eth-fastpath', 'chain_id': 1})
+            return _DR_UNSET
         _dr78 = _dr77()
         if _dr78 is not _DR_UNSET:
             return _dr78
@@ -1316,15 +1198,11 @@ class MinerSolver(_ChampBase):
         def _dr66():
             p = self._normalized_swap_params(intent, state)
             tin = str(p.get('input_token', '') or '').lower()
-            def _fw19():
-                tout = str(p.get('output_token', '') or '').lower()
-                amt = int(p.get('input_amount', 0) or 0)
-                chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                pool = _hydra_census()[0].get(tout)
-                return ((amt, chain_id, pool, tin, tout),)
-            _fwr19 = _fw19()
-            if _fwr19 is not None:
-                return _fwr19[0]
+            tout = str(p.get('output_token', '') or '').lower()
+            amt = int(p.get('input_amount', 0) or 0)
+            chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
+            pool = _hydra_census()[0].get(tout)
+            return (amt, chain_id, pool, tin, tout)
         amt, chain_id, pool, tin, tout = _dr66()
         if not pool or amt <= 0 or chain_id != 8453 or (tin not in (_USDC, _WETH)):
             return None
@@ -1340,10 +1218,7 @@ class MinerSolver(_ChampBase):
                 if tin in (c0, c1):
                     spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': tin, 'zero_for_one': c0 == tin}
                 elif _WETH in (c0, c1) and tin == _USDC:
-                    def _fw31():
-                        spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': _WETH, 'zero_for_one': c0 == _WETH, 'v3_tokens': (_USDC, _WETH), 'v3_fees': (500,)}
-                        return (spec,)
-                    spec, = _fw31()
+                    spec = {'pool': (c0, c1, fee, tick, hooks), 'settle': _WETH, 'zero_for_one': c0 == _WETH, 'v3_tokens': (_USDC, _WETH), 'v3_fees': (500,)}
                 if spec is None:
                     return None
                 return _DR_UNSET
@@ -1351,16 +1226,12 @@ class MinerSolver(_ChampBase):
             if _dr26 is not _DR_UNSET:
                 return _dr26
             cand = {'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-census', 'out': 1, 'gas_est': 650000, 'gas_model': 1000000}
-            def _fw27():
-                cplan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amt, chain_id)
-                if cplan is not None and getattr(cplan, 'interactions', None):
-                    logger.info('[hydra] census cover %s->%s (hook %s, pre=%s)', tin[:8], tout[:8], hooks[:10], hooked_only)
-                    return (cplan,)
-                return (None,)
-                return (_DR_UNSET,)
-            _fwr27 = _fw27()
-            if _fwr27 is not None:
-                return _fwr27[0]
+            cplan = self._build_singlehop_plan(intent, state, snapshot, cand, tin, tout, amt, chain_id)
+            if cplan is not None and getattr(cplan, 'interactions', None):
+                logger.info('[hydra] census cover %s->%s (hook %s, pre=%s)', tin[:8], tout[:8], hooks[:10], hooked_only)
+                return cplan
+            return None
+            return _DR_UNSET
         _dr34 = _dr33()
         if _dr34 is not _DR_UNSET:
             return _dr34
@@ -1372,24 +1243,21 @@ try:
         from eth_abi import encode as _putty_abi_encode
         from minotaur_subnet.shared.types import ExecutionPlan as _PuttyExecutionPlan
         from minotaur_subnet.shared.types import Interaction as _PuttyInteraction
-        def _fw30():
-            try:
-                from eth_utils import to_checksum_address as _putty_ck
-            except Exception:
+        try:
+            from eth_utils import to_checksum_address as _putty_ck
+        except Exception:
 
-                def _putty_ck(a):
-                    return a
-            _putty_log = _putty_logging.getLogger('putty_shim')
-            _PUTTY_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-            _PUTTY_WETH = '0x4200000000000000000000000000000000000006'
-            _PUTTY_BASE_CHAIN = 8453
-            _PUTTY_DEADLINE = 9999999999
-            _PUTTY_APPROVE_SEL = bytes.fromhex('095ea7b3')
-            _PUTTY_EXACT_IN_SINGLE_SEL = bytes.fromhex('a026383e')
-            _PUTTY_TRANSFER_SEL = bytes.fromhex('a9059cbb')
-            _PUTTY_PAIR_SWAP_SEL = bytes.fromhex('022c0d9f')
-            return (_putty_ck, _PUTTY_USDC, _PUTTY_WETH, _PUTTY_BASE_CHAIN, _PUTTY_DEADLINE, _PUTTY_APPROVE_SEL, _PUTTY_EXACT_IN_SINGLE_SEL, _PUTTY_TRANSFER_SEL, _PUTTY_PAIR_SWAP_SEL)
-        _putty_ck, _PUTTY_USDC, _PUTTY_WETH, _PUTTY_BASE_CHAIN, _PUTTY_DEADLINE, _PUTTY_APPROVE_SEL, _PUTTY_EXACT_IN_SINGLE_SEL, _PUTTY_TRANSFER_SEL, _PUTTY_PAIR_SWAP_SEL = _fw30()
+            def _putty_ck(a):
+                return a
+        _putty_log = _putty_logging.getLogger('putty_shim')
+        _PUTTY_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+        _PUTTY_WETH = '0x4200000000000000000000000000000000000006'
+        _PUTTY_BASE_CHAIN = 8453
+        _PUTTY_DEADLINE = 9999999999
+        _PUTTY_APPROVE_SEL = bytes.fromhex('095ea7b3')
+        _PUTTY_EXACT_IN_SINGLE_SEL = bytes.fromhex('a026383e')
+        _PUTTY_TRANSFER_SEL = bytes.fromhex('a9059cbb')
+        _PUTTY_PAIR_SWAP_SEL = bytes.fromhex('022c0d9f')
 
         def _dr13():
             _PUTTY_DEPOSIT_SEL = bytes.fromhex('6e553f65')
@@ -1412,7 +1280,7 @@ try:
                     def _dr63():
                         _PUTTY_CURVE_SUPEROETHB = '0x302a94e3c28c290eaf2a4605fc52e11eb915f378'
                         _PUTTY_ROUTES = {}
-                        _PUTTY_SUBS = _lh1()
+                        _PUTTY_SUBS = {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
                         return (_PUTTY_ROUTES, _PUTTY_SUBS)
                     _PUTTY_ROUTES, _PUTTY_SUBS = _dr63()
                     _PUTTY_SUBS_WETH = {'0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False),), 'lo': 100000000000000, 'hi': 10000000000000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True),), 'lo': 100000000000000, 'hi': 10000000000000000}}
@@ -1420,117 +1288,105 @@ try:
                     return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER)
                 _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr6()
 
-                def _fw1():
-                    def _putty_eth_call(to, data_hex):
-                        import json as _pj
-                        import urllib.request as _pu
-                        url = _PUTTY_RPC.get('url')
+                def _putty_eth_call(to, data_hex):
+                    import json as _pj
+                    import urllib.request as _pu
+                    url = _PUTTY_RPC.get('url')
 
-                        def _dr106():
-                            def _fw9():
-                                if not url:
-                                    raise RuntimeError('putty: no rpc url captured')
-                                body = _pj.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': _putty_ck(to), 'data': data_hex}, 'latest']}).encode()
-                                req = _pu.Request(url, data=body, headers={'content-type': 'application/json'})
-                                with _pu.urlopen(req, timeout=10) as resp:
-                                    out = _pj.loads(resp.read())
-                                return (out,)
-                            out, = _fw9()
-                            res = out.get('result')
-                            if not res or res == '0x':
-                                raise RuntimeError(f'putty eth_call failed: {out.get('error')}')
-                            return res
-                        res = _dr106()
-                        return bytes.fromhex(res[2:])
+                    def _dr106():
+                        if not url:
+                            raise RuntimeError('putty: no rpc url captured')
+                        body = _pj.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': _putty_ck(to), 'data': data_hex}, 'latest']}).encode()
+                        req = _pu.Request(url, data=body, headers={'content-type': 'application/json'})
+                        with _pu.urlopen(req, timeout=10) as resp:
+                            out = _pj.loads(resp.read())
+                        res = out.get('result')
+                        if not res or res == '0x':
+                            raise RuntimeError(f'putty eth_call failed: {out.get('error')}')
+                        return res
+                    res = _dr106()
+                    return bytes.fromhex(res[2:])
 
-                    def _putty_encode_approve(spender, amount):
-                        return '0x' + (_PUTTY_APPROVE_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(spender), int(amount)])).hex()
+                def _putty_encode_approve(spender, amount):
+                    return '0x' + (_PUTTY_APPROVE_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(spender), int(amount)])).hex()
 
-                    def _putty_encode_exact_input_single(token_in, token_out, tick_spacing, recipient, amount_in):
-                        enc = _putty_abi_encode(['(address,address,int24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(tick_spacing), _putty_ck(recipient), int(_PUTTY_DEADLINE), int(amount_in), 0, 0)])
-                        return '0x' + (_PUTTY_EXACT_IN_SINGLE_SEL + enc).hex()
+                def _putty_encode_exact_input_single(token_in, token_out, tick_spacing, recipient, amount_in):
+                    enc = _putty_abi_encode(['(address,address,int24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(tick_spacing), _putty_ck(recipient), int(_PUTTY_DEADLINE), int(amount_in), 0, 0)])
+                    return '0x' + (_PUTTY_EXACT_IN_SINGLE_SEL + enc).hex()
 
-                    def _putty_state_getter(state):
-                        """Champion-agnostic reader over the STABLE IntentState surface."""
+                def _putty_state_getter(state):
+                    """Champion-agnostic reader over the STABLE IntentState surface."""
+                    raw = {}
+                    try:
+                        if hasattr(state, 'raw_params_view'):
+                            raw = dict(state.raw_params_view() or {})
+                    except Exception:
                         raw = {}
+                    if not raw:
                         try:
-                            if hasattr(state, 'raw_params_view'):
-                                raw = dict(state.raw_params_view() or {})
+                            raw = dict(getattr(state, 'raw_params', {}) or {})
                         except Exception:
                             raw = {}
-                        if not raw:
-                            try:
-                                raw = dict(getattr(state, 'raw_params', {}) or {})
-                            except Exception:
-                                raw = {}
-                        typed = getattr(state, 'typed_context', None)
+                    typed = getattr(state, 'typed_context', None)
 
-                        def _get(key):
-                            v = raw.get(key)
-                            if (v is None or v == '') and typed is not None:
-                                v = getattr(typed, key, None)
-                            return v
-                        return _get
+                    def _get(key):
+                        v = raw.get(key)
+                        if (v is None or v == '') and typed is not None:
+                            v = getattr(typed, key, None)
+                        return v
+                    return _get
 
-                    def _putty_build_alt_plan(intent, state, token_out, amount_in, router, tick_spacing):
-                        recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
-                        chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
+                def _putty_build_alt_plan(intent, state, token_out, amount_in, router, tick_spacing):
+                    recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
+                    chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
 
-                        def _dr98():
-                            def _fw24():
-                                interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
-                                return (interactions,)
-                            interactions, = _fw24()
-                            return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'aerodrome_slipstream_alt', 'venue_param': int(tick_spacing), 'chain_id': chain_id})
-                            return _DR_UNSET
-                        _dr99 = _dr98()
-                        if _dr99 is not _DR_UNSET:
-                            return _dr99
+                    def _dr98():
+                        interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
+                        return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'aerodrome_slipstream_alt', 'venue_param': int(tick_spacing), 'chain_id': chain_id})
+                        return _DR_UNSET
+                    _dr99 = _dr98()
+                    if _dr99 is not _DR_UNSET:
+                        return _dr99
 
-                    def _putty_ix(target, data, chain_id):
-                        return _PuttyInteraction(target=_putty_ck(target), value='0', call_data=data, chain_id=chain_id)
+                def _putty_ix(target, data, chain_id):
+                    return _PuttyInteraction(target=_putty_ck(target), value='0', call_data=data, chain_id=chain_id)
 
-                    def _putty_encode_transfer(to, amount):
-                        return '0x' + (_PUTTY_TRANSFER_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(to), int(amount)])).hex()
+                def _putty_encode_transfer(to, amount):
+                    return '0x' + (_PUTTY_TRANSFER_SEL + _putty_abi_encode(['address', 'uint256'], [_putty_ck(to), int(amount)])).hex()
 
-                    def _putty_r02_single(token_out, fee, recipient, amount_in):
-                        enc = _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(token_out), int(fee), _putty_ck(recipient), int(amount_in), 0, 0)])
-                        return '0x' + (_PUTTY_R02_SINGLE_SEL + enc).hex()
+                def _putty_r02_single(token_out, fee, recipient, amount_in):
+                    enc = _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(token_out), int(fee), _putty_ck(recipient), int(amount_in), 0, 0)])
+                    return '0x' + (_PUTTY_R02_SINGLE_SEL + enc).hex()
 
-                    def _putty_r02_path(mids, token_out, fees, recipient, amount_in):
-                        def _fw4():
-                            toks = [_PUTTY_USDC] + list(mids) + [token_out]
-                            path = b''
-                            return (toks, path)
-                        toks, path = _fw4()
-                        for i, f in enumerate(fees):
-                            path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
-                        path += bytes.fromhex(toks[-1][2:])
-                        def _fw12():
-                            enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
-                            return ('0x' + (_PUTTY_R02_PATH_SEL + enc).hex(),)
-                        _fwr12 = _fw12()
-                        if _fwr12 is not None:
-                            return _fwr12[0]
+                def _putty_r02_path(mids, token_out, fees, recipient, amount_in):
+                    toks = [_PUTTY_USDC] + list(mids) + [token_out]
+                    path = b''
+                    for i, f in enumerate(fees):
+                        path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
+                    path += bytes.fromhex(toks[-1][2:])
+                    def _fw12():
+                        enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
+                        return ('0x' + (_PUTTY_R02_PATH_SEL + enc).hex(),)
+                    _fwr12 = _fw12()
+                    if _fwr12 is not None:
+                        return _fwr12[0]
 
-                    def _putty_quote_usdc_weth(fee, amount_in):
-                        data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(_PUTTY_WETH), int(amount_in), int(fee), 0)])).hex()
-                        raw = _putty_eth_call(_PUTTY_UNI_QUOTER, data)
-                        out = int.from_bytes(raw[:32], 'big')
-                        if out <= 0:
-                            raise RuntimeError('putty quoter returned 0')
-                        return out
+                def _putty_quote_usdc_weth(fee, amount_in):
+                    data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(_PUTTY_USDC), _putty_ck(_PUTTY_WETH), int(amount_in), int(fee), 0)])).hex()
+                    raw = _putty_eth_call(_PUTTY_UNI_QUOTER, data)
+                    out = int.from_bytes(raw[:32], 'big')
+                    if out <= 0:
+                        raise RuntimeError('putty quoter returned 0')
+                    return out
 
-                    def _putty_quote_v3(quoter, token_in, token_out, fee, amount_in):
-                        """QuoterV2-ABI single quote (uni + sushi share the struct); 0 on failure."""
-                        try:
-                            data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(amount_in), int(fee), 0)])).hex()
-                            raw = _putty_eth_call(quoter, data)
-                            return int.from_bytes(raw[:32], 'big')
-                        except Exception:
-                            return 0
-                    return (_putty_eth_call, _putty_encode_approve, _putty_state_getter, _putty_build_alt_plan, _putty_ix, _putty_encode_transfer, _putty_r02_single, _putty_r02_path, _putty_quote_usdc_weth, _putty_quote_v3)
-                _putty_eth_call, _putty_encode_approve, _putty_state_getter, _putty_build_alt_plan, _putty_ix, _putty_encode_transfer, _putty_r02_single, _putty_r02_path, _putty_quote_usdc_weth, _putty_quote_v3 = _fw1()
+                def _putty_quote_v3(quoter, token_in, token_out, fee, amount_in):
+                    """QuoterV2-ABI single quote (uni + sushi share the struct); 0 on failure."""
+                    try:
+                        data = '0x' + (_PUTTY_QUOTE_SINGLE_SEL + _putty_abi_encode(['(address,address,uint256,uint24,uint160)'], [(_putty_ck(token_in), _putty_ck(token_out), int(amount_in), int(fee), 0)])).hex()
+                        raw = _putty_eth_call(quoter, data)
+                        return int.from_bytes(raw[:32], 'big')
+                    except Exception:
+                        return 0
 
                 def _putty_best_usdc_weth(amount_in):
                     """Best uni-v3 USDC->WETH quote over fees {100,500,3000} — a strict
@@ -1556,74 +1412,61 @@ try:
                     """Build the substituted interaction list for one table entry."""
                     kind = spec['kind']
 
-                    def _fw29():
-                        def _dr96():
-                            if kind == 'univ3_single':
-                                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
+                    def _dr96():
+                        if kind == 'univ3_single':
+                            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
 
-                            def _dr11():
-                                if kind == 'univ3_path':
-                                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
+                        def _dr11():
+                            if kind == 'univ3_path':
+                                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
 
-                                def _dr88():
-                                    if kind == 'erc4626':
-                                        quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
-                                        def _fw1():
-                                            return ([_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)],)
-                                        _fwr1 = _fw1()
-                                        if _fwr1 is not None:
-                                            return _fwr1[0]
-                                    return _DR_UNSET
-                                    return _DR_UNSET
-                                _dr89 = _dr88()
-                                if _dr89 is not _DR_UNSET:
-                                    return _dr89
+                            def _dr88():
+                                if kind == 'erc4626':
+                                    quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
+                                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
                                 return _DR_UNSET
-                            _dr12 = _dr11()
-                            if _dr12 is not _DR_UNSET:
-                                return _dr12
+                                return _DR_UNSET
+                            _dr89 = _dr88()
+                            if _dr89 is not _DR_UNSET:
+                                return _dr89
                             return _DR_UNSET
-                        _dr97 = _dr96()
-                        if _dr97 is not _DR_UNSET:
-                            return (_dr97,)
-                        if kind == 'curve_full':
+                        _dr12 = _dr11()
+                        if _dr12 is not _DR_UNSET:
+                            return _dr12
+                        return _DR_UNSET
+                    _dr97 = _dr96()
+                    if _dr97 is not _DR_UNSET:
+                        return _dr97
+                    if kind == 'curve_full':
+                        weth_out, fee = _putty_best_usdc_weth(amount_in)
+
+                        def _dr44():
+                            pool = spec['pool']
+                            return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(pool, weth_out), chain_id), _putty_ix(pool, '0x' + (_PUTTY_CURVE_XCHG_SEL + _putty_abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(weth_out), 0, _putty_ck(recipient)])).hex(), chain_id)]
+                            return _DR_UNSET
+                        _dr45 = _dr44()
+                        if _dr45 is not _DR_UNSET:
+                            return _dr45
+
+                    def _dr7():
+                        nonlocal fee, weth_out
+                        if kind == 'uni_sushi':
                             weth_out, fee = _putty_best_usdc_weth(amount_in)
+                            sushi_fee = int(spec['sushi_fee'])
+                            if _putty_quote_v3(_PUTTY_SUSHI_V3_QUOTER, _PUTTY_WETH, token_out, sushi_fee, weth_out) <= 0:
+                                raise RuntimeError('putty: sushi leg quote empty')
 
-                            def _dr44():
-                                pool = spec['pool']
-                                def _re1():
-                                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(pool, weth_out), chain_id), _putty_ix(pool, '0x' + (_PUTTY_CURVE_XCHG_SEL + _putty_abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(weth_out), 0, _putty_ck(recipient)])).hex(), chain_id)]
-                                return _re1()
-                            _dr45 = _dr44()
-                            if _dr45 is not _DR_UNSET:
-                                return (_dr45,)
-
-                        def _dr7():
-                            nonlocal fee, weth_out
-                            if kind == 'uni_sushi':
-                                weth_out, fee = _putty_best_usdc_weth(amount_in)
-                                sushi_fee = int(spec['sushi_fee'])
-                                if _putty_quote_v3(_PUTTY_SUSHI_V3_QUOTER, _PUTTY_WETH, token_out, sushi_fee, weth_out) <= 0:
-                                    raise RuntimeError('putty: sushi leg quote empty')
-
-                                def _dr84():
-
-                                    def _fw22():
-                                        sushi_call = '0x' + (_PUTTY_OLD_SINGLE_SEL + _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_WETH), _putty_ck(token_out), sushi_fee, _putty_ck(recipient), int(_PUTTY_DEADLINE), int(weth_out), 0, 0)])).hex()
-                                        return (sushi_call,)
-                                    sushi_call, = _fw22()
-                                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(_PUTTY_SUSHI_V3_ROUTER, weth_out), chain_id), _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id)]
-                                    return _DR_UNSET
-                                _dr85 = _dr84()
-                                if _dr85 is not _DR_UNSET:
-                                    return _dr85
-                            return _DR_UNSET
-                        _dr8 = _dr7()
-                        if _dr8 is not _DR_UNSET:
-                            return (_dr8,)
-                    _fwr29 = _fw29()
-                    if _fwr29 is not None:
-                        return _fwr29[0]
+                            def _dr84():
+                                sushi_call = '0x' + (_PUTTY_OLD_SINGLE_SEL + _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_WETH), _putty_ck(token_out), sushi_fee, _putty_ck(recipient), int(_PUTTY_DEADLINE), int(weth_out), 0, 0)])).hex()
+                                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(_PUTTY_SUSHI_V3_ROUTER, weth_out), chain_id), _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id)]
+                                return _DR_UNSET
+                            _dr85 = _dr84()
+                            if _dr85 is not _DR_UNSET:
+                                return _dr85
+                        return _DR_UNSET
+                    _dr8 = _dr7()
+                    if _dr8 is not _DR_UNSET:
+                        return _dr8
                     if kind == 'aero_pd':
 
                         def _dr19():
@@ -1636,12 +1479,9 @@ try:
                                     nonlocal cur
                                     out = _putty_pair_get_amount_out(pair, cur, tin)
                                     to = recipient if i == len(hops) - 1 else hops[i + 1][1]
-                                    def _fw2():
-                                        a0, a1 = (0, out) if in_is_t0 else (out, 0)
-                                        ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
-                                        cur = out
-                                        return (a0, a1, cur)
-                                    a0, a1, cur = _fw2()
+                                    a0, a1 = (0, out) if in_is_t0 else (out, 0)
+                                    ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
+                                    cur = out
                                     return (a0, a1, out, to)
                                 a0, a1, out, to = _dr72()
                             return ixs
@@ -1652,12 +1492,8 @@ try:
                 def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
                     recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
                     chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
-                    def _fw18():
-                        interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
-                        return (_PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id}),)
-                    _fwr18 = _fw18()
-                    if _fwr18 is not None:
-                        return _fwr18[0]
+                    interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
+                    return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id})
                 return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter)
                 return _DR_UNSET
             _dr61 = _dr60()
@@ -1719,13 +1555,9 @@ try:
                                 nonlocal plan
                                 if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
                                     plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
-                                    def _fw8():
-                                        if plan is not None and plan.interactions:
-                                            _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
-                                            return (plan,)
-                                    _fwr8 = _fw8()
-                                    if _fwr8 is not None:
-                                        return _fwr8[0]
+                                    if plan is not None and plan.interactions:
+                                        _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
+                                        return plan
 
                                 def _dr69():
                                     nonlocal plan
@@ -1756,10 +1588,8 @@ try:
             return super().generate_plan(*args, **kwargs)
     SOLVER_CLASS = PuttyEdgeSolver
 except Exception:
-    def _fw2():
-        try:
-            import logging as _putty_logging2
-            _putty_logging2.getLogger('putty_shim').exception('[putty] shim import/setup failed; champion solver left unchanged')
-        except Exception:
-            pass
-    _fw2()
+    try:
+        import logging as _putty_logging2
+        _putty_logging2.getLogger('putty_shim').exception('[putty] shim import/setup failed; champion solver left unchanged')
+    except Exception:
+        pass

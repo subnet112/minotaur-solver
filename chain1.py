@@ -59,15 +59,11 @@ def superset(s, intent, state, snapshot, base_plan):
         g = _guards(s, intent, state, snapshot)
         if g is None:
             return None
-        def _fw1():
-            (tin, tout, amt, mo), rcpt, w3, block = g
-            base_empty = base_plan is None or not getattr(base_plan, 'interactions', None)
-            route = _decide(w3, tin, tout, amt, mo, block, base_empty)
-            if route is None:
-                return (None,)
-            return (_mk_plan(route, tin, amt, rcpt, intent, state),)
-        _fwr1 = _fw1()
-        if _fwr1 is not None:
-            return _fwr1[0]
+        (tin, tout, amt, mo), rcpt, w3, block = g
+        base_empty = base_plan is None or not getattr(base_plan, 'interactions', None)
+        route = _decide(w3, tin, tout, amt, mo, block, base_empty)
+        if route is None:
+            return None
+        return _mk_plan(route, tin, amt, rcpt, intent, state)
     except Exception:
         return None

@@ -14,11 +14,8 @@ def est_gs2(s, spec, tin, amt, chain_id):
 
 def est_sv3(s, spec, tin, amt, chain_id):
     q1 = _sl.slip_quote(s, spec['slip_ts'], tin, spec['mid1'], amt, chain_id, spec.get('q'))
-    def _fw1():
-        q2 = s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['f2'], 'mid': spec['mid2']}, spec['mid1'], q1, chain_id) if q1 else None
-        q3 = s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['f3'], 'mid': spec['tout']}, spec['mid2'], q2, chain_id) if q2 else None
-        return (q3,)
-    q3, = _fw1()
+    q2 = s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['f2'], 'mid': spec['mid2']}, spec['mid1'], q1, chain_id) if q1 else None
+    q3 = s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['f3'], 'mid': spec['tout']}, spec['mid2'], q2, chain_id) if q2 else None
     return (q3, q1) if q3 else (None, None)
 
 def est_vs2(s, spec, tin, amt, chain_id):

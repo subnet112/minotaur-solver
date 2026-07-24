@@ -23,13 +23,9 @@ plan's own aero router getAmountsOut, leg2 via the V2 pair's reserves."""
 
         def _dr332(cd1):
             amt_in, _mo, routes, _to, _dl = _dec(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], bytes.fromhex(cd1[10:]))
-            def _fw1():
-                if len(routes) != 1 or routes[0][0].lower() != tin.lower() or routes[0][1].lower() != spec['base_mid'] or (int(amt_in) != int(amt)) or routes[0][2]:
-                    return (False,)
-                return (True,)
-            _fwr1 = _fw1()
-            if _fwr1 is not None:
-                return _fwr1[0]
+            if len(routes) != 1 or routes[0][0].lower() != tin.lower() or routes[0][1].lower() != spec['base_mid'] or int(amt_in) != int(amt) or routes[0][2]:
+                return False
+            return True
 
         def _dr333(cd2):
             cmds, inputs, _d2 = _dec(['bytes', 'bytes[]', 'uint256'], bytes.fromhex(cd2[10:]))
@@ -75,13 +71,10 @@ actually delivers at this block, never a guessed alternative."""
             swaps = []
             for it in (getattr(plan, 'interactions', None) or []):
                 cd = str(getattr(it, 'call_data', '') or '')
-                def _fw1():
-                    body = cd[2:] if cd.startswith('0x') else cd
-                    if len(body) < 8 or body[:8].lower() == '095ea7b3':
-                        return ('c',)
-                    swaps.append((str(getattr(it, 'target', '') or '').lower(), body[:8].lower(), body[8:]))
-                if _fw1() is not None:
+                body = cd[2:] if cd.startswith('0x') else cd
+                if len(body) < 8 or body[:8].lower() == '095ea7b3':
                     continue
+                swaps.append((str(getattr(it, 'target', '') or '').lower(), body[:8].lower(), body[8:]))
             return swaps
         swaps = _dr300()
         if len(swaps) != 1:

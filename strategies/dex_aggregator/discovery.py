@@ -52,10 +52,7 @@ def _dr9():
     _fwr4 = _fw4()
     if _fwr4 is not None:
         return _fwr4[0]
-def _dr9x():
-    AERO_V2_FACTORY, AERO_V2_ROUTER, CBETH, USDBC, USDC, V2_FORKS_BASE, V2_FORKS_MAINNET, V4_QUOTER, V4_STATE_VIEW, VIRTUAL, WETH, ZORA, _ZERO, logger = _dr9()
-    globals().update(locals())
-_dr9x()
+AERO_V2_FACTORY, AERO_V2_ROUTER, CBETH, USDBC, USDC, V2_FORKS_BASE, V2_FORKS_MAINNET, V4_QUOTER, V4_STATE_VIEW, VIRTUAL, WETH, ZORA, _ZERO, logger = _dr9()
 V4_DYN_FEE = 8388608
 CLANKER_HOOK = '0xb429d62f8f3bffb98cdb9569533ea23bf0ba28cc'
 
@@ -64,42 +61,13 @@ def _dr3():
     ZORA_HOOK = '0xc8d077444625eb300a427a6dfb2b1dbf9b159040'
     ZORA_CREATOR_HOOK = '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040'
     def _fw3():
-        def _fw12():
-            V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
-            return (V4_KEY_GRID,)
-        V4_KEY_GRID, = _fw12()
+        V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
         V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
         return (V4_KEY_GRID, V4_BASES)
     V4_KEY_GRID, V4_BASES = _fw3()
     return (HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK)
-def _dr3x():
-    HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK = _dr3()
-    globals().update(locals())
-_dr3x()
-def _eth_v4_consts():
-    # Ethereum (chain 1) Uniswap V4 venue config (StateView wired -> liquidity gate
-    # pre-filters empty pools, same as Base; kills phantom-quote route selection).
-    ETH_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-    ETH_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
-    ETH_DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
-    ETH_USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
-    ETH_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
-    ETH_V4_QUOTER = '0x52f0e24d1c21c8a0cb1e5a5dd6198556bd9e1203'
-    ETH_V4_STATE_VIEW = '0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227'
-    ETH_V4_BASES = (_ZERO, ETH_WETH, ETH_USDC, ETH_DAI, ETH_USDT, ETH_WBTC)
-    # hookless fee/tickSpacing grid + the ultra-low-fee stable pools (fee 7/10/100,
-    # tick 1) that mainnet uses for stable<->stable; ordered most-liquid first.
-    ETH_V4_KEY_GRID = ((3000, 60, _ZERO), (500, 10, _ZERO), (10000, 200, _ZERO), (100, 1, _ZERO), (10, 1, _ZERO), (7, 1, _ZERO))
-    MAX_CALLS = 90
-    globals().update(locals())
-_eth_v4_consts()
-
-
-def _v4_cfg(chain_id):
-    """(bases, grid, weth, quoter, stateview_or_None) for the chain's V4 venue."""
-    if chain_id == 8453:
-        return (V4_BASES, V4_KEY_GRID, WETH, V4_QUOTER, V4_STATE_VIEW)
-    return (ETH_V4_BASES, ETH_V4_KEY_GRID, ETH_WETH, ETH_V4_QUOTER, ETH_V4_STATE_VIEW)
+HOOK_BDF9, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK = _dr3()
+MAX_CALLS = 90
 
 def _sorted_pair(a: str, b: str) -> tuple[str, str]:
     return (a, b) if int(a, 16) < int(b, 16) else (b, a)
@@ -112,33 +80,24 @@ class _DiscoveryEngineDR12:
 
     def v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
         forks = V2_FORKS_BASE if chain_id == 8453 else V2_FORKS_MAINNET if chain_id == 1 else ()
-        def _fw13():
-            hubs = [WETH, USDC] if chain_id == 8453 else ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48']
-            out: list[dict] = []
-            paths = [[tin, tout]] + [[tin, h, tout] for h in hubs if h.lower() not in (tin.lower(), tout.lower())]
+        hubs = [WETH, USDC] if chain_id == 8453 else ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48']
+        out: list[dict] = []
+        paths = [[tin, tout]] + [[tin, h, tout] for h in hubs if h.lower() not in (tin.lower(), tout.lower())]
 
-            def _dr6():
-                for label, router, native in forks:
-                    for path in paths:
-                        q = self._v2_quote(router, path, amount_in)
-                        def _fw1():
-                            if q <= 0:
-                                return ('c',)
-                            n_hops = len(path) - 1
-                            base = {'out': q, 'tokens': tuple(path), 'gas_est': 150000 * n_hops, 'gas_model': 350000 + 150000 * n_hops, 'discovered': label}
-                            if native:
-                                out.append({**base, 'venue': native, 'param': tuple(path)})
-                            else:
-                                out.append({**base, 'venue': 'v2_fork', 'router': router, 'param': router})
-                            return ('b',)
-                        _fwr1 = _fw1()
-                        if _fwr1 is not None:
-                            if _fwr1[0] == 'b':
-                                break
-                            continue
-            _dr6()
-            return (out,)
-        out, = _fw13()
+        def _dr6():
+            for label, router, native in forks:
+                for path in paths:
+                    q = self._v2_quote(router, path, amount_in)
+                    if q <= 0:
+                        continue
+                    n_hops = len(path) - 1
+                    base = {'out': q, 'tokens': tuple(path), 'gas_est': 150000 * n_hops, 'gas_model': 350000 + 150000 * n_hops, 'discovered': label}
+                    if native:
+                        out.append({**base, 'venue': native, 'param': tuple(path)})
+                    else:
+                        out.append({**base, 'venue': 'v2_fork', 'router': router, 'param': router})
+                    break
+        _dr6()
         return out
 
     def aero_v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
@@ -148,14 +107,12 @@ class _DiscoveryEngineDR12:
         def _dr2():
             out: list[dict] = []
             route_sets: list[tuple[tuple, ...]] = []
-            def _fw10():
-                for stable in (False, True):
-                    route_sets.append(((tin, tout, stable, AERO_V2_FACTORY),))
-                for hub in (WETH, USDC):
-                    if hub.lower() in (tin.lower(), tout.lower()):
-                        continue
-                    route_sets.append(((tin, hub, False, AERO_V2_FACTORY), (hub, tout, False, AERO_V2_FACTORY)))
-            _fw10()
+            for stable in (False, True):
+                route_sets.append(((tin, tout, stable, AERO_V2_FACTORY),))
+            for hub in (WETH, USDC):
+                if hub.lower() in (tin.lower(), tout.lower()):
+                    continue
+                route_sets.append(((tin, hub, False, AERO_V2_FACTORY), (hub, tout, False, AERO_V2_FACTORY)))
             return (out, route_sets)
         out, route_sets = _dr2()
         for routes in route_sets:
@@ -165,46 +122,18 @@ class _DiscoveryEngineDR12:
                 r = self._c(AERO_V2_ROUTER, data)
                 return (data, r)
             data, r = _dr8()
-            def _fw8():
-                if not r:
-                    return ('c',)
-                try:
-                    q = int(_dec(['uint256[]'], r)[0][-1])
-                except Exception:
-                    return ('c',)
-                if q <= 0:
-                    return ('c',)
-                out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
-            if _fw8() is not None:
+            if not r:
                 continue
+            try:
+                q = int(_dec(['uint256[]'], r)[0][-1])
+            except Exception:
+                continue
+            if q <= 0:
+                continue
+            out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
         return out
 
-class _DiscoveryEngine_fz(_DiscoveryEngineDR12):
-    def discover(self, chain_id: int, tin: str, tout: str, amount_in: int, min_out: int) -> list[dict]:
-        """All venue families, cheapest/most-likely first. Returns candidates
-        sorted by quoted output desc; quoted candidates beat probed ones."""
-
-        def _dr10():
-            nonlocal tin, tout
-            tin, tout = (tin.lower(), tout.lower())
-            def _sweep():
-                cands = []
-                try:
-                    cands += self.v2_candidates(chain_id, tin, tout, amount_in)
-                    if not (min_out <= 1 and cands):
-                        cands += self.aero_v2_candidates(chain_id, tin, tout, amount_in)
-                    if not (min_out <= 1 and cands):
-                        cands += self.v4_candidates(chain_id, tin, tout, amount_in)
-                except Exception:
-                    logger.exception('[discovery] sweep failed (%s->%s)', tin, tout)
-                return cands
-            return _sweep()
-        cands = _dr10()
-        cands.sort(key=lambda c: c.get('out', 0), reverse=True)
-        logger.info('[discovery] %s->%s chain=%s: %d candidate(s), %d rpc calls', tin[:8], tout[:8], chain_id, len(cands), self._used)
-        return cands
-
-class DiscoveryEngine(_DiscoveryEngine_fz):
+class DiscoveryEngine(_DiscoveryEngineDR12):
     """Stateless per-call sweep; ``call`` is an eth_call thunk with the
     solver's socket timeout already applied: call(to, data) -> bytes|None."""
 
@@ -234,14 +163,9 @@ class DiscoveryEngine(_DiscoveryEngine_fz):
         except Exception:
             return 0
 
-    def _v4_liquidity(self, pool_id: bytes, state_view=None) -> int:
-        # state_view None (mainnet — no public StateView wired) -> skip the
-        # liquidity gate; the quoter reverts/returns 0 on an empty pool anyway.
-        sv = state_view or V4_STATE_VIEW
-        if state_view is None and sv is None:
-            return 1
+    def _v4_liquidity(self, pool_id: bytes) -> int:
         data = _kk(text='getLiquidity(bytes32)')[:4] + pool_id
-        r = self._c(sv, data)
+        r = self._c(V4_STATE_VIEW, data)
         if not r:
             return 0
         try:
@@ -249,13 +173,13 @@ class DiscoveryEngine(_DiscoveryEngine_fz):
         except Exception:
             return 0
 
-    def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int, quoter=None) -> int:
-        c0, c1, fee, tick, hooks = key
-        def _fw7():
+    def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int) -> int:
+        def _fw2():
+            c0, c1, fee, tick, hooks = key
             data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
-            r = self._c(quoter or V4_QUOTER, data)
+            r = self._c(V4_QUOTER, data)
             return (r,)
-        r, = _fw7()
+        r, = _fw2()
         if not r or len(r) < 32:
             return 0
         try:
@@ -268,74 +192,82 @@ class DiscoveryEngine(_DiscoveryEngine_fz):
 
         Emits ``uniswap_v4_ur`` specs matching the solver's existing builder:
         base == tin -> single v4 leg; base != tin -> UR v3 leg (tin->WETH/USDC)
-        chained into the v4 leg via CONTRACT_BALANCE. Base + Ethereum (chain 1)
-        via chain-selected quoter/bases/grid (see ``_v4_cfg``).
+        chained into the v4 leg via CONTRACT_BALANCE.
         """
-        if chain_id not in (8453, 1):
+        if chain_id != 8453:
             return []
-        bases, grid, weth, quoter, state_view = _v4_cfg(chain_id)
-        # ETH (state_view None): skip the on-chain liquidity gate, let the quoter
-        # decide; Base keeps its StateView getLiquidity() pre-filter.
-        def _fw11():
-            skip_liq = state_view is None
-            out: list[dict] = []
-            for base in bases:
-                if base.lower() == tout.lower():
-                    continue
-                for fee, tick, hooks in grid:
-                    def _fw6():
+        out: list[dict] = []
+        for base in V4_BASES:
+            if base.lower() == tout.lower():
+                continue
+            for fee, tick, hooks in V4_KEY_GRID:
+
+                def _fw1():
+                    def _dr11():
                         c0, c1 = _sorted_pair(base, tout)
                         pid = v4_pool_id(c0, c1, fee, tick, hooks)
+                        return (c0, c1, pid)
+                    c0, c1, pid = _dr11()
+                    if self._v4_liquidity(pid) <= 0:
+                        return ('c',)
+                    zero_for_one = c0.lower() == base.lower()
+                    leg_in = amount_in
 
-                        def _fw5():
-                            if not skip_liq and self._v4_liquidity(pid, state_view) <= 0:
-                                return ('c',)
+                    def _dr5():
+                        spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else WETH, 'zero_for_one': zero_for_one}
+                        return spec
+                    spec = _dr5()
+                    if base.lower() != tin.lower():
 
-                            def _fw3():
-                                zero_for_one = c0.lower() == base.lower()
-                                leg_in = amount_in
-                                spec: dict[str, Any] = {'pool': (c0, c1, fee, tick, hooks), 'settle': base if base != _ZERO else weth, 'zero_for_one': zero_for_one}
+                        def _dr1():
+                            nonlocal leg_in
+                            settle = WETH if base == _ZERO else base
+                            spec['v3_tokens'] = (tin, settle)
+                            spec['v3_fees'] = (500,) if settle.lower() == WETH.lower() else (3000,)
+                            if base == _ZERO:
+                                spec['native_eth'] = True
+                            leg_in = 0
+                            return settle
+                        settle = _dr1()
 
-                                def _fw2(leg_in=leg_in):
+                    def _dr7():
+                        q = self._v4_quote((c0, c1, fee, tick, hooks), zero_for_one, leg_in) if leg_in else 1
+                        return q
+                    q = _dr7()
+                    if q <= 0:
+                        return ('c',)
 
-                                    def _fw1(leg_in=leg_in):
-                                        if base.lower() != tin.lower():
-                                            settle = weth if base == _ZERO else base
-                                            spec['v3_tokens'] = (tin, settle)
-                                            spec['v3_fees'] = (500,) if settle.lower() == weth.lower() else (3000,)
-                                            if base == _ZERO:
-                                                spec['native_eth'] = True
-                                            leg_in = 0
-                                        return (leg_in,)
-                                    leg_in, = _fw1()
-                                    key = (c0, c1, fee, tick, hooks)
-                                    if leg_in:
-                                        q = self._v4_quote(key, zero_for_one, leg_in, quoter)
-                                    elif skip_liq:
-                                        q = 1 if self._v4_quote(key, zero_for_one, 10 ** 6, quoter) > 0 else 0
-                                    else:
-                                        q = 1
-                                    return (leg_in, q)
-                                leg_in, q = _fw2()
-                                return (spec, q)
-                            spec, q = _fw3()
-                            if q <= 0:
-                                return ('c',)
-                            out.append({'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'})
-                            return ('b',)
-                        _fwr5 = _fw5()
-                        if _fwr5 is not None:
-                            if _fwr5[0] == 'b':
-                                return ('b',)
-                            return ('c',)
-                    _fwr6 = _fw6()
-                    if _fwr6 is not None:
-                        if _fwr6[0] == 'b':
-                            break
-                        continue
-                if out:
-                    break
-            return (out,)
-        out, = _fw11()
+                    def _dr4():
+                        out.append({'venue': 'uniswap_v4_ur', 'spec': spec, 'param': 'v4-disc', 'out': q, 'gas_est': 650000, 'gas_model': 350000 + 650000, 'discovered': f'v4:{fee}/{tick}/{hooks[:8]}'})
+                    _dr4()
+                    return ('b',)
+                _fwr1 = _fw1()
+                if _fwr1 is not None:
+                    if _fwr1[0] == 'b':
+                        break
+                    continue
+            if out:
+                break
         return out
 
+    def discover(self, chain_id: int, tin: str, tout: str, amount_in: int, min_out: int) -> list[dict]:
+        """All venue families, cheapest/most-likely first. Returns candidates
+        sorted by quoted output desc; quoted candidates beat probed ones."""
+
+        def _dr10():
+            nonlocal tin, tout
+            tin, tout = (tin.lower(), tout.lower())
+            cands = []
+            try:
+                cands += self.v2_candidates(chain_id, tin, tout, amount_in)
+                if not (min_out <= 1 and cands):
+                    cands += self.aero_v2_candidates(chain_id, tin, tout, amount_in)
+                if not (min_out <= 1 and cands):
+                    cands += self.v4_candidates(chain_id, tin, tout, amount_in)
+            except Exception:
+                logger.exception('[discovery] sweep failed (%s->%s)', tin, tout)
+            return cands
+        cands = _dr10()
+        cands.sort(key=lambda c: c.get('out', 0), reverse=True)
+        logger.info('[discovery] %s->%s chain=%s: %d candidate(s), %d rpc calls', tin[:8], tout[:8], chain_id, len(cands), self._used)
+        return cands

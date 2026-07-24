@@ -52,16 +52,14 @@ def _viking_cached_bar(key):
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_cached.json')
             bars: dict = {}
             try:
-                def _fw1():
-                    data = _json.load(open(path)) or {}
-                    for k, v in data.items() if isinstance(data, dict) else []:
-                        try:
-                            iv = int(v)
-                        except (TypeError, ValueError):
-                            continue
-                        if iv > 0:
-                            bars[str(k).lower()] = iv
-                _fw1()
+                data = _json.load(open(path)) or {}
+                for k, v in data.items() if isinstance(data, dict) else []:
+                    try:
+                        iv = int(v)
+                    except (TypeError, ValueError):
+                        continue
+                    if iv > 0:
+                        bars[str(k).lower()] = iv
             except Exception:
                 bars = {}
             return bars
@@ -79,24 +77,21 @@ def _viking_frozen_index() -> dict:
         import json as _json
         idx: dict = {}
         here = os.path.dirname(os.path.abspath(__file__))
-        def _fw2():
-            for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
-                try:
-                    data = _json.load(open(os.path.join(here, fname))) or {}
-                except Exception:
-                    continue
-                for k, spec in data.items() if isinstance(data, dict) else []:
+        for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
+            try:
+                data = _json.load(open(os.path.join(here, fname))) or {}
+            except Exception:
+                continue
+            for k, spec in data.items() if isinstance(data, dict) else []:
 
-                    def _dr12():
-                        rows = (spec or {}).get('interactions') or []
-                        sig = frozenset(((str(r.get('target', '')).lower(), str(r.get('data', '')).lower()) for r in rows))
-                        if sig:
-                            idx.setdefault(str(k).lower(), []).append(sig)
-                        return (rows, sig)
-                    rows, sig = _dr12()
-            _VIKING_FROZEN_INDEX = idx
-            return (_VIKING_FROZEN_INDEX,)
-        _VIKING_FROZEN_INDEX, = _fw2()
+                def _dr12():
+                    rows = (spec or {}).get('interactions') or []
+                    sig = frozenset(((str(r.get('target', '')).lower(), str(r.get('data', '')).lower()) for r in rows))
+                    if sig:
+                        idx.setdefault(str(k).lower(), []).append(sig)
+                    return (rows, sig)
+                rows, sig = _dr12()
+        _VIKING_FROZEN_INDEX = idx
     return _VIKING_FROZEN_INDEX
 
 def _viking_replay() -> dict:
@@ -115,25 +110,23 @@ def _viking_replay() -> dict:
             out: dict = {}
             try:
                 data = _json.load(open(path)) or {}
-                def _fw3():
-                    for key, spec in data.items() if isinstance(data, dict) else []:
-                        rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
-                        if not rows:
-                            continue
+                for key, spec in data.items() if isinstance(data, dict) else []:
+                    rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
+                    if not rows:
+                        continue
 
-                        def _dr7():
-                            try:
-                                at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
-                            except Exception:
-                                at = 0
-                            try:
-                                bout = int((spec or {}).get('built_out', 0) or 0)
-                            except (TypeError, ValueError):
-                                bout = 0
-                            out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
-                            return (at, bout)
-                        at, bout = _dr7()
-                _fw3()
+                    def _dr7():
+                        try:
+                            at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
+                        except Exception:
+                            at = 0
+                        try:
+                            bout = int((spec or {}).get('built_out', 0) or 0)
+                        except (TypeError, ValueError):
+                            bout = 0
+                        out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
+                        return (at, bout)
+                    at, bout = _dr7()
             except Exception:
                 out = {}
             return out
