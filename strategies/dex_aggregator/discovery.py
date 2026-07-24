@@ -38,6 +38,7 @@ def _dr9():
     WETH = '0x4200000000000000000000000000000000000006'
     USDC = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
     USDBC = '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'
+
     def _fw4():
         CBETH = '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22'
         ZORA = '0x1111111111166b7fe7bd91427724b487980afc69'
@@ -60,6 +61,7 @@ def _dr3():
     HOOK_BDF9 = '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'
     ZORA_HOOK = '0xc8d077444625eb300a427a6dfb2b1dbf9b159040'
     ZORA_CREATOR_HOOK = '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040'
+
     def _fw3():
         V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
         V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
@@ -174,6 +176,7 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
             return 0
 
     def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int) -> int:
+
         def _fw2():
             c0, c1, fee, tick, hooks = key
             data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
@@ -203,6 +206,7 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
             for fee, tick, hooks in V4_KEY_GRID:
 
                 def _fw1():
+
                     def _dr11():
                         c0, c1 = _sorted_pair(base, tout)
                         pid = v4_pool_id(c0, c1, fee, tick, hooks)
