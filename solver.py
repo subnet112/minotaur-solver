@@ -984,46 +984,6 @@ def _build_b1_fill_empty():
         except Exception:
             return 0
 
-    def _b1_cover_cbbtc_usdc(intent, state, snapshot, inst=None):
-        """cbBTC -> USDC on Base. Champion has no memorized route for this pair.
-        Live-quote each fee tier, pick the best-output single-hop, and emit
-        approve + exactInputSingle. Falls back to fee 3000 (on-chain best at
-        0.01 cbBTC) if quoting is unavailable."""
-        p = _b1_params(state)
-        tin = str(p.get('input_token', '') or '')
-        tout = str(p.get('output_token', '') or '')
-        amount_in = int(p.get('input_amount', 0) or 0)
-        if amount_in <= 0:
-            return None
-        recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
-        deadline = int(_b1time.time()) + 300
-        chain_id = int(getattr(state, 'chain_id', 0) or 0)
-
-        # Pick the best fee tier by live quote; default to the first (3000).
-        w3 = _b1_w3(state, inst)
-        best_fee, best_out = _B1_CBBTC_FEES[0], -1
-        for fee in _B1_CBBTC_FEES:
-            out = _b1_quote_single(w3, tin, tout, amount_in, fee)
-            if out > best_out:
-                best_out, best_fee = out, fee
-        # amount_out_minimum = 0 so we never revert on slippage (the app's own
-        # min-output guard still applies); we are only filling a champion-empty.
-        swap_cd = _b1_v3single(token_in=tin, token_out=tout, fee=best_fee,
-                               recipient=recipient, deadline=deadline,
-                               amount_in=amount_in, amount_out_minimum=0,
-                               chain_id=chain_id)
-        approve_cd = _b1_approve(_B1_ROUTER_8453, amount_in)
-        return _B1Plan(
-            intent_id=intent.app_id,
-            interactions=[
-                _B1Ix(target=tin, value='0', call_data=approve_cd, chain_id=chain_id),
-                _B1Ix(target=_B1_ROUTER_8453, value='0', call_data=swap_cd, chain_id=chain_id),
-            ],
-            deadline=deadline,
-            nonce=getattr(state, 'nonce', 0),
-            metadata={'solver': 'b1-cover', 'route': f'cbBTC->USDC v3 fee={best_fee}'},
-        )
-
     def _b1_encode_path(tokens, fees):
         """Packed Uniswap V3 path: token(20) + fee(3) + token(20) + ... ."""
         b = b''
@@ -1085,23 +1045,34 @@ def _build_b1_fill_empty():
     # image had `_B1_ROUTES == {}` with no fallback. A generated table may
     # augment coverage; it must never be the only thing providing it.
     #
-    # WETH->DAI via the USDC hub, fees (500,100): verified on a Base fork to
-    # deliver 949.54 DAI for 0.5 WETH where the best DIRECT pool gives 244.63.
-    # It only TIES the king when the king has live RPC (its fast_route contains
-    # this same combo) — its value is filling the order when the king drops.
-    _B1_ROUTES = {
-        (8453, '0x4200000000000000000000000000000000000006',
-               '0x50c5725949a6f0c72e6c4a641f24049a917db0cb'): (
-            ['0x4200000000000000000000000000000000000006',
-             '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
-             '0x50c5725949a6f0c72e6c4a641f24049a917db0cb'], [500, 100]),
-    }
+    # EMPTY BY MEASUREMENT, not by oversight. The obvious candidate here was
+    # WETH->DAI via the USDC hub (500,100) — 949.54 DAI for 0.5 WETH vs 244.63
+    # from the best direct pool. But the scorecard measured that order at ratio
+    # 0.983539 against the champion: CATASTROPHIC, a hard veto. The 3.9x figure
+    # was over the best DIRECT pool, never over the king, whose fast_route
+    # already contains that exact (500,100) USDC combo and which additionally
+    # reaches Aerodrome stable pools that we do not quote.
+    #
+    # Rule: no route whose OUTPUT is a stablecoin goes in this table until we
+    # can quote the venues the king uses for them. auto_attack enforces the same
+    # rule by gating on king_best (king_model.py) instead of a direct baseline.
+    _B1_ROUTES = {}
     try:
         import json as _b1rjson
         _b1_rpath = _b1os.path.join(_b1os.path.dirname(_b1os.path.abspath(__file__)),
                                     'b1_routes.json')
         if _b1os.path.exists(_b1_rpath):
+            # Output tokens that measured CATASTROPHIC on the scorecard. The
+            # loader enforces this too, not just the generator: b1_routes.json is
+            # data that can go stale or arrive from an older prep, and a vetoed
+            # cover must not be re-introducible by a file. Base USDC / DAI.
+            _B1_NO_OUT = ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+                          '0x50c5725949a6f0c72e6c4a641f24049a917db0cb')
             for _r in (_b1rjson.load(open(_b1_rpath)).get('routes') or []):
+                if str(_r.get('tout', '')).lower() in _B1_NO_OUT:
+                    _b1_logger.info('[b1] skipping tabled route with stablecoin '
+                                    'output %s — measured catastrophic', _r.get('tout'))
+                    continue
                 _B1_ROUTES[(int(_r['chain']), str(_r['tin']).lower(), str(_r['tout']).lower())] = (
                     [str(_t) for _t in _r['path_tokens']], [int(_f) for _f in _r['path_fees']])
         _b1_logger.info('[b1] loaded %d route(s) from b1_routes.json', len(_B1_ROUTES))
@@ -1227,13 +1198,34 @@ def _build_b1_fill_empty():
     # suboptimal fee tier. Alias for clarity.
     _b1_cover_bestfee = _b1_cover_usdc_weth
 
+    # ── SCORECARD-DRIVEN COVER SET ──────────────────────────────────────────
+    # Every entry below is justified by measured per-order results from
+    # sub_80e10891dc76 (the only scorecard where our layer actually fired on
+    # served orders). The rule that fell out of that data is stark — our routing
+    # WINS when the output token is WETH and LOSES when it is a stablecoin:
+    #
+    #   output WETH  -> USDC_to_WETH_xl      ratio 1.016676   WIN
+    #                   USDC_to_WETH_l/m/t   ratio 1.014134   WIN
+    #   output USDC  -> WETH_to_USDC_xl/l/m  ratio 0.983592   CATASTROPHIC
+    #                   WETH_to_USDC(+hist)  ratio 0.983965   CATASTROPHIC
+    #                   cbBTC_to_USDC        ratio 0.991095   regression
+    #   output DAI   -> WETH_to_DAI          ratio 0.983539   CATASTROPHIC
+    #
+    # `floor_bps: 100` means anything more than 1% below the champion is
+    # CATASTROPHIC, and adoption requires n_catastrophic == 0. Those seven
+    # stablecoin-output rows were each a hard veto on their own; together they
+    # turned 25 better into "not adopted: 25 better / 34 worse".
+    #
+    # Why the asymmetry: on *_to_stablecoin the champion reaches a venue we do
+    # not quote at all (Aerodrome stable pools / V2 forks — see king_model.py),
+    # so our UniV3-only best is ~1.6% short. Until we quote those venues, ANY
+    # cover with a stablecoin output is a losing trade.
+    #
+    # So: keep only the proven winner, drop every proven loser.
     _B1_COVERS = {
-        # cbBTC -> USDC on Base: champion has no table cover (likely a tie).
-        (8453, _B1_CBBTC.lower(), _B1_USDC_BASE.lower()): _b1_cover_cbbtc_usdc,
-        # USDC -> WETH: king pins fee-100 (drops 8/flakes 7); we pick best fee.
+        # USDC -> WETH: the one measured, repeated win (+1.41% to +1.67% across
+        # tiny/medium/large/xl). King pins fee-100; we live-quote and take best.
         (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): _b1_cover_bestfee,
-        # WETH -> USDC: king pins fee-3000; best tier delivers +0.24-0.31%.
-        (8453, _B1_WETH_BASE.lower(), _B1_USDC_BASE.lower()): _b1_cover_bestfee,
     }
     # Every tabled route registers itself. WETH->DAI (via the USDC hub) used to
     # be a 464-node hand-written function; it is now just a row in
@@ -1250,10 +1242,16 @@ def _build_b1_fill_empty():
     # orders, not just champion-empties). Safe: gated on a same-block live
     # comparison — we only override when we can PROVE more output.
     _B1_OVERRIDE = {
-        # king pins USDC->WETH to fee-100; fee-500 delivers +0.2-0.8% on large/xl
+        # king pins USDC->WETH to fee-100; fee-500 delivers +0.2-0.8% on large/xl.
+        # MEASURED on sub_80e10891dc76: ratio 1.014134-1.016676 across all four
+        # sizes — the only override that has ever paid.
         (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): 100,
-        # king pins WETH->USDC to fee-3000; best tier delivers +0.24-0.31% all sizes
-        (8453, _B1_WETH_BASE.lower(), _B1_USDC_BASE.lower()): 3000,
+        # WETH->USDC REMOVED. It was pinned to fee-3000 on the theory it gained
+        # +0.24-0.31%; the scorecard measured the opposite — ratio 0.983592 on
+        # xl/large/medium and 0.983965 on WETH_to_USDC plus two hist orders, all
+        # flagged CATASTROPHIC (>1% below champion). Overriding a SERVED order
+        # with a plan that loses 1.6% is the single most expensive thing this
+        # layer can do: seven hard vetoes from one table row.
     }
     # AGENTIC ATTACK: merge in any auto-discovered fee-pin overrides. The
     # auto_attack scanner writes b1_overrides.json (next to solver.py) each time
