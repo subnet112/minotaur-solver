@@ -26,8 +26,8 @@ try:
     from solver import GoranSolver as _Base
 except Exception:
     from solver import _McSolver as _Base
-_MV_NAME = "ninja"
-_MV_VERSION = "531.0.3"
+_MV_NAME = "hydra-sov-bignova-router"
+_MV_VERSION = "531.4.0bn"
 _MV_AUTHOR = 'wisedev0103'
 _ROTATE_FP_NONCE = "308"
 try:

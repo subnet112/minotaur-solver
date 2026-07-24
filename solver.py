@@ -881,3 +881,37 @@ class _PymsnoEth(SOLVER_CLASS):
 
 
 SOLVER_CLASS = _PymsnoEth
+
+# ===== CROWN LAYER (re-based on king d720fff) — blind-spot cover + gas-Pareto =====
+def _build_crown():
+    _CROWN_BASE = globals()['SOLVER_CLASS']
+
+    class CrownSolver(_CROWN_BASE):
+
+        def _crown_cover(self, plan, intent, state, snapshot):
+            try:
+                import viking_fastpath as _fp
+                lift = _fp.cover_lift(self, intent, state, snapshot, plan)
+                return lift if lift is not None else plan
+            except Exception:
+                return plan
+
+        def _crown_gas(self, plan, intent, state):
+            try:
+                import viking_gaslift as _gl
+                return _gl.gas_lift(self, plan, intent, state)
+            except Exception:
+                return plan
+
+        def generate_plan(self, intent, state, snapshot=None):
+            try:
+                plan = super().generate_plan(intent, state, snapshot)
+            except Exception:
+                plan = None
+            lifted = self._crown_cover(plan, intent, state, snapshot)
+            return self._crown_gas(lifted, intent, state)
+
+    CrownSolver._crown_orig = _CROWN_BASE.generate_plan
+    CrownSolver._crown_installed = True
+    globals()['SOLVER_CLASS'] = CrownSolver
+_build_crown()
