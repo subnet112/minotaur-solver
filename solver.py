@@ -1275,6 +1275,32 @@ def _build_b1_fill_empty():
         # king pins WETH->USDC to fee-3000; best tier delivers +0.24-0.31% all sizes
         (8453, _B1_WETH_BASE.lower(), _B1_USDC_BASE.lower()): 3000,
     }
+    # AGENTIC ATTACK: merge in any auto-discovered fee-pin overrides. The
+    # auto_attack scanner writes b1_overrides.json (next to solver.py) each time
+    # the king changes: {"overrides": [[chain, tin, tout, pinned_fee], ...]}.
+    # Each such pair also auto-registers the generic best-fee cover. This lets
+    # the attack adapt to a new king WITHOUT editing solver code. Safe: every
+    # override is still gated at runtime by the live-quote margin + min-out floor,
+    # so a stale/wrong entry can only defer to the champion, never regress.
+    try:
+        import json as _b1json
+        _ovpath = _b1os.path.join(_b1os.path.dirname(_b1os.path.abspath(__file__)),
+                                  'b1_overrides.json')
+        if _b1os.path.exists(_ovpath):
+            _ovdata = _b1json.load(open(_ovpath))
+            for _row in (_ovdata.get('overrides') or []):
+                try:
+                    _cid, _ti, _to, _fee = int(_row[0]), str(_row[1]).lower(), str(_row[2]).lower(), int(_row[3])
+                    _key = (_cid, _ti, _to)
+                    _B1_OVERRIDE[_key] = _fee
+                    if _key not in _B1_COVERS:
+                        _B1_COVERS[_key] = _b1_cover_bestfee
+                except Exception:
+                    continue
+            _b1_logger.info('[b1] loaded %d auto-override(s) from b1_overrides.json',
+                            len(_ovdata.get('overrides') or []))
+    except Exception:
+        pass  # any load failure -> keep the hardcoded overrides (safe)
     _B1_OVERRIDE_MARGIN = 1.001  # our route must beat the pinned-fee quote by >0.1%
 
     def _b1_should_override(state, inst=None):
