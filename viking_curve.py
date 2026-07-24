@@ -10,7 +10,6 @@ superset of only firing when the base plan is null."""
 _IDX = {'stable': 'int128', 'crypto': 'uint256'}
 _TAB = None
 
-
 def _table():
     global _TAB
     if _TAB is None:
@@ -24,11 +23,9 @@ def _table():
             _TAB = ({}, {})
     return _TAB
 
-
 def _pool_candidates(tin, tout):
     _, bytoken = _table()
     return list(set(bytoken.get(tin, ())) & set(bytoken.get(tout, ())))
-
 
 def _pool_ij(pool, tin, tout):
     pools, _ = _table()
@@ -36,8 +33,7 @@ def _pool_ij(pool, tin, tout):
     coins = info.get('coins') or []
     if tin not in coins or tout not in coins:
         return None
-    return coins.index(tin), coins.index(tout), info.get('kind', 'stable')
-
+    return (coins.index(tin), coins.index(tout), info.get('kind', 'stable'))
 
 def _quote(w3, pool, kind, i, j, amt):
     from eth_abi import encode as _enc, decode as _dec
@@ -51,7 +47,6 @@ def _quote(w3, pool, kind, i, j, amt):
     except Exception:
         return 0
 
-
 def _pool_quote(w3, pool, tin, tout, amt):
     """(out, 'curve', det) for one pool, or None (no matching coins / quotes 0)."""
     ij = _pool_ij(pool, tin, tout)
@@ -60,7 +55,6 @@ def _pool_quote(w3, pool, tin, tout, amt):
     i, j, kind = ij
     q = _quote(w3, pool, kind, i, j, amt)
     return (q, 'curve', (pool, kind, i, j)) if q > 0 else None
-
 
 def curve_candidates(w3, chain, tin, tout, amt):
     """(out, 'curve', (pool, kind, i, j)) for the best live-quoted Curve pool,
