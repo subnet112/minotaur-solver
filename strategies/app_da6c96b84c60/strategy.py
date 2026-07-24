@@ -162,6 +162,7 @@ class DexAggregatorStrategy(Strategy):
                 try:
                     from web3 import Web3
                     w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': 3}))
+
                     def _fwf(fee=fee):
                         for candidate_fee in _FEE_TIER_PROBE_ORDER:
                             pool = _get_pool(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token, candidate_fee)
