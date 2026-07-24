@@ -13,7 +13,6 @@ universally — V2 SwapRouter02 still exposes the deadline-included
 exactInput on every chain we deploy to.
 """
 from eth_abi.abi import encode
-
 def _v3c_c():
     EXACT_INPUT_SINGLE_SELECTOR_V1 = bytes.fromhex('414bf389')
     EXACT_INPUT_SINGLE_SELECTOR_V2 = bytes.fromhex('04e45aaf')
@@ -96,7 +95,6 @@ def encode_swap_path(tokens: list[str], fees: list[int]) -> bytes:
         raise ValueError(f'Need at least 2 tokens for a path, got {len(tokens)}')
 
     def _dr1():
-
         def _fw1():
             if len(fees) != len(tokens) - 1:
                 raise ValueError(f'Need exactly {len(tokens) - 1} fees for {len(tokens)} tokens, got {len(fees)}')

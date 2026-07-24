@@ -26,7 +26,6 @@ def _dr12():
     UNISWAP_V3_FACTORY_BASE = '0x33128a8fC17869897dcE68Ed026d694621f6FDfD'
     WETH = '0x4200000000000000000000000000000000000006'
     USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-
     def _fw2():
         DAI = '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb'
         CBBTC = '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf'
@@ -37,7 +36,6 @@ def _dr12():
 
     def _dr3():
         _FEE_TIER_PROBE_ORDER = (500, 3000, 10000, 100)
-
         def _fw4():
             _GET_POOL_SELECTOR = bytes.fromhex('1698ee82')
             _LIQUIDITY_SELECTOR = bytes.fromhex('1a686502')
@@ -67,7 +65,6 @@ def _dr12():
         def _dr5():
 
             def _fw5():
-
                 def _encode_exact_input_v1(path: bytes, recipient: str, deadline: int, amount_in: int, amount_out_minimum: int) -> str:
                     encoded_params = encode(['(bytes,address,uint256,uint256,uint256)'], [(path, recipient, deadline, amount_in, amount_out_minimum)])
                     return '0x' + (EXACT_INPUT_SELECTOR + encoded_params).hex()
@@ -131,7 +128,6 @@ class DexAggregatorStrategy(Strategy):
             def _dr11():
                 raw = getattr(state, 'raw_params', {}) or {}
                 input_token = getattr(typed, 'input_token', '') or raw.get('input_token', '')
-
                 def _fw1():
                     output_token = getattr(typed, 'output_token', '') or raw.get('output_token', '')
                     input_amount = int(getattr(typed, 'input_amount', 0) or raw.get('input_amount', '0') or 0)
@@ -158,7 +154,6 @@ class DexAggregatorStrategy(Strategy):
                             fee = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token)
                             if fee is None:
                                 for bridge in (WETH, USDC):
-
                                     def _fw3():
                                         if input_token.lower() == bridge.lower() or output_token.lower() == bridge.lower():
                                             return ('c',)
@@ -182,7 +177,6 @@ class DexAggregatorStrategy(Strategy):
                 try:
                     from web3 import Web3
                     w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': 3}))
-
                     def _fwf(fee=fee):
                         for candidate_fee in _FEE_TIER_PROBE_ORDER:
                             pool = _get_pool(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token, candidate_fee)

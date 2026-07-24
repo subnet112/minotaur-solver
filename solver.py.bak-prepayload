@@ -25,7 +25,6 @@ row at a time.
 from __future__ import annotations
 _DR_UNSET = object()
 import logging
-_REFORK_LANE = "rise05"  # lane marker
 import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
@@ -35,7 +34,7 @@ def _solver_c():
     _PUTTY_FINAL_BRAND = 'hydra-thread-router'
     SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
     SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.8.1c')
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'wisedev0103')
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
     globals().update(locals())
 _solver_c()
 
@@ -522,19 +521,4 @@ def _load_mv():
         import logging as _mvlog
         _mvlog.getLogger(__name__).exception('[mv] curve win layer failed to load; using GoranSolver')
 _load_mv()
-
-# ===== BLIND-SPOT COVER LAYER (outermost, fill-only-empty) — payload_cover =====
-# Raw-replay of captured KyberSwap calldata for orders every inner layer returns 0 on.
-# Wraps the composed SOLVER_CLASS: runs it first, and ONLY if it yields an empty plan
-# does it fill from the captured table (recipient retargeted to the live proxy). So it
-# can only lift a 0 to a delivery — a blind-spot WIN, never a regression/drop — and needs
-# no /score verification. Keeps factor 110 (its largest region is 44 nodes).
-def _load_payload_cover():
-    try:
-        import payload_cover as _pc
-        globals()['SOLVER_CLASS'] = _pc.install(globals()['SOLVER_CLASS'])
-    except Exception:  # any import problem -> keep the inner SOLVER_CLASS, never crash
-        import logging as _pclog
-        _pclog.getLogger(__name__).exception('[cover] payload_cover blind-spot layer failed to load')
-_load_payload_cover()
 

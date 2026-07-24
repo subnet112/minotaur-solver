@@ -26,10 +26,10 @@ try:
     from solver import GoranSolver as _Base
 except Exception:
     from solver import _McSolver as _Base
-_MV_NAME = 'hydra-sov-bignova-router'
-_MV_VERSION = '531.4.0bn'
+_MV_NAME = "s-best"
+_MV_VERSION = "535.0.5"
 _MV_AUTHOR = 'wisedev0103'
-_ROTATE_FP_NONCE = '308'
+_ROTATE_FP_NONCE = "1105"
 try:
     _LIVE_WINS = _mj.load(open(_mos.path.join(_mos.path.dirname(_mos.path.abspath(__file__)), 'live_wins.json')))
 except Exception:

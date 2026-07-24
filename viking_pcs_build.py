@@ -8,8 +8,11 @@ router version + exactInput selector matched to what is deployed on-chain:
   Base router 0x678Aa4bF (SR02-style, NO deadline)  -> exactInput 0xb858183f
 This wiring is byte-identical to the proven champion Pancake leg. My own encoders."""
 import logging
+
 from viking_pcs import _pcs_router
+
 logger = logging.getLogger('solver')
+
 
 def _pcs_path(path, fees):
     """Packed Uniswap-V3-style path bytes: token(20)+fee(3)+token(20)[+fee+token...]."""
@@ -19,6 +22,7 @@ def _pcs_path(path, fees):
         b += int(f).to_bytes(3, 'big') + bytes.fromhex(_ck(path[i + 1])[2:])
     return b
 
+
 def _pcs_encode(chain, path, fees, amt, recipient):
     """exactInput calldata for the chain's Pancake router version (ETH with deadline,
     Base SR02-style without)."""
@@ -27,11 +31,14 @@ def _pcs_encode(chain, path, fees, amt, recipient):
     p = _pcs_path(path, fees)
     if int(chain) == 1:
         sel = bytes.fromhex('c04b8d59')
-        args = _enc(['(bytes,address,uint256,uint256,uint256)'], [(p, _ck(recipient), 9999999999, int(amt), 0)])
+        args = _enc(['(bytes,address,uint256,uint256,uint256)'],
+                    [(p, _ck(recipient), 9999999999, int(amt), 0)])
     else:
         sel = bytes.fromhex('b858183f')
-        args = _enc(['(bytes,address,uint256,uint256)'], [(p, _ck(recipient), int(amt), 0)])
+        args = _enc(['(bytes,address,uint256,uint256)'],
+                    [(p, _ck(recipient), int(amt), 0)])
     return '0x' + (sel + args).hex()
+
 
 def pcs_ix(chain, path, fees, amt, recipient):
     """approve(Pancake router, amt) on path[0] + exactInput; None if no router."""
@@ -42,7 +49,10 @@ def pcs_ix(chain, path, fees, amt, recipient):
     if not router:
         return None
     cd = _pcs_encode(chain, path, fees, amt, recipient)
-    return [Interaction(target=_ck(path[0]), value='0', call_data=encode_approve(_ck(router), int(amt)), chain_id=chain), Interaction(target=_ck(router), value='0', call_data=cd, chain_id=chain)]
+    return [Interaction(target=_ck(path[0]), value='0',
+                        call_data=encode_approve(_ck(router), int(amt)), chain_id=chain),
+            Interaction(target=_ck(router), value='0', call_data=cd, chain_id=chain)]
+
 
 def serve_pcs(intent, state, chain, tin, tout, det, amt, recipient, out):
     """Build the Pancake exactInput plan (approve + swap); None if no router."""
@@ -51,4 +61,5 @@ def serve_pcs(intent, state, chain, tin, tout, det, amt, recipient, out):
     if ix is None:
         return None
     logger.info('[v3hop] override %s->%s out=%s via=pcs', tin[:8], tout[:8], out)
-    return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-pcs', 'chain_id': chain})
+    return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999,
+                         nonce=state.nonce, metadata={'solver': 'viking-pcs', 'chain_id': chain})

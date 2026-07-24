@@ -12,10 +12,8 @@ Re-fork onto a new champion = copy its solver.py to king_base.py. This file is
 fixed (no re-editing the champion's evolving code) — that's the whole point.
 """
 from __future__ import annotations
-
 def _lh1():
     return {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
-
 def _fw6():
     _DR_UNSET = object()
 
@@ -51,7 +49,6 @@ def _fw6():
 globals().update(_fw6())
 
 def _dr18():
-
     def _fw5():
         SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'joeknight')
         _BASE = 8453
@@ -60,7 +57,6 @@ def _dr18():
         _ETH_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
         _ETH_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
         _ETH_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
-
         def _fw6():
             _MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'
             _UNIV2_ROUTER = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24'
@@ -98,7 +94,6 @@ def _dr18():
     """
                     import json as _json
                     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_holes.json')
-
                     def _fw20():
                         try:
                             data = _json.load(open(path)) or {}
@@ -128,7 +123,6 @@ def _dr18():
                             data = _json.load(open(path)) or {}
                         except Exception:
                             return {}
-
                         def _fw26():
                             out = {}
                             for key, spec in data.items() if isinstance(data, dict) else []:
@@ -148,16 +142,13 @@ def _dr18():
                 _APEX_ROUTES = _load_route_table()
                 return (_APEX_ROUTES, _ROUTE_TABLE_ON)
             _APEX_ROUTES, _ROUTE_TABLE_ON = _dr86()
-
             def _fh1():
                 return {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x01facc69ec7360640aa5898e852326752801674a', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x01facc69ec7360640aa5898e852326752801674a', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', 250000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}}
-
             def _fh2():
                 return {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x37d3d61a304695619433bc05ef841e889f69debf', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0x37d3d61a304695619433bc05ef841e889f69debf'], 'fees': [100, 10000]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xc52aedec3374422d7510e294cfaa90799595cba3', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0xc52aedec3374422d7510e294cfaa90799595cba3'], 'fees': [100, 10000]}}
             _APEX_QUALITY_ROUTES = {**_fh1(), **_fh2()}
             return (_APEX_QUALITY_ROUTES, _APEX_ROUTES, _ROUTE_TABLE_ON)
         _APEX_QUALITY_ROUTES, _APEX_ROUTES, _ROUTE_TABLE_ON = _dr11()
-
         def _fw15():
             return ((SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _APEX_QUALITY_ROUTES, _APEX_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _ROUTE_TABLE_ON, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR),)
             return (_DR_UNSET,)
@@ -181,7 +172,6 @@ class _MinerSolverDR77(_Base):
             tout = str(params.get('output_token', '') or '')
 
             def _dr91():
-
                 def _fw14():
                     amount_in = int(params.get('input_amount', 0) or 0)
                     amount_in = self._effective_swap_amount(self._fee_params(state, params), tin, amount_in)
@@ -196,7 +186,6 @@ class _MinerSolverDR77(_Base):
 
                     def _dr82():
                         nonlocal mid
-
                         def _fw23():
                             if kind == 'uni_mav':
                                 pool, token_a_in = param
@@ -246,7 +235,6 @@ class _MinerSolverDR77(_Base):
 
         def _dr95():
             call = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount_in), 0, [_ck(p) for p in path], _ck(recipient), int(deadline)]).hex()
-
             def _fw13():
                 ix = [Interaction(target=path[0], value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
                 return (ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'apex-hole-v2', 'chain_id': chain_id}),)
@@ -268,7 +256,6 @@ class _MinerSolverDR77(_Base):
         def _dr97():
             if w3 is None or not uni_router:
                 return None
-
             def _fw13():
                 best_out, best_fee = (0, 3000)
                 for fee in (3000, 500, 10000, 100):
@@ -286,7 +273,6 @@ class _MinerSolverDR77(_Base):
 
             def _dr50():
                 recipient = self._apex_recipient(state, params)
-
                 def _fw7():
                     deadline = self._apex_deadline(snapshot)
                     call = encode_exact_input_single(token_in=tin, token_out=tout, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
@@ -315,7 +301,6 @@ class _MinerSolverDR77(_Base):
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
             if w3 is None or not uni_router:
                 return None
-
             def _fw16():
                 weth_out, best_fee = (0, 500)
                 for fee in (500, 3000, 100, 10000):
@@ -339,7 +324,6 @@ class _MinerSolverDR77(_Base):
 
                         def _dr79():
                             mav = '0x' + ('a3b105ca' + _enc(['address', 'address', 'bool', 'uint256', 'uint256'], [_ck(recipient), _ck(pool), bool(token_a_in), int(mav_in), 0]).hex())
-
                             def _fw12():
                                 ix = [Interaction(target=tin, value='0', call_data=encode_approve(uni_router, amount_in), chain_id=chain_id), Interaction(target=uni_router, value='0', call_data=leg1, chain_id=chain_id), Interaction(target=_WETH, value='0', call_data=encode_approve(_MAVERICK_ROUTER, mav_in), chain_id=chain_id), Interaction(target=_MAVERICK_ROUTER, value='0', call_data=mav, chain_id=chain_id)]
                                 return (ix,)
@@ -372,7 +356,6 @@ class _MinerSolverDR77(_Base):
         def _dr122():
             w3 = self._get_web3(int(chain_id))
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
-
             def _fw12():
                 if w3 is None or not uni_router:
                     return (None,)
@@ -388,7 +371,6 @@ class _MinerSolverDR77(_Base):
                             mid_out, best_fee = (q, fee)
                     return (best_fee, mid_out)
                 best_fee, mid_out = _dr70()
-
                 def _fw25():
                     if mid_out <= 0:
                         return ((None,),)
@@ -424,7 +406,6 @@ class _MinerSolverDR77(_Base):
             return _dr123
 
 class _MinerSolver_fz(_MinerSolverDR77):
-
     def _apex_frontier_sweep(self, intent, state, snapshot, params):
         """Quote Sushi V3 / SushiV2 / AlienBase (venues king lacks) vs king's reachable
         best; override king ONLY when an extra venue beats reachable*margin AND clears
@@ -480,7 +461,6 @@ class _MinerSolver_fz(_MinerSolverDR77):
             via_weth = _dr43()
             ex = fut = None
             if via_weth:
-
                 def _fwvw(weth_fee=weth_fee, weth_out=weth_out):
                     with ThreadPoolExecutor(max_workers=6) as ex:
 
@@ -494,7 +474,6 @@ class _MinerSolver_fz(_MinerSolverDR77):
                                 weth_out, weth_fee = (o, f)
                     return (weth_fee, weth_out)
                 weth_fee, weth_out = _fwvw()
-
             def _fw1():
                 wi = weth_out * 995 // 1000 if weth_out > 0 else 0
                 tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
@@ -507,13 +486,11 @@ class _MinerSolver_fz(_MinerSolverDR77):
                 def _dr9():
                     nonlocal ex, extra, fut, reachable
                     with ThreadPoolExecutor(max_workers=16) as ex:
-
                         def _fw10():
                             futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
                             return (futs,)
                         futs, = _fw10()
                         for tag, spec, fut in futs:
-
                             def _fw2():
                                 try:
                                     out = int(fut.result(timeout=6))
@@ -590,7 +567,6 @@ class _MinerSolver_fz(_MinerSolverDR77):
                         q = self._q1(w3, 'uniswap_v3', fee, tin, _WETH, amt)
                         if q > best:
                             best, best_fee = (q, fee)
-
                     def _fw8():
                         leg = encode_exact_input_single(token_in=tin, token_out=_WETH, fee=int(best_fee), recipient=recipient, deadline=deadline, amount_in=amt, amount_out_minimum=0, chain_id=chain_id)
                         return ([Interaction(target=tin, value='0', call_data=encode_approve(uni, amt), chain_id=chain_id), Interaction(target=uni, value='0', call_data=leg, chain_id=chain_id)],)
@@ -603,7 +579,6 @@ class _MinerSolver_fz(_MinerSolverDR77):
                     return _dr113
             return (deadline, kind, par, qs_leg, sushi_v3_leg, uni_weth_leg, v2fot_leg)
         deadline, kind, par, qs_leg, sushi_v3_leg, uni_weth_leg, v2fot_leg = _dr111()
-
         def _fw2():
             if kind == 'sushi_v3_direct':
                 ix = sushi_v3_leg(tin, tout, par, amount_in)
@@ -669,7 +644,6 @@ class MinerSolver(_MinerSolver_fz):
             def _dr35():
                 nonlocal p, spec, tin, tout
                 try:
-
                     def _fw22():
                         p = self._normalized_swap_params(intent, state)
                         tin = str(p.get('input_token', '') or '').lower()
@@ -708,7 +682,6 @@ class MinerSolver(_MinerSolver_fz):
             return plan
         if _ROUTE_TABLE_ON and _APEX_ROUTES:
             try:
-
                 def _fw5():
                     p = self._normalized_swap_params(intent, state)
                     tin = str(p.get('input_token', '') or '').lower()
@@ -744,7 +717,6 @@ class MinerSolver(_MinerSolver_fz):
             tin = str(p.get('input_token', '') or '')
             tout = str(p.get('output_token', '') or '')
             amount_in = int(p.get('input_amount', 0) or 0)
-
             def _fw6():
                 if amount_in <= 0:
                     return (None,)
@@ -807,7 +779,6 @@ class MinerSolver(_MinerSolver_fz):
                 if kind == 'univ3_single':
                     return 1
                 if kind == 'univ3_path':
-
                     def _fw11():
                         from strategies.dex_aggregator.v3_codec import encode_swap_path
                         from eth_abi import encode as _enc
@@ -826,7 +797,6 @@ class MinerSolver(_MinerSolver_fz):
                 from eth_abi import encode as _enc, decode as _dec
 
                 def _fw7():
-
                     def _dr75():
                         routes = [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in spec['routes']]
                         return routes
@@ -860,7 +830,6 @@ class MinerSolver(_MinerSolver_fz):
                 chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                 return (amount_in, chain_id, tin, tout)
             amount_in, chain_id, tin, tout = _dr16()
-
             def _c37():
                 return chain_id != _BASE or amount_in <= 0 or (not tin) or (not tout)
             if _c37():
@@ -907,9 +876,7 @@ class MinerSolver(_MinerSolver_fz):
                             best_out = 0
                             for fee in (100, 500, 3000, 10000):
                                 try:
-
                                     def _fw2():
-
                                         def _fw8():
                                             dd = '0xc6a5026a' + _pad(tin) + _pad(tout) + hex(int(amount_in))[2:].rjust(64, '0') + hex(fee)[2:].rjust(64, '0') + '0' * 64
                                             rr = w3.eth.call({'to': _ck(_Q), 'data': dd})
@@ -928,7 +895,6 @@ class MinerSolver(_MinerSolver_fz):
                     _dr3 = _dr2()
                     if _dr3 is not _DR_UNSET:
                         return _dr3
-
                     def _fw3():
                         call = encode_exact_input_single(token_in=tin, token_out=tout, fee=use_fee, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
                         target = router
@@ -955,7 +921,6 @@ class MinerSolver(_MinerSolver_fz):
                                 fees, toks = _dr114()
                                 if not router or len(toks) < 2 or len(fees) != len(toks) - 1:
                                     return None
-
                                 def _fw9():
                                     path = encode_swap_path(toks, fees)
                                     call = '0xb858183f' + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(recipient), int(amount_in), 0)]).hex()
@@ -973,7 +938,6 @@ class MinerSolver(_MinerSolver_fz):
                                 nonlocal _ck, _enc, call, tag, target
                                 from eth_abi import encode as _enc
                                 from eth_utils import to_checksum_address as _ck
-
                                 def _fw11():
                                     routes = spec.get('routes') or []
                                     tuples = [(_ck(r[0]), _ck(r[1]), bool(r[2]), _ck(r[3])) for r in routes]
@@ -1064,7 +1028,6 @@ class MinerSolver(_MinerSolver_fz):
             exotic = getattr(kb, '_STATIC_EXOTIC_ROUTES', None)
             if isinstance(exotic, dict):
                 for k in exotic:
-
                     def _fw15():
                         if isinstance(k, tuple) and len(k) == 2 and (str(k[0]).lower() == tinL) and (str(k[1]).lower() == toutL):
                             return (True,)
@@ -1113,7 +1076,6 @@ class MinerSolver(_MinerSolver_fz):
             best = 0
             for stable in (False, True):
                 try:
-
                     def _fw2():
                         data = sel + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount), [(_ck(tin), _ck(tout), stable, _ck(_AERO_V2_FACTORY))]]).hex()
                         r = bytes(w3.eth.call({'to': _ck(_AERO_V2_ROUTER), 'data': data}))
@@ -1131,7 +1093,6 @@ class MinerSolver(_MinerSolver_fz):
         from eth_abi import encode as _enc
         from eth_utils import to_checksum_address as _ck, keccak as _kk
         try:
-
             def _fw17():
                 sel = '0x' + _kk(text='poolByPair(address,address)')[:4].hex()
                 r = bytes(w3.eth.call({'to': _ck(_QS_ALGEBRA_FACTORY), 'data': sel + _enc(['address', 'address'], [_ck(a), _ck(b)]).hex()}))
@@ -1156,7 +1117,6 @@ class MinerSolver(_MinerSolver_fz):
             tasks = []
             for f in (100, 500, 3000, 10000):
                 tasks.append(('R', None, lambda f=f: self._q1(w3, 'uniswap_v3', f, tin, tout, amount_in)))
-
                 def _fw5():
                     tasks.append(('R', None, lambda f=f: self._q1(w3, 'pancake_v3', f, tin, tout, amount_in)))
                     tasks.append(('E', ('sushi_v3_direct', f), lambda f=f: self._fx_v3_quote(w3, _SUSHI_V3_QUOTER, tin, tout, f, amount_in)))
@@ -1188,7 +1148,6 @@ class MinerSolver(_MinerSolver_fz):
             for t in (1, 50, 100, 200):
                 tasks.append(('R', None, lambda t=t: self._q1(w3, 'aerodrome_slipstream', t, _WETH, tout, wi)))
             for rtr in (_UNIV2_ROUTER, _PANCAKE_V2_ROUTER):
-
                 def _fw10():
                     tasks.append(('R', None, lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
                 _fw10()
@@ -1200,6 +1159,7 @@ class MinerSolver(_MinerSolver_fz):
                     tasks.append(('E', ('v2fot_weth', rtr), lambda rtr=rtr: self._fx_v2_quote(w3, rtr, [_WETH, tout], wi)))
             _dr55()
         return tasks
+
 SOLVER_CLASS = MinerSolver
 try:
 
@@ -1208,7 +1168,6 @@ try:
         from eth_abi import encode as _putty_abi_encode
         from minotaur_subnet.shared.types import ExecutionPlan as _PuttyExecutionPlan
         from minotaur_subnet.shared.types import Interaction as _PuttyInteraction
-
         def _fw8():
             try:
                 from eth_utils import to_checksum_address as _putty_ck
@@ -1258,14 +1217,12 @@ try:
                 _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr1()
 
                 def _fw1():
-
                     def _putty_eth_call(to, data_hex):
                         import json as _pj
                         import urllib.request as _pu
                         url = _PUTTY_RPC.get('url')
 
                         def _dr117():
-
                             def _fw4():
                                 if not url:
                                     raise RuntimeError('putty: no rpc url captured')
@@ -1316,7 +1273,6 @@ try:
                         chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
 
                         def _dr104():
-
                             def _fw21():
                                 interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
                                 return (interactions,)
@@ -1338,7 +1294,6 @@ try:
                         return '0x' + (_PUTTY_R02_SINGLE_SEL + enc).hex()
 
                     def _putty_r02_path(mids, token_out, fees, recipient, amount_in):
-
                         def _fw3():
                             toks = [_PUTTY_USDC] + list(mids) + [token_out]
                             path = b''
@@ -1347,7 +1302,6 @@ try:
                         for i, f in enumerate(fees):
                             path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
                         path += bytes.fromhex(toks[-1][2:])
-
                         def _fw9():
                             enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
                             return ('0x' + (_PUTTY_R02_PATH_SEL + enc).hex(),)
@@ -1399,7 +1353,6 @@ try:
                     kind = spec['kind']
 
                     def _fw24():
-
                         def _dr102():
                             if kind == 'univ3_single':
                                 return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
@@ -1411,7 +1364,6 @@ try:
                                 def _dr93():
                                     if kind == 'erc4626':
                                         quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
-
                                         def _fw1():
                                             return ([_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)],)
                                         _fwr1 = _fw1()
@@ -1435,7 +1387,6 @@ try:
 
                             def _dr52():
                                 pool = spec['pool']
-
                                 def _re1():
                                     return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(pool, weth_out), chain_id), _putty_ix(pool, '0x' + (_PUTTY_CURVE_XCHG_SEL + _putty_abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(weth_out), 0, _putty_ck(recipient)])).hex(), chain_id)]
                                 return _re1()
@@ -1481,7 +1432,6 @@ try:
                                     nonlocal cur
                                     out = _putty_pair_get_amount_out(pair, cur, tin)
                                     to = recipient if i == len(hops) - 1 else hops[i + 1][1]
-
                                     def _fw1():
                                         a0, a1 = (0, out) if in_is_t0 else (out, 0)
                                         ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
@@ -1498,7 +1448,6 @@ try:
                 def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
                     recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
                     chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
-
                     def _fw18():
                         interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
                         return (_PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id}),)
@@ -1551,7 +1500,6 @@ try:
                         route = _PUTTY_ROUTES.get(tout.lower())
                         return (amount_in, route, tin, tout)
                     amount_in, route, tin, tout = _dr49()
-
                     def _fw4():
                         if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
                             router, tick_spacing = route
@@ -1567,7 +1515,6 @@ try:
                                 nonlocal plan
                                 if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
                                     plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
-
                                     def _fw7():
                                         if plan is not None and plan.interactions:
                                             _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
