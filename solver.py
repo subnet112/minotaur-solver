@@ -1233,8 +1233,13 @@ def _build_b1_fill_empty():
             ],
             deadline=deadline,
             nonce=getattr(state, 'nonce', 0),
-            metadata={'solver': 'b1-cover', 'route': f'USDC->WETH v3 fee={best_fee}'},
+            metadata={'solver': 'b1-cover', 'route': f'{tin[:6]}->{tout[:6]} v3 fee={best_fee}'},
         )
+
+    # _b1_cover_usdc_weth is a generic best-fee single-hop cover (reads tin/tout
+    # from state), so it serves any Base major pair where the king pins a
+    # suboptimal fee tier. Alias for clarity.
+    _b1_cover_bestfee = _b1_cover_usdc_weth
 
     _B1_COVERS = {
         # cbBTC -> USDC on Base: champion has no table cover (likely a tie).
@@ -1242,7 +1247,9 @@ def _build_b1_fill_empty():
         # WETH -> DAI on Base via USDC hub (patched by 531.0.3; kept as fallback).
         (8453, _B1_WETH_BASE.lower(), _B1_DAI_BASE.lower()): _b1_cover_weth_dai,
         # USDC -> WETH: king pins fee-100 (drops 8/flakes 7); we pick best fee.
-        (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): _b1_cover_usdc_weth,
+        (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): _b1_cover_bestfee,
+        # WETH -> USDC: king pins fee-3000; best tier delivers +0.24-0.31%.
+        (8453, _B1_WETH_BASE.lower(), _B1_USDC_BASE.lower()): _b1_cover_bestfee,
     }
 
     # OVERRIDE-eligible pairs: (chain, tin, tout) -> champion's known pinned fee.
@@ -1254,6 +1261,8 @@ def _build_b1_fill_empty():
     _B1_OVERRIDE = {
         # king pins USDC->WETH to fee-100; fee-500 delivers +0.2-0.8% on large/xl
         (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): 100,
+        # king pins WETH->USDC to fee-3000; best tier delivers +0.24-0.31% all sizes
+        (8453, _B1_WETH_BASE.lower(), _B1_USDC_BASE.lower()): 3000,
     }
     _B1_OVERRIDE_MARGIN = 1.001  # our route must beat the pinned-fee quote by >0.1%
 
