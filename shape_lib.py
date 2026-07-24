@@ -1,5 +1,3 @@
-# SN112 shape library — quote helpers (builders live in shape_lib2/shape_lib3).
-
 def _res_call(s, pair, chain_id):
     from eth_abi import decode as _dec
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
@@ -17,7 +15,7 @@ def _v_v2_out(s, pair, amt_in, in_is_t0, chain_id):
             return None
         rin, rout = (res[0], res[1]) if in_is_t0 else (res[1], res[0])
         ai = int(amt_in) * 997
-        return ((ai * rout) // (rin * 1000 + ai)) or None
+        return ai * rout // (rin * 1000 + ai) or None
     except Exception:
         return None
 
