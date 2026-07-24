@@ -12,6 +12,7 @@ blind-spot cover), never regress. Everything else defers byte-for-byte to the
 champion. 84 rows, KyberSwap-verified, PMM-free (RFQ quotes expire), gas<=1.5M.
 """
 from __future__ import annotations
+
 def _lh1():
     return {'0xfac77f01957ed1b3dd1cbea992199b8f85b6e886': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xddc75f435af318b757dbe1aa23cf0d362b88e57c', True),), 'lo': 1000000, 'hi': 4000000}, '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x0fac819628a7f612abac1cad939768058cc0170c', False)), 'lo': 1000000, 'hi': 4000000}, '0xeff2a458e464b07088bdb441c21a42ab4b61e07e': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0x04e5a1c883dafd1eae6b11bd6d3eb784d90ce515', True)), 'lo': 1000000, 'hi': 4000000}, '0x01facc69ec7360640aa5898e852326752801674a': {'kind': 'aero_pd', 'hops': (('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcdac0d6c6c59727a65f871236188350531885c43', False), ('0x4200000000000000000000000000000000000006', '0xc238f8eaa625bac4014ffd0e702a4b9a9d12019e', False)), 'lo': 1000000, 'hi': 4000000}, '0xdbfefd2e8460a6ee4955a68582f85708baea60a3': {'kind': 'curve_full', 'pool': '0x302a94e3c28c290eaf2a4605fc52e11eb915f378', 'i': 0, 'j': 1, 'lo': 1000000, 'hi': 4000000}, '0x6985884c4392d348587b19cb9eaaf157f13271cd': {'kind': 'uni_sushi', 'sushi_fee': 500, 'lo': 1000000, 'hi': 4000000}}
 _DR_UNSET = object()
@@ -45,6 +46,7 @@ def _dr21():
                 out: dict = {}
                 try:
                     data = _json.load(open(path)) or {}
+
                     def _fw5():
                         for key, spec in data.items() if isinstance(data, dict) else []:
                             try:
@@ -84,6 +86,7 @@ class JamesSolver(_ApexBase):
 
             def _dr32():
                 norm = getattr(self, '_normalized_swap_params', None)
+
                 def _fw5():
                     try:
                         p = norm(intent, state) if callable(norm) else {}
@@ -113,6 +116,7 @@ class JamesSolver(_ApexBase):
 
             def _dr28():
                 chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+
                 def _fw11():
                     ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in ixs]
                     rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'king-replay', 'chain_id': chain_id})
@@ -151,6 +155,7 @@ try:
         from eth_abi import encode as _putty_abi_encode
         from minotaur_subnet.shared.types import ExecutionPlan as _PuttyExecutionPlan
         from minotaur_subnet.shared.types import Interaction as _PuttyInteraction
+
         def _fw1():
             try:
                 from eth_utils import to_checksum_address as _putty_ck
@@ -200,12 +205,14 @@ try:
                 _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr3()
 
                 def _fw1():
+
                     def _putty_eth_call(to, data_hex):
                         import json as _pj
                         import urllib.request as _pu
                         url = _PUTTY_RPC.get('url')
 
                         def _dr37():
+
                             def _fw4():
                                 if not url:
                                     raise RuntimeError('putty: no rpc url captured')
@@ -256,6 +263,7 @@ try:
                         chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
 
                         def _dr33():
+
                             def _fw9():
                                 interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
                                 return (interactions,)
@@ -277,6 +285,7 @@ try:
                         return '0x' + (_PUTTY_R02_SINGLE_SEL + enc).hex()
 
                     def _putty_r02_path(mids, token_out, fees, recipient, amount_in):
+
                         def _fw3():
                             toks = [_PUTTY_USDC] + list(mids) + [token_out]
                             path = b''
@@ -285,6 +294,7 @@ try:
                         for i, f in enumerate(fees):
                             path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
                         path += bytes.fromhex(toks[-1][2:])
+
                         def _fw2():
                             enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
                             return ('0x' + (_PUTTY_R02_PATH_SEL + enc).hex(),)
@@ -336,6 +346,7 @@ try:
                     kind = spec['kind']
 
                     def _fw10():
+
                         def _dr30():
                             if kind == 'univ3_single':
                                 return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(token_out, spec['fee'], recipient, amount_in), chain_id)]
@@ -347,6 +358,7 @@ try:
                                 def _dr26():
                                     if kind == 'erc4626':
                                         quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
+
                                         def _fw1():
                                             return ([_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)],)
                                         _fwr1 = _fw1()
@@ -370,6 +382,7 @@ try:
 
                             def _dr11():
                                 pool = spec['pool']
+
                                 def _re1():
                                     return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(pool, weth_out), chain_id), _putty_ix(pool, '0x' + (_PUTTY_CURVE_XCHG_SEL + _putty_abi_encode(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(weth_out), 0, _putty_ck(recipient)])).hex(), chain_id)]
                                 return _re1()
@@ -415,6 +428,7 @@ try:
                                     nonlocal cur
                                     out = _putty_pair_get_amount_out(pair, cur, tin)
                                     to = recipient if i == len(hops) - 1 else hops[i + 1][1]
+
                                     def _fw2():
                                         a0, a1 = (0, out) if in_is_t0 else (out, 0)
                                         ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
@@ -431,6 +445,7 @@ try:
                 def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
                     recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
                     chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
+
                     def _fw7():
                         interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
                         return (_PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id}),)
@@ -483,6 +498,7 @@ try:
                         route = _PUTTY_ROUTES.get(tout.lower())
                         return (amount_in, route, tin, tout)
                     amount_in, route, tin, tout = _dr10()
+
                     def _fw1():
                         if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
                             router, tick_spacing = route
@@ -498,6 +514,7 @@ try:
                                 nonlocal plan
                                 if spec is not None and tin.lower() == _PUTTY_USDC.lower() and (spec['lo'] <= amount_in <= spec['hi']):
                                     plan = _putty_build_sub_plan(intent, state, spec, tout, amount_in)
+
                                     def _fw4():
                                         if plan is not None and plan.interactions:
                                             _putty_log.info('[putty] eps substitution %s for %s amt=%s', spec['kind'], tout, amount_in)
@@ -535,6 +552,7 @@ try:
             return super().generate_plan(*args, **kwargs)
     SOLVER_CLASS = PuttyEdgeSolver
 except Exception:
+
     def _fw2():
         try:
             import logging as _putty_logging2
@@ -562,6 +580,7 @@ class _MinoOverrideSolver(_MO_Base):
         try:
 
             def _dr36():
+
                 def _fw3():
                     p = dict(getattr(state, 'raw_params', None) or {})
                     if not p.get('input_token'):
@@ -588,6 +607,7 @@ class _MinoOverrideSolver(_MO_Base):
                 _k = self._mo_key(intent, state)
                 _ix = _mo_load().get(_k) if _k else None
                 if _ix:
+
                     def _fw6():
                         from minotaur_subnet.shared.types import ExecutionPlan as _EP, Interaction as _IX
                         _cid = int(getattr(state, 'chain_id', 0) or 8453)
