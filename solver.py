@@ -639,3 +639,23 @@ class DeltaSolver(_DELTA_BASE):
         return super().generate_plan(intent, state, snapshot)
 
 SOLVER_CLASS = DeltaSolver
+
+
+# ===== APEX-MINOTAUR LAYER (apex_star_003/payload_cover_best) =====
+def _apex_load_payload_cover_best():
+    try:
+        import payload_cover_best as _p
+        globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_best load failed')
+_apex_load_payload_cover_best()
+
+class _ApexBrand_payload_cover_best(SOLVER_CLASS):
+    def metadata(self):
+        m = super().metadata()
+        try:
+            m.name = 'apex_star_003'
+        except Exception:
+            pass
+        return m
+SOLVER_CLASS = _ApexBrand_payload_cover_best
