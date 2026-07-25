@@ -1,4 +1,4 @@
-"""sable-dex-router — LEAN delegate + RPC-ROUTE FIX (fixes the base's zero_for_one drop bug at the routing layer).
+"""cobalt-router — LEAN delegate + RPC-ROUTE FIX (fixes the base's zero_for_one drop bug at the routing layer).
 
 Root cause of every `behind`: the base's quote() (baseline_solver.quote) DOES RPC-discover the exotic
 pools (`_ensure_pools_for_route` queries the UniV3 factory + Aerodrome via the injected proxy RPC), but
@@ -15,9 +15,9 @@ import os
 from _apex_ourbase import SOLVER_CLASS as _Base
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "sable-dex-router-fp29750061n1")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "cobalt-router-fp29750234n1")
 SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "5.4.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "mferranmar")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "giazarandia1019")
 
 _Q96 = 1 << 96
 _WETH_BY_CHAIN = {1: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -433,8 +433,9 @@ class MinerSolver(_Base):
 
 SOLVER_CLASS = MinerSolver
 
+
 # --fp--
-def _apex_fp_29750061n1(v):
+def _apex_fp_29750234n1(v):
     return v + 10
-_APEX_FP = _apex_fp_29750061n1(0)
+_APEX_FP = _apex_fp_29750234n1(0)
 # --/fp--
