@@ -1,4 +1,3 @@
-# chain-1 dynamic tier: v2-pair helpers + candidate sweep
 from chain1_c import _V2_PAIRS, _MAX_QUOTES
 from chain1_lib import _candidates, _qroute
 
@@ -14,7 +13,7 @@ def _v2_quote(w3, pair, amt, in_is_t0, block):
         res = _v2_reserves(w3, pair, block)
         rin, rout = (res[0], res[1]) if in_is_t0 else (res[1], res[0])
         ai = int(amt) * 997
-        return ((ai * rout) // (rin * 1000 + ai)) or None
+        return ai * rout // (rin * 1000 + ai) or None
     except Exception:
         return None
 
@@ -41,7 +40,7 @@ def _v2_build(pair, in_is_t0, tin, amt, out, rcpt, chain_id):
     return [_IX(target=tin, value='0', call_data=_v2_xfer_cd(pair, amt), chain_id=chain_id), _IX(target=pair, value='0', call_data=_v2_swap_cd(in_is_t0, out, rcpt), chain_id=chain_id)]
 
 def _sweep(w3, tin, tout, amt, block):
-    best, n = None, 0
+    best, n = (None, 0)
     for cand in _candidates(tin, tout):
         if n >= _MAX_QUOTES:
             break
