@@ -708,6 +708,30 @@ def _build_b1_fill_empty():
     # Base (8453) Uniswap V3 addresses (same as the baseline's UNISWAP_V3_ROUTERS).
     _B1_ROUTER_8453 = '0x2626664c2603336E57B271c5C0b26F421741e481'
     _B1_QUOTERV2_8453 = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
+
+    # ── CHAIN CONFIG for the generic fill router ────────────────────────────
+    # WHY chain 1 matters (competitor intel, PR "min_router structural delta"):
+    # the benchmark corpus is now ~half Ethereum, and the champion's fork REVERTS
+    # on exotic chain-1 pairs (single-hop UniV3, no pool) — a champion-DROP we can
+    # turn into a cover. Our covers were Base-only, so we dropped these too. This
+    # config drives a chain-aware fill router that serves the ETH tail the whole
+    # field is racing to cover.
+    #   quoter  = UniswapV3 QuoterV2
+    #   rsingle = SwapRouter for single-hop calldata (matches _b1_v3single's
+    #             chain-detected selector: V1/deadline on mainnet, V2 on Base)
+    #   rmulti  = SwapRouter for multi-hop exactInput
+    _B1_CHAINS = {
+        8453: {'quoter': '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
+               'rsingle': '0x2626664c2603336E57B271c5C0b26F421741e481',
+               'rmulti': '0x2626664c2603336E57B271c5C0b26F421741e481',
+               'weth': '0x4200000000000000000000000000000000000006',
+               'usdc': '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', 'multi': 'base'},
+        1: {'quoter': '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+            'rsingle': '0xE592427A0AEce92De3Edee1F18E0157C05861564',  # SwapRouter V1 (deadline)
+            'rmulti': '0xE592427A0AEce92De3Edee1F18E0157C05861564',
+            'weth': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+            'usdc': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 'multi': 'v1'},
+    }
     _B1_CBBTC = '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf'
     _B1_USDC_BASE = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
     _B1_WETH_BASE = '0x4200000000000000000000000000000000000006'
@@ -860,6 +884,126 @@ def _build_b1_fill_empty():
                 _b1_encode_path(tokens, fees), int(amount_in)).call()[0])
         except Exception:
             return 0
+
+    # ── CHAIN-AWARE quoting (drives the ETH fill router) ────────────────────
+    def _b1_qsingle(w3, quoter, tin, tout, amt, fee):
+        """quoteExactInputSingle on ANY chain's QuoterV2. 0 on revert."""
+        if w3 is None:
+            return 0
+        try:
+            from web3 import Web3
+            abi = [{"inputs": [{"components": [{"type": "address"}, {"type": "address"},
+                    {"type": "uint256"}, {"type": "uint24"}, {"type": "uint160"}], "type": "tuple"}],
+                    "name": "quoteExactInputSingle",
+                    "outputs": [{"type": "uint256"}, {"type": "uint160"}, {"type": "uint32"}, {"type": "uint256"}],
+                    "stateMutability": "nonpayable", "type": "function"}]
+            q = w3.eth.contract(address=Web3.to_checksum_address(quoter), abi=abi)
+            return int(q.functions.quoteExactInputSingle(
+                (Web3.to_checksum_address(tin), Web3.to_checksum_address(tout),
+                 int(amt), int(fee), 0)).call()[0])
+        except Exception:
+            return 0
+
+    def _b1_qpath(w3, quoter, tokens, fees, amt):
+        """quoteExactInput (multi-hop) on ANY chain's QuoterV2. 0 on revert."""
+        if w3 is None:
+            return 0
+        try:
+            abi = [{"inputs": [{"type": "bytes"}, {"type": "uint256"}],
+                    "name": "quoteExactInput",
+                    "outputs": [{"type": "uint256"}, {"type": "uint160[]"},
+                                {"type": "uint32[]"}, {"type": "uint256"}],
+                    "stateMutability": "nonpayable", "type": "function"}]
+            q = w3.eth.contract(address=_cs(quoter), abi=abi)
+            return int(q.functions.quoteExactInput(_b1_encode_path(tokens, fees), int(amt)).call()[0])
+        except Exception:
+            return 0
+
+    def _b1_cover_generic(intent, state, snapshot, inst=None):
+        """GENERIC UniV3 fill-empty router for any chain in _B1_CHAINS.
+
+        Fires only when the champion returned EMPTY (the caller guarantees this).
+        The champion drops exotic chain-1 orders (its fork reverts with no direct
+        pool); this quotes UniV3 — direct across all fee tiers, plus 2-hop via
+        WETH and USDC — and delivers the best to the runtime recipient. Because
+        the champion delivered 0, ANY positive delivery is a strict cover and
+        cannot regress; the min-out floor (best_quote * 0.995) makes a bad-price
+        fill revert to the same 0 rather than deliver a terrible price, so the
+        worst case ties the champion's drop.
+        """
+        cid = int(getattr(state, 'chain_id', 0) or 0)
+        cfg = _B1_CHAINS.get(cid)
+        if cfg is None:
+            return None
+        p = _b1_params(state)
+        tin = str(p.get('input_token', '') or '')
+        tout = str(p.get('output_token', '') or '')
+        amount_in = int(p.get('input_amount', 0) or 0)
+        if amount_in <= 0 or not tin or not tout:
+            return None
+        w3 = _b1_w3(state, inst)
+        if w3 is None:
+            return None
+        q = cfg['quoter']
+        # best DIRECT across all tiers
+        best_out, best = 0, None   # best = ('single', fee) | ('path', tokens, fees)
+        for fee in (100, 500, 3000, 10000):
+            o = _b1_qsingle(w3, q, tin, tout, amount_in, fee)
+            if o > best_out:
+                best_out, best = o, ('single', fee)
+        # best 2-hop via WETH / USDC hubs (all fee combos on the two legs)
+        for hub in (cfg['weth'], cfg['usdc']):
+            if hub.lower() in (tin.lower(), tout.lower()):
+                continue
+            l1b, l1f = 0, None
+            for f in (100, 500, 3000, 10000):
+                o = _b1_qsingle(w3, q, tin, hub, amount_in, f)
+                if o > l1b:
+                    l1b, l1f = o, f
+            if l1b <= 0:
+                continue
+            l2b, l2f = 0, None
+            for f in (100, 500, 3000, 10000):
+                o = _b1_qsingle(w3, q, hub, tout, l1b, f)
+                if o > l2b:
+                    l2b, l2f = o, f
+            if l2b <= 0:
+                continue
+            real = _b1_qpath(w3, q, [tin, hub, tout], [l1f, l2f], amount_in)
+            if real > best_out:
+                best_out, best = real, ('path', [tin, hub, tout], [l1f, l2f])
+        if best_out <= 0 or best is None:
+            return None
+        recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
+        chain_id = cid
+        deadline = int(_b1time.time()) + 300
+        floor = int(best_out * 0.995)   # slippage floor: bad fill reverts to a drop, never a bad price
+        if best[0] == 'single':
+            swap_cd = _b1_v3single(token_in=tin, token_out=tout, fee=best[1],
+                                   recipient=recipient, deadline=deadline,
+                                   amount_in=amount_in, amount_out_minimum=floor,
+                                   chain_id=chain_id)
+        else:
+            _tokens, _fees = best[1], best[2]
+            if cfg['multi'] == 'base':
+                swap_cd = _b1_encode_exact_input_base(
+                    _b1_encode_path(_tokens, _fees), recipient, amount_in, floor)
+            else:
+                from strategies.dex_aggregator.v3_codec import encode_exact_input as _b1_ei
+                swap_cd = _b1_ei(_b1_encode_path(_tokens, _fees), recipient, deadline,
+                                 amount_in, floor)
+        return _B1Plan(
+            intent_id=intent.app_id,
+            interactions=[
+                _B1Ix(target=tin, value='0',
+                      call_data=_b1_approve(cfg['rsingle'], amount_in), chain_id=chain_id),
+                _B1Ix(target=cfg['rsingle'] if best[0] == 'single' else cfg['rmulti'],
+                      value='0', call_data=swap_cd, chain_id=chain_id),
+            ],
+            deadline=deadline,
+            nonce=getattr(state, 'nonce', 0),
+            metadata={'solver': 'b1-generic', 'route': f'cid{cid} {best[0]}'},
+        )
 
     # ── TABLE-DRIVEN ROUTE COVER (edge lives in DATA, not in code) ──────────
     # auto_attack.py writes b1_routes.json: proven multi-hop routes, one row per
@@ -1205,24 +1349,30 @@ def _build_b1_fill_empty():
                     _b1_logger.exception('[b1] override check failed; keeping champion plan')
                 return plan
             # champion declined -> try a cover for this token pair (fill-empty).
+            # First a pair-specific cover, then the GENERIC chain-aware UniV3
+            # router — the latter is what serves the exotic chain-1 (Ethereum)
+            # tail the champion drops (the field's main net edge). Both are
+            # fill-only-empty here: the champion delivered nothing, so a sound
+            # delivery is a pure cover and cannot regress.
             cover = _B1_COVERS.get(_b1_pair_key(state))
-            if cover is not None:
+            for _cov_fn, _tag in ((cover, 'pair'), (_b1_cover_generic, 'generic')):
+                if _cov_fn is None:
+                    continue
                 try:
-                    cov = cover(intent, state, snapshot, inst=self)
+                    cov = _cov_fn(intent, state, snapshot, inst=self)
                     # DEFENSE: a malformed cover on a champion-EMPTY order still
                     # costs us — it reverts instead of delivering, and if the
                     # champion in fact served this order on the validator's fork
                     # (our local read said empty) that is a `dropped` HARD VETO.
                     # Only return covers that could actually execute.
                     if _b1_plan_is_sound(cov):
-                        _b1_logger.info('[b1] cover filled a champion-empty order')
+                        _b1_logger.info('[b1] %s cover filled a champion-empty order', _tag)
                         return cov
                     if not _b1_is_empty(cov):
                         _b1_logger.warning(
-                            '[b1] cover plan failed soundness check — '
-                            'returning champion result instead')
+                            '[b1] %s cover failed soundness check — trying next', _tag)
                 except Exception:
-                    _b1_logger.exception('[b1] cover failed; returning champion result')
+                    _b1_logger.exception('[b1] %s cover failed', _tag)
             return plan
 
     globals().update(locals())
