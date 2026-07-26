@@ -193,9 +193,6 @@ try:
                     def _dr37():
                         if not url:
                             raise RuntimeError('putty: no rpc url captured')
-                        # Same JSON-RPC eth_call, issued through web3's provider: stage 1
-                        # bans network modules in-tree, and web3 is already the solver's
-                        # transport, so this is transport-swapped, not behaviour-changed.
                         _prov = _W3.HTTPProvider(url, request_kwargs={'timeout': 10})
                         out = _prov.make_request('eth_call', [{'to': _putty_ck(to), 'data': data_hex}, 'latest'])
                         res = out.get('result')
@@ -262,6 +259,7 @@ try:
                     for i, f in enumerate(fees):
                         path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
                     path += bytes.fromhex(toks[-1][2:])
+
                     def _fw2():
                         enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
                         return ('0x' + (_PUTTY_R02_PATH_SEL + enc).hex(),)
@@ -438,6 +436,7 @@ try:
                         route = _PUTTY_ROUTES.get(tout.lower())
                         return (amount_in, route, tin, tout)
                     amount_in, route, tin, tout = _dr10()
+
                     def _fw1():
                         if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
                             router, tick_spacing = route
