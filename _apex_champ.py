@@ -32,32 +32,19 @@ logger = logging.getLogger(__name__)
 _STRATEGIES_DIR = Path(__file__).parent / 'strategies'
 
 def _load_agent_strategies() -> dict:
-    """Load Strategy classes from strategies/<app_id>/strategy.py, keyed by
-    app_id. Never raises — a broken strategy file is skipped."""
     out: dict = {}
-    if not _STRATEGIES_DIR.is_dir():
+    try:
+        from minotaur_subnet.sdk.strategy import Strategy
+    except Exception:
         return out
-    for app_dir in _STRATEGIES_DIR.iterdir():
-        strat_file = app_dir / 'strategy.py'
-        if not (app_dir.is_dir() and app_dir.name.startswith('app_') and strat_file.is_file()):
-            continue
-        try:
-            def _fw1():
-                spec = importlib.util.spec_from_file_location(f'agent_strategy_{app_dir.name}', strat_file)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-                from minotaur_subnet.sdk.strategy import Strategy
-                return (mod, Strategy)
-            mod, Strategy = _fw1()
-            for obj in vars(mod).values():
-                def _fw3():
-                    if isinstance(obj, type) and issubclass(obj, Strategy) and (obj is not Strategy):
-                        out[app_dir.name] = obj()
-                        return ('b',)
-                if _fw3() is not None:
-                    break
-        except Exception:
-            logger.exception('[james] skipping broken strategy %s', strat_file)
+    try:
+        import strategies.app_da6c96b84c60.strategy as _sm_0
+        for _o in vars(_sm_0).values():
+            if isinstance(_o, type) and issubclass(_o, Strategy) and _o is not Strategy:
+                out['app_da6c96b84c60'] = _o()
+                break
+    except Exception:
+        logger.exception('[sanitize] skipping strategy %s', 'app_da6c96b84c60')
     return out
 
 class _JamesSolverDR17(KingSolver):
@@ -219,6 +206,7 @@ class JamesSolver(_JamesSolverDR17):
             self._dyn_order_budget = None
 
             def _dr20():
+
                 def _fw4():
                     if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
                         import time as _t
@@ -312,6 +300,7 @@ class JamesSolver(_JamesSolverDR17):
             return None
 
         def _fw2():
+
             def _dr6():
                 chain_id = int(getattr(state, 'chain_id', 0) or 0)
                 if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())) or ((tin, tout) in table):
@@ -337,6 +326,7 @@ class JamesSolver(_JamesSolverDR17):
 
                             def _dr14():
                                 c0, c1 = (self._JWETH, tout) if int(self._JWETH, 16) < int(tout, 16) else (tout, self._JWETH)
+
                                 def _fw5():
                                     spec = {'pool': (c0, c1, self._JV4_DYN_FEE, 200, hook), 'settle': self._JWETH, 'zero_for_one': c0.lower() == self._JWETH.lower()}
                                     if tin == self._JUSDC.lower():
