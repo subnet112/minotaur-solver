@@ -16,23 +16,16 @@ Multi-hop candidates are restricted to a single DEX family, matching the base's 
 executability rule (mixed-DEX multi-hop is not buildable by the plan layer).
 """
 from __future__ import annotations
-
 import logging
-
 logger = logging.getLogger(__name__)
-
-MAX_INTERMEDIARIES = 48   # cap the candidate set so the search stays inside the plan budget
-MAX_PAIRS_3HOP = 900      # cap on (m1,m2) pairs examined
-
+MAX_INTERMEDIARIES = 48
+MAX_PAIRS_3HOP = 900
 
 def _dex_of(pool):
-    return str((pool or {}).get("dex") or "uniswap_v3")
-
+    return str((pool or {}).get('dex') or 'uniswap_v3')
 
 def _tokens_of(pool):
-    return (str(pool.get("token0", "") or "").lower(),
-            str(pool.get("token1", "") or "").lower())
-
+    return (str(pool.get('token0', '') or '').lower(), str(pool.get('token1', '') or '').lower())
 
 def _candidates(pool_states, tin, tout):
     """Tokens appearing in the snapshot, ranked by liquidity, minus the endpoints."""
@@ -40,7 +33,7 @@ def _candidates(pool_states, tin, tout):
     for pool in (pool_states or {}).values():
         try:
             t0, t1 = _tokens_of(pool)
-            liq = int(pool.get("liquidity", 0) or 0)
+            liq = int(pool.get('liquidity', 0) or 0)
         except Exception:
             continue
         for t in (t0, t1):
@@ -49,7 +42,6 @@ def _candidates(pool_states, tin, tout):
                     weight[t] = liq
     ranked = sorted(weight.items(), key=lambda kv: kv[1], reverse=True)
     return [t for t, _ in ranked[:MAX_INTERMEDIARIES]]
-
 
 def install(base_cls, best_direct, hop_of):
     """Wrap `base_cls`, widening ONLY the route search. `best_direct`/`hop_of` are the
@@ -68,6 +60,7 @@ def install(base_cls, best_direct, hop_of):
             return False
 
     class _WideRouteSolver(base_cls):
+
         def _wide_route(self, pool_states, tin, tout, amt):
             best = None
             mids = _candidates(pool_states, tin, tout)
@@ -80,7 +73,7 @@ def install(base_cls, best_direct, hop_of):
                 h2 = _leg(pool_states, m, tout, h1[0])
                 if h2 and h2[0] > 0 and _same_dex(h1, h2):
                     if best is None or h2[0] > best[0]:
-                        best = (h2[0], "wide2:" + m[:8], [hop_of(h1), hop_of(h2)])
+                        best = (h2[0], 'wide2:' + m[:8], [hop_of(h1), hop_of(h2)])
             budget = MAX_PAIRS_3HOP
             for m1, h1 in first.items():
                 for m2 in mids:
@@ -95,8 +88,7 @@ def install(base_cls, best_direct, hop_of):
                     h3 = _leg(pool_states, m2, tout, h2[0])
                     if h3 and h3[0] > 0 and _same_dex(h1, h2, h3):
                         if best is None or h3[0] > best[0]:
-                            best = (h3[0], "wide3:%s>%s" % (m1[:6], m2[:6]),
-                                    [hop_of(h1), hop_of(h2), hop_of(h3)])
+                            best = (h3[0], 'wide3:%s>%s' % (m1[:6], m2[:6]), [hop_of(h1), hop_of(h2), hop_of(h3)])
                 if budget <= 0:
                     break
             return best
@@ -104,41 +96,27 @@ def install(base_cls, best_direct, hop_of):
         def _find_best_executable_route(self, pool_states, token_in, token_out, amount_in, chain_id):
             base_route = None
             try:
-                base_route = super()._find_best_executable_route(
-                    pool_states, token_in, token_out, amount_in, chain_id)
+                base_route = super()._find_best_executable_route(pool_states, token_in, token_out, amount_in, chain_id)
             except Exception:
-                logger.exception("[wide] base route raised; continuing with wide search")
+                logger.exception('[wide] base route raised; continuing with wide search')
             try:
-                tin = str(token_in or "").split(":")[-1].lower()
-                tout = str(token_out or "").split(":")[-1].lower()
+                tin = str(token_in or '').split(':')[-1].lower()
+                tout = str(token_out or '').split(':')[-1].lower()
                 amt = int(amount_in or 0)
-                if not tin or not tout or amt <= 0 or not pool_states:
+                if not tin or not tout or amt <= 0 or (not pool_states):
                     return base_route
                 mine = self._wide_route(pool_states, tin, tout, amt)
             except Exception:
-                logger.exception("[wide] wide search failed; base route stands")
+                logger.exception('[wide] wide search failed; base route stands')
                 return base_route
             if mine is None:
                 return base_route
             if base_route is None:
-                logger.info("[wide] filled a base blind spot (%s)", mine[1])
+                logger.info('[wide] filled a base blind spot (%s)', mine[1])
                 return mine
             return mine if mine[0] > base_route[0] else base_route
-
     return _WideRouteSolver
-
-
-
-
-# -- DEFECT LIST ------------------------------------------------------------
-# Pairs the subnet's own dex-compare `worst_losses` leaderboard flags as ROUTING
-# DEFECTS: we SERVE them, but the median gross output trails the best aggregator
-# by more than the severe threshold (several by >99 percent). The base DOES return
-# a route there - a bad one - so a 'probe only when the base found nothing' guard
-# never fires on exactly the pairs with the largest available gain. Always run the
-# wider search on these.
 DEFECT_PAIRS = None
-
 
 def _defects():
     """Pair defect list, loaded from data (kept out of the AST so the routing code
@@ -147,43 +125,22 @@ def _defects():
     if DEFECT_PAIRS is None:
         try:
             import json as _j, os as _o
-            raw = _j.load(open(_o.path.join(_o.path.dirname(_o.path.abspath(__file__)), "defect_pairs.json")))
+            raw = _j.load(open(_o.path.join(_o.path.dirname(_o.path.abspath(__file__)), 'defect_pairs.json')))
             DEFECT_PAIRS = {int(k): {(a.lower(), b.lower()) for a, b in v} for k, v in raw.items()}
         except Exception:
             DEFECT_PAIRS = {}
     return DEFECT_PAIRS
-
 
 def _is_defect(cid, tin, tout):
     try:
         return (str(tin).lower(), str(tout).lower()) in _defects().get(int(cid), ())
     except Exception:
         return False
-
-# ── live-RPC route widening ────────────────────────────────────────────────────
-# The base quotes: direct across 4 fee tiers, then 2-hop through exactly two hubs
-# (USDC/WETH) with four hardcoded fee pairs each. Pairs whose best path bridges a
-# different major, or uses a fee pair outside that short list, are quoted worse (or
-# not at all). This probes the remaining majors and the full fee grid in ONE extra
-# multicall batch and returns the base's own dict shape, so the candidate/plan layer
-# is untouched. Only a strictly larger quote replaces the base's.
-EXTRA_HUBS = {
-    1: ["0xdAC17F958D2ee523a2206206994597C13D831ec7",   # USDT
-        "0x6B175474E89094C44Da98b954EedeAC495271d0F",   # DAI
-        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"],  # WBTC
-    8453: ["0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",  # DAI
-           "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",  # cbBTC
-           "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"], # USDT
-}
-FEE_PAIRS = [(500, 500), (3000, 3000), (500, 3000), (3000, 500),
-             (100, 500), (500, 100), (3000, 10000), (10000, 3000)]
-# Budget is split by how much is at stake. On a pair the base CAN quote we spend almost
-# nothing (a wrong guess there risks a regression). On a base-BLIND pair the champion
-# delivers 0, so the order is already lost — a deeper search is pure upside.
+EXTRA_HUBS = {1: ['0xdAC17F958D2ee523a2206206994597C13D831ec7', '0x6B175474E89094C44Da98b954EedeAC495271d0F', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'], 8453: ['0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb', '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2']}
+FEE_PAIRS = [(500, 500), (3000, 3000), (500, 3000), (3000, 500), (100, 500), (500, 100), (3000, 10000), (10000, 3000)]
 MAX_SUBCALLS = 8
 MAX_SUBCALLS_BLIND = 48
 TRI_HOPS = [(500, 500, 500), (3000, 3000, 3000), (500, 3000, 500), (3000, 500, 3000)]
-
 
 def install_fast_route(mod):
     """Wrap `mod.fast_route` with an ADAPTIVE tier-first probe (sn22 lane).
@@ -194,7 +151,7 @@ def install_fast_route(mod):
     whose liquidity is concentrated in one tier this reaches the good route with a
     fraction of the calls; on base-blind pairs it falls back to a broad sweep.
     """
-    orig = getattr(mod, "fast_route", None)
+    orig = getattr(mod, 'fast_route', None)
     if orig is None:
         return
 
@@ -203,12 +160,12 @@ def install_fast_route(mod):
         try:
             outs = mod._run_mc_list(w3, [(q, True, mod._single_cd(tin, tout, amt, f)) for f in TIERS])
         except Exception:
-            return 0, None
-        best_out, best_fee = 0, None
+            return (0, None)
+        best_out, best_fee = (0, None)
         for f, o in zip(TIERS, outs or []):
             if o and int(o) > best_out:
-                best_out, best_fee = int(o), f
-        return best_out, best_fee
+                best_out, best_fee = (int(o), f)
+        return (best_out, best_fee)
 
     def _anchored_pairs(anchor):
         """Fee pairs anchored to the tier that won the direct leg."""
@@ -222,17 +179,17 @@ def install_fast_route(mod):
         return out
 
     def _probe(w3, cid, tin, tout, amt, blind=False):
-        q = getattr(mod, "_QUOTER", {}).get(cid)
+        q = getattr(mod, '_QUOTER', {}).get(cid)
         if not q:
             return None
         hubs = [h for h in EXTRA_HUBS.get(cid, []) if h.lower() not in (tin.lower(), tout.lower())]
-        for h in (getattr(mod, "_USDC", {}).get(cid), getattr(mod, "_WETH", {}).get(cid)):
-            if h and h.lower() not in (tin.lower(), tout.lower()) and h not in hubs:
+        for h in (getattr(mod, '_USDC', {}).get(cid), getattr(mod, '_WETH', {}).get(cid)):
+            if h and h.lower() not in (tin.lower(), tout.lower()) and (h not in hubs):
                 hubs.append(h)
         _, anchor = _direct_tier(w3, q, tin, tout, amt)
         pairs = _anchored_pairs(anchor)
         cap = MAX_SUBCALLS_BLIND if blind else MAX_SUBCALLS
-        subcalls, meta = [], []
+        subcalls, meta = ([], [])
         for hub in hubs:
             for f1, f2 in pairs:
                 if len(subcalls) >= cap:
@@ -247,8 +204,8 @@ def install_fast_route(mod):
             return None
         best = None
         for (hub, f1, f2), o in zip(meta, outs or []):
-            if o and int(o) > 0 and (best is None or int(o) > best["out"]):
-                best = {"kind": "2hop", "hub": hub, "f1": f1, "f2": f2, "out": int(o)}
+            if o and int(o) > 0 and (best is None or int(o) > best['out']):
+                best = {'kind': '2hop', 'hub': hub, 'f1': f1, 'f2': f2, 'out': int(o)}
         return best
 
     def adaptive_fast_route(w3, cid, tin, tout, amt):
@@ -256,18 +213,17 @@ def install_fast_route(mod):
         try:
             base = orig(w3, cid, tin, tout, amt)
         except Exception:
-            logger.exception("[adaptive] base fast_route raised")
-        quotable = bool(base and base.get("out", 0) > 0)
-        if quotable and not _is_defect(cid, tin, tout):
+            logger.exception('[adaptive] base fast_route raised')
+        quotable = bool(base and base.get('out', 0) > 0)
+        if quotable and (not _is_defect(cid, tin, tout)):
             return base
         try:
             mine = _probe(w3, cid, tin, tout, amt, blind=not quotable)
         except Exception:
-            logger.exception("[adaptive] probe failed; base quote stands")
+            logger.exception('[adaptive] probe failed; base quote stands')
             return base
-        if mine and (base is None or mine["out"] > base.get("out", 0)):
-            logger.info("[adaptive] better 2-hop via %s (%s/%s)", mine["hub"][:10], mine["f1"], mine["f2"])
+        if mine and (base is None or mine['out'] > base.get('out', 0)):
+            logger.info('[adaptive] better 2-hop via %s (%s/%s)', mine['hub'][:10], mine['f1'], mine['f2'])
             return mine
         return base
-
     mod.fast_route = adaptive_fast_route
