@@ -1,0 +1,1050 @@
+{
+ "rows": {
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x4200000000000000000000000000000000000006|1000000": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x4200000000000000000000000000000000000006"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "517667377955145",
+   "min_out": "481555507063974",
+   "bar": "0",
+   "src": "ord_9c399716c1354e28",
+   "round": "round-e29743531-n1",
+   "at": 1784613853
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x4200000000000000000000000000000000000006": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x4200000000000000000000000000000000000006"
+   ],
+   "fees": [
+    500
+   ],
+   "quoted_out": "530584392307017257",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044697
+  },
+  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x6b175474e89094c44da98b954eedeac495271d0f": {
+   "chain": 1,
+   "tokens": [
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "999881976151768577607",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044586
+  },
+  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+   "chain": 1,
+   "tokens": [
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "1884322670",
+   "klass": "graph",
+   "amt": "1000000000000000000",
+   "src": "route_table",
+   "at": 1785044727
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x6985884c4392d348587b19cb9eaaf157f13271cd": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x4200000000000000000000000000000000000006",
+    "0x6985884c4392d348587b19cb9eaaf157f13271cd"
+   ],
+   "fees": [
+    100,
+    3000
+   ],
+   "quoted_out": "2508099885850216914",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_55926319bcc84608",
+   "klass": "orderbook",
+   "hops": 2,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x5f980dcfc4c0fa3911554cf5ab288ed0eb13dba3": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x5f980dcfc4c0fa3911554cf5ab288ed0eb13dba3"
+   ],
+   "fees": [
+    10000
+   ],
+   "quoted_out": "76015323463474022248170",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_3c653b08a3774773",
+   "klass": "orderbook",
+   "hops": 1,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0xb79dd08ea68a908a97220c76d19a6aa9cbde4376": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "0x4200000000000000000000000000000000000006",
+    "0xb79dd08ea68a908a97220c76d19a6aa9cbde4376"
+   ],
+   "fees": [
+    500,
+    500,
+    500
+   ],
+   "quoted_out": "2198755",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_ff673dd7e94c4a3a",
+   "klass": "orderbook",
+   "hops": 3,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x4b6bf1d365ea1a8d916da37fafd4ae8c86d061d7": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "0x4200000000000000000000000000000000000006",
+    "0x4b6bf1d365ea1a8d916da37fafd4ae8c86d061d7"
+   ],
+   "fees": [
+    3000,
+    500,
+    3000
+   ],
+   "quoted_out": "574360153860552660415",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_62b9142d14904dbf",
+   "klass": "orderbook",
+   "hops": 3,
+   "at": 1784622186
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x800822d361335b4d5f352dac293ca4128b5b605f": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x800822d361335b4d5f352dac293ca4128b5b605f"
+   ],
+   "fees": [
+    10000
+   ],
+   "quoted_out": "244851330317688580937",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_3c31c2652dfc4653",
+   "klass": "orderbook",
+   "hops": 1,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x8b7dde054be9d180c1be7fae0874697374a49832": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x8b7dde054be9d180c1be7fae0874697374a49832"
+   ],
+   "fees": [
+    3000
+   ],
+   "quoted_out": "745366062770608844436",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_a06fe59d2d9f478a",
+   "klass": "orderbook",
+   "hops": 1,
+   "at": 1784629121
+  },
+  "8453|0x4200000000000000000000000000000000000006|0x800822d361335b4d5f352dac293ca4128b5b605f": {
+   "chain": 8453,
+   "tokens": [
+    "0x4200000000000000000000000000000000000006",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x800822d361335b4d5f352dac293ca4128b5b605f"
+   ],
+   "fees": [
+    500,
+    3000
+   ],
+   "quoted_out": "3057338349676351652650",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_48a5e7e216a740a4",
+   "klass": "orderbook",
+   "hops": 2,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0xa7d68d155d17cb30e311367c2ef1e82ab6022b67": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0xa7d68d155d17cb30e311367c2ef1e82ab6022b67"
+   ],
+   "fees": [
+    10000
+   ],
+   "quoted_out": "14146268896628452064",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_8cbe1a0f84034413",
+   "klass": "orderbook",
+   "hops": 1,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0xa66f68ef2d8091e13585a502464bd11a159cf710": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0xa66f68ef2d8091e13585a502464bd11a159cf710"
+   ],
+   "fees": [
+    3000
+   ],
+   "quoted_out": "399996499210197365192",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_9187bc56d5a04c8a",
+   "klass": "orderbook",
+   "hops": 1,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "0x4200000000000000000000000000000000000006",
+    "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe"
+   ],
+   "fees": [
+    3000,
+    500,
+    3000
+   ],
+   "quoted_out": "14458012455793572830",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_b97d889a8bbe4c9e",
+   "klass": "orderbook",
+   "hops": 3,
+   "at": 1784622186
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x368181499736d0c0cc614dbb145e2ec1ac86b8c6": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0x368181499736d0c0cc614dbb145e2ec1ac86b8c6"
+   ],
+   "fees": [
+    3000
+   ],
+   "quoted_out": "1982104499431590260",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_e160309fbbce4fc0",
+   "klass": "orderbook",
+   "hops": 1,
+   "at": 1784622186
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0xfde4c96c8593536e31f229ea8f37b2ada2699bb2": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "2002355",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_18e2d8e97726448c",
+   "klass": "orderbook",
+   "hops": 1,
+   "at": 1784622186
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x18dd5b087bca9920562aff7a0199b96b9230438b": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "0x4200000000000000000000000000000000000006",
+    "0x18dd5b087bca9920562aff7a0199b96b9230438b"
+   ],
+   "fees": [
+    500,
+    500,
+    500
+   ],
+   "quoted_out": "4722324",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_4932894ba87a4a74",
+   "klass": "orderbook",
+   "hops": 3,
+   "at": 1784622186
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0xc0041ef357b183448b235a8ea73ce4e4ec8c265f": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "0x4200000000000000000000000000000000000006",
+    "0xc0041ef357b183448b235a8ea73ce4e4ec8c265f"
+   ],
+   "fees": [
+    3000,
+    500,
+    3000
+   ],
+   "quoted_out": "31345174966685690112",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_383785130e7040eb",
+   "klass": "orderbook",
+   "hops": 3,
+   "at": 1784622186
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x4ed4e862860bed51a9570b96d89af5e1b0efefed": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "0x4200000000000000000000000000000000000006",
+    "0x4ed4e862860bed51a9570b96d89af5e1b0efefed"
+   ],
+   "fees": [
+    500,
+    500,
+    500
+   ],
+   "quoted_out": "637469711099533498156",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_0fdf7aef87d54862",
+   "klass": "orderbook",
+   "hops": 3,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x50c5725949a6f0c72e6c4a641f24049a917db0cb": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "1000104146962430442595",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044673
+  },
+  "8453|0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
+   "chain": 8453,
+   "tokens": [
+    "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "1000023289",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044678
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA"
+   ],
+   "fees": [
+    500
+   ],
+   "quoted_out": "999349444",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044671
+  },
+  "8453|0x50c5725949a6f0c72e6c4a641f24049a917db0cb|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
+   "chain": 8453,
+   "tokens": [
+    "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "999688974",
+   "klass": "graph",
+   "amt": "1000000000000000000000",
+   "src": "route_table",
+   "at": 1785044685
+  },
+  "8453|0x4200000000000000000000000000000000000006|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
+   "chain": 8453,
+   "tokens": [
+    "0x4200000000000000000000000000000000000006",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "fees": [
+    500
+   ],
+   "quoted_out": "1882719573",
+   "klass": "graph",
+   "amt": "1000000000000000000",
+   "src": "route_table",
+   "at": 1785044661
+  },
+  "8453|0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
+   "chain": 8453,
+   "tokens": [
+    "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22",
+    "0x4200000000000000000000000000000000000006",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "fees": [
+    100,
+    100
+   ],
+   "quoted_out": "1049930",
+   "min_out": "841483",
+   "bar": "0",
+   "src": "ord_97b65cc0c5944e3d",
+   "klass": "orderbook",
+   "hops": 2,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x940181a94a35a4569e4529a3cdfb74e38fd98631": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x940181a94A35A4569E4529A3CDfB74e38FD98631"
+   ],
+   "fees": [
+    500
+   ],
+   "quoted_out": "1885892238927990288",
+   "min_out": "1791984187217059152",
+   "bar": "0",
+   "src": "ord_4feb4900a4fa45eb",
+   "klass": "orderbook",
+   "hops": 1,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0xae4a37d554c6d6f3e398546d8566b25052e0169c": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0x4200000000000000000000000000000000000006",
+    "0xae4a37d554c6d6f3e398546d8566b25052e0169c"
+   ],
+   "fees": [
+    100,
+    100
+   ],
+   "quoted_out": "117512968850850635062",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_ca937d64596e4da4",
+   "klass": "orderbook",
+   "hops": 2,
+   "at": 1784629121
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x04c0599ae5a44757c0af6f9ec3b93da8976c150a": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "0x4200000000000000000000000000000000000006",
+    "0x04c0599ae5a44757c0af6f9ec3b93da8976c150a"
+   ],
+   "fees": [
+    3000,
+    3000
+   ],
+   "quoted_out": "459728351328998",
+   "min_out": "1",
+   "bar": "0",
+   "src": "ord_0c53c501cb354ec8",
+   "klass": "orderbook",
+   "hops": 2,
+   "at": 1784629121
+  },
+  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x6b175474e89094c44da98b954eedeac495271d0f|1000000": {
+   "chain": 1,
+   "tokens": [
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "999949809837779753",
+   "min_out": "987635643180631466",
+   "bar": "994183820387475237",
+   "src": "ord_211bd4c968e343d0",
+   "round": "round-e29743944-n1",
+   "at": 1784636860
+  },
+  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7": {
+   "chain": 1,
+   "tokens": [
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "1885672853",
+   "klass": "graph",
+   "amt": "1000000000000000000",
+   "src": "route_table",
+   "at": 1785044582
+  },
+  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f": {
+   "chain": 1,
+   "tokens": [
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+   ],
+   "fees": [
+    100,
+    500
+   ],
+   "quoted_out": "1883771861100396084154",
+   "klass": "graph",
+   "amt": "1000000000000000000",
+   "src": "route_table",
+   "at": 1785044582
+  },
+  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": {
+   "chain": 1,
+   "tokens": [
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+   ],
+   "fees": [
+    100,
+    500
+   ],
+   "quoted_out": "2926002",
+   "klass": "graph",
+   "amt": "1000000000000000000",
+   "src": "route_table",
+   "at": 1785044583
+  },
+  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": {
+   "chain": 1,
+   "tokens": [
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "530535337355228927",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044583
+  },
+  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xdac17f958d2ee523a2206206994597c13d831ec7": {
+   "chain": 1,
+   "tokens": [
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "1000702435",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044584
+  },
+  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": {
+   "chain": 1,
+   "tokens": [
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+   ],
+   "fees": [
+    100,
+    500
+   ],
+   "quoted_out": "1552810",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044588
+  },
+  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": {
+   "chain": 1,
+   "tokens": [
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+   ],
+   "fees": [
+    500
+   ],
+   "quoted_out": "530093521582172335",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044590
+  },
+  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+   "chain": 1,
+   "tokens": [
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "999097980",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044594
+  },
+  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x6b175474e89094c44da98b954eedeac495271d0f": {
+   "chain": 1,
+   "tokens": [
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "999056657441786741125",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785042589
+  },
+  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": {
+   "chain": 1,
+   "tokens": [
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+   ],
+   "fees": [
+    100,
+    500
+   ],
+   "quoted_out": "1549840",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785042589
+  },
+  "1|0x6b175474e89094c44da98b954eedeac495271d0f|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": {
+   "chain": 1,
+   "tokens": [
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+   ],
+   "fees": [
+    100,
+    500
+   ],
+   "quoted_out": "530482166392266254",
+   "klass": "graph",
+   "amt": "1000000000000000000000",
+   "src": "route_table",
+   "at": 1785044653
+  },
+  "1|0x6b175474e89094c44da98b954eedeac495271d0f|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+   "chain": 1,
+   "tokens": [
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "999917833",
+   "klass": "graph",
+   "amt": "1000000000000000000000",
+   "src": "route_table",
+   "at": 1785044653
+  },
+  "1|0x6b175474e89094c44da98b954eedeac495271d0f|0xdac17f958d2ee523a2206206994597c13d831ec7": {
+   "chain": 1,
+   "tokens": [
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "1000743305",
+   "klass": "graph",
+   "amt": "1000000000000000000000",
+   "src": "route_table",
+   "at": 1785044654
+  },
+  "1|0x6b175474e89094c44da98b954eedeac495271d0f|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": {
+   "chain": 1,
+   "tokens": [
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+   ],
+   "fees": [
+    100,
+    500
+   ],
+   "quoted_out": "1550954",
+   "klass": "graph",
+   "amt": "1000000000000000000000",
+   "src": "route_table",
+   "at": 1785044654
+  },
+  "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": {
+   "chain": 1,
+   "tokens": [
+    "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+   ],
+   "fees": [
+    500
+   ],
+   "quoted_out": "1707898925802393812",
+   "klass": "graph",
+   "amt": "5000000",
+   "src": "route_table",
+   "at": 1785044655
+  },
+  "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+   "chain": 1,
+   "tokens": [
+    "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+   ],
+   "fees": [
+    500,
+    100
+   ],
+   "quoted_out": "3217627366",
+   "klass": "graph",
+   "amt": "5000000",
+   "src": "route_table",
+   "at": 1785044655
+  },
+  "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xdac17f958d2ee523a2206206994597c13d831ec7": {
+   "chain": 1,
+   "tokens": [
+    "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+   ],
+   "fees": [
+    500,
+    100
+   ],
+   "quoted_out": "3219699346",
+   "klass": "graph",
+   "amt": "5000000",
+   "src": "route_table",
+   "at": 1785044656
+  },
+  "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0x6b175474e89094c44da98b954eedeac495271d0f": {
+   "chain": 1,
+   "tokens": [
+    "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+   ],
+   "fees": [
+    500,
+    100
+   ],
+   "quoted_out": "3208851381555579562614",
+   "klass": "graph",
+   "amt": "5000000",
+   "src": "route_table",
+   "at": 1785044656
+  },
+  "8453|0x4200000000000000000000000000000000000006|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf": {
+   "chain": 8453,
+   "tokens": [
+    "0x4200000000000000000000000000000000000006",
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+   ],
+   "fees": [
+    500
+   ],
+   "quoted_out": "2922829",
+   "klass": "graph",
+   "amt": "1000000000000000000",
+   "src": "route_table",
+   "at": 1785044667
+  },
+  "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf": {
+   "chain": 8453,
+   "tokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+   ],
+   "fees": [
+    500
+   ],
+   "quoted_out": "1552096",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044674
+  },
+  "8453|0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca|0x4200000000000000000000000000000000000006": {
+   "chain": 8453,
+   "tokens": [
+    "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x4200000000000000000000000000000000000006"
+   ],
+   "fees": [
+    100,
+    500
+   ],
+   "quoted_out": "530596700055132835",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044676
+  },
+  "8453|0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca|0x50c5725949a6f0c72e6c4a641f24049a917db0cb": {
+   "chain": 8453,
+   "tokens": [
+    "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA",
+    "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "1000216970873018974831",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044680
+  },
+  "8453|0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf": {
+   "chain": 8453,
+   "tokens": [
+    "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+   ],
+   "fees": [
+    100,
+    500
+   ],
+   "quoted_out": "1552132",
+   "klass": "graph",
+   "amt": "1000000000",
+   "src": "route_table",
+   "at": 1785044681
+  },
+  "8453|0x50c5725949a6f0c72e6c4a641f24049a917db0cb|0x4200000000000000000000000000000000000006": {
+   "chain": 8453,
+   "tokens": [
+    "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x4200000000000000000000000000000000000006"
+   ],
+   "fees": [
+    100,
+    500
+   ],
+   "quoted_out": "530419363624114840",
+   "klass": "graph",
+   "amt": "1000000000000000000000",
+   "src": "route_table",
+   "at": 1785044683
+  },
+  "8453|0x50c5725949a6f0c72e6c4a641f24049a917db0cb|0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca": {
+   "chain": 8453,
+   "tokens": [
+    "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+    "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "999421739",
+   "klass": "graph",
+   "amt": "1000000000000000000000",
+   "src": "route_table",
+   "at": 1785044687
+  },
+  "8453|0x50c5725949a6f0c72e6c4a641f24049a917db0cb|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf": {
+   "chain": 8453,
+   "tokens": [
+    "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+   ],
+   "fees": [
+    100,
+    500
+   ],
+   "quoted_out": "1551613",
+   "klass": "graph",
+   "amt": "1000000000000000000000",
+   "src": "route_table",
+   "at": 1785044688
+  },
+  "8453|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf|0x4200000000000000000000000000000000000006": {
+   "chain": 8453,
+   "tokens": [
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "0x4200000000000000000000000000000000000006"
+   ],
+   "fees": [
+    3000
+   ],
+   "quoted_out": "1708931043352385021",
+   "klass": "graph",
+   "amt": "5000000",
+   "src": "route_table",
+   "at": 1785044690
+  },
+  "8453|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
+   "chain": 8453,
+   "tokens": [
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "fees": [
+    500
+   ],
+   "quoted_out": "3217988891",
+   "klass": "graph",
+   "amt": "5000000",
+   "src": "route_table",
+   "at": 1785044692
+  },
+  "8453|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf|0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca": {
+   "chain": 8453,
+   "tokens": [
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA"
+   ],
+   "fees": [
+    500,
+    500
+   ],
+   "quoted_out": "3214172194",
+   "klass": "graph",
+   "amt": "5000000",
+   "src": "route_table",
+   "at": 1785044693
+  },
+  "8453|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf|0x50c5725949a6f0c72e6c4a641f24049a917db0cb": {
+   "chain": 8453,
+   "tokens": [
+    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"
+   ],
+   "fees": [
+    500,
+    100
+   ],
+   "quoted_out": "2621828014119446228028",
+   "klass": "graph",
+   "amt": "5000000",
+   "src": "route_table",
+   "at": 1785044695
+  },
+  "8453|0x4200000000000000000000000000000000000006|0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca": {
+   "chain": 8453,
+   "tokens": [
+    "0x4200000000000000000000000000000000000006",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA"
+   ],
+   "fees": [
+    500,
+    500
+   ],
+   "quoted_out": "1881141517",
+   "klass": "graph",
+   "amt": "1000000000000000000",
+   "src": "route_table",
+   "at": 1785044663
+  },
+  "8453|0x4200000000000000000000000000000000000006|0x50c5725949a6f0c72e6c4a641f24049a917db0cb": {
+   "chain": 8453,
+   "tokens": [
+    "0x4200000000000000000000000000000000000006",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"
+   ],
+   "fees": [
+    500,
+    100
+   ],
+   "quoted_out": "1882821130365209587405",
+   "klass": "graph",
+   "amt": "1000000000000000000",
+   "src": "route_table",
+   "at": 1785044665
+  },
+  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1000000000000000": {
+   "chain": 1,
+   "tokens": [
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+   ],
+   "fees": [
+    100
+   ],
+   "quoted_out": "1859772",
+   "min_out": "1859162",
+   "bar": "0",
+   "src": "ord_57be10f7e1b4486b",
+   "round": "round-e29748645-n1",
+   "at": 1784918820
+  }
+ },
+ "tried": {
+  "ord_9c399716c1354e28": 3,
+  "ord_211bd4c968e343d0": 1,
+  "ord_57be10f7e1b4486b": 2,
+  "ord_710c91401286409a": 3
+ },
+ "splits": {}
+}

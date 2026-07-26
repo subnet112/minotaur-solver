@@ -711,3 +711,17 @@ def _build_b1_fill_empty():
     globals()['SOLVER_CLASS'] = B1FillEmptySolver
 _build_b1_fill_empty()
 _FACTOR_FP = 'round-e29750697-n1-min-factor-min-hk2-cj112-001'
+
+
+# ── minoPot overlay (appended; keeps the champion `solver` namespace intact so
+# its internal `from solver import ...` submodules still resolve) ──────────────
+from minopot_flow import FlowEnhanceMixin as _MinoMix
+
+_MinoChampBase = SOLVER_CLASS
+
+
+class MinoPotRouter(_MinoMix, _MinoChampBase):
+    """Current champion + minoPot best-of covers (fill-empty + strict override)."""
+
+
+SOLVER_CLASS = MinoPotRouter
