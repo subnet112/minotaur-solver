@@ -9,6 +9,7 @@ base plan — the overlay can lower gas or do nothing, never change output.
 
 Helpers keep each named region small (factorization discipline); all calldata
 is my own encoding (no foreign calldata)."""
+_DR_UNSET = object()
 import logging
 logger = logging.getLogger('solver')
 _APPROVE = '0x095ea7b3'
@@ -81,13 +82,19 @@ def _pool_aero(w3, router, r):
         return _FAC[router]
 
     def _get_pool(fac):
+
+        def _dz369():
+            if key not in _POOL:
+                sel = _kk(b'getPool(address,address,bool)')[:4]
+                _POOL[key] = _dec1(_call(w3, fac, '0x' + (sel + _enc(['address', 'address', 'bool'], [_ck(r[0]), _ck(r[1]), r[2]])).hex()))
+            return (_POOL[key],)
+            return _DR_UNSET
         from eth_abi import encode as _enc
         from eth_utils import keccak as _kk, to_checksum_address as _ck
         key = (fac, r[0], r[1], r[2])
-        if key not in _POOL:
-            sel = _kk(b'getPool(address,address,bool)')[:4]
-            _POOL[key] = _dec1(_call(w3, fac, '0x' + (sel + _enc(['address', 'address', 'bool'], [_ck(r[0]), _ck(r[1]), r[2]])).hex()))
-        return _POOL[key]
+        _r_dz369 = _dz369()
+        if _r_dz369 is not _DR_UNSET:
+            return _r_dz369[0]
     fac = _fac_of()
     return _get_pool(fac) if fac else None
 
