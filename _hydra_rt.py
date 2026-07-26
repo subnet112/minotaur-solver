@@ -3,6 +3,7 @@ multicall logic factored out of solver.py. Behavior-identical to the inline
 originals; split into small regions and de-duplicated (one Multicall3 addr, one
 aggregate3 selector, one raw-multicall helper) so no region is large."""
 from __future__ import annotations
+_DR_UNSET = object()
 from eth_abi import encode as _enc, decode as _dec
 from eth_utils import keccak as _kec
 _MC3 = '0xcA11bde05977b3631167028862bE2a173976CA11'
@@ -61,24 +62,34 @@ def _hub_combos(cid, hub):
     return [(500, 100), (3000, 100), (100, 500), (100, 3000)] if hub == _USDC.get(cid) else [(500, 500), (3000, 3000), (500, 3000), (3000, 500)]
 
 def _fr_hub(w3, q, cid, tin, tout, amt, hub, best):
+
+    def _dz15():
+        nonlocal best
+        try:
+            outs = _run_mc_list(w3, [(q, True, _path_cd([tin, hub, tout], [f1, f2], amt)) for f1, f2 in combos])
+            for (f1, f2), o in zip(combos, outs):
+                if o > 0 and (best is None or o > best['out']):
+                    best = {'kind': '2hop', 'hub': hub, 'f1': f1, 'f2': f2, 'out': o}
+        except Exception:
+            pass
     combos = _hub_combos(cid, hub)
-    try:
-        outs = _run_mc_list(w3, [(q, True, _path_cd([tin, hub, tout], [f1, f2], amt)) for f1, f2 in combos])
-        for (f1, f2), o in zip(combos, outs):
-            if o > 0 and (best is None or o > best['out']):
-                best = {'kind': '2hop', 'hub': hub, 'f1': f1, 'f2': f2, 'out': o}
-    except Exception:
-        pass
+    _dz15()
     return best
 
 def fast_route(w3, cid, tin, tout, amt):
     """Best route as a cand-ready dict: {kind:'direct',fee,out} or {kind:'2hop',hub,f1,f2,out} or None."""
+
+    def _dz14():
+        q = _QUOTER[cid]
+        best = _fr_direct(w3, q, tin, tout, amt, None)
+        for hub in (_USDC.get(cid), _WETH.get(cid)):
+            if not hub or hub.lower() in (tin.lower(), tout.lower()):
+                continue
+            best = _fr_hub(w3, q, cid, tin, tout, amt, hub, best)
+        return (best,)
+        return _DR_UNSET
     if cid not in _QUOTER or amt <= 0:
         return None
-    q = _QUOTER[cid]
-    best = _fr_direct(w3, q, tin, tout, amt, None)
-    for hub in (_USDC.get(cid), _WETH.get(cid)):
-        if not hub or hub.lower() in (tin.lower(), tout.lower()):
-            continue
-        best = _fr_hub(w3, q, cid, tin, tout, amt, hub, best)
-    return best
+    _r_dz14 = _dz14()
+    if _r_dz14 is not _DR_UNSET:
+        return _r_dz14[0]
