@@ -1,6 +1,7 @@
 """Pool-math helpers (exact-integer V3 tick math + best-route search) factored
 out of solver.py. Behavior-identical; small regions."""
 from __future__ import annotations
+_DR_UNSET = object()
 _Q96 = 1 << 96
 
 def _v3_out_zfo(sp, liq, aaf, max_impact):
@@ -38,17 +39,23 @@ def _v3_out(sqrt_price_x96, liquidity, amount_in, zero_for_one, fee_ppm):
 
 def _pool_out(pool, x, y, amt):
     """(out, fee) for `pool` on x->y, or None when it isn't that pair."""
+
+    def _dz13():
+        if t0 == x and t1 == y:
+            zfo = True
+        elif t0 == y and t1 == x:
+            zfo = False
+        else:
+            return (None,)
+        fee = int(pool.get('fee', 3000) or 3000)
+        out = _v3_out(int(pool.get('sqrtPriceX96', 0) or 0), int(pool.get('liquidity', 0) or 0), amt, zfo, fee)
+        return ((out, fee),)
+        return _DR_UNSET
     t0 = str(pool.get('token0', '') or '').lower()
     t1 = str(pool.get('token1', '') or '').lower()
-    if t0 == x and t1 == y:
-        zfo = True
-    elif t0 == y and t1 == x:
-        zfo = False
-    else:
-        return None
-    fee = int(pool.get('fee', 3000) or 3000)
-    out = _v3_out(int(pool.get('sqrtPriceX96', 0) or 0), int(pool.get('liquidity', 0) or 0), amt, zfo, fee)
-    return (out, fee)
+    _r_dz13 = _dz13()
+    if _r_dz13 is not _DR_UNSET:
+        return _r_dz13[0]
 
 def _best_direct(pool_states, tin, tout, amt):
     """Return (output, pool_addr, pool_state, fee) for the best single pool, or None."""
@@ -68,16 +75,22 @@ def _hop(d):
 
 def _route_2hop(pool_states, tin, tout, amt, mid):
     """(output, desc, hops) for tin->mid->tout, or None."""
+
+    def _dz12():
+        if m == tin.lower() or m == tout.lower():
+            return (None,)
+        h1 = _best_direct(pool_states, tin, mid, amt)
+        if not h1:
+            return (None,)
+        h2 = _best_direct(pool_states, mid, tout, h1[0])
+        if not h2:
+            return (None,)
+        return ((h2[0], f'2hop:{mid[:8]}', [_hop(h1), _hop(h2)]),)
+        return _DR_UNSET
     m = str(mid).lower()
-    if m == tin.lower() or m == tout.lower():
-        return None
-    h1 = _best_direct(pool_states, tin, mid, amt)
-    if not h1:
-        return None
-    h2 = _best_direct(pool_states, mid, tout, h1[0])
-    if not h2:
-        return None
-    return (h2[0], f'2hop:{mid[:8]}', [_hop(h1), _hop(h2)])
+    _r_dz12 = _dz12()
+    if _r_dz12 is not _DR_UNSET:
+        return _r_dz12[0]
 
 def _best_route(pool_states, tin, tout, amt, mids):
     """Correct replacement for pool_math.find_best_route -> (output, desc, hops) or None."""
