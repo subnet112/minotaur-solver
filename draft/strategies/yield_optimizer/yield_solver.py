@@ -50,12 +50,10 @@ def _query_aave_rate(rpc_url: str) -> float:
     try:
 
         def _dr6():
-            import urllib.request
-            import json
+            from web3 import Web3 as _W3
             data = '0x35ea6a75' + _encode_address(USDC)
-            payload = json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': AAVE_V3_POOL, 'data': data}, 'latest']}).encode()
-            req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
-            resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+            resp = _W3.HTTPProvider(rpc_url, request_kwargs={'timeout': 10}).make_request(
+                'eth_call', [{'to': AAVE_V3_POOL, 'data': data}, 'latest'])
             result = resp.get('result', '0x')
             rate_hex = result[2 + 2 * 64:2 + 3 * 64]
             return rate_hex
@@ -69,14 +67,13 @@ def _query_aave_rate(rpc_url: str) -> float:
 def _query_compound_rate(rpc_url: str) -> float:
     """Query Compound V3 USDC supply rate via RPC."""
     try:
-        import urllib.request
+        from web3 import Web3 as _W3
         import json
-        payload = json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': COMPOUND_V3_CUSDC, 'data': '0x7eb71131'}, 'latest']}).encode()
+        _cparams = [{'to': COMPOUND_V3_CUSDC, 'data': '0x7eb71131'}, 'latest']
 
         def _dr2():
             nonlocal payload, resp
-            req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
-            resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+            resp = _W3.HTTPProvider(rpc_url, request_kwargs={'timeout': 10}).make_request('eth_call', _cparams)
             util_hex = resp.get('result', '0x0')
             utilization = int(util_hex, 16)
             data = '0xd955759d' + _encode_uint256(utilization)

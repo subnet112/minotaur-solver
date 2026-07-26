@@ -11,7 +11,6 @@ covering an order it zeroes — it cannot lose ground.
 """
 from __future__ import annotations
 _DR_UNSET = object()
-import importlib.util
 import logging
 from pathlib import Path
 from king_solver import MinerSolver as KingSolver
@@ -32,32 +31,34 @@ logger = logging.getLogger(__name__)
 _STRATEGIES_DIR = Path(__file__).parent / 'strategies'
 
 def _load_agent_strategies() -> dict:
-    """Load Strategy classes from strategies/<app_id>/strategy.py, keyed by
-    app_id. Never raises — a broken strategy file is skipped."""
+    """Strategy classes keyed by app_id, imported STATICALLY.
+
+    The previous implementation discovered each strategy file at runtime and
+    loaded it through the import machinery. Stage 1 now rejects code that defeats
+    static analysis, and a solver shipping a fixed strategy tree has no need for
+    it: the packages below are the ones in this repo, so plain imports give the
+    identical mapping while staying statically analysable. Never raises — a
+    broken strategy is skipped.
+    """
     out: dict = {}
-    if not _STRATEGIES_DIR.is_dir():
+    try:
+        from minotaur_subnet.sdk.strategy import Strategy
+    except Exception:
         return out
-    for app_dir in _STRATEGIES_DIR.iterdir():
-        strat_file = app_dir / 'strategy.py'
-        if not (app_dir.is_dir() and app_dir.name.startswith('app_') and strat_file.is_file()):
-            continue
+    from strategies.app_da6c96b84c60 import strategy as _app_da6c96b84c60
+    for app_id, mod in (("app_da6c96b84c60", _app_da6c96b84c60),):
         try:
-            def _fw1():
-                spec = importlib.util.spec_from_file_location(f'agent_strategy_{app_dir.name}', strat_file)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-                from minotaur_subnet.sdk.strategy import Strategy
-                return (mod, Strategy)
-            mod, Strategy = _fw1()
-            for obj in vars(mod).values():
-                def _fw3():
-                    if isinstance(obj, type) and issubclass(obj, Strategy) and (obj is not Strategy):
-                        out[app_dir.name] = obj()
-                        return ('b',)
-                if _fw3() is not None:
-                    break
+            cls = getattr(mod, "STRATEGY_CLASS", None)
+            if not (isinstance(cls, type) and issubclass(cls, Strategy) and cls is not Strategy):
+                cls = None
+                for obj in vars(mod).values():
+                    if isinstance(obj, type) and issubclass(obj, Strategy) and obj is not Strategy:
+                        cls = obj
+                        break
+            if cls is not None:
+                out[app_id] = cls()
         except Exception:
-            logger.exception('[james] skipping broken strategy %s', strat_file)
+            logger.exception('[james] skipping broken strategy %s', app_id)
     return out
 
 class _JamesSolverDR17(KingSolver):
