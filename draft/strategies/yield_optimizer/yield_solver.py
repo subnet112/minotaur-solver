@@ -50,13 +50,17 @@ def _query_aave_rate(rpc_url: str) -> float:
     try:
 
         def _dr6():
+
+            def _dz79():
+                data = '0x35ea6a75' + _encode_address(USDC)
+                payload = json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': AAVE_V3_POOL, 'data': data}, 'latest']}).encode()
+                req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
+                resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+                result = resp.get('result', '0x')
+                return (data, payload, req, resp, result)
             import urllib.request
             import json
-            data = '0x35ea6a75' + _encode_address(USDC)
-            payload = json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': AAVE_V3_POOL, 'data': data}, 'latest']}).encode()
-            req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
-            resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
-            result = resp.get('result', '0x')
+            data, payload, req, resp, result = _dz79()
             rate_hex = result[2 + 2 * 64:2 + 3 * 64]
             return rate_hex
         rate_hex = _dr6()
@@ -68,25 +72,33 @@ def _query_aave_rate(rpc_url: str) -> float:
 
 def _query_compound_rate(rpc_url: str) -> float:
     """Query Compound V3 USDC supply rate via RPC."""
+
+    def _dz80():
+        req = _dr2()
+        resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+        rate_hex = resp.get('result', '0x0')
+        rate_per_second = int(rate_hex, 16)
+        return (rate_hex, rate_per_second, req, resp)
     try:
         import urllib.request
         import json
         payload = json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': COMPOUND_V3_CUSDC, 'data': '0x7eb71131'}, 'latest']}).encode()
 
         def _dr2():
+
+            def _dz78(payload):
+                req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
+                resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
+                util_hex = resp.get('result', '0x0')
+                utilization = int(util_hex, 16)
+                data = '0xd955759d' + _encode_uint256(utilization)
+                return (data, req, resp, util_hex, utilization)
             nonlocal payload, resp
-            req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
-            resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
-            util_hex = resp.get('result', '0x0')
-            utilization = int(util_hex, 16)
-            data = '0xd955759d' + _encode_uint256(utilization)
+            data, req, resp, util_hex, utilization = _dz78(payload)
             payload = json.dumps({'jsonrpc': '2.0', 'id': 2, 'method': 'eth_call', 'params': [{'to': COMPOUND_V3_CUSDC, 'data': data}, 'latest']}).encode()
             req = urllib.request.Request(rpc_url, data=payload, headers={'Content-Type': 'application/json'})
             return req
-        req = _dr2()
-        resp = json.loads(urllib.request.urlopen(req, timeout=10).read())
-        rate_hex = resp.get('result', '0x0')
-        rate_per_second = int(rate_hex, 16)
+        rate_hex, rate_per_second, req, resp = _dz80()
         return rate_per_second * 31536000 / 1e+18 * 100
     except Exception as exc:
         logger.debug('Failed to query Compound rate: %s', exc)
@@ -108,6 +120,11 @@ class BaselineYieldStrategy(Strategy):
         rpc_url = ''
 
         def _dr3():
+
+            def _dz77():
+                return (ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=int(time.time()) + 300, nonce=state.nonce, metadata={'strategy': 'baseline_yield', 'route': route, 'aave_rate': round(aave_rate, 4), 'compound_rate': round(compound_rate, 4), 'target_protocol': target_protocol, 'asset': asset, 'amount': str(amount)}),)
+                return (_DR_UNSET,)
+                return _DR_UNSET
             nonlocal rpc_url
             if snapshot and hasattr(snapshot, 'rpc_urls') and snapshot.rpc_urls:
                 rpc_url = snapshot.rpc_urls.get(chain_id, '')
@@ -119,27 +136,34 @@ class BaselineYieldStrategy(Strategy):
                     rpc_url = os.environ.get('ANVIL_RPC_URL', '')
 
                 def _dr5():
+
+                    def _dz76():
+                        if compound_rate > aave_rate and compound_rate > 0:
+                            target_protocol = COMPOUND_V3_CUSDC
+                            supply_calldata = _encode_compound_supply(asset, amount)
+                            route = 'compound_v3'
+                        elif aave_rate > 0:
+                            target_protocol = AAVE_V3_POOL
+                            supply_calldata = _encode_aave_supply(asset, amount, contract_address)
+                            route = 'aave_v3'
+                        else:
+                            target_protocol = AAVE_V3_POOL
+                            supply_calldata = _encode_aave_supply(asset, amount, contract_address)
+                            route = 'aave_v3_default'
+                        return ((aave_rate, compound_rate, route, supply_calldata, target_protocol),)
+                        return _DR_UNSET
                     aave_rate = _query_aave_rate(rpc_url) if rpc_url else 0
                     compound_rate = _query_compound_rate(rpc_url) if rpc_url else 0
-                    if compound_rate > aave_rate and compound_rate > 0:
-                        target_protocol = COMPOUND_V3_CUSDC
-                        supply_calldata = _encode_compound_supply(asset, amount)
-                        route = 'compound_v3'
-                    elif aave_rate > 0:
-                        target_protocol = AAVE_V3_POOL
-                        supply_calldata = _encode_aave_supply(asset, amount, contract_address)
-                        route = 'aave_v3'
-                    else:
-                        target_protocol = AAVE_V3_POOL
-                        supply_calldata = _encode_aave_supply(asset, amount, contract_address)
-                        route = 'aave_v3_default'
-                    return (aave_rate, compound_rate, route, supply_calldata, target_protocol)
+                    _r_dz76 = _dz76()
+                    if _r_dz76 is not _DR_UNSET:
+                        return _r_dz76[0]
                 aave_rate, compound_rate, route, supply_calldata, target_protocol = _dr5()
                 interactions = [Interaction(target=asset, value='0', call_data=_encode_approve(target_protocol, amount), chain_id=chain_id), Interaction(target=target_protocol, value='0', call_data=supply_calldata, chain_id=chain_id)]
                 return (aave_rate, compound_rate, interactions, route, target_protocol)
             aave_rate, compound_rate, interactions, route, target_protocol = _dr1()
-            return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=int(time.time()) + 300, nonce=state.nonce, metadata={'strategy': 'baseline_yield', 'route': route, 'aave_rate': round(aave_rate, 4), 'compound_rate': round(compound_rate, 4), 'target_protocol': target_protocol, 'asset': asset, 'amount': str(amount)})
-            return _DR_UNSET
+            _r_dz77 = _dz77()
+            if _r_dz77 is not _DR_UNSET:
+                return _r_dz77[0]
         _dr4 = _dr3()
         if _dr4 is not _DR_UNSET:
             return _dr4
