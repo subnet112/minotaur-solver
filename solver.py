@@ -15,9 +15,9 @@ import os
 from _apex_ourbase import SOLVER_CLASS as _Base
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "console-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "0.169.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "0xConsole")
+SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "sable-dex-router-fp29751494n1")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "5.4.0")
+SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "mferranmar")
 
 _Q96 = 1 << 96
 _WETH_BY_CHAIN = {1: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -199,10 +199,6 @@ from eth_abi import encode as _E, decode as _D
 _MC3A = "0xcA11bde05977b3631167028862bE2a173976CA11"
 _AERO_QUOTER = {8453: "0x254cF9E1E6e233aa1AC962CB9B05b2cfeAaE15b0"}
 _AERO_TICKS = [1, 50, 100, 200, 2000]
-# Consulted ONLY when the spacings above quote nothing: an extra candidate that
-# out-quotes a working route can win the ranking and then under-deliver, turning a
-# delivery into a drop. Additive-only keeps the upside without that risk.
-_AERO_TICKS_FALLBACK = [4, 10, 25, 500]
 _AQ_SEL = _k2(text="quoteExactInputSingle((address,address,uint256,int24,uint160))")[:4]
 _AGGA = _k2(text="aggregate3((address,bool,bytes)[])")[:4]
 
@@ -227,27 +223,16 @@ def aero_route(w3, cid, tin, tout, amt):
         res = _amc(w3, subs)
     except Exception:
         return None
-    def _scan(ticks, results):
-        got = None
-        for ts, (ok, d) in zip(ticks, results):
-            if not (ok and d and len(d) >= 32):
-                continue
+    best = None
+    for ts, (ok, d) in zip(_AERO_TICKS, res):
+        if ok and d and len(d) >= 32:
             try:
                 out = _D(["uint256"], d[:32])[0]
             except Exception:
                 continue
-            if out > 0 and (got is None or out > got["out"]):
-                got = {"ts": ts, "out": out}
-        return got
-    primary = _scan(_AERO_TICKS, res)
-    if primary is not None:
-        return primary
-    try:
-        extra = _amc(w3, [(qc, True, _AQ_SEL + _E(["(address,address,uint256,int24,uint160)"],
-                 [(w3.to_checksum_address(tin), w3.to_checksum_address(tout), amt, ts, 0)])) for ts in _AERO_TICKS_FALLBACK])
-    except Exception:
-        return None
-    return _scan(_AERO_TICKS_FALLBACK, extra)
+            if out > 0 and (best is None or out > best["out"]):
+                best = {"ts": ts, "out": out}
+    return best
 
 
 from eth_utils import keccak as _k3
@@ -449,17 +434,7 @@ class MinerSolver(_Base):
 SOLVER_CLASS = MinerSolver
 
 # --fp--
-def _apex_fp_29750061n1(v):
+def _apex_fp_29751494n1(v):
     return v + 10
-_APEX_FP = _apex_fp_29750061n1(0)
+_APEX_FP = _apex_fp_29751494n1(0)
 # --/fp--
-
-
-# ===== WIDE-ROUTE LAYER (defect-targeted) =====
-def _install_wide():
-    try:
-        import wide_router as _wr, sys as _sys
-        _wr.install_fast_route(_sys.modules[__name__])
-    except Exception:
-        import logging as _l; _l.getLogger(__name__).exception('[wide] layer failed; base stands')
-_install_wide()
