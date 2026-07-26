@@ -66,13 +66,16 @@ actually delivers at this block, never a guessed alternative."""
     try:
 
         def _dr300():
+
+            def _dz259():
+                swaps.append((str(getattr(it, 'target', '') or '').lower(), body[:8].lower(), body[8:]))
             swaps = []
             for it in getattr(plan, 'interactions', None) or []:
                 cd = str(getattr(it, 'call_data', '') or '')
                 body = cd[2:] if cd.startswith('0x') else cd
                 if len(body) < 8 or body[:8].lower() == '095ea7b3':
                     continue
-                swaps.append((str(getattr(it, 'target', '') or '').lower(), body[:8].lower(), body[8:]))
+                _dz259()
             return swaps
         swaps = _dr300()
         if len(swaps) != 1:

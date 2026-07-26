@@ -1,3 +1,4 @@
+_DR_UNSET = object()
 from shape_lib2 import _V_V3_ROUTERS
 
 def _xfer_cd(pair, amt):
@@ -65,8 +66,14 @@ def _v_build_vs2(spec, tin, tout, amt, q1, chain_id):
     leg1 = _vs2_leg1(spec, tin, amt)
 
     def _dr343(rcpt):
+
+        def _dz263():
+            return ([_IX(target=tin, value='0', call_data=encode_approve(_ck(uni_r), int(amt)), chain_id=chain_id), _IX(target=uni_r, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id)],)
+            return _DR_UNSET
         leg2 = _aero.encode_exact_input_single(token_in=spec['mid'], token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=rcpt, deadline=9999999999, amount_in=int(q1), amount_out_minimum=0)
-        return [_IX(target=tin, value='0', call_data=encode_approve(_ck(uni_r), int(amt)), chain_id=chain_id), _IX(target=uni_r, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id)]
+        _r_dz263 = _dz263()
+        if _r_dz263 is not _DR_UNSET:
+            return _r_dz263[0]
     return _dr343
 
 def _p2_leg1(spec, tin, amt):
@@ -124,12 +131,16 @@ def build_a3(spec, tin, tout, amt, q1, q2, est, chain_id):
 
 def build_s2(spec, tin, tout, amt, q1, est, chain_id):
     """2-leg s2 row builder (slip leg paid to the pair, pair.swap)."""
+
+    def _dz264(amt, chain_id, spec, tin):
+        slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+        leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid'], tick_spacing=int(spec['slip_ts']), recipient=spec['pair'], deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
+        return (leg1, slip_router)
     from eth_utils import to_checksum_address as _ck
     from strategies.dex_aggregator import aerodrome as _aero
     from common.abi_utils import encode_approve
     from minotaur_subnet.shared.types import Interaction as _IX
-    slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
-    leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid'], tick_spacing=int(spec['slip_ts']), recipient=spec['pair'], deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
+    leg1, slip_router = _dz264(amt, chain_id, spec, tin)
     a0, a1 = (int(est), 0) if int(spec['out_index']) == 0 else (0, int(est))
 
     def _dr320(rcpt):

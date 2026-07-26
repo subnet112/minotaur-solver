@@ -1,3 +1,4 @@
+_DR_UNSET = object()
 import shape_lib as _sl
 from shape_est import est_v3s, est_a3, est_s2, est_e1, est_ss, est_sgs, est_v2p
 
@@ -12,10 +13,16 @@ def est_gs2(s, spec, tin, amt, chain_id):
     return (q2, q1) if q2 else (None, None)
 
 def est_sv3(s, spec, tin, amt, chain_id):
+
+    def _dz260():
+        q2 = s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['f2'], 'mid': spec['mid2']}, spec['mid1'], q1, chain_id) if q1 else None
+        q3 = s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['f3'], 'mid': spec['tout']}, spec['mid2'], q2, chain_id) if q2 else None
+        return ((q3, q1) if q3 else (None, None),)
+        return _DR_UNSET
     q1 = _sl.slip_quote(s, spec['slip_ts'], tin, spec['mid1'], amt, chain_id, spec.get('q'))
-    q2 = s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['f2'], 'mid': spec['mid2']}, spec['mid1'], q1, chain_id) if q1 else None
-    q3 = s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['f3'], 'mid': spec['tout']}, spec['mid2'], q2, chain_id) if q2 else None
-    return (q3, q1) if q3 else (None, None)
+    _r_dz260 = _dz260()
+    if _r_dz260 is not _DR_UNSET:
+        return _r_dz260[0]
 
 def est_vs2(s, spec, tin, amt, chain_id):
     q1 = s._hydra_quote_leg1({'leg1_router': spec.get('l1_router') or 'uni', 'leg1_fee': spec['l1_fee'], 'mid': spec['mid']}, tin, amt, chain_id)

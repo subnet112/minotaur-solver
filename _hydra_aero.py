@@ -39,25 +39,32 @@ def aero_route(w3, cid, tin, tout, amt):
     return _aero_parse(res)
 
 def _v2_subs(ck, tin, tout, amt):
+
+    def _dz11():
+        for stable in (False, True):
+            subs.append((ck(_AERO_V2_R), True, _AERO_SEL + _enc(['uint256', '(address,address,bool,address)[]'], [amt, [(ck(tin), ck(tout), stable, ck(_AERO_V2_F))]])))
+            meta.append(('aerodrome_v2', stable))
     subs, meta = ([], [])
-    for stable in (False, True):
-        subs.append((ck(_AERO_V2_R), True, _AERO_SEL + _enc(['uint256', '(address,address,bool,address)[]'], [amt, [(ck(tin), ck(tout), stable, ck(_AERO_V2_F))]])))
-        meta.append(('aerodrome_v2', stable))
+    _dz11()
     subs.append((ck(_UNIV2_R), True, _UNIV2_SEL + _enc(['uint256', 'address[]'], [amt, [ck(tin), ck(tout)]])))
     meta.append(('uniswap_v2', None))
     return (subs, meta)
 
 def _v2_parse(meta, res):
+
+    def _dz10():
+        nonlocal best
+        for (venue, stable), (ok, d) in zip(meta, res):
+            if ok and d:
+                try:
+                    amounts = _dec(['uint256[]'], d)[0]
+                    out = int(amounts[-1]) if amounts else 0
+                except Exception:
+                    out = 0
+                if out > 0 and (best is None or out > best['out']):
+                    best = {'venue': venue, 'stable': stable, 'out': out}
     best = None
-    for (venue, stable), (ok, d) in zip(meta, res):
-        if ok and d:
-            try:
-                amounts = _dec(['uint256[]'], d)[0]
-                out = int(amounts[-1]) if amounts else 0
-            except Exception:
-                out = 0
-            if out > 0 and (best is None or out > best['out']):
-                best = {'venue': venue, 'stable': stable, 'out': out}
+    _dz10()
     return best
 
 def v2_route(w3, cid, tin, tout, amt):
