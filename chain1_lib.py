@@ -1,3 +1,4 @@
+_DR_UNSET = object()
 from chain1_c import _WETH, _USDT, _QUOTER, _ROUTER, _FEES, _HUBS, _CHAMP_FEE
 
 def _pack(tokens, fees):
@@ -9,13 +10,19 @@ def _pack(tokens, fees):
     return b
 
 def _champ_route(tin, tout):
-    fs = frozenset((tin, tout))
-    if fs in _CHAMP_FEE:
-        return ((tin, tout), (_CHAMP_FEE[fs],))
-    if _WETH not in (tin, tout):
-        f1 = _CHAMP_FEE.get(frozenset((tin, _WETH)), 3000)
-        f2 = _CHAMP_FEE.get(frozenset((_WETH, tout)), 3000)
-        return ((tin, _WETH, tout), (f1, f2))
+
+    def _dz46():
+        fs = frozenset((tin, tout))
+        if fs in _CHAMP_FEE:
+            return (((tin, tout), (_CHAMP_FEE[fs],)),)
+        if _WETH not in (tin, tout):
+            f1 = _CHAMP_FEE.get(frozenset((tin, _WETH)), 3000)
+            f2 = _CHAMP_FEE.get(frozenset((_WETH, tout)), 3000)
+            return (((tin, _WETH, tout), (f1, f2)),)
+        return _DR_UNSET
+    _r_dz46 = _dz46()
+    if _r_dz46 is not _DR_UNSET:
+        return _r_dz46[0]
     return ((tin, tout), (3000,))
 
 def _candidates(tin, tout):
