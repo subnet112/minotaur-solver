@@ -1134,6 +1134,40 @@ class MinerSolver(_ChampBase):
             pass
         return super().check_trigger(intent, state, snapshot)
 
+    _FP_QUOTER_L1 = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e'
+
+    def _fp_route_quotes(self, tokens, fees, amt):
+        """True unless the fastpath's hardcoded path provably quotes nothing.
+
+        FAIL-OPEN by design: only a quoter REVERT (positive evidence the pool does not
+        exist) returns False. No web3, a transport error, a timeout — anything whose
+        meaning is UNKNOWN — returns True and emits the route exactly as before, so an
+        RPC hiccup can never cost us a working plan.
+        """
+        try:
+            w3 = self._get_web3(1)
+            if w3 is None:
+                return True
+            from eth_abi import encode as _e2, decode as _d2
+            from eth_utils import keccak as _k3, to_checksum_address as _ck3
+            b = b''
+            for i, t in enumerate(tokens):
+                b += bytes.fromhex(t[2:])
+                if i < len(fees):
+                    b += int(fees[i]).to_bytes(3, 'big')
+            cd = '0x' + (_k3(text='quoteExactInput(bytes,uint256)')[:4]
+                         + _e2(['bytes', 'uint256'], [b, int(amt)])).hex()
+            try:
+                raw = w3.eth.call({'to': _ck3(self._FP_QUOTER_L1), 'data': cd})
+            except Exception as exc:
+                from web3.exceptions import ContractLogicError as _CLE
+                if isinstance(exc, _CLE) or 'execution reverted' in str(exc).lower():
+                    return False
+                return True
+            return int(_d2(['uint256', 'uint160[]', 'uint32[]', 'uint256'], raw)[0] or 0) > 0
+        except Exception:
+            return True
+
     def _hydra_eth_fastpath(self, intent, state):
         """Zero-RPC Ethereum-mainnet plan: approve + Uniswap V3 exactInput
         single-hop (or 2-hop via WETH) on the deepest fee tiers. Covers the
@@ -1180,12 +1214,18 @@ class MinerSolver(_ChampBase):
                                 tokens, fees = ([tin, tout], [3000])
                         _dr75()
                     swap_data = '0xc04b8d59' + _enc(['(bytes,address,uint256,uint256,uint256)'], [(path_bytes(tokens, fees), _ck(recip), 9999999999, amt, 0)]).hex()
-                    return (fees, swap_data)
-                fees, swap_data = _dr16()
+                    return (tokens, fees, swap_data)
+                tokens, fees, swap_data = _dr16()
+                if not self._fp_route_quotes(tokens, fees, amt):
+                    logger.info('[hydra] eth fastpath declined (route quotes 0) %s->%s', tin[:8], tout[:8])
+                    return None
                 swap = _IX(target=_ck(ROUTER), value='0', call_data=swap_data, chain_id=1)
                 logger.info('[hydra] eth fastpath %s->%s amt=%s hops=%d', tin[:8], tout[:8], amt, len(fees))
                 return (approve, swap)
-            approve, swap = _dr32()
+            _built = _dr32()
+            if _built is None:
+                return None
+            approve, swap = _built
             self._bm_done = getattr(self, '_bm_done', 0) + 1
             return _EP(intent_id=intent.app_id, interactions=[approve, swap], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'hydra-eth-fastpath', 'chain_id': 1})
             return _DR_UNSET
