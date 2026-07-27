@@ -27,6 +27,7 @@ All addresses are const; every RPC call is wrapped so any single venue failing
 degrades to "no candidate from that venue", never an exception upward.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import logging
 from typing import Any, Callable
 from eth_abi import encode as _enc, decode as _dec
@@ -38,6 +39,7 @@ def _dr9():
     WETH = '0x4200000000000000000000000000000000000006'
     USDC = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
     USDBC = '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'
+
     def _fw4():
         CBETH = '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22'
         ZORA = '0x1111111111166b7fe7bd91427724b487980afc69'
@@ -60,6 +62,7 @@ def _dr3():
     HOOK_BDF9 = '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'
     ZORA_HOOK = '0xc8d077444625eb300a427a6dfb2b1dbf9b159040'
     ZORA_CREATOR_HOOK = '0xd61a675f8a0c67a73dc3b54fb7318b4d91409040'
+
     def _fw3():
         V4_KEY_GRID = ((V4_DYN_FEE, 200, CLANKER_HOOK), (V4_DYN_FEE, 200, '0xd60d6b218116cfd801e28f78d011a203d2b068cc'), (V4_DYN_FEE, 200, '0xbdf938149ac6a781f94faa0ed45e6a0e984c6544'), (V4_DYN_FEE, 200, HOOK_BDF9), (30000, 200, ZORA_CREATOR_HOOK), (10000, 200, ZORA_HOOK), (10000, 200, _ZERO), (3000, 60, _ZERO), (100000, 2000, _ZERO), (500, 10, _ZERO), (100, 1, _ZERO), (20000, 200, _ZERO), (800000, 100, CLANKER_HOOK))
         V4_BASES = (_ZERO, WETH, USDC, ZORA, VIRTUAL)
@@ -85,7 +88,8 @@ class _DiscoveryEngineDR12:
         paths = [[tin, tout]] + [[tin, h, tout] for h in hubs if h.lower() not in (tin.lower(), tout.lower())]
 
         def _dr6():
-            for label, router, native in forks:
+
+            def _dz299():
                 for path in paths:
                     q = self._v2_quote(router, path, amount_in)
                     if q <= 0:
@@ -97,40 +101,51 @@ class _DiscoveryEngineDR12:
                     else:
                         out.append({**base, 'venue': 'v2_fork', 'router': router, 'param': router})
                     break
+            for label, router, native in forks:
+                _dz299()
         _dr6()
         return out
 
     def aero_v2_candidates(self, chain_id: int, tin: str, tout: str, amount_in: int) -> list[dict]:
+
+        def _dz300():
+            for routes in route_sets:
+
+                def _dr8():
+                    data = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [amount_in, [(_ck(a), _ck(b), s, _ck(f)) for a, b, s, f in routes]])
+                    r = self._c(AERO_V2_ROUTER, data)
+                    return (data, r)
+                data, r = _dr8()
+                if not r:
+                    continue
+                try:
+                    q = int(_dec(['uint256[]'], r)[0][-1])
+                except Exception:
+                    continue
+                if q <= 0:
+                    continue
+                out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
         if chain_id != 8453:
             return []
 
         def _dr2():
+
+            def _dz298():
+                for stable in (False, True):
+                    route_sets.append(((tin, tout, stable, AERO_V2_FACTORY),))
+                for hub in (WETH, USDC):
+                    if hub.lower() in (tin.lower(), tout.lower()):
+                        continue
+                    route_sets.append(((tin, hub, False, AERO_V2_FACTORY), (hub, tout, False, AERO_V2_FACTORY)))
+                return ((out, route_sets),)
+                return _DR_UNSET
             out: list[dict] = []
             route_sets: list[tuple[tuple, ...]] = []
-            for stable in (False, True):
-                route_sets.append(((tin, tout, stable, AERO_V2_FACTORY),))
-            for hub in (WETH, USDC):
-                if hub.lower() in (tin.lower(), tout.lower()):
-                    continue
-                route_sets.append(((tin, hub, False, AERO_V2_FACTORY), (hub, tout, False, AERO_V2_FACTORY)))
-            return (out, route_sets)
+            _r_dz298 = _dz298()
+            if _r_dz298 is not _DR_UNSET:
+                return _r_dz298[0]
         out, route_sets = _dr2()
-        for routes in route_sets:
-
-            def _dr8():
-                data = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [amount_in, [(_ck(a), _ck(b), s, _ck(f)) for a, b, s, f in routes]])
-                r = self._c(AERO_V2_ROUTER, data)
-                return (data, r)
-            data, r = _dr8()
-            if not r:
-                continue
-            try:
-                q = int(_dec(['uint256[]'], r)[0][-1])
-            except Exception:
-                continue
-            if q <= 0:
-                continue
-            out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
+        _dz300()
         return out
 
 class DiscoveryEngine(_DiscoveryEngineDR12):
@@ -174,6 +189,7 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
             return 0
 
     def _v4_quote(self, key: tuple, zero_for_one: bool, amount_in: int) -> int:
+
         def _fw2():
             c0, c1, fee, tick, hooks = key
             data = _kk(text='quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))')[:4] + _enc(['((address,address,uint24,int24,address),bool,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(tick), _ck(hooks)), bool(zero_for_one), int(amount_in), b'')])
@@ -203,6 +219,7 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
             for fee, tick, hooks in V4_KEY_GRID:
 
                 def _fw1():
+
                     def _dr11():
                         c0, c1 = _sorted_pair(base, tout)
                         pid = v4_pool_id(c0, c1, fee, tick, hooks)
@@ -255,18 +272,24 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
         sorted by quoted output desc; quoted candidates beat probed ones."""
 
         def _dr10():
+
+            def _dz297():
+                cands = []
+                try:
+                    cands += self.v2_candidates(chain_id, tin, tout, amount_in)
+                    if not (min_out <= 1 and cands):
+                        cands += self.aero_v2_candidates(chain_id, tin, tout, amount_in)
+                    if not (min_out <= 1 and cands):
+                        cands += self.v4_candidates(chain_id, tin, tout, amount_in)
+                except Exception:
+                    logger.exception('[discovery] sweep failed (%s->%s)', tin, tout)
+                return (cands,)
+                return _DR_UNSET
             nonlocal tin, tout
             tin, tout = (tin.lower(), tout.lower())
-            cands = []
-            try:
-                cands += self.v2_candidates(chain_id, tin, tout, amount_in)
-                if not (min_out <= 1 and cands):
-                    cands += self.aero_v2_candidates(chain_id, tin, tout, amount_in)
-                if not (min_out <= 1 and cands):
-                    cands += self.v4_candidates(chain_id, tin, tout, amount_in)
-            except Exception:
-                logger.exception('[discovery] sweep failed (%s->%s)', tin, tout)
-            return cands
+            _r_dz297 = _dz297()
+            if _r_dz297 is not _DR_UNSET:
+                return _r_dz297[0]
         cands = _dr10()
         cands.sort(key=lambda c: c.get('out', 0), reverse=True)
         logger.info('[discovery] %s->%s chain=%s: %d candidate(s), %d rpc calls', tin[:8], tout[:8], chain_id, len(cands), self._used)
