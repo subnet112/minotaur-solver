@@ -52,8 +52,7 @@ def _query_aave_rate(rpc_url: str) -> float:
         def _dr6():
             from web3 import Web3 as _W3
             data = '0x35ea6a75' + _encode_address(USDC)
-            resp = _W3.HTTPProvider(rpc_url, request_kwargs={'timeout': 10}).make_request(
-                'eth_call', [{'to': AAVE_V3_POOL, 'data': data}, 'latest'])
+            resp = _W3.HTTPProvider(rpc_url, request_kwargs={'timeout': 10}).make_request('eth_call', [{'to': AAVE_V3_POOL, 'data': data}, 'latest'])
             result = resp.get('result', '0x')
             rate_hex = result[2 + 2 * 64:2 + 3 * 64]
             return rate_hex
