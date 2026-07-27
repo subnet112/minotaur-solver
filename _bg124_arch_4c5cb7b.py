@@ -17,103 +17,80 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from _hydra_rt import _QUOTER, fast_route
 from _hydra_aero import _AERO_V2_F, aero_route, v2_route
 from _hydra_pm import _best_route, _best_direct, _hop
-
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "hydra-sov-d-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "549.0.0-netfree-d")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "bryanaltes")
-
-_WETH_BY_CHAIN = {1: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-                  8453: "0x4200000000000000000000000000000000000006"}
-_NATIVE = {"0x0000000000000000000000000000000000000000",
-           "0x0000000000000000000000000000000000000001",
-           "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
-
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'hydra-sov-d-router')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '549.0.0-netfree-d')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'bryanaltes')
+_WETH_BY_CHAIN = {1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 8453: '0x4200000000000000000000000000000000000006'}
+_NATIVE = {'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000001', '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}
 
 def _wrap(token, chain_id):
     if str(token).lower() in _NATIVE:
         return _WETH_BY_CHAIN.get(int(chain_id or 0), token)
     return token
 
-
 def _strip155(t):
-    return t.split(":")[-1] if t.startswith("eip155:") else t
-
+    return t.split(':')[-1] if t.startswith('eip155:') else t
 
 def _chain_id(state, snapshot):
-    return int(getattr(state, "chain_id", 0) or (getattr(snapshot, "chain_id", 0) if snapshot else 0) or 0)
-
+    return int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
 
 def _split_by_dex(pool_states):
-    v3 = {a: p for a, p in pool_states.items() if (p.get("dex") or "uniswap_v3") == "uniswap_v3"}
-    aero = {a: p for a, p in pool_states.items() if p.get("dex") == "aerodrome_slipstream"}
-    return v3, aero
-
+    v3 = {a: p for a, p in pool_states.items() if (p.get('dex') or 'uniswap_v3') == 'uniswap_v3'}
+    aero = {a: p for a, p in pool_states.items() if p.get('dex') == 'aerodrome_slipstream'}
+    return (v3, aero)
 
 def _offline_result(r, tin, tout):
     from minotaur_subnet.shared.types import QuoteResult
-    return QuoteResult(estimated_output=str(r[0]),
-        route_summary=f"{tin[:8]}..->{tout[:8]}.. {r[1]}", gas_estimate=450000,
-        metadata={"data_source": "offline-fixed"})
-
+    return QuoteResult(estimated_output=str(r[0]), route_summary=f'{tin[:8]}..->{tout[:8]}.. {r[1]}', gas_estimate=450000, metadata={'data_source': 'offline-fixed'})
 
 def _sas_v3_cands(rt, wtin, wtout, amt):
     cands = []
-    if rt and rt.get("out", 0) > 0:
-        if rt["kind"] == "direct":
-            cands.append({"venue": "uniswap_v3", "param": rt["fee"], "out": int(rt["out"]),
-                          "gas_est": 120000, "gas_model": 120000, "spend_amount": amt})
+    if rt and rt.get('out', 0) > 0:
+        if rt['kind'] == 'direct':
+            cands.append({'venue': 'uniswap_v3', 'param': rt['fee'], 'out': int(rt['out']), 'gas_est': 120000, 'gas_model': 120000, 'spend_amount': amt})
         else:
-            cands.append({"venue": "uni_v3_path", "param": "path",
-                          "tokens": [wtin, rt["hub"], wtout], "fees": [rt["f1"], rt["f2"]],
-                          "out": int(rt["out"]), "gas_est": 240000, "gas_model": 240000, "spend_amount": amt})
+            cands.append({'venue': 'uni_v3_path', 'param': 'path', 'tokens': [wtin, rt['hub'], wtout], 'fees': [rt['f1'], rt['f2']], 'out': int(rt['out']), 'gas_est': 240000, 'gas_model': 240000, 'spend_amount': amt})
     return cands
-
 
 def _sas_aero_cands(ar, amt):
     cands = []
-    if ar and ar.get("out", 0) > 0:
-        cands.append({"venue": "aerodrome_slipstream", "param": ar["ts"], "out": int(ar["out"]),
-                      "gas_est": 160000, "gas_model": 160000, "spend_amount": amt})
+    if ar and ar.get('out', 0) > 0:
+        cands.append({'venue': 'aerodrome_slipstream', 'param': ar['ts'], 'out': int(ar['out']), 'gas_est': 160000, 'gas_model': 160000, 'spend_amount': amt})
     return cands
-
 
 def _sas_v2_cands(vr, wtin, wtout, amt):
     cands = []
-    if vr and vr.get("out", 0) > 0:
-        if vr["venue"] == "aerodrome_v2":
-            cands.append({"venue": "aerodrome_v2", "routes": [(wtin, wtout, bool(vr["stable"]), _AERO_V2_F)],
-                          "param": _AERO_V2_F, "out": int(vr["out"]), "gas_est": 200000, "gas_model": 520000, "spend_amount": amt})
+    if vr and vr.get('out', 0) > 0:
+        if vr['venue'] == 'aerodrome_v2':
+            cands.append({'venue': 'aerodrome_v2', 'routes': [(wtin, wtout, bool(vr['stable']), _AERO_V2_F)], 'param': _AERO_V2_F, 'out': int(vr['out']), 'gas_est': 200000, 'gas_model': 520000, 'spend_amount': amt})
         else:
-            cands.append({"venue": "uniswap_v2", "tokens": [wtin, wtout], "param": "v2",
-                          "out": int(vr["out"]), "gas_est": 150000, "gas_model": 300000, "spend_amount": amt})
+            cands.append({'venue': 'uniswap_v2', 'tokens': [wtin, wtout], 'param': 'v2', 'out': int(vr['out']), 'gas_est': 150000, 'gas_model': 300000, 'spend_amount': amt})
     return cands
 
-
 class MinerSolver(_Base):
-    def metadata(self):  # type: ignore[override]
+
+    def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR,
-            description="fast-plan + EXACT Aerodrome quoter (drop=0 AND reg=0, accurate venue ranking)",
-            supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='fast-plan + EXACT Aerodrome quoter (drop=0 AND reg=0, accurate venue ranking)', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     def _raw_swap(self, intent, state, snapshot):
         """Normalized (input_token, output_token, input_amount, chain_id) — eip155
         stripped, fee-effective amount applied. Shared by the fast-path and offline."""
         params = self._normalized_swap_params(intent, state)
-        tin = str(params.get("input_token", "") or "")
-        tout = str(params.get("output_token", "") or "")
-        amt = int(params.get("input_amount", 0) or 0)
+        tin = str(params.get('input_token', '') or '')
+        tout = str(params.get('output_token', '') or '')
+        amt = int(params.get('input_amount', 0) or 0)
         try:
             amt = self._effective_swap_amount(self._fee_params(state, params), tin, amt)
         except Exception:
             pass
-        return _strip155(tin), _strip155(tout), amt, _chain_id(state, snapshot)
+        return (_strip155(tin), _strip155(tout), amt, _chain_id(state, snapshot))
 
     def _sas_build(self, intent, state, snapshot, cands, wtin, wtout, amt, cid):
-        for cand in sorted(cands, key=lambda c: int(c.get("out", 0)), reverse=True):
+        for cand in sorted(cands, key=lambda c: int(c.get('out', 0)), reverse=True):
             try:
                 plan = self._build_singlehop_plan(intent, state, snapshot, cand, wtin, wtout, amt, cid)
-                if plan is not None and getattr(plan, "interactions", None):
+                if plan is not None and getattr(plan, 'interactions', None):
                     return plan
             except Exception:
                 continue
@@ -145,7 +122,7 @@ class MinerSolver(_Base):
         tin, tout, amt, cid = self._raw_swap(intent, state, snapshot)
         wtin = _wrap(tin, cid)
         wtout = _wrap(tout, cid)
-        if not (wtin and wtout and amt > 0 and cid in _QUOTER):
+        if not (wtin and wtout and (amt > 0) and (cid in _QUOTER)):
             return None
         w3 = self._web3_for(cid)
         if w3 is None:
@@ -153,7 +130,7 @@ class MinerSolver(_Base):
         cands = self._sas_cands(w3, cid, wtin, wtout, amt)
         return self._sas_build(intent, state, snapshot, cands, wtin, wtout, amt, cid)
 
-    def _score_aware_singlehop(self, intent, state, snapshot, base_plan):  # type: ignore[override]
+    def _score_aware_singlehop(self, intent, state, snapshot, base_plan):
         """FAST delivering plan: multicall picks the route, base _build_singlehop_plan
         builds a scoreIntent-compatible approve+swap. Fits the per-order budget on big
         rounds (where the base's RPC route-select times out -> fallback -> drop)."""
@@ -179,10 +156,10 @@ class MinerSolver(_Base):
             return max(cands, key=lambda r: r[0])
         d = _best_direct(pool_states, token_in, token_out, amount_in)
         if d:
-            return (d[0], "direct", [_hop(d)])
+            return (d[0], 'direct', [_hop(d)])
         return None
 
-    def _find_best_executable_route(self, pool_states, token_in, token_out, amount_in, chain_id):  # type: ignore[override]
+    def _find_best_executable_route(self, pool_states, token_in, token_out, amount_in, chain_id):
         """Correct routing (fixes the zero_for_one crash). Preserves the original's
         executability logic: mixed multi-hop falls back to the better single-DEX subset."""
         try:
@@ -201,7 +178,7 @@ class MinerSolver(_Base):
             try:
                 dexes = {self._hop_dex(h) for h in hops}
             except Exception:
-                dexes = {"uniswap_v3"}
+                dexes = {'uniswap_v3'}
             if len(dexes) == 1:
                 return unrestricted
             return self._fbe_subset(pool_states, token_in, token_out, amount_in, mids)
@@ -214,33 +191,28 @@ class MinerSolver(_Base):
         except Exception:
             return []
 
-    def _offline_fallback_quote(self, intent, state, snapshot):  # type: ignore[override]
+    def _offline_fallback_quote(self, intent, state, snapshot):
         try:
-            ps = getattr(snapshot, "pool_states", None) if snapshot else None
+            ps = getattr(snapshot, 'pool_states', None) if snapshot else None
             if not ps:
                 return None
             tin, tout, amt, cid = self._raw_swap(intent, state, snapshot)
             if not tin or not tout or amt <= 0:
                 return None
-            tin = _wrap(tin, cid); tout = _wrap(tout, cid)
+            tin = _wrap(tin, cid)
+            tout = _wrap(tout, cid)
             r = _best_route(ps, tin, tout, amt, self._mids_for(cid))
             if r and r[0] > 0:
                 return _offline_result(r, tin, tout)
             return None
         except Exception:
             return None
-
-
 SOLVER_CLASS = MinerSolver
 
-
-# --fp--
 def _apex_fp_29748096n1(v):
     return v + 10
 _APEX_FP = _apex_fp_29748096n1(0)
-# --/fp--
 
-# ===== CROWN LAYER (re-based on king 2ebded6) — blind-spot cover + gas-Pareto =====
 def _build_crown():
     _CROWN_BASE = globals()['SOLVER_CLASS']
 
@@ -262,10 +234,6 @@ def _build_crown():
                 return plan
 
         def metadata(self):
-            # Force OUR per-lane brand (min_multivenue._MV_NAME, sed by the ship)
-            # as the outermost class — king bases stamp their own name last
-            # (_PYMSNO_NAME / apex hardcodes / _PUTTY_FINAL_BRAND), which would
-            # otherwise leak the king's brand and mask us on the dashboard.
             m = super().metadata()
             try:
                 import min_multivenue as _mv
@@ -282,7 +250,6 @@ def _build_crown():
                 plan = None
             lifted = self._crown_cover(plan, intent, state, snapshot)
             return self._crown_gas(lifted, intent, state)
-
     CrownSolver._crown_orig = _CROWN_BASE.generate_plan
     CrownSolver._crown_installed = True
     globals()['SOLVER_CLASS'] = CrownSolver
