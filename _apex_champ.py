@@ -31,17 +31,7 @@ logger = logging.getLogger(__name__)
 _STRATEGIES_DIR = Path(__file__).parent / 'strategies'
 
 def _load_agent_strategies() -> dict:
-    """Load Strategy classes keyed by app_id via STATIC package imports so the
-    tree passes strict Stage-1 static screening. Behavior-identical to the prior
-    file-walking loader for our shipped strategies/app_* set (each app dir is a
-    package). Never raises — a broken strategy is skipped."""
-    out: dict = {}
-    try:
-        from strategies.app_da6c96b84c60.strategy import DexAggregatorStrategy
-        out['app_da6c96b84c60'] = DexAggregatorStrategy()
-    except Exception:
-        logger.exception('[james] skipping broken strategy %s', 'app_da6c96b84c60')
-    return out
+    return {}
 
 class _JamesSolverDR17(KingSolver):
 
