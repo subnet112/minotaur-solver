@@ -30,7 +30,7 @@ def _dl_qsingle(url, tin, tout, amt, fee):
 
 def _dl_qpath(url, tokens, fees, amt):
 
-    def _dz68():
+    def _dz47():
         data = _dl_sel('quoteExactInput(bytes,uint256)') + encode(['bytes', 'uint256'], [b, int(amt)]).hex()
         r = _dl_ethcall(url, _ETH_QUOTER, data)
         return (int(r[2:66], 16) if r and len(r) >= 66 else 0,)
@@ -41,9 +41,9 @@ def _dl_qpath(url, tokens, fees, amt):
         b += bytes.fromhex(t[2:])
         if i < len(fees):
             b += int(fees[i]).to_bytes(3, 'big')
-    _r_dz68 = _dz68()
-    if _r_dz68 is not _DR_UNSET:
-        return _r_dz68[0]
+    _r_dz47 = _dz47()
+    if _r_dz47 is not _DR_UNSET:
+        return _r_dz47[0]
 _BAL_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8'
 _BAL_TBL = '8399c8fc273bd165c346af74a02e65f10e4fd78fe2fc85bfb48c4cf147921fbe110cf92ef9f26f94ae255db04ba78519f33871c557d8fd6bafdb83bd;7f39c581f595b53c5cb19bd0b3f8da6c935e2ca07fc66500c84a76ad7e9c93437bfc5ac33e2ddae93de27efa2f1aa663ae5d458857e731c129069f29000200000000000000000588;0bfc9d54fc184518a81162f8fb99c2eaca081202ae78736cd615f374d3085123a210448e74fc63931ea5870f7c037930ce1d5d8d9317c670e89e13e3;ba100000625a3754423978a60c9317c58a424e3dc02aaa39b223fe8d0a0e5c4f27ead9083c756cc25c6ee304399dbdb9c8ef030ab642b10820db8f56000200000000000000000014;2260fac5e5542a773aa44fbcfedf7c193bc2c599c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2a6f548df93de924d73be7d25dc02554c6bd66db500020000000000000000000e;0bfc9d54fc184518a81162f8fb99c2eaca081202f1c9acdc66974dfb6decb12aa385b9cd01190e3857c23c58b1d8c3292c15becf07c62c5c52457a42;775f661b0bd1739349b9a2a3ef60be277c5d2d29d11c452fc99cf405034ee446803b6f6c1f6d5ed89ed5175aecb6653c1bdaa19793c16fd74fbeeb37;559b7bfc48a5274754b08819f75c5f27af53d53bc02aaa39b223fe8d0a0e5c4f27ead9083c756cc239eb558131e5ebeb9f76a6cbf6898f6e6dce5e4e0002000000000000000005c8;ae8535c23afedda9304b03c68a3563b75fc8f92bbb6881874825e60e1160416d6c426eae65f2459eae8535c23afedda9304b03c68a3563b75fc8f92b0000000000000000000005a0;ae8535c23afedda9304b03c68a3563b75fc8f92bf951e335afb289353dc249e82926178eac7ded78ae8535c23afedda9304b03c68a3563b75fc8f92b0000000000000000000005a0;bb6881874825e60e1160416d6c426eae65f2459ef951e335afb289353dc249e82926178eac7ded78ae8535c23afedda9304b03c68a3563b75fc8f92b0000000000000000000005a0;6810e776880c02933d47db1b9fc05908e5386b96def1ca1fb7fbcdc777520aa7f396b4e015f497ab92762b42a06dcdddc5b7362cfb01e631c4d44b40000200000000000000000182;c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2fd0205066521550d7d7ab19da8f72bb004b4c3419232a548dd9e81bac65500b5e0d918f8ba93675c000200000000000000000423;0fe906e030a44ef24ca8c7dc7b7c53a6c4f00ce977146784315ba81904d654466968e3a7c196d1f3daba3d8ccf79ef289a7e2dbce51871b39ea445a2;c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2dbdb4d16eda451d0503b854cf79d55697f90c8df1535d7ca00323aa32bd62aeddf7ca651e4b95966;4cbde5c4b4b53ebe4af4adb85404725985406163a35b1b31ce002fbf2058d22f30f95d405200a15b4cbde5c4b4b53ebe4af4adb85404725985406163000000000000000000000595;4cbde5c4b4b53ebe4af4adb85404725985406163bb6881874825e60e1160416d6c426eae65f2459e4cbde5c4b4b53ebe4af4adb85404725985406163000000000000000000000595;a35b1b31ce002fbf2058d22f30f95d405200a15bbb6881874825e60e1160416d6c426eae65f2459e4cbde5c4b4b53ebe4af4adb85404725985406163000000000000000000000595;79c71d3436f39ce382d0f58f1b011d88100b9d91c02aaa39b223fe8d0a0e5c4f27ead9083c756cc21bccaac02bae336c6352acc3b772059ef1142fa70002000000000000000001f0;68917a0e538cf4a807b3d415c1af5cdbab0ff4dca0b86991c6218b36c1d19d4a2e9eb0ce3606eb4848995dbdca50fa5346b0771d40a5ae7664262f7e;7bc3485026ac48b6cf9baf0a377477fff5703af8c71ea051a5f82c67adcf634c36ffe6334793d24c85b2b559bc2d21104c4defdd6efca8a20343361d;7bc3485026ac48b6cf9baf0a377477fff5703af8d4fa2d31b7968e448877f69a96de69f5de8cd23e85b2b559bc2d21104c4defdd6efca8a20343361d;c71ea051a5f82c67adcf634c36ffe6334793d24cd4fa2d31b7968e448877f69a96de69f5de8cd23e85b2b559bc2d21104c4defdd6efca8a20343361d;a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48c02aaa39b223fe8d0a0e5c4f27ead9083c756cc296646936b91d6b9d7d0c47c496afbf3d6ec7b6f8000200000000000000000019;2260fac5e5542a773aa44fbcfedf7c193bc2c599eb4c2781e4eba804ce9a9803c67d0893436bb27dfeadd389a5c427952d8fdb8057d6c8ba1156cc56000000000000000000000066;2260fac5e5542a773aa44fbcfedf7c193bc2c599fe18be6b3bd88a2d2a7f928d00292e7a9963cfc6feadd389a5c427952d8fdb8057d6c8ba1156cc56000000000000000000000066;eb4c2781e4eba804ce9a9803c67d0893436bb27dfe18be6b3bd88a2d2a7f928d00292e7a9963cfc6feadd389a5c427952d8fdb8057d6c8ba1156cc56000000000000000000000066;c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2cfeaead4947f0705a14ec42ac3d44129e1ef3ed55122e01d819e58bb2e22528c0d68d310f0aa6fd7000200000000000000000163;9f8f72aa9304c8b593d555f12ef6589cc3a579a2c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2aac98ee71d4f8a156b6abaa6844cdb7789d086ce00020000000000000000001b;1cf0f3aabe4d12106b27ab44df5473974279c524c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2ea39581977325c0833694d51656316ef8a926a62000200000000000000000036;6b175474e89094c44da98b954eedeac495271d0fc02aaa39b223fe8d0a0e5c4f27ead9083c756cc20b09dea16768f0799065c475be02919503cb2a3500020000000000000000001a;40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f8353157092ed8be69a9df8f95af097bbf33cb2af8353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9;40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2fa0b86991c6218b36c1d19d4a2e9eb0ce3606eb488353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9;40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2fdac17f958d2ee523a2206206994597c13d831ec78353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9;8353157092ed8be69a9df8f95af097bbf33cb2afa0b86991c6218b36c1d19d4a2e9eb0ce3606eb488353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9;8353157092ed8be69a9df8f95af097bbf33cb2afdac17f958d2ee523a2206206994597c13d831ec78353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9;a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48dac17f958d2ee523a2206206994597c13d831ec78353157092ed8be69a9df8f95af097bbf33cb2af0000000000000000000005d9;3839a0dd920463eb5d8231efe4d8c5edc44145ecd4fa2d31b7968e448877f69a96de69f5de8cd23e51cdf9cc199f8121b58d9337983a79a1b87330fd;c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2ec53bf9167f50cdeb3ae105f56099aaab9061f83bda917a67c7d9ae67da92c4ea87e10e5d6c11b54;4ba01f22827018b4772cd326c7627fb4956a7c00890a5122aa1da30fec4286de7904ff808f0bd74a9054ae85300c7d3a325714fc2f1454d0b7c73a12;3c640f0d3036ad85afa2d5a9e32be651657b874f50cf90b954958480b8df7958a9e965752f62712450cf90b954958480b8df7958a9e965752f62712400000000000000000000046f;3c640f0d3036ad85afa2d5a9e32be651657b874fd4e7c1f3da1144c9e2cfd1b015eda7652b4a439950cf90b954958480b8df7958a9e965752f62712400000000000000000000046f;3c640f0d3036ad85afa2d5a9e32be651657b874feb486af868aeb3b6e53066abc9623b1041b42bc050cf90b954958480b8df7958a9e965752f62712400000000000000000000046f;50cf90b954958480b8df7958a9e965752f627124d4e7c1f3da1144c9e2cfd1b015eda7652b4a439950cf90b954958480b8df7958a9e965752f62712400000000000000000000046f;50cf90b954958480b8df7958a9e965752f627124eb486af868aeb3b6e53066abc9623b1041b42bc050cf90b954958480b8df7958a9e965752f62712400000000000000000000046f;d4e7c1f3da1144c9e2cfd1b015eda7652b4a4399eb486af868aeb3b6e53066abc9623b1041b42bc050cf90b954958480b8df7958a9e965752f62712400000000000000000000046f;35e78b3982e87ecfd5b3f3265b601c046cdbe232a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48f506984c16737b1a9577cadeda02a49fd612aff80002000000000000000002a9;6c0aeceedc55c9d55d8b99216a670d85330941c3c02aaa39b223fe8d0a0e5c4f27ead9083c756cc21846c6cbe0d433e152fa358e5ff27968e18bce7c;44108f0223a3c3028f5fe7aec7f9bb2e66bef82f7f39c581f595b53c5cb19bd0b3f8da6c935e2ca036be1e97ea98ab43b4debf92742517266f5731a3000200000000000000000466;c0c17dd08263c16f6b64e772fb9b723bf1344ddfe108fbc04852b5df72f9e44d7c29f47e7a993adde00e947decfe01692070e113002705bdf77ddbd3;a3931d71877c0e7a3148cb7eb4463524fec27fbdf3b5b661b92b75c71fa5aba8fd95d7514a9cd605642bb6860b4776cc10b26b8f361fd139e7f0db04;97ccc1c046d067ab945d3cf3cc6920d3b1e54c88d4fa2d31b7968e448877f69a96de69f5de8cd23e114907c2a07978c38ebb9f9f6a5261a846b79521'
 _BAL_MAP = {}
@@ -61,14 +61,14 @@ def _dl_bal_quote(url, tin, tout, amt, pid):
     """Exact out via Vault.queryBatchSwap (GIVEN_IN). Returns int (0 on failure).
     Deltas come back as int256[]: [+amountIn, -amountOut] -> out = -deltas[1]."""
 
-    def _dz67(amt, pid, tin, tout, url):
+    def _dz46(amt, pid, tin, tout, url):
         sig = 'queryBatchSwap(uint8,(bytes32,uint256,uint256,uint256,bytes)[],address[],(address,bool,address,bool))'
         z = '0x0000000000000000000000000000000000000000'
         data = _dl_sel(sig) + encode(['uint8', '(bytes32,uint256,uint256,uint256,bytes)[]', 'address[]', '(address,bool,address,bool)'], [0, [(bytes.fromhex(pid[2:]), 0, 1, int(amt), b'')], [tin, tout], (z, False, z, False)]).hex()
         r = _dl_ethcall(url, _BAL_VAULT, data)
         return (data, r, sig, z)
     from eth_abi import encode
-    data, r, sig, z = _dz67(amt, pid, tin, tout, url)
+    data, r, sig, z = _dz46(amt, pid, tin, tout, url)
     if not r or len(r) < 258:
         return 0
     d = int(r[194:258], 16)
@@ -79,7 +79,7 @@ def _dl_bal_quote(url, tin, tout, amt, pid):
 def _dl_bal_ix(tin, tout, amt, recipient, pid):
     """approve + Vault.swap interactions for a single-pool Balancer swap."""
 
-    def _dz66():
+    def _dz45():
         sig = 'swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)'
         swap = _dl_sel(sig) + encode(['(bytes32,uint8,address,address,uint256,bytes)', '(address,bool,address,bool)', 'uint256', 'uint256'], [(bytes.fromhex(pid[2:]), 0, tin, tout, amt, b''), (recipient, False, recipient, False), 1, 9999999999]).hex()
         return ([(tin, approve), (_BAL_VAULT, swap)],)
@@ -87,22 +87,22 @@ def _dl_bal_ix(tin, tout, amt, recipient, pid):
     from eth_abi import encode
     amt = int(amt)
     approve = '0x095ea7b3' + _BAL_VAULT[2:].rjust(64, '0').lower() + amt.to_bytes(32, 'big').hex()
-    _r_dz66 = _dz66()
-    if _r_dz66 is not _DR_UNSET:
-        return _r_dz66[0]
+    _r_dz45 = _dz45()
+    if _r_dz45 is not _DR_UNSET:
+        return _r_dz45[0]
 
 def _dl_best_route(url, tin, tout, amt):
 
-    def _dz65():
+    def _dz44():
         nonlocal best, o
         best = (0, None)
         for f in (500, 3000, 10000):
             o = _dl_qsingle(url, tin, tout, amt, f)
             if o > best[0]:
                 best = (o, ('single', f))
-        _dz64()
+        _dz43()
 
-    def _dz64():
+    def _dz43():
         nonlocal best, o
         tl, ol = (tin.lower(), tout.lower())
         for m in (_ETH_WETH, _ETH_USDC, '0xdAC17F958D2ee523a2206206994597C13D831ec7'):
@@ -111,7 +111,7 @@ def _dl_best_route(url, tin, tout, amt):
             o = _dl_qpath(url, [tin, m, tout], [3000, 3000], amt)
             if o > best[0]:
                 best = (o, ('path', [tin, m, tout], [3000, 3000]))
-    _dz65()
+    _dz44()
     pid = _dl_bal_pool(tin, tout)
     if pid:
         o = _dl_bal_quote(url, tin, tout, amt, pid)
@@ -121,28 +121,28 @@ def _dl_best_route(url, tin, tout, amt):
 
 def _dl_eth_ix(tin, tout, amt, recipient, route):
 
-    def _dz63():
+    def _dz42():
         if kind == 'bal':
             return (_dl_bal_ix(tin, tout, amt, recipient, route[1][1]),)
         return _DR_UNSET
 
-    def _dz62(route):
+    def _dz41(route):
         tokens, fees = (route[1][1], route[1][2])
-        _dz59()
+        _dz38()
         return (fees, tokens)
 
-    def _dz61(amt, recipient, route, tin, tout):
+    def _dz40(amt, recipient, route, tin, tout):
         fee = route[1][1]
         swap = _dl_sel('exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))') + encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(tin, tout, int(fee), recipient, 9999999999, amt, 1, 0)]).hex()
         return (fee, swap)
 
-    def _dz60(amt, route):
+    def _dz39(amt, route):
         amt = int(amt)
         approve = '0x095ea7b3' + _ETH_ROUTER[2:].rjust(64, '0').lower() + amt.to_bytes(32, 'big').hex()
         kind = route[1][0]
         return (amt, approve, kind)
 
-    def _dz59():
+    def _dz38():
         nonlocal swap
         b = b''
         for i, t in enumerate(tokens):
@@ -151,20 +151,20 @@ def _dl_eth_ix(tin, tout, amt, recipient, route):
                 b += int(fees[i]).to_bytes(3, 'big')
         swap = _dl_sel('exactInput((bytes,address,uint256,uint256,uint256))') + encode(['(bytes,address,uint256,uint256,uint256)'], [(b, recipient, 9999999999, amt, 1)]).hex()
     from eth_abi import encode
-    amt, approve, kind = _dz60(amt, route)
-    _r_dz63 = _dz63()
-    if _r_dz63 is not _DR_UNSET:
-        return _r_dz63[0]
+    amt, approve, kind = _dz39(amt, route)
+    _r_dz42 = _dz42()
+    if _r_dz42 is not _DR_UNSET:
+        return _r_dz42[0]
     if kind == 'single':
-        fee, swap = _dz61(amt, recipient, route, tin, tout)
+        fee, swap = _dz40(amt, recipient, route, tin, tout)
     else:
-        fees, tokens = _dz62(route)
+        fees, tokens = _dz41(route)
     return [(tin, approve), (_ETH_ROUTER, swap)]
 
 def _dl_flatten(ix):
     """Interaction calldatas, unwrapping one level of multicall(bytes[])."""
 
-    def _dz58():
+    def _dz37():
         if cd[:8] in _SEL_MC:
             try:
                 payload = bytes.fromhex(cd[8:])
@@ -187,19 +187,19 @@ def _dl_flatten(ix):
             datas.append(cd)
     flat = []
     for cd in datas:
-        _dz58()
+        _dz37()
     return flat
 
 def _dl_decode_path(body, sel, url):
     """Re-quote a decoded exactInput (path) champion swap."""
 
-    def _dz57(body, sel):
+    def _dz36(body, sel):
         path, _rec, amt, _mo = decode(['(bytes,address,uint256,uint256)'], body)[0] if sel == _SEL_EI_02 else decode(['(bytes,address,uint256,uint256,uint256)'], body)[0][:4]
         toks, fees = ([], [])
         p = path if isinstance(path, (bytes, bytearray)) else bytes.fromhex(str(path))
         return (_mo, _rec, amt, fees, p, path, toks)
 
-    def _dz56():
+    def _dz35():
         o = 0
         while o + 20 <= len(p):
             toks.append('0x' + p[o:o + 20].hex())
@@ -210,37 +210,37 @@ def _dl_decode_path(body, sel, url):
         return (_dl_qpath(url, toks, fees, amt),)
         return _DR_UNSET
     from eth_abi import decode
-    _mo, _rec, amt, fees, p, path, toks = _dz57(body, sel)
-    _r_dz56 = _dz56()
-    if _r_dz56 is not _DR_UNSET:
-        return _r_dz56[0]
+    _mo, _rec, amt, fees, p, path, toks = _dz36(body, sel)
+    _r_dz35 = _dz35()
+    if _r_dz35 is not _DR_UNSET:
+        return _r_dz35[0]
 
 def _dl_decode_one(cd, url):
     """Decode+re-quote one calldata. Returns ('ANSWER', q_or_None) if it's a UniV3
     swap (q>0 -> its output; else None so caller DEFERS, never treats as blind),
     ('SWAP', None) if a swap is present but undecodable, or ('SKIP', None)."""
 
-    def _dz55(cd):
+    def _dz34(cd):
         sel = cd[:8]
         body = bytes.fromhex(cd[8:]) if len(cd) > 8 else b''
         return (body, sel)
 
-    def _dz54(body, url):
+    def _dz33(body, url):
         tin, tout, fee, _r, amt, _m, _s = decode(['(address,address,uint24,address,uint256,uint256,uint160)'], body)[0]
         q = _dl_qsingle(url, tin, tout, amt, fee)
         return (_m, _r, _s, amt, fee, q, tin, tout)
 
-    def _dz53():
+    def _dz32():
         nonlocal q
-        _r_dz52 = _dz52()
-        if _r_dz52 is not _DR_UNSET:
-            return (_r_dz52[0],)
+        _r_dz31 = _dz31()
+        if _r_dz31 is not _DR_UNSET:
+            return (_r_dz31[0],)
         if sel in (_SEL_EI_02, _SEL_EI):
             q = _dl_decode_path(body, sel, url)
             return (('ANSWER', q if q > 0 else None),)
         return _DR_UNSET
 
-    def _dz52():
+    def _dz31():
         nonlocal _m, _r, _s, amt, fee, q, tin, tout
         if sel == _SEL_EIS:
             tin, tout, fee, _r, _d, amt, _m, _s = decode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], body)[0]
@@ -248,14 +248,14 @@ def _dl_decode_one(cd, url):
             return (('ANSWER', q if q > 0 else None),)
         return _DR_UNSET
     from eth_abi import decode
-    body, sel = _dz55(cd)
+    body, sel = _dz34(cd)
     try:
         if sel == _SEL_EIS_02:
-            _m, _r, _s, amt, fee, q, tin, tout = _dz54(body, url)
+            _m, _r, _s, amt, fee, q, tin, tout = _dz33(body, url)
             return ('ANSWER', q if q > 0 else None)
-        _r_dz53 = _dz53()
-        if _r_dz53 is not _DR_UNSET:
-            return _r_dz53[0]
+        _r_dz32 = _dz32()
+        if _r_dz32 is not _DR_UNSET:
+            return _r_dz32[0]
     except Exception:
         return ('SWAP', None)
     return ('SKIP', None)
@@ -280,7 +280,7 @@ def _dl_override(intent, state, rp, url, tin, tout, amt, co):
     and have a valid recipient. Returns a _DLPlan or None (None -> caller defers to
     champion). Split out of _dl_route1 so each region stays small (un-factorable)."""
 
-    def _dz51():
+    def _dz30():
         if recip.startswith('0x') and len(recip) == 42:
             pairs = _dl_eth_ix(tin, tout, amt, recip, (out, route))
             ix = [_DLIx(target=t, value='0', call_data=cd, chain_id=1) for t, cd in pairs]
@@ -289,7 +289,7 @@ def _dl_override(intent, state, rp, url, tin, tout, amt, co):
     out, route = _dl_best_route(url, tin, tout, amt)
     if out > 0 and route and (out * 10000 > co * (10000 + 30)):
         recip = str(getattr(state, 'contract_address', '') or rp.get('receiver', '') or '').lower()
-        _r_dz51 = _dz51()
-        if _r_dz51 is not _DR_UNSET:
-            return _r_dz51[0]
+        _r_dz30 = _dz30()
+        if _r_dz30 is not _DR_UNSET:
+            return _r_dz30[0]
     return None
