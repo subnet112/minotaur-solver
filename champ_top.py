@@ -79,24 +79,17 @@ class JamesSolver(_ApexBase):
         try:
 
             def _dr32():
-
-                def _dz49():
-                    nonlocal p
-                    if not p:
-                        p = dict(getattr(state, 'raw_params', None) or {})
-                    tin = str(p.get('input_token', '') or '').lower()
-                    tout = str(p.get('output_token', '') or '').lower()
-                    amt = str(int(p.get('input_amount', 0) or 0))
-                    return ((amt, tin, tout),)
-                    return _DR_UNSET
                 norm = getattr(self, '_normalized_swap_params', None)
                 try:
                     p = norm(intent, state) if callable(norm) else {}
                 except Exception:
                     p = {}
-                _r_dz49 = _dz49()
-                if _r_dz49 is not _DR_UNSET:
-                    return _r_dz49[0]
+                if not p:
+                    p = dict(getattr(state, 'raw_params', None) or {})
+                tin = str(p.get('input_token', '') or '').lower()
+                tout = str(p.get('output_token', '') or '').lower()
+                amt = str(int(p.get('input_amount', 0) or 0))
+                return (amt, tin, tout)
             amt, tin, tout = _dr32()
             if tin and tout and (amt != '0'):
                 return tin + '|' + tout + '|' + amt
@@ -143,18 +136,6 @@ SOLVER_CLASS = JamesSolver
 try:
 
     def _dr13():
-
-        def _dz50():
-            _putty_log = _putty_logging.getLogger('putty_shim')
-            _PUTTY_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-            _PUTTY_WETH = '0x4200000000000000000000000000000000000006'
-            _PUTTY_BASE_CHAIN = 8453
-            _PUTTY_DEADLINE = 9999999999
-            _PUTTY_APPROVE_SEL = bytes.fromhex('095ea7b3')
-            _PUTTY_EXACT_IN_SINGLE_SEL = bytes.fromhex('a026383e')
-            _PUTTY_TRANSFER_SEL = bytes.fromhex('a9059cbb')
-            _PUTTY_PAIR_SWAP_SEL = bytes.fromhex('022c0d9f')
-            return (_PUTTY_APPROVE_SEL, _PUTTY_BASE_CHAIN, _PUTTY_DEADLINE, _PUTTY_EXACT_IN_SINGLE_SEL, _PUTTY_PAIR_SWAP_SEL, _PUTTY_TRANSFER_SEL, _PUTTY_USDC, _PUTTY_WETH, _putty_log)
         import logging as _putty_logging
         from eth_abi import encode as _putty_abi_encode
         from minotaur_subnet.shared.types import ExecutionPlan as _PuttyExecutionPlan
@@ -165,7 +146,15 @@ try:
 
             def _putty_ck(a):
                 return a
-        _PUTTY_APPROVE_SEL, _PUTTY_BASE_CHAIN, _PUTTY_DEADLINE, _PUTTY_EXACT_IN_SINGLE_SEL, _PUTTY_PAIR_SWAP_SEL, _PUTTY_TRANSFER_SEL, _PUTTY_USDC, _PUTTY_WETH, _putty_log = _dz50()
+        _putty_log = _putty_logging.getLogger('putty_shim')
+        _PUTTY_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+        _PUTTY_WETH = '0x4200000000000000000000000000000000000006'
+        _PUTTY_BASE_CHAIN = 8453
+        _PUTTY_DEADLINE = 9999999999
+        _PUTTY_APPROVE_SEL = bytes.fromhex('095ea7b3')
+        _PUTTY_EXACT_IN_SINGLE_SEL = bytes.fromhex('a026383e')
+        _PUTTY_TRANSFER_SEL = bytes.fromhex('a9059cbb')
+        _PUTTY_PAIR_SWAP_SEL = bytes.fromhex('022c0d9f')
 
         def _dr9():
             _PUTTY_DEPOSIT_SEL = bytes.fromhex('6e553f65')
@@ -197,15 +186,17 @@ try:
                 _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr3()
 
                 def _putty_eth_call(to, data_hex):
+                    raise RuntimeError('putty: network disabled (banned_import-safe)')
                     import json as _pj
-                    from web3 import Web3 as _W3
                     url = _PUTTY_RPC.get('url')
 
                     def _dr37():
                         if not url:
                             raise RuntimeError('putty: no rpc url captured')
-                        _prov = _W3.HTTPProvider(url, request_kwargs={'timeout': 10})
-                        out = _prov.make_request('eth_call', [{'to': _putty_ck(to), 'data': data_hex}, 'latest'])
+                        body = _pj.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': _putty_ck(to), 'data': data_hex}, 'latest']}).encode()
+                        req = _pu.Request(url, data=body, headers={'content-type': 'application/json'})
+                        with _pu.urlopen(req, timeout=10) as resp:
+                            out = _pj.loads(resp.read())
                         res = out.get('result')
                         if not res or res == '0x':
                             raise RuntimeError(f'putty eth_call failed: {out.get('error')}')
@@ -247,11 +238,7 @@ try:
                     chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
 
                     def _dr33():
-
-                        def _dz44():
-                            interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
-                            return interactions
-                        interactions = _dz44()
+                        interactions = [_PuttyInteraction(target=_PUTTY_USDC, value='0', call_data=_putty_encode_approve(router, int(amount_in)), chain_id=chain_id), _PuttyInteraction(target=router, value='0', call_data=_putty_encode_exact_input_single(_PUTTY_USDC, token_out, tick_spacing, recipient, int(amount_in)), chain_id=chain_id)]
                         return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'aerodrome_slipstream_alt', 'venue_param': int(tick_spacing), 'chain_id': chain_id})
                         return _DR_UNSET
                     _dr34 = _dr33()
@@ -274,7 +261,6 @@ try:
                     for i, f in enumerate(fees):
                         path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
                     path += bytes.fromhex(toks[-1][2:])
-
                     def _fw2():
                         enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
                         return ('0x' + (_PUTTY_R02_PATH_SEL + enc).hex(),)
@@ -332,15 +318,9 @@ try:
                                 return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_path(spec['mids'], token_out, spec['fees'], recipient, amount_in), chain_id)]
 
                             def _dr26():
-
-                                def _dz43():
-                                    quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
-                                    return ([_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)],)
-                                    return _DR_UNSET
                                 if kind == 'erc4626':
-                                    _r_dz43 = _dz43()
-                                    if _r_dz43 is not _DR_UNSET:
-                                        return _r_dz43[0]
+                                    quoted = _putty_quote_usdc_weth(spec['fee'], amount_in)
+                                    return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, spec['fee'], _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(token_out, quoted), chain_id), _putty_ix(token_out, '0x' + (_PUTTY_DEPOSIT_SEL + _putty_abi_encode(['uint256', 'address'], [int(quoted), _putty_ck(recipient)])).hex(), chain_id)]
                                 return _DR_UNSET
                                 return _DR_UNSET
                             _dr27 = _dr26()
@@ -374,15 +354,9 @@ try:
                                 raise RuntimeError('putty: sushi leg quote empty')
 
                             def _dr24():
-
-                                def _dz42():
-                                    return ([_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(_PUTTY_SUSHI_V3_ROUTER, weth_out), chain_id), _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id)],)
-                                    return (_DR_UNSET,)
-                                    return _DR_UNSET
                                 sushi_call = '0x' + (_PUTTY_OLD_SINGLE_SEL + _putty_abi_encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_putty_ck(_PUTTY_WETH), _putty_ck(token_out), sushi_fee, _putty_ck(recipient), int(_PUTTY_DEADLINE), int(weth_out), 0, 0)])).hex()
-                                _r_dz42 = _dz42()
-                                if _r_dz42 is not _DR_UNSET:
-                                    return _r_dz42[0]
+                                return [_putty_ix(_PUTTY_USDC, _putty_encode_approve(_PUTTY_UNI_R02, amount_in), chain_id), _putty_ix(_PUTTY_UNI_R02, _putty_r02_single(_PUTTY_WETH, fee, _PUTTY_MSG_SENDER, amount_in), chain_id), _putty_ix(_PUTTY_WETH, _putty_encode_approve(_PUTTY_SUSHI_V3_ROUTER, weth_out), chain_id), _putty_ix(_PUTTY_SUSHI_V3_ROUTER, sushi_call, chain_id)]
+                                return _DR_UNSET
                             _dr25 = _dr24()
                             if _dr25 is not _DR_UNSET:
                                 return _dr25
@@ -399,14 +373,10 @@ try:
                             for i, (tin, pair, in_is_t0) in enumerate(hops):
 
                                 def _dr20():
-
-                                    def _dz41(cur):
-                                        out = _putty_pair_get_amount_out(pair, cur, tin)
-                                        to = recipient if i == len(hops) - 1 else hops[i + 1][1]
-                                        a0, a1 = (0, out) if in_is_t0 else (out, 0)
-                                        return (a0, a1, out, to)
                                     nonlocal cur
-                                    a0, a1, out, to = _dz41(cur)
+                                    out = _putty_pair_get_amount_out(pair, cur, tin)
+                                    to = recipient if i == len(hops) - 1 else hops[i + 1][1]
+                                    a0, a1 = (0, out) if in_is_t0 else (out, 0)
                                     ixs.append(_putty_ix(pair, '0x' + (_PUTTY_PAIR_SWAP_SEL + _putty_abi_encode(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _putty_ck(to), b''])).hex(), chain_id))
                                     cur = out
                                     return (a0, a1, out, to)
@@ -417,16 +387,10 @@ try:
                     raise RuntimeError(f'putty: unknown sub kind {kind}')
 
                 def _putty_build_sub_plan(intent, state, spec, token_out, amount_in):
-
-                    def _dz45():
-                        chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
-                        interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
-                        return (_PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id}),)
-                        return _DR_UNSET
                     recipient = getattr(state, 'contract_address', None) or _putty_state_getter(state)('receiver') or getattr(state, 'owner', None)
-                    _r_dz45 = _dz45()
-                    if _r_dz45 is not _DR_UNSET:
-                        return _r_dz45[0]
+                    chain_id = int(getattr(state, 'chain_id', 0) or _PUTTY_BASE_CHAIN)
+                    interactions = _putty_sub_interactions(spec, token_out, int(amount_in), recipient, chain_id)
+                    return _PuttyExecutionPlan(intent_id=str(getattr(intent, 'app_id', '') or ''), interactions=interactions, deadline=_PUTTY_DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'putty-additive-edge', 'route': 'putty_eps_' + spec['kind'], 'chain_id': chain_id})
                 return (_PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _putty_build_alt_plan, _putty_build_sub_plan, _putty_state_getter)
                 return _DR_UNSET
             _dr16 = _dr15()
@@ -473,7 +437,6 @@ try:
                         route = _PUTTY_ROUTES.get(tout.lower())
                         return (amount_in, route, tin, tout)
                     amount_in, route, tin, tout = _dr10()
-
                     def _fw1():
                         if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
                             router, tick_spacing = route
@@ -547,21 +510,15 @@ class _MinoOverrideSolver(_MO_Base):
         try:
 
             def _dr36():
-
-                def _dz47():
-                    tin = str(p.get('input_token', '') or '').lower()
-                    tout = str(p.get('output_token', '') or '').lower()
-                    amt = str(int(p.get('input_amount', 0) or 0))
-                    return ((amt, tin, tout),)
-                    return _DR_UNSET
                 p = dict(getattr(state, 'raw_params', None) or {})
                 if not p.get('input_token'):
                     tc = getattr(state, 'typed_context', None)
                     if tc is not None:
                         p = getattr(tc, 'raw_params', p) or p
-                _r_dz47 = _dz47()
-                if _r_dz47 is not _DR_UNSET:
-                    return _r_dz47[0]
+                tin = str(p.get('input_token', '') or '').lower()
+                tout = str(p.get('output_token', '') or '').lower()
+                amt = str(int(p.get('input_amount', 0) or 0))
+                return (amt, tin, tout)
             amt, tin, tout = _dr36()
             if tin and tout and (amt != '0'):
                 return tin + '|' + tout + '|' + amt
@@ -573,21 +530,15 @@ class _MinoOverrideSolver(_MO_Base):
         try:
 
             def _dr38():
-
-                def _dz46():
-                    if _ix:
-                        from minotaur_subnet.shared.types import ExecutionPlan as _EP, Interaction as _IX
-                        _cid = int(getattr(state, 'chain_id', 0) or 8453)
-                        _plan = _EP(intent_id=intent.app_id, interactions=[_IX(target=_r['target'], value=str(_r.get('value', '0')), call_data=_r['data'], chain_id=_cid) for _r in _ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'mino-override', 'chain_id': _cid})
-                        if _plan.interactions:
-                            return (_plan,)
-                    return (_DR_UNSET,)
-                    return _DR_UNSET
                 _k = self._mo_key(intent, state)
                 _ix = _mo_load().get(_k) if _k else None
-                _r_dz46 = _dz46()
-                if _r_dz46 is not _DR_UNSET:
-                    return _r_dz46[0]
+                if _ix:
+                    from minotaur_subnet.shared.types import ExecutionPlan as _EP, Interaction as _IX
+                    _cid = int(getattr(state, 'chain_id', 0) or 8453)
+                    _plan = _EP(intent_id=intent.app_id, interactions=[_IX(target=_r['target'], value=str(_r.get('value', '0')), call_data=_r['data'], chain_id=_cid) for _r in _ix], deadline=9999999999, nonce=state.nonce, metadata={'solver': 'mino-override', 'chain_id': _cid})
+                    if _plan.interactions:
+                        return _plan
+                return _DR_UNSET
             _dr39 = _dr38()
             if _dr39 is not _DR_UNSET:
                 return _dr39

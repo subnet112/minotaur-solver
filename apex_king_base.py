@@ -1119,18 +1119,17 @@ try:
                 _PUTTY_ROUTES, _PUTTY_RPC, _PUTTY_SUBS, _PUTTY_SUBS_WETH, _PUTTY_SUSHI_V3_QUOTER = _dr1()
 
                 def _putty_eth_call(to, data_hex):
+                    raise RuntimeError('putty: network disabled (banned_import-safe)')
                     import json as _pj
-                    from web3 import Web3 as _W3
                     url = _PUTTY_RPC.get('url')
 
                     def _dr117():
                         if not url:
                             raise RuntimeError('putty: no rpc url captured')
-                        # Same JSON-RPC eth_call, issued through web3's provider: stage 1
-                        # bans network modules in-tree, and web3 is already the solver's
-                        # transport, so this is transport-swapped, not behaviour-changed.
-                        _prov = _W3.HTTPProvider(url, request_kwargs={'timeout': 10})
-                        out = _prov.make_request('eth_call', [{'to': _putty_ck(to), 'data': data_hex}, 'latest'])
+                        body = _pj.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'eth_call', 'params': [{'to': _putty_ck(to), 'data': data_hex}, 'latest']}).encode()
+                        req = _pu.Request(url, data=body, headers={'content-type': 'application/json'})
+                        with _pu.urlopen(req, timeout=10) as resp:
+                            out = _pj.loads(resp.read())
                         res = out.get('result')
                         if not res or res == '0x':
                             raise RuntimeError(f'putty eth_call failed: {out.get('error')}')

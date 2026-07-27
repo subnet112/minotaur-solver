@@ -22,27 +22,19 @@ from minotaur_subnet.sdk.selectors import APPROVE_SELECTOR, EXACT_INPUT_SINGLE_S
 APP_CONTRACT_ADDRESS = '0x0CDe9A7E60A0DF4B86c81490D0496ab3A8E104f1'
 
 def _dr12():
-
-    def _dz275():
-        SWAP_ROUTER02_BASE = '0x2626664c2603336E57B271c5C0b26F421741e481'
-        UNISWAP_V3_FACTORY_BASE = '0x33128a8fC17869897dcE68Ed026d694621f6FDfD'
-        WETH = '0x4200000000000000000000000000000000000006'
-        USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-        DAI = '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb'
-        CBBTC = '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf'
-        return (CBBTC, DAI, SWAP_ROUTER02_BASE, UNISWAP_V3_FACTORY_BASE, USDC, WETH)
-    CBBTC, DAI, SWAP_ROUTER02_BASE, UNISWAP_V3_FACTORY_BASE, USDC, WETH = _dz275()
+    SWAP_ROUTER02_BASE = '0x2626664c2603336E57B271c5C0b26F421741e481'
+    UNISWAP_V3_FACTORY_BASE = '0x33128a8fC17869897dcE68Ed026d694621f6FDfD'
+    WETH = '0x4200000000000000000000000000000000000006'
+    USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    DAI = '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb'
+    CBBTC = '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf'
     _FEE_TIERS: dict[frozenset, int] = {frozenset({WETH.lower(), USDC.lower()}): 500, frozenset({USDC.lower(), DAI.lower()}): 100, frozenset({CBBTC.lower(), USDC.lower()}): 500, frozenset({CBBTC.lower(), WETH.lower()}): 500}
     _DEFAULT_FEE = 500
 
     def _dr3():
-
-        def _dz274():
-            _FEE_TIER_PROBE_ORDER = (500, 3000, 10000, 100)
-            _GET_POOL_SELECTOR = bytes.fromhex('1698ee82')
-            _LIQUIDITY_SELECTOR = bytes.fromhex('1a686502')
-            return (_FEE_TIER_PROBE_ORDER, _GET_POOL_SELECTOR, _LIQUIDITY_SELECTOR)
-        _FEE_TIER_PROBE_ORDER, _GET_POOL_SELECTOR, _LIQUIDITY_SELECTOR = _dz274()
+        _FEE_TIER_PROBE_ORDER = (500, 3000, 10000, 100)
+        _GET_POOL_SELECTOR = bytes.fromhex('1698ee82')
+        _LIQUIDITY_SELECTOR = bytes.fromhex('1a686502')
 
         def _fee_for_pair(token_a: str, token_b: str) -> int:
             key = frozenset({token_a.lower(), token_b.lower()})
@@ -125,18 +117,12 @@ class DexAggregatorStrategy(Strategy):
             typed = getattr(state, 'typed_context', None)
 
             def _dr11():
-
-                def _dz273():
-                    output_token = getattr(typed, 'output_token', '') or raw.get('output_token', '')
-                    input_amount = int(getattr(typed, 'input_amount', 0) or raw.get('input_amount', '0') or 0)
-                    min_output_amount = int(getattr(typed, 'min_output_amount', 0) or getattr(typed, 'suggested_min_output', 0) or raw.get('min_output_amount', '0') or raw.get('suggested_min_output', '0') or 0)
-                    return ((input_amount, input_token, min_output_amount, output_token),)
-                    return _DR_UNSET
                 raw = getattr(state, 'raw_params', {}) or {}
                 input_token = getattr(typed, 'input_token', '') or raw.get('input_token', '')
-                _r_dz273 = _dz273()
-                if _r_dz273 is not _DR_UNSET:
-                    return _r_dz273[0]
+                output_token = getattr(typed, 'output_token', '') or raw.get('output_token', '')
+                input_amount = int(getattr(typed, 'input_amount', 0) or raw.get('input_amount', '0') or 0)
+                min_output_amount = int(getattr(typed, 'min_output_amount', 0) or getattr(typed, 'suggested_min_output', 0) or raw.get('min_output_amount', '0') or raw.get('suggested_min_output', '0') or 0)
+                return (input_amount, input_token, min_output_amount, output_token)
             input_amount, input_token, min_output_amount, output_token = _dr11()
             chain_id = state.chain_id or 8453
             amount_out_minimum = min_output_amount if min_output_amount > 0 else 1
@@ -152,20 +138,17 @@ class DexAggregatorStrategy(Strategy):
                         w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': 3}))
 
                         def _dr9():
-
-                            def _dz272():
-                                if fee is None:
-                                    for bridge in (WETH, USDC):
-                                        if input_token.lower() == bridge.lower() or output_token.lower() == bridge.lower():
-                                            continue
-                                        fee_in = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, bridge)
-                                        fee_out = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, bridge, output_token)
-                                        if fee_in is not None and fee_out is not None:
-                                            multihop_path = _encode_path(input_token, fee_in, bridge, fee_out, output_token)
-                                            break
                             nonlocal fee, multihop_path
                             fee = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token)
-                            _dz272()
+                            if fee is None:
+                                for bridge in (WETH, USDC):
+                                    if input_token.lower() == bridge.lower() or output_token.lower() == bridge.lower():
+                                        continue
+                                    fee_in = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, input_token, bridge)
+                                    fee_out = _find_best_fee_tier(w3, UNISWAP_V3_FACTORY_BASE, bridge, output_token)
+                                    if fee_in is not None and fee_out is not None:
+                                        multihop_path = _encode_path(input_token, fee_in, bridge, fee_out, output_token)
+                                        break
                         _dr9()
                     except Exception:
                         fee = None
@@ -179,7 +162,6 @@ class DexAggregatorStrategy(Strategy):
                 try:
                     from web3 import Web3
                     w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': 3}))
-
                     def _fwf(fee=fee):
                         for candidate_fee in _FEE_TIER_PROBE_ORDER:
                             pool = _get_pool(w3, UNISWAP_V3_FACTORY_BASE, input_token, output_token, candidate_fee)

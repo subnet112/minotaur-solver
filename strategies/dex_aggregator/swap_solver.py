@@ -111,7 +111,6 @@ class SwapIntentProcessor(IntentProcessor):
             ValueError: If required metadata is missing or chain unsupported.
         """
         params = self._extract_swap_params(intent, state)
-
         def _fw1():
             input_token: str = params['input_token']
             output_token: str = params['output_token']
@@ -123,12 +122,8 @@ class SwapIntentProcessor(IntentProcessor):
             router_address = self._get_router(chain_id)
 
             def _dr1():
-
-                def _dz310():
-                    deadline = context.timestamp + self.deadline_offset
-                    interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router_address, input_amount), chain_id=chain_id), Interaction(target=router_address, value='0', call_data=encode_exact_input_single(token_in=input_token, token_out=output_token, fee=fee_tier, recipient=recipient, deadline=deadline, amount_in=input_amount, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
-                    return (deadline, interactions)
-                deadline, interactions = _dz310()
+                deadline = context.timestamp + self.deadline_offset
+                interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router_address, input_amount), chain_id=chain_id), Interaction(target=router_address, value='0', call_data=encode_exact_input_single(token_in=input_token, token_out=output_token, fee=fee_tier, recipient=recipient, deadline=deadline, amount_in=input_amount, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
                 return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3', 'fee_tier': fee_tier, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'min_output_amount': str(min_output_amount)})
                 return _DR_UNSET
             return (_dr1,)
@@ -146,9 +141,7 @@ class SwapIntentProcessor(IntentProcessor):
         logger.info('SwapIntentProcessor score received: %.3f (valid=%s) for intent %s', score.score, score.valid, intent.app_id)
 
     def _extract_swap_params(self, intent: AppIntentDefinition, state: IntentState) -> dict[str, Any]:
-
-        def _dz311():
-            """Extract and validate swap parameters from intent + state.
+        """Extract and validate swap parameters from intent + state.
 
         Swap parameters can come from two places:
         1. state.raw_params -- runtime parameters set when the intent is triggered
@@ -164,12 +157,8 @@ class SwapIntentProcessor(IntentProcessor):
         Raises:
             ValueError: If required parameters are missing.
         """
-            if isinstance(state.typed_context, SwapIntentContext):
-                return ({'input_token': state.typed_context.input_token, 'output_token': state.typed_context.output_token, 'input_amount': state.typed_context.input_amount, 'min_output_amount': state.typed_context.min_output_amount, 'receiver': state.typed_context.receiver, 'fee_tier': state.typed_context.fee_tier},)
-            return _DR_UNSET
-        _r_dz311 = _dz311()
-        if _r_dz311 is not _DR_UNSET:
-            return _r_dz311[0]
+        if isinstance(state.typed_context, SwapIntentContext):
+            return {'input_token': state.typed_context.input_token, 'output_token': state.typed_context.output_token, 'input_amount': state.typed_context.input_amount, 'min_output_amount': state.typed_context.min_output_amount, 'receiver': state.typed_context.receiver, 'fee_tier': state.typed_context.fee_tier}
         params = _state_params(state)
         normalized = normalize_swap_intent_params(params, manifest=manifest_from_definition(intent), intent_name=_intent_function_from_state(state, 'swap'), receiver_default=state.contract_address or state.owner, slippage_bps=self.slippage_bps)
 
