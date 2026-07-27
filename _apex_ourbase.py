@@ -34,6 +34,7 @@ _PUTTY_FINAL_BRAND = 'hydra-pathfinder-router'
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.99.1b')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
+
 import shape_lib as _sl
 import shape_est2 as _se
 import shape_build as _sb
@@ -68,25 +69,18 @@ class VikingSolver(_HydraBase):
         try:
 
             def _dr14():
-
-                def _dz5():
-                    nonlocal p
-                    if not p:
-                        p = dict(getattr(state, 'raw_params', None) or {})
-                    if not p and isinstance(state, dict):
-                        p = state
-                    tin = str(p.get('input_token', '') or '').lower()
-                    tout = str(p.get('output_token', '') or '').lower()
-                    return ((p, tin, tout),)
-                    return _DR_UNSET
                 norm = getattr(self, '_normalized_swap_params', None)
                 try:
                     p = norm(intent, state) if callable(norm) else {}
                 except Exception:
                     p = {}
-                _r_dz5 = _dz5()
-                if _r_dz5 is not _DR_UNSET:
-                    return _r_dz5[0]
+                if not p:
+                    p = dict(getattr(state, 'raw_params', None) or {})
+                if not p and isinstance(state, dict):
+                    p = state
+                tin = str(p.get('input_token', '') or '').lower()
+                tout = str(p.get('output_token', '') or '').lower()
+                return (p, tin, tout)
             p, tin, tout = _dr14()
             amt = str(int(p.get('input_amount', 0) or 0))
             if tin and tout and (amt != '0'):
@@ -128,19 +122,13 @@ class VikingSolver(_HydraBase):
             rows = (row or {}).get('ix')
 
             def _dr20():
-
-                def _dz4():
-                    ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
-                    rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
-                    return (None if self._v_is_empty(rp) else rp,)
-                    return (_DR_UNSET,)
-                    return _DR_UNSET
                 if not rows:
                     return None
                 chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
-                _r_dz4 = _dz4()
-                if _r_dz4 is not _DR_UNSET:
-                    return _r_dz4[0]
+                ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
+                rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
+                return None if self._v_is_empty(rp) else rp
+                return _DR_UNSET
             _dr21 = _dr20()
             if _dr21 is not _DR_UNSET:
                 return _dr21
@@ -148,17 +136,10 @@ class VikingSolver(_HydraBase):
             logger.exception('[viking] replay build failed')
             return None
     _VIKING_DYN_FALLBACKS = _vd.DYN_FALLBACKS
-
     def _v_dynamic_fallback(self, intent, state, snapshot):
         try:
 
             def _dr23():
-
-                def _dz3(p):
-                    tin = str(p.get('input_token', '') or '').lower()
-                    tout = str(p.get('output_token', '') or '').lower()
-                    spec = self._VIKING_DYN_FALLBACKS.get((tin, tout))
-                    return (spec, tin, tout)
                 norm = getattr(self, '_normalized_swap_params', None)
                 try:
                     p = norm(intent, state) if callable(norm) else {}
@@ -166,7 +147,9 @@ class VikingSolver(_HydraBase):
                     p = {}
                 if not p:
                     p = dict(getattr(state, 'raw_params', None) or {})
-                spec, tin, tout = _dz3(p)
+                tin = str(p.get('input_token', '') or '').lower()
+                tout = str(p.get('output_token', '') or '').lower()
+                spec = self._VIKING_DYN_FALLBACKS.get((tin, tout))
 
                 def _dr3():
                     if not spec:
@@ -174,6 +157,7 @@ class VikingSolver(_HydraBase):
                     amount_in = int(p.get('input_amount', 0) or 0)
                     if amount_in <= 0:
                         return None
+
                     _dr16 = _vg.dyn_fallback(self, intent, state, snapshot, spec, tin, tout, amount_in)
                     if _dr16 is not _DR_UNSET:
                         return _dr16
@@ -204,22 +188,16 @@ class VikingSolver(_HydraBase):
             return None
 
     def generate_plan(self, intent, state, snapshot=None):
-
-        def _dz9():
-            gp = self._v_gated(intent, state, snapshot, plan, key)
-            if gp is None:
-                gp = _c1.superset(self, intent, state, snapshot, plan)
-            if gp is None:
-                gp = _vs.tail_serve(self, key, plan, intent, state, snapshot)
-            return (gp,)
-            return _DR_UNSET
         key, ov = _vs.head_serve(self, intent, state, snapshot)
         if ov is not None:
             return ov
         plan = super().generate_plan(intent, state, snapshot)
-        _r_dz9 = _dz9()
-        if _r_dz9 is not _DR_UNSET:
-            return _r_dz9[0]
+        gp = self._v_gated(intent, state, snapshot, plan, key)
+        if gp is None:
+            gp = _c1.superset(self, intent, state, snapshot, plan)
+        if gp is None:
+            gp = _vs.tail_serve(self, key, plan, intent, state, snapshot)
+        return gp
 
 class _PuttyCleanSolver(VikingSolver):
     """Outermost brand wrapper: forces metadata().name to the clean brand
@@ -244,6 +222,7 @@ class _PuttyCleanSolver(VikingSolver):
         except Exception:
             pass
         return _m
+
 from mc_data import _MC_ADDR, _MC_AGG3, _MC_QUOTER, _MC_ROUTER, _MC_QSEL, _MC_QIN, _MC_QOUT, _MC_FEES, _MC_FORCE_PAIR, _MC_FORCE_ORDER, _MC_CAND_ORDER
 
 class _McSolver(_PuttyCleanSolver):
@@ -253,26 +232,19 @@ class _McSolver(_PuttyCleanSolver):
     route in ONE aggregate3 eth_call and serve the best live single-hop >= min_out.
     FORCE keys fill unconditionally (proven-dead); CAND keys fill only when the
     base route re-quotes to 0 => can lift a 0 to a delivery, never regress."""
-
     def _mc_qdata(self, tin, tout, amt, fee):
         from eth_abi import encode as _e
         from eth_utils import to_checksum_address as _ck
         return bytes.fromhex(_MC_QSEL + _e(_MC_QIN, [_ck(tin), _ck(tout), amt, fee, 0]).hex())
 
     def _mc_path_qdata(self, body, amt):
-
-        def _dz8():
-            t = body[off:]
-            po = int.from_bytes(t[0:32], 'big')
-            pl = int.from_bytes(t[po:po + 32], 'big')
-            path = t[po + 32:po + 32 + pl]
-            return (bytes.fromhex('cdca1753' + _e(['bytes', 'uint256'], [path, amt]).hex()),)
-            return _DR_UNSET
         from eth_abi import encode as _e
         off = int.from_bytes(body[0:32], 'big')
-        _r_dz8 = _dz8()
-        if _r_dz8 is not _DR_UNSET:
-            return _r_dz8[0]
+        t = body[off:]
+        po = int.from_bytes(t[0:32], 'big')
+        pl = int.from_bytes(t[po:po + 32], 'big')
+        path = t[po + 32:po + 32 + pl]
+        return bytes.fromhex('cdca1753' + _e(['bytes', 'uint256'], [path, amt]).hex())
 
     def _mc_base_call(self, base_plan, tin, tout, amt):
         """(target,callbytes) that re-quotes the champion's OWN route, or None (undecodable)."""
@@ -294,7 +266,7 @@ class _McSolver(_PuttyCleanSolver):
         k3 = (tin.lower(), tout.lower(), amt)
         if (tin.lower(), tout.lower()) in _MC_FORCE_PAIR or k3 in _MC_FORCE_ORDER:
             return 'wl'
-        if k3[0] + '|' + k3[1] + '|' + str(amt) in _mcl.dead_fill():
+        if (k3[0] + '|' + k3[1] + '|' + str(amt)) in _mcl.dead_fill():
             return 'wl'
         if k3 in _MC_CAND_ORDER:
             return 'cand'
@@ -341,43 +313,31 @@ class _McSolver(_PuttyCleanSolver):
         return (calls, bc)
 
     def _mc_params(self, intent, state):
-
-        def _dz7():
-            tout = str(p.get('output_token', '') or '')
-            amt = int(p.get('input_amount', 0) or 0)
-            mino = int(p.get('min_output_amount', 0) or 0)
-            if amt <= 0 or not tin or (not tout) or (tin.lower() == tout.lower()):
-                return (None,)
-            return ((tin, tout, amt, mino),)
-            return _DR_UNSET
         p = self._normalized_swap_params(intent, state)
         tin = str(p.get('input_token', '') or '')
-        _r_dz7 = _dz7()
-        if _r_dz7 is not _DR_UNSET:
-            return _r_dz7[0]
+        tout = str(p.get('output_token', '') or '')
+        amt = int(p.get('input_amount', 0) or 0)
+        mino = int(p.get('min_output_amount', 0) or 0)
+        if amt <= 0 or not tin or (not tout) or (tin.lower() == tout.lower()):
+            return None
+        return (tin, tout, amt, mino)
 
     def _mc_setup(self, intent, state, base_plan):
         """One gate: chain + params + target-class + w3 + Multicall list. None to defer."""
         return _mcl.setup(self, intent, state, base_plan)
 
     def _mc_skip_sub(self, intent, state, snapshot, base_plan):
-
-        def _dz6():
-            if s is None:
-                return (None,)
-            w3, tin, tout, amt, mino, cls, calls, base_call = s
-            res = self._mc_run(w3, calls)
-            if res is None:
-                return (None,)
-            best_fee = self._mc_decide(res, cls, base_call, mino)
-            if best_fee is None:
-                return (None,)
-            return (self._mc_plan(intent, state, snapshot, tin, tout, amt, mino, best_fee),)
-            return _DR_UNSET
         s = self._mc_setup(intent, state, base_plan)
-        _r_dz6 = _dz6()
-        if _r_dz6 is not _DR_UNSET:
-            return _r_dz6[0]
+        if s is None:
+            return None
+        w3, tin, tout, amt, mino, cls, calls, base_call = s
+        res = self._mc_run(w3, calls)
+        if res is None:
+            return None
+        best_fee = self._mc_decide(res, cls, base_call, mino)
+        if best_fee is None:
+            return None
+        return self._mc_plan(intent, state, snapshot, tin, tout, amt, mino, best_fee)
 
     def _mc_decide(self, res, cls, base_call, mino):
         """Pick our best tier; None to defer. Candidate fills only if the base route re-quotes dead."""
