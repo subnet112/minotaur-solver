@@ -1,4 +1,3 @@
-# chain-1 dynamic tier: quoting + v3 building helpers
 from chain1_c import _WETH, _USDT, _QUOTER, _ROUTER, _FEES, _HUBS, _CHAMP_FEE
 
 def _pack(tokens, fees):
@@ -70,13 +69,13 @@ def _build(route, tin, amt, rcpt, chain_id):
 def _amounts(p):
     amt = int(p.get('input_amount', 0) or 0)
     mo = int(p.get('min_output_amount', 0) or 0)
-    return amt, mo
+    return (amt, mo)
 
 def _params(s, intent, state):
     p = s._normalized_swap_params(intent, state)
     tin = str(p.get('input_token', '') or '').lower()
     tout = str(p.get('output_token', '') or '').lower()
     amt, mo = _amounts(p)
-    if len(tin) != 42 or len(tout) != 42 or amt <= 0 or tin == tout:
+    if len(tin) != 42 or len(tout) != 42 or amt <= 0 or (tin == tout):
         return None
     return (tin, tout, amt, mo)
