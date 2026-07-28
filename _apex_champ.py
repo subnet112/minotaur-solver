@@ -192,6 +192,7 @@ class JamesSolver(_JamesSolverDR17):
             self._dyn_order_budget = None
 
             def _dr20():
+
                 def _fw4():
                     if getattr(self, '_bm_t0', None) and getattr(self, '_bm_total', 0):
                         import time as _t
@@ -285,6 +286,7 @@ class JamesSolver(_JamesSolverDR17):
             return None
 
         def _fw2():
+
             def _dr6():
                 chain_id = int(getattr(state, 'chain_id', 0) or 0)
                 if chain_id != 8453 or amt <= 0 or (not tout.startswith('0x')) or (tout in self._JAMES_CANONICAL) or (tin not in (self._JUSDC.lower(), self._JWETH.lower())) or ((tin, tout) in table):
@@ -310,6 +312,7 @@ class JamesSolver(_JamesSolverDR17):
 
                             def _dr14():
                                 c0, c1 = (self._JWETH, tout) if int(self._JWETH, 16) < int(tout, 16) else (tout, self._JWETH)
+
                                 def _fw5():
                                     spec = {'pool': (c0, c1, self._JV4_DYN_FEE, 200, hook), 'settle': self._JWETH, 'zero_for_one': c0.lower() == self._JWETH.lower()}
                                     if tin == self._JUSDC.lower():
