@@ -1,5 +1,6 @@
 """Shared address/venue constants for the king engine (split out of
 king_base.py for the factorization metric — pure data, no logic)."""
+
 def _fw1():
     _DR_UNSET = object()
 
@@ -19,6 +20,7 @@ def _fw1():
             _ZERO = '0x0000000000000000000000000000000000000000'
             _MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'
             _UNIV2_ROUTER = '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24'
+
             def _fw2():
                 _UNIVERSAL_ROUTER = '0x6ff5693b99212da76ad316178a184ab56d299b43'
                 _UNI_SWAPROUTER02 = '0x2626664c2603336E57B271c5C0b26F421741e481'
@@ -108,6 +110,7 @@ def _fw1():
                 _EQUALIZER_ROUTER = '0x2F87Bf58D5A9b2eFadE55Cdbd46153a0902be6FA'
                 _PANCAKE_V2_ROUTER = '0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb'
                 _ETH = 1
+
                 def _fw3():
                     _BT = 964
                     _ETH_WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
