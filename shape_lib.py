@@ -1,3 +1,5 @@
+_DR_UNSET = object()
+
 def _res_call(s, pair, chain_id):
     from eth_abi import decode as _dec
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
@@ -32,29 +34,41 @@ def _v_bs_quote(s, venue, param, tin, tout, amt, chain_id):
 
 def _v_sng_dy(s, pool, i, j, dx, chain_id):
     """Curve StableNg forward quote: pool.get_dy(i, j, dx); None on failure."""
+
+    def _dz224():
+        w3 = s._get_web3(int(chain_id))
+        if w3 is None:
+            return (None,)
+        sel = _keccak(text='get_dy(int128,int128,uint256)')[:4]
+        r = w3.eth.call({'to': _ck(pool), 'data': '0x' + (sel + _enc(['int128', 'int128', 'uint256'], [int(i), int(j), int(dx)])).hex()})
+        return (_dec(['uint256'], r)[0] or None,)
+        return _DR_UNSET
     try:
         from eth_abi import encode as _enc, decode as _dec
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        w3 = s._get_web3(int(chain_id))
-        if w3 is None:
-            return None
-        sel = _keccak(text='get_dy(int128,int128,uint256)')[:4]
-        r = w3.eth.call({'to': _ck(pool), 'data': '0x' + (sel + _enc(['int128', 'int128', 'uint256'], [int(i), int(j), int(dx)])).hex()})
-        return _dec(['uint256'], r)[0] or None
+        _r_dz224 = _dz224()
+        if _r_dz224 is not _DR_UNSET:
+            return _r_dz224[0]
     except Exception:
         return None
 
 def _v_pair_gao(s, pair, amt, tin, chain_id):
     """Solidly/Aero V2 pair forward quote via the pair's own getAmountOut."""
-    try:
+
+    def _dz223():
         from eth_abi import encode as _enc, decode as _dec
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
         w3 = s._get_web3(int(chain_id))
         if w3 is None:
-            return None
+            return (None,)
         sel = _keccak(text='getAmountOut(uint256,address)')[:4]
         r = w3.eth.call({'to': _ck(pair), 'data': '0x' + (sel + _enc(['uint256', 'address'], [int(amt), _ck(tin)])).hex()})
-        return _dec(['uint256'], r)[0] or None
+        return (_dec(['uint256'], r)[0] or None,)
+        return _DR_UNSET
+    try:
+        _r_dz223 = _dz223()
+        if _r_dz223 is not _DR_UNSET:
+            return _r_dz223[0]
     except Exception:
         return None
 

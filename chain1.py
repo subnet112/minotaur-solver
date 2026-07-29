@@ -1,3 +1,4 @@
+_DR_UNSET = object()
 from chain1_lib import _qroute, _build, _params, _champ_route
 from chain1_v2 import _v2_build, _sweep, _v2_best
 
@@ -54,15 +55,21 @@ def _guards(s, intent, state, snapshot):
 def superset(s, intent, state, snapshot, base_plan):
     """Chain-1 candidate sweep; a plan only when strictly better than the
     engine's own quoted route by the margin (or the base plan is empty)."""
-    try:
-        g = _guards(s, intent, state, snapshot)
+
+    def _dz39():
         if g is None:
-            return None
+            return (None,)
         (tin, tout, amt, mo), rcpt, w3, block = g
         base_empty = base_plan is None or not getattr(base_plan, 'interactions', None)
         route = _decide(w3, tin, tout, amt, mo, block, base_empty)
         if route is None:
-            return None
-        return _mk_plan(route, tin, amt, rcpt, intent, state)
+            return (None,)
+        return (_mk_plan(route, tin, amt, rcpt, intent, state),)
+        return _DR_UNSET
+    try:
+        g = _guards(s, intent, state, snapshot)
+        _r_dz39 = _dz39()
+        if _r_dz39 is not _DR_UNSET:
+            return _r_dz39[0]
     except Exception:
         return None

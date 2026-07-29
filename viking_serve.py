@@ -1,6 +1,7 @@
 """Viking serve chain (hoisted from VikingSolver.generate_plan / _v_gated,
 behavior-identical): override precedence, gated eval, cached-bar guard,
 stale-row engine serve, fill-only-empty."""
+_DR_UNSET = object()
 import logging
 import viking_gate as _vg
 from viking_tables import _v_gated_table, _viking_override, _viking_cached_bar, _viking_frozen_index, _viking_replay
@@ -102,13 +103,19 @@ def _gated_plan(s, intent, state, spec, tin, tout, amt, mid_q, est, chain_id):
     return _EP(intent_id=intent.app_id, interactions=ixs, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-gated', 'chain_id': chain_id})
 
 def gated_eval(s, intent, state, snapshot, plan, key):
+
+    def _dz311():
+        if hit is None:
+            return (None,)
+        spec, chain_id = hit
+        tin, tout, amt_s = key.split('|')
+        amt = int(amt_s)
+        est, mid_q = _vg.gate_est(s, spec, plan, tin, tout, amt, key, chain_id)
+        if not est:
+            return (None,)
+        return (_gated_plan(s, intent, state, spec, tin, tout, amt, mid_q, est, chain_id),)
+        return _DR_UNSET
     hit = _gated_gate(s, state, snapshot, plan, key)
-    if hit is None:
-        return None
-    spec, chain_id = hit
-    tin, tout, amt_s = key.split('|')
-    amt = int(amt_s)
-    est, mid_q = _vg.gate_est(s, spec, plan, tin, tout, amt, key, chain_id)
-    if not est:
-        return None
-    return _gated_plan(s, intent, state, spec, tin, tout, amt, mid_q, est, chain_id)
+    _r_dz311 = _dz311()
+    if _r_dz311 is not _DR_UNSET:
+        return _r_dz311[0]

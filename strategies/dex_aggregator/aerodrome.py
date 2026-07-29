@@ -65,14 +65,20 @@ def _dr4():
                     try:
 
                         def _dr9():
+
+                            def _dz273():
+                                slot0 = pool.functions.slot0().call()
+                                liquidity = pool.functions.liquidity().call()
+                                fee = pool.functions.fee().call()
+                                token0 = pool.functions.token0().call()
+                                token1 = pool.functions.token1().call()
+                                tick_spacing = pool.functions.tickSpacing().call()
+                                return ((fee, liquidity, slot0, tick_spacing, token0, token1),)
+                                return _DR_UNSET
                             pool = w3.eth.contract(address=w3.to_checksum_address(pool_address), abi=_POOL_ABI)
-                            slot0 = pool.functions.slot0().call()
-                            liquidity = pool.functions.liquidity().call()
-                            fee = pool.functions.fee().call()
-                            token0 = pool.functions.token0().call()
-                            token1 = pool.functions.token1().call()
-                            tick_spacing = pool.functions.tickSpacing().call()
-                            return (fee, liquidity, slot0, tick_spacing, token0, token1)
+                            _r_dz273 = _dz273()
+                            if _r_dz273 is not _DR_UNSET:
+                                return _r_dz273[0]
                         fee, liquidity, slot0, tick_spacing, token0, token1 = _dr9()
                     except Exception as exc:
                         logger.debug('Slipstream pool query failed for %s: %s', pool_address, exc)
@@ -99,6 +105,13 @@ def _dr4():
                         a_lower, b_lower = (token_a.lower(), token_b.lower())
 
                         def _dr5():
+
+                            def _dz272():
+                                if discovered > 0:
+                                    logger.debug('Aerodrome: %d pools for %s/%s on chain %d', discovered, token_a[:10], token_b[:10], chain_id)
+                                return (pool_states,)
+                                return (_DR_UNSET,)
+                                return _DR_UNSET
                             cache_key = (chain_id, 'aero_slip', min(a_lower, b_lower), max(a_lower, b_lower))
                             now = time.time()
                             if discovery_cache is not None:
@@ -141,10 +154,9 @@ def _dr4():
                                     discovery_cache[cache_key] = now
                                 return discovered
                             discovered = _dr3()
-                            if discovered > 0:
-                                logger.debug('Aerodrome: %d pools for %s/%s on chain %d', discovered, token_a[:10], token_b[:10], chain_id)
-                            return pool_states
-                            return _DR_UNSET
+                            _r_dz272 = _dz272()
+                            if _r_dz272 is not _DR_UNSET:
+                                return _r_dz272[0]
                         _dr6 = _dr5()
                         if _dr6 is not _DR_UNSET:
                             return _dr6
