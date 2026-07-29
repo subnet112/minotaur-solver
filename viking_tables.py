@@ -9,7 +9,6 @@ _VIKING_CACHED_BARS = None
 _VIKING_FROZEN_INDEX = None
 _VIKING_REPLAY_CACHE = None
 
-
 def _v_gated_table():
     """Lazy gated_rows.json — 'tin|tout|amt' -> champion-route-gated row spec
     (own-built routes only; pool params machine-extracted from oracle route
