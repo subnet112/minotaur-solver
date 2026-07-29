@@ -12,6 +12,7 @@ Re-fork onto a new champion = copy its solver.py to king_base.py. This file is
 fixed (no re-editing the champion's evolving code) — that's the whole point.
 """
 from __future__ import annotations
+
 def _fw6():
     _DR_UNSET = object()
 
@@ -126,13 +127,16 @@ def _dr18():
                 _APEX_ROUTES = _load_route_table()
                 return (_APEX_ROUTES, _ROUTE_TABLE_ON)
             _APEX_ROUTES, _ROUTE_TABLE_ON = _dr86()
+
             def _fh1():
                 return {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x3ee5e23eee121094f1cfc0ccc79d6c809ebd22e5', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x01facc69ec7360640aa5898e852326752801674a', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', True, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x4200000000000000000000000000000000000006', '0x01facc69ec7360640aa5898e852326752801674a', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', 250000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'], ['0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0x74ccbe53f77b08632ce0cb91d3a545bf6b8e0979', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}}
+
             def _fh2():
                 return {('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', 2000000): {'kind': 'aero_v2', 'routes': [['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x18dd5b087bca9920562aff7a0199b96b9230438b', False, '0x420DD381b31aEf6683db6B902084cB0FFECe40Da']]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x37d3d61a304695619433bc05ef841e889f69debf', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0x37d3d61a304695619433bc05ef841e889f69debf'], 'fees': [100, 10000]}, ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xc52aedec3374422d7510e294cfaa90799595cba3', 2000000): {'kind': 'univ3_path', 'tokens': ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x4200000000000000000000000000000000000006', '0xc52aedec3374422d7510e294cfaa90799595cba3'], 'fees': [100, 10000]}}
             _APEX_QUALITY_ROUTES = {**_fh1(), **_fh2()}
             return (_APEX_QUALITY_ROUTES, _APEX_ROUTES, _ROUTE_TABLE_ON)
         _APEX_QUALITY_ROUTES, _APEX_ROUTES, _ROUTE_TABLE_ON = _dr11()
+
         def _fw15():
             return ((SOLVER_AUTHOR, _AERO_V2_FACTORY, _AERO_V2_ROUTER, _ALIEN_V2_ROUTER, _APEX_HOLE_ROUTES, _APEX_QUALITY_ROUTES, _APEX_ROUTES, _BASE, _ETH, _ETH_USDC, _ETH_WBTC, _ETH_WETH, _FRONTIER_MAJORS, _FRONTIER_ON, _MAVERICK_ROUTER, _PANCAKE_V2_ROUTER, _QS_ALGEBRA_FACTORY, _QS_ALGEBRA_ROUTER, _ROUTE_TABLE_ON, _SUSHI_V2_ROUTER, _SUSHI_V3_QUOTER, _SUSHI_V3_ROUTER, _UNIV2_ROUTER, _WETH, _ZERO_ADDR),)
             return (_DR_UNSET,)
@@ -229,6 +233,7 @@ class _MinerSolverDR77(_Base):
         def _dr97():
             if w3 is None or not uni_router:
                 return None
+
             def _fw13():
                 best_out, best_fee = (0, 3000)
                 for fee in (3000, 500, 10000, 100):
@@ -320,6 +325,7 @@ class _MinerSolverDR77(_Base):
         def _dr122():
             w3 = self._get_web3(int(chain_id))
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+
             def _fw12():
                 if w3 is None or not uni_router:
                     return (None,)
@@ -425,6 +431,7 @@ class MinerSolver(_MinerSolverDR77):
             return plan
         if _ROUTE_TABLE_ON and _APEX_ROUTES:
             try:
+
                 def _fw5():
                     p = self._normalized_swap_params(intent, state)
                     tin = str(p.get('input_token', '') or '').lower()
@@ -475,6 +482,7 @@ class MinerSolver(_MinerSolverDR77):
                 def _dr108():
                     if not router:
                         return None
+
                     def _fw14():
                         recipient = self._apex_recipient(state, p)
                         deadline = self._apex_deadline(snapshot)
@@ -517,6 +525,7 @@ class MinerSolver(_MinerSolverDR77):
                 if kind == 'univ3_single':
                     return 1
                 if kind == 'univ3_path':
+
                     def _fw11():
                         from strategies.dex_aggregator.v3_codec import encode_swap_path
                         from eth_abi import encode as _enc
@@ -535,6 +544,7 @@ class MinerSolver(_MinerSolverDR77):
                 from eth_abi import encode as _enc, decode as _dec
 
                 def _fw7():
+
                     def _dr75():
                         routes = [(_ck(x[0]), _ck(x[1]), bool(x[2]), _ck(x[3])) for x in spec['routes']]
                         return routes
@@ -612,6 +622,7 @@ class MinerSolver(_MinerSolverDR77):
                             best_out = 0
                             for fee in (100, 500, 3000, 10000):
                                 try:
+
                                     def _fw2():
                                         dd = '0xc6a5026a' + _pad(tin) + _pad(tout) + hex(int(amount_in))[2:].rjust(64, '0') + hex(fee)[2:].rjust(64, '0') + '0' * 64
                                         rr = w3.eth.call({'to': _ck(_Q), 'data': dd})
@@ -628,6 +639,7 @@ class MinerSolver(_MinerSolverDR77):
                     _dr3 = _dr2()
                     if _dr3 is not _DR_UNSET:
                         return _dr3
+
                     def _fw3():
                         call = encode_exact_input_single(token_in=tin, token_out=tout, fee=use_fee, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id)
                         target = router
@@ -928,6 +940,7 @@ class MinerSolver(_MinerSolverDR77):
             via_weth = _dr43()
             ex = fut = None
             if via_weth:
+
                 def _fwvw(weth_fee=weth_fee, weth_out=weth_out):
                     with ThreadPoolExecutor(max_workers=6) as ex:
 
@@ -941,6 +954,7 @@ class MinerSolver(_MinerSolverDR77):
                                 weth_out, weth_fee = (o, f)
                     return (weth_fee, weth_out)
                 weth_fee, weth_out = _fwvw()
+
             def _fw1():
                 wi = weth_out * 995 // 1000 if weth_out > 0 else 0
                 tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
@@ -953,6 +967,7 @@ class MinerSolver(_MinerSolverDR77):
                 def _dr9():
                     nonlocal ex, extra, fut, reachable
                     with ThreadPoolExecutor(max_workers=16) as ex:
+
                         def _fw10():
                             futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
                             return (futs,)
@@ -1070,6 +1085,7 @@ try:
         from eth_abi import encode as _putty_abi_encode
         from minotaur_subnet.shared.types import ExecutionPlan as _PuttyExecutionPlan
         from minotaur_subnet.shared.types import Interaction as _PuttyInteraction
+
         def _fw8():
             try:
                 from eth_utils import to_checksum_address as _putty_ck
@@ -1194,6 +1210,7 @@ try:
                     for i, f in enumerate(fees):
                         path += bytes.fromhex(toks[i][2:]) + int(f).to_bytes(3, 'big')
                     path += bytes.fromhex(toks[-1][2:])
+
                     def _fw9():
                         enc = _putty_abi_encode(['(bytes,address,uint256,uint256)'], [(path, _putty_ck(recipient), int(amount_in), 0)])
                         return ('0x' + (_PUTTY_R02_PATH_SEL + enc).hex(),)
@@ -1370,6 +1387,7 @@ try:
                         route = _PUTTY_ROUTES.get(tout.lower())
                         return (amount_in, route, tin, tout)
                     amount_in, route, tin, tout = _dr49()
+
                     def _fw4():
                         if route is not None and tin.lower() == _PUTTY_USDC.lower() and (amount_in > 0):
                             router, tick_spacing = route
