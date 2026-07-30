@@ -1,9 +1,9 @@
 """curve_refresh — veto-safe LIVE ETH Curve AMOUNT-WIN cover.
 
-Aimed squarely at the current champion (dl_router): it live-requotes ONLY Uniswap V3
+Aimed squarely at the current champion (d6c52f_router): it live-requotes ONLY Uniswap V3
 on ETH. This cover targets the venue it structurally can't fresh-quote — Curve — and
 serves a fresh Curve exchange ONLY when it strictly out-delivers the champion's own
-plan by >30bps (matching the champion's own dl_router gate). Wins where the champion
+plan by >30bps (matching the champion's own d6c52f_router gate). Wins where the champion
 routes a pegged/stable/LST pair via Uni V3 (or a decayed frozen cover) but a fresh
 Curve get_dy delivers more.
 
