@@ -12,37 +12,46 @@ No third-party solver code; only stdlib + eth_abi. eth_call goes to the RPC the
 harness/sandbox provides (same endpoints the champion quotes against).
 """
 from __future__ import annotations
+_DR_UNSET = object()
 from _fx_shard_0 import *
 import json
 import time
 from eth_abi import encode as _enc, decode as _dec
 from web3 import Web3
-DEADLINE = 9999999999
-BUDGET_S = 6.0
-_SEARCH_DEADLINE = [0.0]
-S_APPROVE = '095ea7b3'
-S_V3_SINGLE_V1 = '414bf389'
-S_V3_SINGLE_02 = '04e45aaf'
-S_V3_PATH_V1 = 'c04b8d59'
-S_V3_PATH_02 = 'b858183f'
-S_V2_SWAP = '38ed1739'
-S_QUOTE_SINGLE = 'c6a5026a'
+
+def _dz311():
+    DEADLINE = 9999999999
+    BUDGET_S = 6.0
+    _SEARCH_DEADLINE = [0.0]
+    S_APPROVE = '095ea7b3'
+    S_V3_SINGLE_V1 = '414bf389'
+    S_V3_SINGLE_02 = '04e45aaf'
+    S_V3_PATH_V1 = 'c04b8d59'
+    S_V3_PATH_02 = 'b858183f'
+    S_V2_SWAP = '38ed1739'
+    S_QUOTE_SINGLE = 'c6a5026a'
+    return (DEADLINE, BUDGET_S, _SEARCH_DEADLINE, S_APPROVE, S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02, S_V2_SWAP, S_QUOTE_SINGLE)
+DEADLINE, BUDGET_S, _SEARCH_DEADLINE, S_APPROVE, S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02, S_V2_SWAP, S_QUOTE_SINGLE = _dz311()
 
 def _fx_20():
+
+    def _dz311():
+        S_QUOTE_PATH = 'cdca1753'
+        S_V2_AMOUNTS = 'd06ca61f'
+        S_CURVE_FIND = 'a87df06c'
+        S_CURVE_IDX = 'eb85226d'
+        S_CURVE_GETDY = '5e0d443f'
+        S_CURVE_EXCH = '3df02124'
+        S_CURVE_EXCH_RECV = 'ddc1f59d'
+        S_TRANSFER = 'a9059cbb'
+        S_AERO_GAO = '5509a1ac'
+        S_AERO_SWAP = 'cac88ea9'
+        FEES = (100, 500, 3000, 10000)
+        AERO_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
+        AERO_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
+        return (AERO_FACTORY, AERO_ROUTER, FEES, S_AERO_GAO, S_AERO_SWAP, S_CURVE_EXCH, S_CURVE_EXCH_RECV, S_CURVE_FIND, S_CURVE_GETDY, S_CURVE_IDX, S_QUOTE_PATH, S_TRANSFER, S_V2_AMOUNTS)
     global AERO_FACTORY, AERO_ROUTER, CHAINS, FEES, S_AERO_SWAP, S_CURVE_EXCH_RECV, S_CURVE_FIND, S_CURVE_GETDY, S_CURVE_IDX, _approve, _v3_path_bytes, eth_call, q_aero, q_v2, q_v3_path, q_v3_single
-    S_QUOTE_PATH = 'cdca1753'
-    S_V2_AMOUNTS = 'd06ca61f'
-    S_CURVE_FIND = 'a87df06c'
-    S_CURVE_IDX = 'eb85226d'
-    S_CURVE_GETDY = '5e0d443f'
-    S_CURVE_EXCH = '3df02124'
-    S_CURVE_EXCH_RECV = 'ddc1f59d'
-    S_TRANSFER = 'a9059cbb'
-    S_AERO_GAO = '5509a1ac'
-    S_AERO_SWAP = 'cac88ea9'
-    FEES = (100, 500, 3000, 10000)
-    AERO_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
-    AERO_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
+    AERO_FACTORY, AERO_ROUTER, FEES, S_AERO_GAO, S_AERO_SWAP, S_CURVE_EXCH, S_CURVE_EXCH_RECV, S_CURVE_FIND, S_CURVE_GETDY, S_CURVE_IDX, S_QUOTE_PATH, S_TRANSFER, S_V2_AMOUNTS = _dz311()
 
     def _cfg_eth():
         return {'quoter': '0x61fFE014bA17989E743c5F6cB21bF9697530B21e', 'v3router': '0xE592427A0AEce92De3Edee1F18E0157C05861564', 'v3sel_single': S_V3_SINGLE_V1, 'v3sel_path': S_V3_PATH_V1, 'v3_deadline': True, 'v2routers': ['0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'], 'hubs': ['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0xdAC17F958D2ee523a2206206994597C13D831ec7', '0x6B175474E89094C44Da98b954EedeAC495271d0F', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'], 'curve_metareg': '0xF98B45FA17DE75FB1aD0e7aFD971b0ca00e379fC'}
@@ -140,19 +149,25 @@ def q_curve(rpc, cfg, tin, tout, amt):
     there is no fixed-amount `transfer(app, dy)` leg that could revert when the
     realized dy is 1 wei below the quote. Covers the stETH/wstETH/crvUSD/3pool tail
     that Uniswap-only routing misses."""
+
+    def _dz310():
+        pool = '0x' + d[12:32].hex()
+        if int(pool, 16) == 0:
+            return (None,)
+        di = eth_call(rpc, mr, '0x' + S_CURVE_IDX + _enc(['address', 'address', 'address'], [pool, tin, tout]).hex())
+        if not di:
+            return (None,)
+        return (_fx_23(_dec, _enc, amt, di, pool, rpc),)
+        return _DR_UNSET
     mr = cfg.get('curve_metareg')
     if not mr:
         return None
     d = eth_call(rpc, mr, '0x' + S_CURVE_FIND + _enc(['address', 'address'], [tin, tout]).hex())
     if not d or len(d) < 32:
         return None
-    pool = '0x' + d[12:32].hex()
-    if int(pool, 16) == 0:
-        return None
-    di = eth_call(rpc, mr, '0x' + S_CURVE_IDX + _enc(['address', 'address', 'address'], [pool, tin, tout]).hex())
-    if not di:
-        return None
-    return _fx_23(_dec, _enc, amt, di, pool, rpc)
+    _r_dz310 = _dz310()
+    if _r_dz310 is not _DR_UNSET:
+        return _r_dz310[0]
 
 def _legs_curve(tin, amt, app_addr, route):
     """approve + exchange with receiver=app (0xddc1f59d) — no forward leg, no revert."""
@@ -172,30 +187,42 @@ def _aero_candidates(tin, tout, hubs):
 
 def _scan_v3(rpc, cfg, tin, tout, amt, take, expired):
     """Direct uniV3 across fee tiers, then 2-hop via each hub."""
+
+    def _dz309():
+        hub_fees = (500, 3000)
+        for hub in cfg['hubs']:
+            if hub.lower() in (tin, tout):
+                continue
+            for f1 in hub_fees:
+                for f2 in hub_fees:
+                    if expired():
+                        return (None,)
+                    take(q_v3_path(rpc, cfg, [tin, hub, tout], [f1, f2], amt), {'kind': 'v3_path', 'tokens': [tin, hub, tout], 'fees': [f1, f2]})
+        return _DR_UNSET
     for fee in FEES:
         if expired():
             return
         take(q_v3_single(rpc, cfg, tin, tout, amt, fee), {'kind': 'v3_single', 'fee': fee})
-    hub_fees = (500, 3000)
-    for hub in cfg['hubs']:
-        if hub.lower() in (tin, tout):
-            continue
-        for f1 in hub_fees:
-            for f2 in hub_fees:
-                if expired():
-                    return
-                take(q_v3_path(rpc, cfg, [tin, hub, tout], [f1, f2], amt), {'kind': 'v3_path', 'tokens': [tin, hub, tout], 'fees': [f1, f2]})
+    _r_dz309 = _dz309()
+    if _r_dz309 is not _DR_UNSET:
+        return _r_dz309[0]
 
 def _scan_v2(rpc, cfg, tin, tout, amt, take, expired):
     """uniV2-style routers: direct, then via each hub."""
-    for router in cfg['v2routers']:
+
+    def _dz308():
         if expired():
-            return
+            return (None,)
         take(q_v2(rpc, router, [tin, tout], amt), {'kind': 'v2', 'router': router, 'path': [tin, tout]})
         for hub in cfg['hubs']:
             if hub.lower() in (tin, tout) or expired():
                 continue
             take(q_v2(rpc, router, [tin, hub, tout], amt), {'kind': 'v2', 'router': router, 'path': [tin, hub, tout]})
+        return _DR_UNSET
+    for router in cfg['v2routers']:
+        _r_dz308 = _dz308()
+        if _r_dz308 is not _DR_UNSET:
+            return _r_dz308[0]
 
 def _scan_aero(rpc, cfg, tin, tout, amt, take, expired):
     """Aerodrome (Base only) — the venue Uniswap-on-Base misses. Its swap names the
@@ -206,6 +233,15 @@ def _scan_aero(rpc, cfg, tin, tout, amt, take, expired):
         take(q_aero(rpc, routes, amt), {'kind': 'aero', 'routes': routes})
 
 def best_route(rpc, chain_id, tin, tout, amt):
+
+    def _dz307():
+        _scan_v2(rpc, cfg, tin, tout, amt, take, expired)
+        if int(chain_id) == 8453:
+            _scan_aero(rpc, cfg, tin, tout, amt, take, expired)
+        if cfg.get('curve_metareg') and (not expired()):
+            cv = q_curve(rpc, cfg, tin, tout, amt)
+            if cv:
+                take(cv['dy'], {'kind': 'curve', **cv})
     cfg = CHAINS.get(int(chain_id))
     if not cfg:
         return None
@@ -223,31 +259,35 @@ def best_route(rpc, chain_id, tin, tout, amt):
         if out and out > 0 and (best is None or out > best[0]):
             best = (out, route)
     _scan_v3(rpc, cfg, tin, tout, amt, take, expired)
-    _scan_v2(rpc, cfg, tin, tout, amt, take, expired)
-    if int(chain_id) == 8453:
-        _scan_aero(rpc, cfg, tin, tout, amt, take, expired)
-    if cfg.get('curve_metareg') and (not expired()):
-        cv = q_curve(rpc, cfg, tin, tout, amt)
-        if cv:
-            take(cv['dy'], {'kind': 'curve', **cv})
+    _dz307()
     return best
 
 def _legs_v3_single(cfg, tin, tout, amt, app_addr, route):
+
+    def _dz306():
+        nonlocal body
+        body = _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint256', 'uint160'], [tin, tout, int(route['fee']), app_addr, DEADLINE, int(amt), 0, 0])
     r = cfg['v3router']
     if cfg['v3_deadline']:
-        body = _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint256', 'uint160'], [tin, tout, int(route['fee']), app_addr, DEADLINE, int(amt), 0, 0])
+        _dz306()
     else:
         body = _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint160'], [tin, tout, int(route['fee']), app_addr, int(amt), 0, 0])
     return [(tin, _approve(tin, r, amt)), (r, '0x' + cfg['v3sel_single'] + body.hex())]
 
 def _legs_v3_path(cfg, tin, amt, app_addr, route):
+
+    def _dz305():
+        if cfg['v3_deadline']:
+            body = _enc(['bytes', 'address', 'uint256', 'uint256', 'uint256'], [path, app_addr, DEADLINE, int(amt), 0])
+        else:
+            body = _enc(['bytes', 'address', 'uint256', 'uint256'], [path, app_addr, int(amt), 0])
+        return ([(tin, _approve(tin, r, amt)), (r, '0x' + cfg['v3sel_path'] + body.hex())],)
+        return _DR_UNSET
     r = cfg['v3router']
     path = _v3_path_bytes(route['tokens'], route['fees'])
-    if cfg['v3_deadline']:
-        body = _enc(['bytes', 'address', 'uint256', 'uint256', 'uint256'], [path, app_addr, DEADLINE, int(amt), 0])
-    else:
-        body = _enc(['bytes', 'address', 'uint256', 'uint256'], [path, app_addr, int(amt), 0])
-    return [(tin, _approve(tin, r, amt)), (r, '0x' + cfg['v3sel_path'] + body.hex())]
+    _r_dz305 = _dz305()
+    if _r_dz305 is not _DR_UNSET:
+        return _r_dz305[0]
 
 def _legs_v2(tin, amt, app_addr, route):
     r = route['router']
@@ -273,14 +313,21 @@ def _legs_for(cfg, kind, tin, tout, amt, app_addr, route):
     return None
 
 def build_plan(app_id, chain_id, tin, tout, amt, app_addr, nonce, route, ExecutionPlan, Interaction):
+
+    def _dz304():
+        nonlocal tin, tout
+        tin = tin.lower()
+        tout = tout.lower()
+        legs = _legs_for(cfg, route['kind'], tin, tout, amt, app_addr, route)
+        if not legs:
+            return (None,)
+        ix = [Interaction(target=t, value='0', call_data=d, chain_id=int(chain_id)) for t, d in legs]
+        return (ExecutionPlan(intent_id=app_id, interactions=ix, deadline=DEADLINE, nonce=nonce, metadata={'chain_id': int(chain_id)}),)
+        return _DR_UNSET
     cfg = CHAINS[int(chain_id)]
-    tin = tin.lower()
-    tout = tout.lower()
-    legs = _legs_for(cfg, route['kind'], tin, tout, amt, app_addr, route)
-    if not legs:
-        return None
-    ix = [Interaction(target=t, value='0', call_data=d, chain_id=int(chain_id)) for t, d in legs]
-    return ExecutionPlan(intent_id=app_id, interactions=ix, deadline=DEADLINE, nonce=nonce, metadata={'chain_id': int(chain_id)})
+    _r_dz304 = _dz304()
+    if _r_dz304 is not _DR_UNSET:
+        return _r_dz304[0]
 
 def cover(app_id, chain_id, tin, tout, amt, app_addr, nonce, rpc_url, ExecutionPlan, Interaction):
     """Full path: live-quote best route, build plan. Returns (plan, expected_out) or (None, 0)."""

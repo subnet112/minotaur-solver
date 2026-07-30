@@ -1,3 +1,4 @@
+_DR_UNSET = object()
 __all__ = ['_fx_5', '_fx_23', '_fx_25', '__fx_tbl29__C1B', '__fx_tbl29__C1D', '__fx_tbl29__C1T', '__fx_tbl29__C1U', '__fx_tbl29__C1W', '_fx_tbl29']
 
 def _fx_5(_B1Ix, _B1Plan, _b1_approve, _fx_2, amount_in, best, cfg, cid, intent, state, tin):
@@ -5,6 +6,16 @@ def _fx_5(_B1Ix, _B1Plan, _b1_approve, _fx_2, amount_in, best, cfg, cid, intent,
     return _B1Plan(intent_id=intent.app_id, interactions=[_B1Ix(target=tin, value='0', call_data=_b1_approve(cfg['rsingle'], amount_in), chain_id=chain_id), _B1Ix(target=cfg['rsingle'] if best[0] == 'single' else cfg['rmulti'], value='0', call_data=swap_cd, chain_id=chain_id)], deadline=deadline, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'b1-generic', 'route': f'cid{cid} {best[0]}'})
 
 def _fx_23(_dec, _enc, amt, di, pool, rpc):
+
+    def _dz36():
+        if not dy or len(dy) < 32:
+            return (None,)
+        try:
+            out = int(_dec(['uint256'], dy[:32])[0])
+        except Exception:
+            return (None,)
+        return ({'pool': pool, 'i': int(i), 'j': int(j), 'dy': out} if out > 0 else None,)
+        return _DR_UNSET
     try:
         i, j, is_under = _dec(['int128', 'int128', 'bool'], di)
     except Exception:
@@ -12,20 +23,46 @@ def _fx_23(_dec, _enc, amt, di, pool, rpc):
     if is_under:
         return None
     dy = eth_call(rpc, pool, '0x' + S_CURVE_GETDY + _enc(['int128', 'int128', 'uint256'], [int(i), int(j), int(amt)]).hex())
-    if not dy or len(dy) < 32:
-        return None
-    try:
-        out = int(_dec(['uint256'], dy[:32])[0])
-    except Exception:
-        return None
-    return {'pool': pool, 'i': int(i), 'j': int(j), 'dy': out} if out > 0 else None
+    _r_dz36 = _dz36()
+    if _r_dz36 is not _DR_UNSET:
+        return _r_dz36[0]
 
 def _fx_25(_B1Ix, _B1Plan, _B1_AERO_V2_FACTORY, _B1_AERO_V2_ROUTER, _B1_ROUTER_8453, _B1_SPLIT_LEG_SLACK, _B1_SPLIT_MARGIN, _b1_approve, _b1_quote_aero_v2, _b1_quote_single, _b1_v3single, _b1time, amount_in, amount_out_min_floor, chain_id, champ_out, intent, state, tin, tout, w3):
+
+    def _dz34():
+        best_total, best_a1, best_q1, best_q2, best_stable = (0, 0, 0, 0, True)
+        return (best_a1, best_q1, best_q2, best_stable, best_total)
+
+    def _dz33(amount_in, best_a1, state):
+        a2 = amount_in - best_a1
+        recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
+        return (a2, recipient)
+
+    def _dz32(_B1_SPLIT_LEG_SLACK, best_q1, best_q2):
+        min1 = int(best_q1 * (1.0 - _B1_SPLIT_LEG_SLACK))
+        min2 = int(best_q2 * (1.0 - _B1_SPLIT_LEG_SLACK))
+        return (min1, min2)
+
+    def _dz31():
+        _fx_3()
+        if best_total <= 0:
+            return (None,)
+        floor = max(int(amount_out_min_floor), int(champ_out * _B1_SPLIT_MARGIN))
+        if best_total <= floor:
+            return (None,)
+        return _DR_UNSET
     if champ_out <= 0:
         return None
-    best_total, best_a1, best_q1, best_q2, best_stable = (0, 0, 0, 0, True)
+    best_a1, best_q1, best_q2, best_stable, best_total = _dz34()
 
     def _fx_3():
+
+        def _dz30():
+            for stable in (True, False):
+                q2 = _b1_quote_aero_v2(w3, tin, tout, a2, stable)
+                if q2 > 0 and q1 + q2 > best_total:
+                    best_total, best_a1 = (q1 + q2, a1)
+                    best_q1, best_q2, best_stable = (q1, q2, stable)
         nonlocal a2, best_a1, best_q1, best_q2, best_stable, best_total
         for pct in (50, 60, 65, 70, 75, 80):
             a1 = amount_in * pct // 100
@@ -33,37 +70,38 @@ def _fx_25(_B1Ix, _B1Plan, _B1_AERO_V2_FACTORY, _B1_AERO_V2_ROUTER, _B1_ROUTER_8
             q1 = _b1_quote_single(w3, tin, tout, a1, 100)
             if q1 <= 0:
                 continue
-            for stable in (True, False):
-                q2 = _b1_quote_aero_v2(w3, tin, tout, a2, stable)
-                if q2 > 0 and q1 + q2 > best_total:
-                    best_total, best_a1 = (q1 + q2, a1)
-                    best_q1, best_q2, best_stable = (q1, q2, stable)
-    _fx_3()
-    if best_total <= 0:
-        return None
-    floor = max(int(amount_out_min_floor), int(champ_out * _B1_SPLIT_MARGIN))
-    if best_total <= floor:
-        return None
-    min1 = int(best_q1 * (1.0 - _B1_SPLIT_LEG_SLACK))
-    min2 = int(best_q2 * (1.0 - _B1_SPLIT_LEG_SLACK))
+            _dz30()
+    _r_dz31 = _dz31()
+    if _r_dz31 is not _DR_UNSET:
+        return _r_dz31[0]
+    min1, min2 = _dz32(_B1_SPLIT_LEG_SLACK, best_q1, best_q2)
     if min1 + min2 <= champ_out:
         return None
-    a2 = amount_in - best_a1
-    recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
+    a2, recipient = _dz33(amount_in, best_a1, state)
 
     def _fx_12():
-        deadline = int(_b1time.time()) + 300
+
+        def _dz29():
+            deadline = int(_b1time.time()) + 300
+            return deadline
+        deadline = _dz29()
         try:
 
             def _fx_7():
+
+                def _dz28():
+                    aero_sel = _kk(text='swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)')[:4]
+                    aero_cd = '0x' + (aero_sel + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(a2), int(min2), [(ck(tin), ck(tout), bool(best_stable), ck(_B1_AERO_V2_FACTORY))], ck(recipient), int(deadline)])).hex()
+                    return ((aero_cd, v3_cd),)
+                    return _DR_UNSET
                 from web3 import Web3 as _W3
                 from eth_abi import encode as _enc
                 from eth_utils import keccak as _kk
                 ck = _W3.to_checksum_address
                 v3_cd = _b1_v3single(token_in=tin, token_out=tout, fee=100, recipient=recipient, deadline=deadline, amount_in=best_a1, amount_out_minimum=min1, chain_id=chain_id)
-                aero_sel = _kk(text='swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)')[:4]
-                aero_cd = '0x' + (aero_sel + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(a2), int(min2), [(ck(tin), ck(tout), bool(best_stable), ck(_B1_AERO_V2_FACTORY))], ck(recipient), int(deadline)])).hex()
-                return (aero_cd, v3_cd)
+                _r_dz28 = _dz28()
+                if _r_dz28 is not _DR_UNSET:
+                    return _r_dz28[0]
             aero_cd, v3_cd = _fx_7()
         except Exception:
             return None

@@ -11,6 +11,7 @@ the base's own quote() now works end-to-end for snapshot AND RPC-fetched exotic 
 node count is irrelevant to adoption. Fill-only-empty in spirit: correct routing can only lift a drop.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 from _fx_shard_0 import *
 _FT_UNSET = object()
 import os
@@ -20,11 +21,15 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from _hydra_rt import _QUOTER, fast_route
 from _hydra_aero import _AERO_V2_F, aero_route, v2_route
 from _hydra_pm import _best_route, _best_direct, _hop
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '538.0.5')
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
-_WETH_BY_CHAIN = {1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 8453: '0x4200000000000000000000000000000000000006'}
-_NATIVE = {'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000001', '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}
+
+def _dz26():
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon')
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '538.0.5')
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
+    _WETH_BY_CHAIN = {1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 8453: '0x4200000000000000000000000000000000000006'}
+    _NATIVE = {'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000001', '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}
+    return (SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR, _WETH_BY_CHAIN, _NATIVE)
+SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR, _WETH_BY_CHAIN, _NATIVE = _dz26()
 
 def _wrap(token, chain_id):
     if str(token).lower() in _NATIVE:
@@ -47,12 +52,15 @@ def _offline_result(r, tin, tout):
     return QuoteResult(estimated_output=str(r[0]), route_summary=f'{tin[:8]}..->{tout[:8]}.. {r[1]}', gas_estimate=450000, metadata={'data_source': 'offline-fixed'})
 
 def _sas_v3_cands(rt, wtin, wtout, amt):
+
+    def _dz26():
+        if rt and rt.get('out', 0) > 0:
+            if rt['kind'] == 'direct':
+                cands.append({'venue': 'uniswap_v3', 'param': rt['fee'], 'out': int(rt['out']), 'gas_est': 120000, 'gas_model': 120000, 'spend_amount': amt})
+            else:
+                cands.append({'venue': 'uni_v3_path', 'param': 'path', 'tokens': [wtin, rt['hub'], wtout], 'fees': [rt['f1'], rt['f2']], 'out': int(rt['out']), 'gas_est': 240000, 'gas_model': 240000, 'spend_amount': amt})
     cands = []
-    if rt and rt.get('out', 0) > 0:
-        if rt['kind'] == 'direct':
-            cands.append({'venue': 'uniswap_v3', 'param': rt['fee'], 'out': int(rt['out']), 'gas_est': 120000, 'gas_model': 120000, 'spend_amount': amt})
-        else:
-            cands.append({'venue': 'uni_v3_path', 'param': 'path', 'tokens': [wtin, rt['hub'], wtout], 'fees': [rt['f1'], rt['f2']], 'out': int(rt['out']), 'gas_est': 240000, 'gas_model': 240000, 'spend_amount': amt})
+    _dz26()
     return cands
 
 def _sas_aero_cands(ar, amt):
@@ -62,12 +70,15 @@ def _sas_aero_cands(ar, amt):
     return cands
 
 def _sas_v2_cands(vr, wtin, wtout, amt):
+
+    def _dz25():
+        if vr and vr.get('out', 0) > 0:
+            if vr['venue'] == 'aerodrome_v2':
+                cands.append({'venue': 'aerodrome_v2', 'routes': [(wtin, wtout, bool(vr['stable']), _AERO_V2_F)], 'param': _AERO_V2_F, 'out': int(vr['out']), 'gas_est': 200000, 'gas_model': 520000, 'spend_amount': amt})
+            else:
+                cands.append({'venue': 'uniswap_v2', 'tokens': [wtin, wtout], 'param': 'v2', 'out': int(vr['out']), 'gas_est': 150000, 'gas_model': 300000, 'spend_amount': amt})
     cands = []
-    if vr and vr.get('out', 0) > 0:
-        if vr['venue'] == 'aerodrome_v2':
-            cands.append({'venue': 'aerodrome_v2', 'routes': [(wtin, wtout, bool(vr['stable']), _AERO_V2_F)], 'param': _AERO_V2_F, 'out': int(vr['out']), 'gas_est': 200000, 'gas_model': 520000, 'spend_amount': amt})
-        else:
-            cands.append({'venue': 'uniswap_v2', 'tokens': [wtin, wtout], 'param': 'v2', 'out': int(vr['out']), 'gas_est': 150000, 'gas_model': 300000, 'spend_amount': amt})
+    _dz25()
     return cands
 
 class MinerSolver(_Base):
@@ -79,15 +90,21 @@ class MinerSolver(_Base):
     def _raw_swap(self, intent, state, snapshot):
         """Normalized (input_token, output_token, input_amount, chain_id) — eip155
         stripped, fee-effective amount applied. Shared by the fast-path and offline."""
+
+        def _dz24():
+            tin = str(params.get('input_token', '') or '')
+            tout = str(params.get('output_token', '') or '')
+            amt = int(params.get('input_amount', 0) or 0)
+            try:
+                amt = self._effective_swap_amount(self._fee_params(state, params), tin, amt)
+            except Exception:
+                pass
+            return ((_strip155(tin), _strip155(tout), amt, _chain_id(state, snapshot)),)
+            return _DR_UNSET
         params = self._normalized_swap_params(intent, state)
-        tin = str(params.get('input_token', '') or '')
-        tout = str(params.get('output_token', '') or '')
-        amt = int(params.get('input_amount', 0) or 0)
-        try:
-            amt = self._effective_swap_amount(self._fee_params(state, params), tin, amt)
-        except Exception:
-            pass
-        return (_strip155(tin), _strip155(tout), amt, _chain_id(state, snapshot))
+        _r_dz24 = _dz24()
+        if _r_dz24 is not _DR_UNSET:
+            return _r_dz24[0]
 
     def _sas_build(self, intent, state, snapshot, cands, wtin, wtout, amt, cid):
         for cand in sorted(cands, key=lambda c: int(c.get('out', 0)), reverse=True):
@@ -100,19 +117,22 @@ class MinerSolver(_Base):
         return None
 
     def _sas_cands(self, w3, cid, wtin, wtout, amt):
+
+        def _dz23():
+            rt = fast_route(w3, cid, wtin, wtout, amt)
+            cands.extend(_sas_v3_cands(rt, wtin, wtout, amt))
+            try:
+                ar = aero_route(w3, cid, wtin, wtout, amt)
+                cands.extend(_sas_aero_cands(ar, amt))
+            except Exception:
+                pass
+            try:
+                vr = v2_route(w3, cid, wtin, wtout, amt)
+                cands.extend(_sas_v2_cands(vr, wtin, wtout, amt))
+            except Exception:
+                pass
         cands = []
-        rt = fast_route(w3, cid, wtin, wtout, amt)
-        cands.extend(_sas_v3_cands(rt, wtin, wtout, amt))
-        try:
-            ar = aero_route(w3, cid, wtin, wtout, amt)
-            cands.extend(_sas_aero_cands(ar, amt))
-        except Exception:
-            pass
-        try:
-            vr = v2_route(w3, cid, wtin, wtout, amt)
-            cands.extend(_sas_v2_cands(vr, wtin, wtout, amt))
-        except Exception:
-            pass
+        _dz23()
         return cands
 
     def _web3_for(self, cid):
@@ -141,15 +161,22 @@ class MinerSolver(_Base):
             return None
 
         def _fx_40():
-            w3 = self._web3_for(cid)
-            if w3 is None:
-                sc = self._c1_static_cands(wtin, wtout, amt, cid)
-                if sc:
-                    return self._sas_build(intent, state, snapshot, sc, wtin, wtout, amt, cid)
-                return None
-            cands = self._sas_cands(w3, cid, wtin, wtout, amt)
-            if not cands:
+
+            def _dz19():
+                nonlocal cands
+                w3 = self._web3_for(cid)
+                if w3 is None:
+                    sc = self._c1_static_cands(wtin, wtout, amt, cid)
+                    if sc:
+                        return (self._sas_build(intent, state, snapshot, sc, wtin, wtout, amt, cid),)
+                    return (None,)
                 cands = self._sas_cands(w3, cid, wtin, wtout, amt)
+                if not cands:
+                    cands = self._sas_cands(w3, cid, wtin, wtout, amt)
+                return _DR_UNSET
+            _r_dz19 = _dz19()
+            if _r_dz19 is not _DR_UNSET:
+                return _r_dz19[0]
             if not cands:
                 cands = self._c1_static_cands(wtin, wtout, amt, cid)
             return self._sas_build(intent, state, snapshot, cands, wtin, wtout, amt, cid)
@@ -169,24 +196,45 @@ class MinerSolver(_Base):
 
     def _fbe_subset(self, pool_states, token_in, token_out, amount_in, mids):
         """Mixed multi-hop -> best single-DEX subset (v3-only / aero-only), else best direct."""
+
+        def _dz22():
+            cands = []
+            for subset in (v3_only, aero_only):
+                if not subset:
+                    continue
+                r = _best_route(subset, token_in, token_out, amount_in, mids)
+                if r is not None:
+                    cands.append(r)
+            if cands:
+                return (max(cands, key=lambda r: r[0]),)
+            d = _best_direct(pool_states, token_in, token_out, amount_in)
+            if d:
+                return ((d[0], 'direct', [_hop(d)]),)
+            return _DR_UNSET
         v3_only, aero_only = _split_by_dex(pool_states)
-        cands = []
-        for subset in (v3_only, aero_only):
-            if not subset:
-                continue
-            r = _best_route(subset, token_in, token_out, amount_in, mids)
-            if r is not None:
-                cands.append(r)
-        if cands:
-            return max(cands, key=lambda r: r[0])
-        d = _best_direct(pool_states, token_in, token_out, amount_in)
-        if d:
-            return (d[0], 'direct', [_hop(d)])
+        _r_dz22 = _dz22()
+        if _r_dz22 is not _DR_UNSET:
+            return _r_dz22[0]
         return None
 
     def _find_best_executable_route(self, pool_states, token_in, token_out, amount_in, chain_id):
         """Correct routing (fixes the zero_for_one crash). Preserves the original's
         executability logic: mixed multi-hop falls back to the better single-DEX subset."""
+
+        def _dz21():
+            unrestricted = _best_route(pool_states, token_in, token_out, amount_in, mids)
+            if unrestricted is None:
+                return (None,)
+            _, _, hops = unrestricted
+            if len(hops) <= 1:
+                return (unrestricted,)
+            try:
+                dexes = {self._hop_dex(h) for h in hops}
+            except Exception:
+                dexes = {'uniswap_v3'}
+            if len(dexes) == 1:
+                return (unrestricted,)
+            return _DR_UNSET
         try:
             token_in = _wrap(token_in, chain_id)
             token_out = _wrap(token_out, chain_id)
@@ -194,18 +242,9 @@ class MinerSolver(_Base):
                 mids = self._intermediaries_for_chain(chain_id)
             except Exception:
                 mids = []
-            unrestricted = _best_route(pool_states, token_in, token_out, amount_in, mids)
-            if unrestricted is None:
-                return None
-            _, _, hops = unrestricted
-            if len(hops) <= 1:
-                return unrestricted
-            try:
-                dexes = {self._hop_dex(h) for h in hops}
-            except Exception:
-                dexes = {'uniswap_v3'}
-            if len(dexes) == 1:
-                return unrestricted
+            _r_dz21 = _dz21()
+            if _r_dz21 is not _DR_UNSET:
+                return _r_dz21[0]
             return self._fbe_subset(pool_states, token_in, token_out, amount_in, mids)
         except Exception:
             return None
@@ -217,19 +256,26 @@ class MinerSolver(_Base):
             return []
 
     def _offline_fallback_quote(self, intent, state, snapshot):
+
+        def _dz20():
+            nonlocal tin, tout
+            if not tin or not tout or amt <= 0:
+                return (None,)
+            tin = _wrap(tin, cid)
+            tout = _wrap(tout, cid)
+            r = _best_route(ps, tin, tout, amt, self._mids_for(cid))
+            if r and r[0] > 0:
+                return (_offline_result(r, tin, tout),)
+            return (None,)
+            return _DR_UNSET
         try:
             ps = getattr(snapshot, 'pool_states', None) if snapshot else None
             if not ps:
                 return None
             tin, tout, amt, cid = self._raw_swap(intent, state, snapshot)
-            if not tin or not tout or amt <= 0:
-                return None
-            tin = _wrap(tin, cid)
-            tout = _wrap(tout, cid)
-            r = _best_route(ps, tin, tout, amt, self._mids_for(cid))
-            if r and r[0] > 0:
-                return _offline_result(r, tin, tout)
-            return None
+            _r_dz20 = _dz20()
+            if _r_dz20 is not _DR_UNSET:
+                return _r_dz20[0]
         except Exception:
             return None
 MinerSolver._C1_STATIC_FEE = _fx_tbl29
@@ -284,6 +330,28 @@ def _build_crown():
             def _fh0h():
 
                 def _ft10():
+
+                    def _dz16():
+                        if int(cid or 0) != 8453 or int(amt or 0) <= 0 or (not tin) or (not tout):
+                            return (((None,),),)
+                        _r_dz15 = _dz15()
+                        if _r_dz15 is not _DR_UNSET:
+                            return (_r_dz15[0],)
+                        try:
+                            params = self._normalized_swap_params(intent, state)
+                        except Exception:
+                            params = {}
+                        return (_FT_UNSET,)
+                        return _DR_UNSET
+
+                    def _dz15():
+                        tl, ol = (str(tin).lower(), str(tout).lower())
+                        if tl == ol:
+                            return (((None,),),)
+                        th, oh = (tl in self._NF_HUBS, ol in self._NF_HUBS)
+                        exotic = ol if th else tl if oh else ol
+                        fee = 500 if th and oh else int(self._NF_FEE.get(exotic, 10000))
+                        return _DR_UNSET
                     nonlocal Interaction, ExecutionPlan, _abi, _ck, encode_exact_input_single, tin, tout, amt, cid, tl, ol, th, oh, exotic, fee, params
                     nonlocal Interaction, ExecutionPlan, _abi, _ck, encode_exact_input_single, tin, tout, amt, cid, tl, ol, th, oh, exotic, fee, params, recipient, deadline, router, approve, swap, ix
                     from minotaur_subnet.shared.types import Interaction, ExecutionPlan
@@ -291,33 +359,33 @@ def _build_crown():
                     from eth_utils import to_checksum_address as _ck
                     from strategies.dex_aggregator.v3_codec import encode_exact_input_single
                     tin, tout, amt, cid = self._raw_swap(intent, state, snapshot)
-                    if int(cid or 0) != 8453 or int(amt or 0) <= 0 or (not tin) or (not tout):
-                        return ((None,),)
-                    tl, ol = (str(tin).lower(), str(tout).lower())
-                    if tl == ol:
-                        return ((None,),)
-                    th, oh = (tl in self._NF_HUBS, ol in self._NF_HUBS)
-                    exotic = ol if th else tl if oh else ol
-                    fee = 500 if th and oh else int(self._NF_FEE.get(exotic, 10000))
-                    try:
-                        params = self._normalized_swap_params(intent, state)
-                    except Exception:
-                        params = {}
-                    return _FT_UNSET
+                    _r_dz16 = _dz16()
+                    if _r_dz16 is not _DR_UNSET:
+                        return _r_dz16[0]
 
                 def _ft11():
+
+                    def _dz14(recipient):
+                        deadline = 4102444800
+                        router = '0x2626664c2603336E57B271c5C0b26F421741e481'
+                        approve = '0x095ea7b3' + _abi(['address', 'uint256'], [_ck(router), int(amt)]).hex()
+                        swap = encode_exact_input_single(token_in=tin, token_out=tout, fee=fee, recipient=recipient, deadline=int(deadline), amount_in=int(amt), amount_out_minimum=0, chain_id=8453)
+                        _r_dz13 = _dz13()
+                        return (_r_dz13, approve, deadline, router, swap)
+
+                    def _dz13():
+                        ix = [Interaction(target=_ck(tin), value='0', call_data=approve, chain_id=8453), Interaction(target=_ck(router), value='0', call_data=swap, chain_id=8453)]
+                        return (((ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=int(deadline), nonce=state.nonce, metadata={'solver': 'hydra-nf-cover', 'route': f'v3-{fee}', 'chain_id': 8453}),),),)
+                        return ((_FT_UNSET,),)
+                        return (_FT_UNSET,)
+                        return _DR_UNSET
                     nonlocal recipient, deadline, router, approve, swap, ix
                     recipient = getattr(state, 'contract_address', None) or (params.get('receiver') if params else None) or getattr(state, 'owner', None)
                     if not recipient:
                         return ((None,),)
-                    deadline = 4102444800
-                    router = '0x2626664c2603336E57B271c5C0b26F421741e481'
-                    approve = '0x095ea7b3' + _abi(['address', 'uint256'], [_ck(router), int(amt)]).hex()
-                    swap = encode_exact_input_single(token_in=tin, token_out=tout, fee=fee, recipient=recipient, deadline=int(deadline), amount_in=int(amt), amount_out_minimum=0, chain_id=8453)
-                    ix = [Interaction(target=_ck(tin), value='0', call_data=approve, chain_id=8453), Interaction(target=_ck(router), value='0', call_data=swap, chain_id=8453)]
-                    return ((ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=int(deadline), nonce=state.nonce, metadata={'solver': 'hydra-nf-cover', 'route': f'v3-{fee}', 'chain_id': 8453}),),)
-                    return (_FT_UNSET,)
-                    return _FT_UNSET
+                    _r_dz13, approve, deadline, router, swap = _dz14(recipient)
+                    if _r_dz13 is not _DR_UNSET:
+                        return _r_dz13[0]
                 Interaction = ExecutionPlan = _abi = _ck = encode_exact_input_single = tin = tout = amt = cid = tl = ol = th = oh = exotic = fee = params = recipient = deadline = router = approve = swap = ix = None
                 _r_ft10 = _ft10()
                 if _r_ft10 is not _FT_UNSET:
@@ -355,13 +423,8 @@ def _build_crown():
             return (t, box)
 
         def initialize(self, config):
-            try:
-                super().initialize(config)
-            except Exception:
-                pass
-            try:
-                ru = (config or {}).get('rpc_urls') or {}
-                norm = {}
+
+            def _dz18():
                 for k, v in ru.items():
                     try:
                         if v:
@@ -376,12 +439,26 @@ def _build_crown():
                         cur.setdefault(k, v)
                 if not isinstance(getattr(self, '_web3_cache', None), dict):
                     self._web3_cache = {}
+            try:
+                super().initialize(config)
+            except Exception:
+                pass
+            try:
+                ru = (config or {}).get('rpc_urls') or {}
+                norm = {}
+                _dz18()
             except Exception:
                 pass
             self._qf_warmup()
         _QF_WARM = {1: ('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '10000000'), 8453: ('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', '0x4200000000000000000000000000000000000006', '10000000')}
 
         def _qf_warmup(self):
+
+            def _dz17():
+                nonlocal t
+                st = _IS(contract_address='', chain_id=cid, nonce=0, owner='', raw_params={'input_token': tin, 'output_token': tout, 'input_amount': amt, 'min_output_amount': '0'}, control={'_scenario_name': 'warmup', '_intent_function': 'swap'})
+                t, _ = self._qf_start(self._crown_full, (_WarmIntent(), st, _MS.empty(cid)))
+                threads.append(t)
             try:
                 from minotaur_subnet.shared.types import IntentState as _IS
                 from minotaur_subnet.sdk.intent_solver import MarketSnapshot as _MS
@@ -393,9 +470,7 @@ def _build_crown():
                 for cid, (tin, tout, amt) in self._QF_WARM.items():
                     if not (getattr(self, '_rpc_urls', None) or {}).get(cid):
                         continue
-                    st = _IS(contract_address='', chain_id=cid, nonce=0, owner='', raw_params={'input_token': tin, 'output_token': tout, 'input_amount': amt, 'min_output_amount': '0'}, control={'_scenario_name': 'warmup', '_intent_function': 'swap'})
-                    t, _ = self._qf_start(self._crown_full, (_WarmIntent(), st, _MS.empty(cid)))
-                    threads.append(t)
+                    _dz17()
                 deadline = self._QF_WARMUP_S / max(1, len(threads)) if threads else 0
                 for t in threads:
                     t.join(deadline)
@@ -449,6 +524,21 @@ def _build_crown():
             def _fh0h():
 
                 def _ft10():
+
+                    def _dz12():
+                        ft, fbox = self._qf_start(self._fast_plan, (intent, state, snapshot))
+                        ft.join(min(9.0, max(5.0, slice_s)))
+                        fp = fbox.get('r')
+                        if fp is not None and getattr(fp, 'interactions', None):
+                            return (((fp,),),)
+                        if not cascade_ok:
+                            try:
+                                busy.join(3.0)
+                            except Exception:
+                                pass
+                            if busy.is_alive():
+                                return (((None,),),)
+                        return _DR_UNSET
                     nonlocal sn, slice_s, busy, cascade_ok, fp, ft, fbox, t, box
                     nonlocal sn, slice_s, busy, cascade_ok, fp, ft, fbox, t, box
 
@@ -463,18 +553,9 @@ def _build_crown():
                         return (busy, cascade_ok, slice_s, sn)
                     busy, cascade_ok, slice_s, sn = _fx_32()
                     if sn.startswith('quote:'):
-                        ft, fbox = self._qf_start(self._fast_plan, (intent, state, snapshot))
-                        ft.join(min(9.0, max(5.0, slice_s)))
-                        fp = fbox.get('r')
-                        if fp is not None and getattr(fp, 'interactions', None):
-                            return ((fp,),)
-                        if not cascade_ok:
-                            try:
-                                busy.join(3.0)
-                            except Exception:
-                                pass
-                            if busy.is_alive():
-                                return ((None,),)
+                        _r_dz12 = _dz12()
+                        if _r_dz12 is not _DR_UNSET:
+                            return _r_dz12[0]
                         t, box = self._qf_start(self._crown_full, (intent, state, snapshot))
                         self._qf_busy = t
                         t.join(max(6.0, slice_s))
@@ -482,6 +563,17 @@ def _build_crown():
                     return _FT_UNSET
 
                 def _ft11():
+
+                    def _dz11():
+                        ft, fbox = self._qf_start(self._fast_plan, (intent, state, snapshot))
+                        ft.join(self._QF_FALLBACK_S)
+                        fp = fbox.get('r')
+                        if fp is not None and getattr(fp, 'interactions', None):
+                            return (((fp,),),)
+                        return (((box.get('r') if cascade_ok else None,),),)
+                        return ((_FT_UNSET,),)
+                        return (_FT_UNSET,)
+                        return _DR_UNSET
                     nonlocal t, box, ft, fbox, fp
                     if cascade_ok:
                         t, box = self._qf_start(self._crown_full, (intent, state, snapshot))
@@ -489,14 +581,9 @@ def _build_crown():
                         t.join(max(4.0, slice_s))
                         if 'r' in box:
                             return ((box.get('r'),),)
-                    ft, fbox = self._qf_start(self._fast_plan, (intent, state, snapshot))
-                    ft.join(self._QF_FALLBACK_S)
-                    fp = fbox.get('r')
-                    if fp is not None and getattr(fp, 'interactions', None):
-                        return ((fp,),)
-                    return ((box.get('r') if cascade_ok else None,),)
-                    return (_FT_UNSET,)
-                    return _FT_UNSET
+                    _r_dz11 = _dz11()
+                    if _r_dz11 is not _DR_UNSET:
+                        return _r_dz11[0]
                 sn = slice_s = busy = cascade_ok = fp = ft = fbox = t = box = None
                 _r_ft10 = _ft10()
                 if _r_ft10 is not _FT_UNSET:
