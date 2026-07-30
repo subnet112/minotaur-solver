@@ -19,9 +19,9 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from _hydra_rt import _QUOTER, fast_route
 from _hydra_aero import _AERO_V2_F, aero_route, v2_route
 from _hydra_pm import _best_route, _best_direct, _hop
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "falcon")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "538.0.5")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "randy707")
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '538.0.5')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
 _WETH_BY_CHAIN = {1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 8453: '0x4200000000000000000000000000000000000006'}
 _NATIVE = {'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000001', '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}
 
@@ -519,18 +519,6 @@ def _build_crown():
     globals()['SOLVER_CLASS'] = CrownSolver
 _build_crown()
 
-
-# ===== BLIND-SPOT COVER (outermost, wraps the CROWN) =====================
-# SOLVER_CLASS at this point is CrownSolver, installed by _build_crown() above -- not
-# MinerSolver. Wrapping MinerSolver would silently discard the champion's crown layer
-# and with it every order the crown is what serves.
-#
-# The tree underneath is champion-identical, so on every order the champion serves this
-# routes identically -> matched, and dropped/regression/catastrophic are structurally 0.
-# The layer adds only upside: it serves a pre-verified plan where the champion delivers
-# nothing, and where a row is PROVEN (fork-measured, stored on the row) to beat the
-# champion on an order our own stack drops. Any import failure leaves SOLVER_CLASS
-# untouched -- a refork must never fail closed into something worse than the champion.
 def _load_blind_cover():
     try:
         import blind_cover as _bc
@@ -539,6 +527,4 @@ def _load_blind_cover():
     except Exception:
         import logging as _bclog
         _bclog.getLogger(__name__).exception('[cover] blind-spot layer failed to load')
-
-
 _load_blind_cover()
