@@ -1,3 +1,4 @@
+_DR_UNSET = object()
 _FR_UNSET = object()
 __all__ = ['_fx_5', '_fx_23', '_fx_25', '__fx_tbl29__C1B', '__fx_tbl29__C1D', '__fx_tbl29__C1T', '__fx_tbl29__C1U', '__fx_tbl29__C1W', '_fx_tbl29']
 
@@ -39,6 +40,13 @@ def _fx_25(_B1Ix, _B1Plan, _B1_AERO_V2_FACTORY, _B1_AERO_V2_ROUTER, _B1_ROUTER_8
         best_total, best_a1, best_q1, best_q2, best_stable = (0, 0, 0, 0, True)
 
         def _fx_3():
+
+            def _dz21():
+                for stable in (True, False):
+                    q2 = _b1_quote_aero_v2(w3, tin, tout, a2, stable)
+                    if q2 > 0 and q1 + q2 > best_total:
+                        best_total, best_a1 = (q1 + q2, a1)
+                        best_q1, best_q2, best_stable = (q1, q2, stable)
             nonlocal a2, best_a1, best_q1, best_q2, best_stable, best_total
             for pct in (50, 60, 65, 70, 75, 80):
                 a1 = amount_in * pct // 100
@@ -46,11 +54,7 @@ def _fx_25(_B1Ix, _B1Plan, _B1_AERO_V2_FACTORY, _B1_AERO_V2_ROUTER, _B1_ROUTER_8
                 q1 = _b1_quote_single(w3, tin, tout, a1, 100)
                 if q1 <= 0:
                     continue
-                for stable in (True, False):
-                    q2 = _b1_quote_aero_v2(w3, tin, tout, a2, stable)
-                    if q2 > 0 and q1 + q2 > best_total:
-                        best_total, best_a1 = (q1 + q2, a1)
-                        best_q1, best_q2, best_stable = (q1, q2, stable)
+                _dz21()
         _fx_3()
         if best_total <= 0:
             return None
@@ -69,18 +73,28 @@ def _fx_25(_B1Ix, _B1Plan, _B1_AERO_V2_FACTORY, _B1_AERO_V2_ROUTER, _B1_ROUTER_8
     recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
 
     def _fx_12():
-        deadline = int(_b1time.time()) + 300
+
+        def _dz22():
+            deadline = int(_b1time.time()) + 300
+            return deadline
+        deadline = _dz22()
         try:
 
             def _fx_7():
+
+                def _dz20():
+                    aero_sel = _kk(text='swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)')[:4]
+                    aero_cd = '0x' + (aero_sel + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(a2), int(min2), [(ck(tin), ck(tout), bool(best_stable), ck(_B1_AERO_V2_FACTORY))], ck(recipient), int(deadline)])).hex()
+                    return ((aero_cd, v3_cd),)
+                    return _DR_UNSET
                 from web3 import Web3 as _W3
                 from eth_abi import encode as _enc
                 from eth_utils import keccak as _kk
                 ck = _W3.to_checksum_address
                 v3_cd = _b1_v3single(token_in=tin, token_out=tout, fee=100, recipient=recipient, deadline=deadline, amount_in=best_a1, amount_out_minimum=min1, chain_id=chain_id)
-                aero_sel = _kk(text='swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)')[:4]
-                aero_cd = '0x' + (aero_sel + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(a2), int(min2), [(ck(tin), ck(tout), bool(best_stable), ck(_B1_AERO_V2_FACTORY))], ck(recipient), int(deadline)])).hex()
-                return (aero_cd, v3_cd)
+                _r_dz20 = _dz20()
+                if _r_dz20 is not _DR_UNSET:
+                    return _r_dz20[0]
             aero_cd, v3_cd = _fx_7()
         except Exception:
             return None
