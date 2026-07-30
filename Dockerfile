@@ -9,10 +9,3 @@ RUN python -c "import web3" 2>/dev/null || pip install --no-cache-dir -r /app/so
 
 COPY . /app/solver/
 WORKDIR /app/solver
-
-# Cold pin-proxy reads regularly exceed the 2s default socket timeout (round
-# e29755437: the WHOLE challenger field timed out on the same chain-1 quote
-# set while the grandfathered champion, on a laxer client, served it). Raise
-# the per-call caps; the in-solver adaptive pacer still bounds total time.
-ENV SOLVER_RPC_TIMEOUT_S=4.0
-ENV SOLVER_QUOTER_TIMEOUT_S=6.0

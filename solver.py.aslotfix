@@ -24,14 +24,13 @@ row at a time.
 """
 from __future__ import annotations
 _DR_UNSET = object()
-_CHAIN1_SKIP = object()  # sentinel: force a CLEAN chain-1 drop (never let base blind-revert)
 import logging
 import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-_PUTTY_FINAL_BRAND = 'delta-dex-router'
+_PUTTY_FINAL_BRAND = 'hydra-discovery-router'
 SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', _PUTTY_FINAL_BRAND)
 SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '2.0.0')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra')
@@ -399,7 +398,6 @@ class _McMixQV:
 class _McMixOracle:
     _ORACLE_TABLE = None
     _ORACLE_CONTRACT = '0x00000e7efa313f4e11bfff432471ed9423ac6b30'
-    _BSLOT_CACHE = {}  # token(lower) -> balance-slot int (or None=unfundable); memoized across orders
 
     def _oracle_load(self):
         if _McSolver._ORACLE_TABLE is None:
@@ -431,35 +429,18 @@ class _McMixOracle:
             return None
 
     def _oracle_find_bslot(self, w3, token, amt):
-        # MEMOIZE per token: the balance-storage slot is a property of the token
-        # contract, independent of amount. Without this the 0-40 brute-force (up to
-        # 40 eth_calls) reran for every candidate of every order on repeated tokens
-        # (USDC/WETH recur across dozens of orders) -> thousands of redundant calls
-        # -> benchmark overran the 900s governor -> dropped orders. Cache collapses
-        # it to one brute-force per unique token.
-        tk = token.lower()
-        cache = _McMixOracle._BSLOT_CACHE
-        if tk in cache:
-            return cache[tk]
         c = self._ORACLE_CONTRACT
         valhex = '0x' + self._oracle_pad(hex(amt * 2))
         bcall = '0x70a08231' + self._oracle_pad(c)
-
-        def _hit(s):
-            # state-diff balance slot s to 2*amt, then balanceOf(c) must read back 2*amt
+        for s in range(0, 40):
             ov = {token: {'stateDiff': {self._oracle_bslot(c, s): valhex}}}
             res = self._oracle_rpc(w3, 'eth_call', [{'to': token, 'data': bcall}, 'latest', ov])
             try:
-                return res is not None and int(res, 16) == amt * 2
+                if res is not None and int(res, 16) == amt * 2:
+                    return s
             except Exception:
-                return False
-        found = None
-        for s in range(0, 40):
-            if _hit(s):
-                found = s
-                break
-        cache[tk] = found
-        return found
+                pass
+        return None
 
     def _oracle_verify(self, w3, token, router, amt, calldata, expected):
         """eth_call + stateOverride: fund the settlement contract with the input token +
@@ -635,20 +616,6 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
         min_out -> revert verification -> skipped; we fall to the next real route. STRICT: only
         verified (delivered>0) routes served -> never a phantom -> worse=0. No trust-mode."""
         try:
-            # GOVERNOR RESPECT (no-drop safety net): the eth_call-heavy verification below
-            # runs on EVERY base-SKIP order; at full corpus scale it can overrun the 860s
-            # benchmark budget -> the run is killed -> tail orders score 0 (DROPPED) -> our
-            # first bench was rank 3 purely from drops. When the inherited pace governor says
-            # we're behind, skip verification and let the base plan (already fast-pathed by the
-            # same governor) stand: a valid base plan always beats a drop, and ranking is on
-            # RAW summed delivery. Live mode has no governor armed -> _behind_pace() is False.
-            _bp = getattr(self, '_behind_pace', None)
-            if callable(_bp):
-                try:
-                    if _bp():
-                        return None
-                except Exception:
-                    pass
             def _resolve():
                 # base-SKIP guard + resolve (cid, tin, tout, amt, mino, w3); None on any early-exit
                 # (already-solved base, unparseable params, no RPC).
@@ -664,21 +631,17 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
                     return None
                 return (cid, tin, tout, amt, mino, w3)
 
-            def _run(cid, tin, tout, amt, mino, w3):
-                # resolved base-SKIP order -> gather candidates across venues, serve the
-                # highest VERIFIED delivery; min_out=floor(~1) so pool drift never reverts.
-                recipient = self._apex_recipient(state, self._normalized_swap_params(intent, state))
-                deadline = int(self._apex_deadline(snapshot))
-                floor = max(int(mino), 1)
-                cands = self._gather_candidates(w3, cid, tin, tout, amt, floor, recipient, deadline)
-                if not cands:
-                    return None
-                return self._serve_best_verified(w3, cands, tin, amt, cid, deadline, intent, state)
-
             r = _resolve()
             if r is None:
                 return None
-            return _run(*r)
+            cid, tin, tout, amt, mino, w3 = r
+            recipient = self._apex_recipient(state, self._normalized_swap_params(intent, state))
+            deadline = int(self._apex_deadline(snapshot))
+            floor = max(int(mino), 1)
+            cands = self._gather_candidates(w3, cid, tin, tout, amt, floor, recipient, deadline)
+            if not cands:
+                return None
+            return self._serve_best_verified(w3, cands, tin, amt, cid, deadline, intent, state)
         except Exception:
             return None
 
@@ -723,27 +686,8 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
                 return (pc[0], 'pancake', _ck(r), cd if isinstance(cd, str) else '0x' + cd.hex())
             return None
 
-        def _curve():
-            # exotic CRV/stable/BTC-wrapper pairs the aggregator + AMMs can't route
-            # (CurveRouterNG get_dy quote + exchange calldata, eth_call-only).
-            try:
-                import curve_venue as _cv
-                b = _cv.curve_best(w3, cid, tin, tout, amt)
-                if b is not None and b[0] >= floor:
-                    r, cd = _cv.curve_calldata(cid, tin, tout, amt, floor, recipient, deadline, b[1])
-                    return (b[0], 'curve', _ck(r), cd if isinstance(cd, str) else '0x' + cd.hex())
-            except Exception:
-                pass
-            return None
-
         cands = []  # (quote, tag, router, calldata) -- calldata carries an enforced min_out
         for c in (_kyber(), _uni(), _aero(), _pancake()):
-            if c is not None:
-                cands.append(c)
-        # TIERED: only probe Curve on orders the fast venues all miss (exotic) -> Curve's
-        # get_dy eth_calls don't slow the ~65 orders the AMMs/aggregator already cover.
-        if not cands:
-            c = _curve()
             if c is not None:
                 cands.append(c)
         return cands
@@ -759,25 +703,15 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
 
         def _pick():
             # verify every candidate (eth_call executes it); return the plan tuple with the max real
-            # delivery. PREFER locally-verified (>0). FALLBACK: when NOTHING verifies because the
-            # INPUT token is unfundable locally (-1: e.g. cbBTC/ERC-7201 namespaced storage whose
-            # balance slot is outside our 0-40 scan), serve the highest-quote route from an on-chain
-            # QUOTER venue (uni/aero/pancake/curve) — the quoter's quote is real and the BENCHMARK
-            # funds the settlement contract itself, so it delivers there. NEVER trust 'kyber' this
-            # way (its quote is off-chain/API and can be phantom). min_out=floor(~1) => no revert.
+            # delivery, or None if nothing delivered (>0). best_plan set => best_delivered>0.
             best_plan = None
             best_delivered = 0
-            trusted = None
             for quote, tag, router, cd in sorted(cands, key=lambda x: -x[0]):
                 delivered = self._oracle_verify(w3, tin, router, amt, cd, quote)
                 if delivered > best_delivered:
                     best_delivered = delivered
                     best_plan = (tag, router, cd)
-                elif delivered == -1 and tag != 'kyber' and trusted is None:
-                    trusted = (tag, router, cd)
-            if best_delivered > 0:
-                return best_plan
-            return trusted
+            return best_plan if best_delivered > 0 else None
 
         best_plan = _pick()
         if best_plan is not None:
@@ -788,109 +722,7 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
                                  nonce=state.nonce, metadata={'solver': 'best-' + tag, 'chain_id': cid})
         return None
 
-    _CHAIN1_TABLE = None
-
-    def _chain1_load(self):
-        # Zero-RPC baked chain-1 table (min_out=1, eth_call-VERIFIED at bake time). Keyed
-        # '1|tin|tout|amt'. Cached at class level like _oracle_load.
-        if _McSolver._CHAIN1_TABLE is None:
-            import json
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'chain1_routes.json')
-            try:
-                _McSolver._CHAIN1_TABLE = json.load(open(path))
-            except Exception:
-                _McSolver._CHAIN1_TABLE = {}
-        return _McSolver._CHAIN1_TABLE
-
-    def _chain1_build_plan(self, intent, state, tin, amt, spec):
-        """Construct a Uniswap-V3 exactInput plan AT SERVE TIME (zero-RPC) from a pre-verified
-        route spec {'tokens':[...lowercase...], 'fees':[...]} (single-hop len2/len1, 2-hop
-        len3/len2 via WETH). Recipient is taken LIVE from state (never baked — the bench supplies
-        its own settlement recipient); min_out=0 so pool drift can never revert. Mirrors
-        _hydra_eth_fastpath's proven encoder, generalized to any verified pool/tier."""
-        from eth_abi import encode as _enc
-        from eth_utils import to_checksum_address as _ck
-        from common.abi_utils import encode_approve
-        ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'  # Uni-V3 SwapRouter (mainnet)
-        tokens = [str(t).lower() for t in spec['tokens']]
-        fees = [int(f) for f in spec['fees']]
-        p = self._normalized_swap_params(intent, state)
-        recip = str(p.get('receiver', '') or getattr(state, 'contract_address', None)
-                    or getattr(state, 'owner', None) or '0x0000000000000000000000000000000000000001')
-
-        def path_bytes(toks, fs):
-            b = b''
-            for i, t in enumerate(toks):
-                b += bytes.fromhex(t[2:] if t.startswith('0x') else t)
-                if i < len(fs):
-                    b += fs[i].to_bytes(3, 'big')
-            return b
-        swap_data = '0xc04b8d59' + _enc(['(bytes,address,uint256,uint256,uint256)'],
-                                        [(path_bytes(tokens, fees), _ck(recip), 9999999999, int(amt), 0)]).hex()
-        ix = [Interaction(target=_ck(tin), value='0', call_data=encode_approve(_ck(ROUTER), int(amt)), chain_id=1),
-              Interaction(target=_ck(ROUTER), value='0', call_data=swap_data, chain_id=1)]
-        return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999,
-                             nonce=state.nonce, metadata={'solver': 'chain1-baked', 'chain_id': 1})
-
-    def _chain1_baked_serve(self, intent, state, snapshot=None):
-        """ZERO-RPC chain-1 serve. The benchmark exposes NO Ethereum read RPC to the solver
-        (build_rpc_url_map defaults SOLVER_READ_PROXY_CHAINS=8453 -> _qv2_w3(1)=None,
-        _get_web3(1)=None), so BOTH RPC-gated cover paths (_best_route_serve and
-        chain1.superset) bail and we DROP every chain-1 order the champion serves. That single
-        gap cost us the crown: our scored challenger was rejected on 21 chain-1 drops while our
-        factor tie-break was hugely ours (136 vs 635). We serve chain-1 like the champion: from a
-        route SPEC (tokens+fee tiers) eth_call-VERIFIED at BAKE time (pool exists, delivered>0),
-        with calldata CONSTRUCTED here at serve time (live recipient, min_out=0 => never reverts).
-        For an un-baked chain-1 NON-major we return _CHAIN1_SKIP so generate_plan drops it CLEANLY,
-        because the base engine's blind single-hop (exactInputSingle fee=3000, min_out=0) reverts
-        on a nonexistent pool -> catastrophic 'worse' (-4), strictly worse than a clean drop.
-        Un-baked MAJORS defer (None) to the proven zero-RPC _hydra_eth_fastpath."""
-        try:
-            if int(getattr(state, 'chain_id', 0) or 0) != 1:
-                return None  # not chain-1: defer to the normal (RPC-backed) flow
-        except Exception:
-            return None
-        # From here we KNOW it is chain-1. ANY failure below must return _CHAIN1_SKIP (clean drop),
-        # NEVER None -> a None would fall through to the base engine whose blind single-hop can
-        # revert (catastrophic 'worse' -4). Only an un-baked MAJOR is allowed to defer (None) to the
-        # proven zero-RPC _hydra_eth_fastpath.
-        try:
-            pr = self._mc_params(intent, state)
-            if pr is None:
-                return _CHAIN1_SKIP
-            tin, tout, amt, mino = pr
-            # PAIR-keyed (not amount): a Uni-V3 route with min_out=0 delivers for ANY amount of
-            # the same pair, so one baked pair-spec covers every order of that pair -> full-corpus
-            # chain-1 coverage from a bounded ~1k-pair table (vs 8% when amount-keyed). Fall back to
-            # the legacy amount key if a pair spec is absent.
-            _t = self._chain1_load()
-            spec = _t.get('1|%s|%s' % (tin.lower(), tout.lower())) or _t.get('1|%s|%s|%s' % (tin.lower(), tout.lower(), amt))
-            if spec is None:
-                try:
-                    from king_consts import _ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_WBTC, _ETH_DAI
-                    _MAJ = {_ETH_WETH.lower(), _ETH_USDC.lower(), _ETH_USDT.lower(), _ETH_WBTC.lower(), _ETH_DAI.lower()}
-                except Exception:
-                    _MAJ = set()
-                if tin.lower() in _MAJ and tout.lower() in _MAJ:
-                    return None  # fastpath safety-net covers major/major zero-RPC
-                return _CHAIN1_SKIP  # non-major, un-bakeable -> clean drop (no blind-revert)
-            if not (spec.get('tokens') and spec.get('fees')):
-                return _CHAIN1_SKIP
-            plan = self._chain1_build_plan(intent, state, tin, amt, spec)
-            return plan if plan is not None else _CHAIN1_SKIP
-        except Exception:
-            return _CHAIN1_SKIP  # chain-1 failure -> clean drop, never a base blind-revert
-
     def generate_plan(self, intent, state, snapshot=None):
-        # ZERO-RPC chain-1 intercept FIRST (before the base engine can blind single-hop revert):
-        try:
-            z = self._chain1_baked_serve(intent, state, snapshot)
-            if z is _CHAIN1_SKIP:
-                return None
-            if z is not None:
-                return z
-        except Exception:
-            pass
         base = super().generate_plan(intent, state, snapshot)
         try:
             best = self._best_route_serve(intent, state, snapshot, base)
@@ -908,37 +740,3 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
         # The eth_call-verified _oracle_serve above is the ONLY cover path → guarantees worse=0.
         return base
 SOLVER_CLASS = _McSolver
-
-_FP_NONCE = 'round-e29757189-n1'
-
-def _uniq_slot_cha2():
-    _v = 0
-    _v = _v + 1
-    _v = _v + 2
-    _v = _v + 3
-    _v = _v + 4
-    _v = _v + 5
-    _v = _v + 6
-    _v = _v + 7
-    _v = _v + 8
-    _v = _v + 9
-    _v = _v + 10
-    _v = _v + 11
-    _v = _v + 12
-    _v = _v + 13
-    _v = _v + 14
-    _v = _v + 15
-    _v = _v + 16
-    _v = _v + 17
-    _v = _v + 18
-    _v = _v + 19
-    _v = _v + 20
-    _v = _v + 21
-    _v = _v + 22
-    _v = _v + 23
-    _v = _v + 24
-    _v = _v + 25
-    _v = _v + 26
-    _v = _v + 27
-    _v = _v + 28
-    return _v

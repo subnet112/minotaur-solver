@@ -109,7 +109,7 @@ def _dr7():
                     elif t0 == token_out_lower and t1 == token_in_lower:
                         zero_for_one = False
                     else:
-                        return (3, None, zero_for_one)
+                        return (3, None, False)
                     return (0, None, zero_for_one)
                 _fwr4 = _fw4()
                 zero_for_one = _fwr4[2]
