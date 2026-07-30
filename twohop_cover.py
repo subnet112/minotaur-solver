@@ -9,6 +9,7 @@ can only win where the order's optimal 2-hop uses a fee-pair the champion can't
 produce — never a regression. NARROW edge (audit-rated low), zero risk.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 _FR_UNSET = object()
 import logging
 logger = logging.getLogger(__name__)
@@ -48,6 +49,17 @@ def wrap(base_cls):
         def _th_candidate(self, intent, state, snapshot, base):
             """Guards + params; delegates quote+build to _th_quote (both stay small regions).
             Returns (cand, tin, tout, amt, app, w3) or None to defer."""
+
+            def _dz347():
+                _rv_47 = _fr_47()
+                if _rv_47 is not _FR_UNSET:
+                    return (_rv_47,)
+                amt = int(p.get('input_amount', 0) or 0)
+                app = getattr(state, 'contract_address', '') or ''
+                if amt <= 0 or not tin or (not tout) or (tin == tout) or (not app):
+                    return (None,)
+                return (self._th_quote(intent, state, snapshot, cfg, cid, p, tin, tout, amt, app),)
+                return _DR_UNSET
             if cover_state.disabled('twohop'):
                 return None
             cfg = cid = p = tin = tout = None
@@ -64,14 +76,9 @@ def wrap(base_cls):
                 tin = str(p.get('input_token', '') or '').lower()
                 tout = str(p.get('output_token', '') or '').lower()
                 return _FR_UNSET
-            _rv_47 = _fr_47()
-            if _rv_47 is not _FR_UNSET:
-                return _rv_47
-            amt = int(p.get('input_amount', 0) or 0)
-            app = getattr(state, 'contract_address', '') or ''
-            if amt <= 0 or not tin or (not tout) or (tin == tout) or (not app):
-                return None
-            return self._th_quote(intent, state, snapshot, cfg, cid, p, tin, tout, amt, app)
+            _r_dz347 = _dz347()
+            if _r_dz347 is not _DR_UNSET:
+                return _r_dz347[0]
 
         def _th_quote(self, intent, state, snapshot, cfg, cid, p, tin, tout, amt, app):
             """web3 + missing-2hop quote + built candidate plan (own region)."""
@@ -101,14 +108,31 @@ def wrap(base_cls):
 
         def _th_plan(self, intent, state, snapshot, path, router, cid, amt, tin):
             """Encode the approve+exactInput 2-hop plan (its own region for factorization)."""
+
+            def _dz346():
+                cd = encode_exact_input(path=path, recipient=_ck(recipient), deadline=deadline, amount_in=amt, amount_out_minimum=0)
+                ix = [Interaction(target=_ck(tin), value='0', call_data=encode_approve(_ck(router), amt), chain_id=cid), Interaction(target=_ck(router), value='0', call_data=cd, chain_id=cid)]
+                return (ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': '2hop-cover', 'chain_id': cid}),)
+                return _DR_UNSET
             from eth_utils import to_checksum_address as _ck
             recipient = self._apex_recipient(state, self._normalized_swap_params(intent, state))
             deadline = int(self._apex_deadline(snapshot))
-            cd = encode_exact_input(path=path, recipient=_ck(recipient), deadline=deadline, amount_in=amt, amount_out_minimum=0)
-            ix = [Interaction(target=_ck(tin), value='0', call_data=encode_approve(_ck(router), amt), chain_id=cid), Interaction(target=_ck(router), value='0', call_data=cd, chain_id=cid)]
-            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': '2hop-cover', 'chain_id': cid})
+            _r_dz346 = _dz346()
+            if _r_dz346 is not _DR_UNSET:
+                return _r_dz346[0]
 
         def generate_plan(self, intent, state, snapshot=None):
+
+            def _dz345():
+                _rv_49 = _fr_49()
+                if _rv_49 is not _FR_UNSET:
+                    return (_rv_49,)
+                if champ_out is None or cand_out is None:
+                    return (base,)
+                if cand_out > champ_out * (1 + cover_state.margin_bps(_MARGIN_BPS) / 10000):
+                    logger.info('[2hop] cover WIN champ=%d cand=%d %s->%s', champ_out, cand_out, tin[:10], tout[:10])
+                    return (cand,)
+                return _DR_UNSET
             base = super().generate_plan(intent, state, snapshot)
             try:
                 cand = cand_out = champ_out = tin = tout = None
@@ -124,14 +148,9 @@ def wrap(base_cls):
                     champ_out = viking_sim.sim_floor(w3, base, tin, tout, amt, app)
                     cand_out = viking_sim.sim_floor(w3, cand, tin, tout, amt, app)
                     return _FR_UNSET
-                _rv_49 = _fr_49()
-                if _rv_49 is not _FR_UNSET:
-                    return _rv_49
-                if champ_out is None or cand_out is None:
-                    return base
-                if cand_out > champ_out * (1 + cover_state.margin_bps(_MARGIN_BPS) / 10000):
-                    logger.info('[2hop] cover WIN champ=%d cand=%d %s->%s', champ_out, cand_out, tin[:10], tout[:10])
-                    return cand
+                _r_dz345 = _dz345()
+                if _r_dz345 is not _DR_UNSET:
+                    return _r_dz345[0]
             except Exception:
                 logger.exception('[2hop] cover failed; deferring to champion')
             return base

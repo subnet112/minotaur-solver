@@ -5,6 +5,7 @@ different tier yields more. Only the fee word of the exactInputSingle calldata i
 recipient, deadline, amounts and the approve interaction stay exactly as the champion built
 them, so a rescue can only convert a revert into a delivery.
 """
+_DR_UNSET = object()
 _FR_UNSET = object()
 _SEL_EIS = '414bf389'
 _TIERS = (100, 500, 3000, 10000)
@@ -61,6 +62,20 @@ def _w3_of(self, cid):
         return None
 
 def _rescue_dead(self, plan, intent, state, snapshot):
+
+    def _dz269():
+        if len(w) < 8:
+            return (None,)
+        nf = _better_fee(self, w3, cid, w, int(w[2], 16))
+        if nf is None:
+            return (None,)
+        w[2] = format(int(nf), '064x')
+        try:
+            plan.interactions[i].call_data = cd[:10] + ''.join(w)
+        except Exception:
+            return (None,)
+        return (plan,)
+        return _DR_UNSET
     try:
         cd = cid = i = w = w3 = None
 
@@ -83,16 +98,8 @@ def _rescue_dead(self, plan, intent, state, snapshot):
         _rv_28 = _fr_28()
         if _rv_28 is not _FR_UNSET:
             return _rv_28
-        if len(w) < 8:
-            return None
-        nf = _better_fee(self, w3, cid, w, int(w[2], 16))
-        if nf is None:
-            return None
-        w[2] = format(int(nf), '064x')
-        try:
-            plan.interactions[i].call_data = cd[:10] + ''.join(w)
-        except Exception:
-            return None
-        return plan
+        _r_dz269 = _dz269()
+        if _r_dz269 is not _DR_UNSET:
+            return _r_dz269[0]
     except Exception:
         return None

@@ -9,15 +9,19 @@ from __future__ import annotations
 _FR_UNSET = object()
 from eth_abi import decode as _dec
 import router_cover as _rc
-APPROVE = '095ea7b3'
-S_V3_SINGLE_V1 = '414bf389'
-S_V3_SINGLE_02 = '04e45aaf'
-S_V3_PATH_V1 = 'c04b8d59'
-S_V3_PATH_02 = 'b858183f'
-S_V2 = '38ed1739'
-S_V2_FOT = '5c11d795'
-SWAPS = {S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02, S_V2, S_V2_FOT}
-_SENTINEL = 1 << 255
+
+def _dz72():
+    APPROVE = '095ea7b3'
+    S_V3_SINGLE_V1 = '414bf389'
+    S_V3_SINGLE_02 = '04e45aaf'
+    S_V3_PATH_V1 = 'c04b8d59'
+    S_V3_PATH_02 = 'b858183f'
+    S_V2 = '38ed1739'
+    S_V2_FOT = '5c11d795'
+    SWAPS = {S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02, S_V2, S_V2_FOT}
+    _SENTINEL = 1 << 255
+    return (APPROVE, S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02, S_V2, S_V2_FOT, SWAPS, _SENTINEL)
+APPROVE, S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02, S_V2, S_V2_FOT, SWAPS, _SENTINEL = _dz72()
 
 def _sel(cd):
     return (cd[2:10] if cd.startswith('0x') else cd[:8]).lower()

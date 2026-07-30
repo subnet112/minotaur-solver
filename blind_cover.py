@@ -19,14 +19,19 @@ The recipient baked into the calldata is rewritten to the live proxy at serve ti
 so a redeployed executor cannot silently route output to a dead address.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 _FR_UNSET = object()
 import json, logging, os
-logger = logging.getLogger(__name__)
-_ROTATE_FP_NONCE = '9525'
-_TABLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'live_wins.json')
-_BENCH_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_bench.json')
-_MIN_VALID = 0
-_BEAT_TTL_S = 24 * 3600
+
+def _dz59():
+    logger = logging.getLogger(__name__)
+    _ROTATE_FP_NONCE = '9525'
+    _TABLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'live_wins.json')
+    _BENCH_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_bench.json')
+    _MIN_VALID = 0
+    _BEAT_TTL_S = 24 * 3600
+    return (logger, _TABLE_PATH, _BENCH_PATH, _BEAT_TTL_S)
+logger, _TABLE_PATH, _BENCH_PATH, _BEAT_TTL_S = _dz59()
 
 def _load():
     try:
@@ -85,16 +90,22 @@ def _key(state):
     and lowercases it. Keying on anything else (e.g. a retired executor) makes every
     row unreachable — that silently killed a 1000+ row table once already.
     """
-    try:
-        p = getattr(state, 'raw_params', None) or {}
-        tin = str(p.get('input_token') or '').lower()
-        tout = str(p.get('output_token') or '').lower()
+
+    def _dz59():
         amt = int(p.get('input_amount') or 0)
         ca = str(getattr(state, 'contract_address', '') or '').lower()
         cid = int(getattr(state, 'chain_id', 0) or 0)
         if not (tin and tout and amt and ca):
-            return None
-        return f'{cid}|{ca}|{tin}|{tout}|{amt}'
+            return (None,)
+        return (f'{cid}|{ca}|{tin}|{tout}|{amt}',)
+        return _DR_UNSET
+    try:
+        p = getattr(state, 'raw_params', None) or {}
+        tin = str(p.get('input_token') or '').lower()
+        tout = str(p.get('output_token') or '').lower()
+        _r_dz59 = _dz59()
+        if _r_dz59 is not _DR_UNSET:
+            return _r_dz59[0]
     except Exception:
         return None
 
