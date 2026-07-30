@@ -19,32 +19,23 @@ The recipient baked into the calldata is rewritten to the live proxy at serve ti
 so a redeployed executor cannot silently route output to a dead address.
 """
 from __future__ import annotations
+_FR_UNSET = object()
 import json, logging, os
-
 logger = logging.getLogger(__name__)
-_ROTATE_FP_NONCE = "9525"   # rewritten per-build; distinct fingerprint per bench
-
-_TABLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "live_wins.json")
-_BENCH_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "champ_bench.json")
+_ROTATE_FP_NONCE = '9525'
+_TABLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'live_wins.json')
+_BENCH_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_bench.json')
 _MIN_VALID = 0
-# How long a fork-measured beat proof stays trustworthy. Frozen calldata rots as pools
-# move: the q_63a9af2d row under-delivered 2.1% against its own minted estimate by the
-# time it was benched. Past the TTL a row silently demotes to fill-only-empty, which for
-# a row we drop is the verdict we already had -- expiry is never worse than not arming.
 _BEAT_TTL_S = 24 * 3600
-
 
 def _load():
     try:
         with open(_TABLE_PATH) as f:
             return json.load(f)
     except Exception:
-        logger.warning("[cover] no cover table at %s; layer inert", _TABLE_PATH)
+        logger.warning('[cover] no cover table at %s; layer inert', _TABLE_PATH)
         return {}
-
-
 _TABLE = _load()
-
 
 def _bench():
     """Keys the CHAMPION is measured to serve, from our own scorecards.
@@ -64,12 +55,9 @@ def _bench():
         with open(_BENCH_PATH) as f:
             return json.load(f)
     except Exception:
-        logger.info("[cover] no champ_bench.json; served-row guard inert")
+        logger.info('[cover] no champ_bench.json; served-row guard inert')
         return {}
-
-
 _BENCH = _bench()
-
 
 def _bench_blocks(key):
     """True when the champion serves `key` and we have no bench proof of beating it.
@@ -80,16 +68,15 @@ def _bench_blocks(key):
     """
     rec = _BENCH.get(key)
     if not rec:
-        return False                          # unknown row: blind marking still governs
+        return False
     try:
-        champ = int(rec.get("champ") or 0)
-        ours = int(rec.get("ours") or 0)
+        champ = int(rec.get('champ') or 0)
+        ours = int(rec.get('ours') or 0)
     except Exception:
-        return True                           # unparseable proof is not a proof
+        return True
     if champ <= 0:
-        return False                          # champion blind here: preempt stays free
+        return False
     return ours * 1000 <= champ * 1001
-
 
 def _key(state):
     """chain|contract_address|tin|tout|amount — must match the bench byte for byte.
@@ -99,27 +86,27 @@ def _key(state):
     row unreachable — that silently killed a 1000+ row table once already.
     """
     try:
-        p = getattr(state, "raw_params", None) or {}
-        tin = str(p.get("input_token") or "").lower()
-        tout = str(p.get("output_token") or "").lower()
-        amt = int(p.get("input_amount") or 0)
-        ca = str(getattr(state, "contract_address", "") or "").lower()
-        cid = int(getattr(state, "chain_id", 0) or 0)
+        p = getattr(state, 'raw_params', None) or {}
+        tin = str(p.get('input_token') or '').lower()
+        tout = str(p.get('output_token') or '').lower()
+        amt = int(p.get('input_amount') or 0)
+        ca = str(getattr(state, 'contract_address', '') or '').lower()
+        cid = int(getattr(state, 'chain_id', 0) or 0)
         if not (tin and tout and amt and ca):
             return None
-        return f"{cid}|{ca}|{tin}|{tout}|{amt}"
+        return f'{cid}|{ca}|{tin}|{tout}|{amt}'
     except Exception:
         return None
-
 
 def install(base_cls, Interaction, ExecutionPlan):
     """Wrap `base_cls` so an EMPTY plan is filled from the table; else pass through."""
 
     class _BlindCover(base_cls):
+
         @staticmethod
         def _empty(plan):
             try:
-                return plan is None or not getattr(plan, "interactions", None)
+                return plan is None or not getattr(plan, 'interactions', None)
             except Exception:
                 return True
 
@@ -127,27 +114,23 @@ def install(base_cls, Interaction, ExecutionPlan):
             row = _TABLE.get(_key(state))
             if not row:
                 return None
-            ixs = row.get("interactions") or []
+            ixs = row.get('interactions') or []
             if not ixs:
                 return None
-            cid = int(getattr(state, "chain_id", 0) or 0)
+            cid = int(getattr(state, 'chain_id', 0) or 0)
 
             def _cv_ixs():
                 out = []
                 for r in ixs:
-                    data = r.get("call_data") or r.get("data")
-                    if not r.get("target") or not data:
+                    data = r.get('call_data') or r.get('data')
+                    if not r.get('target') or not data:
                         return None
-                    out.append(Interaction(target=r["target"], value=str(r.get("value", "0")),
-                                           call_data=data, chain_id=cid))
+                    out.append(Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=data, chain_id=cid))
                 return out
-
             out = _cv_ixs()
             if out is None:
                 return None
-            return ExecutionPlan(intent_id=getattr(intent, "app_id", ""), interactions=out,
-                                 deadline=9999999999, nonce=getattr(state, "nonce", 0),
-                                 metadata={"solver": "blind-cover", "chain_id": cid})
+            return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=out, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'blind-cover', 'chain_id': cid})
 
         def _beat_ok(self, row):
             """Is this row PROVEN better than both the champion and our own stack here?
@@ -166,94 +149,74 @@ def install(base_cls, Interaction, ExecutionPlan):
             today, so a proven-better cover there can at worst leave the drop it found.
             """
             try:
-                champ = int(row.get("champ_out") or 0)
-                mine = int(row.get("self_out") or 0)
-                ver = int(row.get("verified_out") or 0)
+                champ = int(row.get('champ_out') or 0)
+                mine = int(row.get('self_out') or 0)
+                ver = int(row.get('verified_out') or 0)
             except Exception:
                 return False
             if champ <= 0 or ver <= 0:
                 return False
-            if mine > 0 and mine * 100 >= champ * 99:
-                return False                      # we are inside the floor: hands off
-            if ver * 1000 <= champ * 1001 or ver <= mine:
-                return False                      # not proven better than both
-            try:
-                import time as _t
-                if float(row.get("verified") or 0) + _BEAT_TTL_S < _t.time():
-                    return False                  # an unrefreshed proof is not a proof
-            except Exception:
-                return False
+
+            def _fr_12():
+                if mine > 0 and mine * 100 >= champ * 99:
+                    return False
+                if ver * 1000 <= champ * 1001 or ver <= mine:
+                    return False
+                try:
+                    import time as _t
+                    if float(row.get('verified') or 0) + _BEAT_TTL_S < _t.time():
+                        return False
+                except Exception:
+                    return False
+                return _FR_UNSET
+            _rv_12 = _fr_12()
+            if _rv_12 is not _FR_UNSET:
+                return _rv_12
             return True
 
         def generate_plan(self, intent, state, snapshot=None):
-            # KNOWN-BLIND PREEMPT. The inner fastpath ALWAYS emits a plan (approve +
-            # V3 exactInput on guessed fee tiers, no liquidity check), so on exotic
-            # pairs it "serves" a plan that reverts to 0 at execution — and a plan
-            # that is never empty means fill-only-empty alone can never fire (that
-            # suppression cost minota ~30 skips). So: when the CHAMPION is known to
-            # deliver 0 on this exact key, serve the cover FIRST. Worst case there is
-            # champ=0/ours=0 = the same skip — a drop needs champ>0, which is exactly
-            # what the marking excludes. The marking is stamped from the champion's
-            # own scorecard + quote corpus and EXPIRES (champ_blind_until), so a
-            # champion that starts serving an order demotes its row back to
-            # fill-only-empty within hours rather than becoming a preempting stale
-            # cover — the kira drop q_2368941d… is the failure mode this avoids.
+
             def _gp_preempt():
                 try:
                     import time as _t
                     k = _key(state)
                     row = _TABLE.get(k)
                     if row and _bench_blocks(k):
-                        logger.info("[cover] served-row guard: champion delivers here "
-                                    "and no bench proof of a beat; falling through")
+                        logger.info('[cover] served-row guard: champion delivers here and no bench proof of a beat; falling through')
                         return None
-                    if row and float(row.get("champ_blind_until") or 0) > _t.time():
+                    if row and float(row.get('champ_blind_until') or 0) > _t.time():
                         c = self._cover(intent, state)
                         if c is not None:
-                            logger.info("[cover] known-blind preempt")
+                            logger.info('[cover] known-blind preempt')
                             return c
                 except Exception:
-                    logger.exception("[cover] preempt check failed; falling through")
+                    logger.exception('[cover] preempt check failed; falling through')
                 return None
 
             def _gp_fill(plan):
                 try:
                     c = self._cover(intent, state)
                     if c is not None:
-                        logger.info("[cover] blind-spot fill (fill-only-empty)")
+                        logger.info('[cover] blind-spot fill (fill-only-empty)')
                         return c
                 except Exception:
-                    logger.exception("[cover] fill failed; inner plan stands")
+                    logger.exception('[cover] fill failed; inner plan stands')
                 return plan
 
-            # PROVEN-BEAT preempt. Runs before the blind check because it is the
-            # stricter of the two: it demands a fork-measured win over the champion AND
-            # over our own stack, where the blind check only demands the champion be
-            # marked as delivering nothing.
             def _gp_beat():
                 try:
                     k = _key(state)
                     row = _TABLE.get(k)
-                    # The bench guard outranks the beat proof, because the proof's own
-                    # licence expired with the rebase. `self_out` was measured against the
-                    # PRE-rebase engine; on a champion-verbatim tree the fall-through
-                    # delivers the champion's own route, so a row stamped `self_out: 0`
-                    # is NOT a drop today and "at worst it stays the drop it was" no
-                    # longer holds. Preempting can only invent a `dropped` here.
-                    # Magnitude is no argument either: n_wins is a COUNT, so the 565,527x
-                    # beat on q_b32465ca scores +1, exactly what a 1.004x beat scores,
-                    # while a rotted cover costs an absolute veto.
                     if row and _bench_blocks(k):
                         return None
                     if row and self._beat_ok(row):
                         c = self._cover(intent, state)
                         if c is not None:
-                            logger.info("[cover] proven-beat preempt")
+                            logger.info('[cover] proven-beat preempt')
                             return c
                 except Exception:
-                    logger.exception("[cover] beat check failed; falling through")
+                    logger.exception('[cover] beat check failed; falling through')
                 return None
-
             beat = _gp_beat()
             if beat is not None:
                 return beat
@@ -263,10 +226,9 @@ def install(base_cls, Interaction, ExecutionPlan):
             try:
                 plan = super().generate_plan(intent, state, snapshot)
             except Exception:
-                logger.exception("[cover] inner generate_plan raised")
+                logger.exception('[cover] inner generate_plan raised')
                 plan = None
             if not self._empty(plan):
-                return plan                      # champion routing always wins
+                return plan
             return _gp_fill(plan)
-
     return _BlindCover

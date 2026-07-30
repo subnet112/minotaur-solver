@@ -11,31 +11,36 @@ the base's own quote() now works end-to-end for snapshot AND RPC-fetched exotic 
 node count is irrelevant to adoption. Fill-only-empty in spirit: correct routing can only lift a drop.
 """
 from __future__ import annotations
+_FR_UNSET = object()
 from _fx_shard_0 import *
 _FT_UNSET = object()
 import os
-import threading
-from _apex_ourbase import SOLVER_CLASS as _Base
-from minotaur_subnet.sdk.intent_solver import SolverMetadata
-from _hydra_rt import _QUOTER, fast_route
-from _hydra_aero import _AERO_V2_F, aero_route, v2_route
-from _hydra_pm import _best_route, _best_direct, _hop
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '538.0.5')
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
-_WETH_BY_CHAIN = {1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 8453: '0x4200000000000000000000000000000000000006'}
-_NATIVE = {'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000001', '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}
 
-def _wrap(token, chain_id):
-    if str(token).lower() in _NATIVE:
-        return _WETH_BY_CHAIN.get(int(chain_id or 0), token)
-    return token
+def _fr_1():
+    global SOLVER_AUTHOR, SOLVER_NAME, SOLVER_VERSION, SolverMetadata, _AERO_V2_F, _Base, _NATIVE, _QUOTER, _WETH_BY_CHAIN, _best_direct, _best_route, _chain_id, _hop, _strip155, _wrap, aero_route, fast_route, threading, v2_route
+    import threading
+    from _apex_ourbase import SOLVER_CLASS as _Base
+    from minotaur_subnet.sdk.intent_solver import SolverMetadata
+    from _hydra_rt import _QUOTER, fast_route
+    from _hydra_aero import _AERO_V2_F, aero_route, v2_route
+    from _hydra_pm import _best_route, _best_direct, _hop
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon')
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '538.0.5')
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
+    _WETH_BY_CHAIN = {1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 8453: '0x4200000000000000000000000000000000000006'}
+    _NATIVE = {'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000001', '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}
 
-def _strip155(t):
-    return t.split(':')[-1] if t.startswith('eip155:') else t
+    def _wrap(token, chain_id):
+        if str(token).lower() in _NATIVE:
+            return _WETH_BY_CHAIN.get(int(chain_id or 0), token)
+        return token
 
-def _chain_id(state, snapshot):
-    return int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+    def _strip155(t):
+        return t.split(':')[-1] if t.startswith('eip155:') else t
+
+    def _chain_id(state, snapshot):
+        return int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
+_fr_1()
 
 def _split_by_dex(pool_states):
     v3 = {a: p for a, p in pool_states.items() if (p.get('dex') or 'uniswap_v3') == 'uniswap_v3'}
@@ -189,17 +194,25 @@ class MinerSolver(_Base):
         executability logic: mixed multi-hop falls back to the better single-DEX subset."""
         try:
             token_in = _wrap(token_in, chain_id)
-            token_out = _wrap(token_out, chain_id)
-            try:
-                mids = self._intermediaries_for_chain(chain_id)
-            except Exception:
-                mids = []
-            unrestricted = _best_route(pool_states, token_in, token_out, amount_in, mids)
-            if unrestricted is None:
-                return None
-            _, _, hops = unrestricted
-            if len(hops) <= 1:
-                return unrestricted
+            hops = mids = token_out = unrestricted = None
+
+            def _fr_2():
+                nonlocal hops, mids, token_out, unrestricted
+                token_out = _wrap(token_out, chain_id)
+                try:
+                    mids = self._intermediaries_for_chain(chain_id)
+                except Exception:
+                    mids = []
+                unrestricted = _best_route(pool_states, token_in, token_out, amount_in, mids)
+                if unrestricted is None:
+                    return None
+                _, _, hops = unrestricted
+                if len(hops) <= 1:
+                    return unrestricted
+                return _FR_UNSET
+            _rv_2 = _fr_2()
+            if _rv_2 is not _FR_UNSET:
+                return _rv_2
             try:
                 dexes = {self._hop_dex(h) for h in hops}
             except Exception:
@@ -288,14 +301,22 @@ def _build_crown():
                     nonlocal Interaction, ExecutionPlan, _abi, _ck, encode_exact_input_single, tin, tout, amt, cid, tl, ol, th, oh, exotic, fee, params, recipient, deadline, router, approve, swap, ix
                     from minotaur_subnet.shared.types import Interaction, ExecutionPlan
                     from eth_abi import encode as _abi
-                    from eth_utils import to_checksum_address as _ck
-                    from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-                    tin, tout, amt, cid = self._raw_swap(intent, state, snapshot)
-                    if int(cid or 0) != 8453 or int(amt or 0) <= 0 or (not tin) or (not tout):
-                        return ((None,),)
-                    tl, ol = (str(tin).lower(), str(tout).lower())
-                    if tl == ol:
-                        return ((None,),)
+                    ol = tl = None
+
+                    def _fr_3():
+                        nonlocal ol, tl
+                        from eth_utils import to_checksum_address as _ck
+                        from strategies.dex_aggregator.v3_codec import encode_exact_input_single
+                        tin, tout, amt, cid = self._raw_swap(intent, state, snapshot)
+                        if int(cid or 0) != 8453 or int(amt or 0) <= 0 or (not tin) or (not tout):
+                            return ((None,),)
+                        tl, ol = (str(tin).lower(), str(tout).lower())
+                        if tl == ol:
+                            return ((None,),)
+                        return _FR_UNSET
+                    _rv_3 = _fr_3()
+                    if _rv_3 is not _FR_UNSET:
+                        return _rv_3
                     th, oh = (tl in self._NF_HUBS, ol in self._NF_HUBS)
                     exotic = ol if th else tl if oh else ol
                     fee = 500 if th and oh else int(self._NF_FEE.get(exotic, 10000))
@@ -312,9 +333,14 @@ def _build_crown():
                         return ((None,),)
                     deadline = 4102444800
                     router = '0x2626664c2603336E57B271c5C0b26F421741e481'
-                    approve = '0x095ea7b3' + _abi(['address', 'uint256'], [_ck(router), int(amt)]).hex()
-                    swap = encode_exact_input_single(token_in=tin, token_out=tout, fee=fee, recipient=recipient, deadline=int(deadline), amount_in=int(amt), amount_out_minimum=0, chain_id=8453)
-                    ix = [Interaction(target=_ck(tin), value='0', call_data=approve, chain_id=8453), Interaction(target=_ck(router), value='0', call_data=swap, chain_id=8453)]
+                    ix = None
+
+                    def _fr_4():
+                        nonlocal ix
+                        approve = '0x095ea7b3' + _abi(['address', 'uint256'], [_ck(router), int(amt)]).hex()
+                        swap = encode_exact_input_single(token_in=tin, token_out=tout, fee=fee, recipient=recipient, deadline=int(deadline), amount_in=int(amt), amount_out_minimum=0, chain_id=8453)
+                        ix = [Interaction(target=_ck(tin), value='0', call_data=approve, chain_id=8453), Interaction(target=_ck(router), value='0', call_data=swap, chain_id=8453)]
+                    _fr_4()
                     return ((ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=int(deadline), nonce=state.nonce, metadata={'solver': 'hydra-nf-cover', 'route': f'v3-{fee}', 'chain_id': 8453}),),)
                     return (_FT_UNSET,)
                     return _FT_UNSET
@@ -368,14 +394,18 @@ def _build_crown():
                             norm[int(k)] = v
                     except Exception:
                         pass
-                cur = getattr(self, '_rpc_urls', None)
-                if not isinstance(cur, dict):
-                    self._rpc_urls = dict(norm)
-                else:
-                    for k, v in norm.items():
-                        cur.setdefault(k, v)
-                if not isinstance(getattr(self, '_web3_cache', None), dict):
-                    self._web3_cache = {}
+
+                def _fr_5():
+                    nonlocal k, v
+                    cur = getattr(self, '_rpc_urls', None)
+                    if not isinstance(cur, dict):
+                        self._rpc_urls = dict(norm)
+                    else:
+                        for k, v in norm.items():
+                            cur.setdefault(k, v)
+                    if not isinstance(getattr(self, '_web3_cache', None), dict):
+                        self._web3_cache = {}
+                _fr_5()
             except Exception:
                 pass
             self._qf_warmup()
@@ -393,9 +423,12 @@ def _build_crown():
                 for cid, (tin, tout, amt) in self._QF_WARM.items():
                     if not (getattr(self, '_rpc_urls', None) or {}).get(cid):
                         continue
-                    st = _IS(contract_address='', chain_id=cid, nonce=0, owner='', raw_params={'input_token': tin, 'output_token': tout, 'input_amount': amt, 'min_output_amount': '0'}, control={'_scenario_name': 'warmup', '_intent_function': 'swap'})
-                    t, _ = self._qf_start(self._crown_full, (_WarmIntent(), st, _MS.empty(cid)))
-                    threads.append(t)
+
+                    def _fr_6():
+                        st = _IS(contract_address='', chain_id=cid, nonce=0, owner='', raw_params={'input_token': tin, 'output_token': tout, 'input_amount': amt, 'min_output_amount': '0'}, control={'_scenario_name': 'warmup', '_intent_function': 'swap'})
+                        t, _ = self._qf_start(self._crown_full, (_WarmIntent(), st, _MS.empty(cid)))
+                        threads.append(t)
+                    _fr_6()
                 deadline = self._QF_WARMUP_S / max(1, len(threads)) if threads else 0
                 for t in threads:
                     t.join(deadline)
@@ -466,18 +499,26 @@ def _build_crown():
                         ft, fbox = self._qf_start(self._fast_plan, (intent, state, snapshot))
                         ft.join(min(9.0, max(5.0, slice_s)))
                         fp = fbox.get('r')
-                        if fp is not None and getattr(fp, 'interactions', None):
-                            return ((fp,),)
-                        if not cascade_ok:
-                            try:
-                                busy.join(3.0)
-                            except Exception:
-                                pass
-                            if busy.is_alive():
-                                return ((None,),)
-                        t, box = self._qf_start(self._crown_full, (intent, state, snapshot))
-                        self._qf_busy = t
-                        t.join(max(6.0, slice_s))
+                        box = None
+
+                        def _fr_7():
+                            nonlocal box
+                            if fp is not None and getattr(fp, 'interactions', None):
+                                return ((fp,),)
+                            if not cascade_ok:
+                                try:
+                                    busy.join(3.0)
+                                except Exception:
+                                    pass
+                                if busy.is_alive():
+                                    return ((None,),)
+                            t, box = self._qf_start(self._crown_full, (intent, state, snapshot))
+                            self._qf_busy = t
+                            t.join(max(6.0, slice_s))
+                            return _FR_UNSET
+                        _rv_7 = _fr_7()
+                        if _rv_7 is not _FR_UNSET:
+                            return _rv_7
                         return ((box.get('r'),),)
                     return _FT_UNSET
 
@@ -489,12 +530,18 @@ def _build_crown():
                         t.join(max(4.0, slice_s))
                         if 'r' in box:
                             return ((box.get('r'),),)
-                    ft, fbox = self._qf_start(self._fast_plan, (intent, state, snapshot))
-                    ft.join(self._QF_FALLBACK_S)
-                    fp = fbox.get('r')
-                    if fp is not None and getattr(fp, 'interactions', None):
-                        return ((fp,),)
-                    return ((box.get('r') if cascade_ok else None,),)
+
+                    def _fr_8():
+                        ft, fbox = self._qf_start(self._fast_plan, (intent, state, snapshot))
+                        ft.join(self._QF_FALLBACK_S)
+                        fp = fbox.get('r')
+                        if fp is not None and getattr(fp, 'interactions', None):
+                            return ((fp,),)
+                        return ((box.get('r') if cascade_ok else None,),)
+                        return _FR_UNSET
+                    _rv_8 = _fr_8()
+                    if _rv_8 is not _FR_UNSET:
+                        return _rv_8
                     return (_FT_UNSET,)
                     return _FT_UNSET
                 sn = slice_s = busy = cascade_ok = fp = ft = fbox = t = box = None
