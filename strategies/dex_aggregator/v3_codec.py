@@ -15,7 +15,6 @@ exactInput on every chain we deploy to.
 from eth_abi.abi import encode
 EXACT_INPUT_SINGLE_SELECTOR_V1 = bytes.fromhex('414bf389')
 EXACT_INPUT_SINGLE_SELECTOR_V2 = bytes.fromhex('04e45aaf')
-EXACT_INPUT_SINGLE_SELECTOR = EXACT_INPUT_SINGLE_SELECTOR_V1
 SWAP_ROUTER_V2_CHAINS = {8453, 10, 42161}
 EXACT_INPUT_SELECTOR = bytes.fromhex('c04b8d59')
 

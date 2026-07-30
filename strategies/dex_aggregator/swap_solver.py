@@ -132,13 +132,6 @@ class SwapIntentProcessor(IntentProcessor):
         if _dr2 is not _DR_UNSET:
             return _dr2
 
-    async def on_score_received(self, intent: AppIntentDefinition, plan: ExecutionPlan, score: ScoreResult) -> None:
-        """Log score feedback. The baseline solver does not learn.
-
-        A production solver would use this to tune parameters like
-        fee tier selection, slippage tolerance, and routing strategy.
-        """
-        logger.info('SwapIntentProcessor score received: %.3f (valid=%s) for intent %s', score.score, score.valid, intent.app_id)
 
     def _extract_swap_params(self, intent: AppIntentDefinition, state: IntentState) -> dict[str, Any]:
         """Extract and validate swap parameters from intent + state.
