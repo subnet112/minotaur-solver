@@ -5,26 +5,22 @@ different tier yields more. Only the fee word of the exactInputSingle calldata i
 recipient, deadline, amounts and the approve interaction stay exactly as the champion built
 them, so a rescue can only convert a revert into a delivery.
 """
+_DR_UNSET = object()
 _SEL_EIS = '414bf389'
 _TIERS = (100, 500, 3000, 10000)
-_QUOTER = {1: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-           8453: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'}
-
+_QUOTER = {1: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e', 8453: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'}
 
 def _words(cd):
     body = cd[10:]
     return [body[i:i + 64] for i in range(0, len(body), 64)]
 
-
 def _quote(w3, quoter, ti, to, amt, fee):
-    data = ('c6a5026a' + ti.rjust(64, '0') + to.rjust(64, '0')
-            + format(int(amt), '064x') + format(int(fee), '064x') + '0' * 64)
+    data = 'c6a5026a' + ti.rjust(64, '0') + to.rjust(64, '0') + format(int(amt), '064x') + format(int(fee), '064x') + '0' * 64
     try:
         ret = bytes(w3.eth.call({'to': quoter, 'data': '0x' + data}))
         return int.from_bytes(ret[:32], 'big') if len(ret) >= 32 else 0
     except Exception:
         return 0
-
 
 def _swap_ix(plan):
     """Index of the plan's exactInputSingle interaction, else None."""
@@ -36,22 +32,26 @@ def _swap_ix(plan):
         pass
     return None
 
-
 def _better_fee(self, w3, cid, w, cur_fee):
-    ti, to = w[0][-40:], w[1][-40:]
+
+    def _dz262():
+        if _quote(w3, quoter, ti, to, amt, cur_fee) > 0:
+            return (None,)
+        best, bf = (0, None)
+        for f in _TIERS:
+            if int(f) == int(cur_fee):
+                continue
+            o = _quote(w3, quoter, ti, to, amt, f)
+            if o > best:
+                best, bf = (o, f)
+        return (bf if best > 0 else None,)
+        return _DR_UNSET
+    ti, to = (w[0][-40:], w[1][-40:])
     amt = int(w[5], 16)
     quoter = _QUOTER[cid]
-    if _quote(w3, quoter, ti, to, amt, cur_fee) > 0:
-        return None                      # champion's own tier is alive — leave it alone
-    best, bf = 0, None
-    for f in _TIERS:
-        if int(f) == int(cur_fee):
-            continue
-        o = _quote(w3, quoter, ti, to, amt, f)
-        if o > best:
-            best, bf = o, f
-    return bf if best > 0 else None
-
+    _r_dz262 = _dz262()
+    if _r_dz262 is not _DR_UNSET:
+        return _r_dz262[0]
 
 def _w3_of(self, cid):
     try:
@@ -60,8 +60,33 @@ def _w3_of(self, cid):
     except Exception:
         return None
 
-
 def _rescue_dead(self, plan, intent, state, snapshot):
+
+    def _dz260(i, plan):
+        cd = str(plan.interactions[i].call_data)
+        _r_dz259 = _dz259()
+        return (_r_dz259, cd)
+
+    def _dz259():
+        _r_dz258 = _dz258()
+        if _r_dz258 is not _DR_UNSET:
+            return (_r_dz258[0],)
+        return (plan,)
+        return _DR_UNSET
+
+    def _dz258():
+        w = _words(cd)
+        if len(w) < 8:
+            return (None,)
+        nf = _better_fee(self, w3, cid, w, int(w[2], 16))
+        if nf is None:
+            return (None,)
+        w[2] = format(int(nf), '064x')
+        try:
+            plan.interactions[i].call_data = cd[:10] + ''.join(w)
+        except Exception:
+            return (None,)
+        return _DR_UNSET
     try:
         if plan is None or not getattr(plan, 'interactions', None):
             return None
@@ -74,18 +99,8 @@ def _rescue_dead(self, plan, intent, state, snapshot):
         w3 = _w3_of(self, cid)
         if w3 is None:
             return None
-        cd = str(plan.interactions[i].call_data)
-        w = _words(cd)
-        if len(w) < 8:
-            return None
-        nf = _better_fee(self, w3, cid, w, int(w[2], 16))
-        if nf is None:
-            return None
-        w[2] = format(int(nf), '064x')
-        try:
-            plan.interactions[i].call_data = cd[:10] + ''.join(w)
-        except Exception:
-            return None
-        return plan
+        _r_dz259, cd = _dz260(i, plan)
+        if _r_dz259 is not _DR_UNSET:
+            return _r_dz259[0]
     except Exception:
         return None
