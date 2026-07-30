@@ -7,24 +7,19 @@ them, so a rescue can only convert a revert into a delivery.
 """
 _SEL_EIS = '414bf389'
 _TIERS = (100, 500, 3000, 10000)
-_QUOTER = {1: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-           8453: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'}
-
+_QUOTER = {1: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e', 8453: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'}
 
 def _words(cd):
     body = cd[10:]
     return [body[i:i + 64] for i in range(0, len(body), 64)]
 
-
 def _quote(w3, quoter, ti, to, amt, fee):
-    data = ('c6a5026a' + ti.rjust(64, '0') + to.rjust(64, '0')
-            + format(int(amt), '064x') + format(int(fee), '064x') + '0' * 64)
+    data = 'c6a5026a' + ti.rjust(64, '0') + to.rjust(64, '0') + format(int(amt), '064x') + format(int(fee), '064x') + '0' * 64
     try:
         ret = bytes(w3.eth.call({'to': quoter, 'data': '0x' + data}))
         return int.from_bytes(ret[:32], 'big') if len(ret) >= 32 else 0
     except Exception:
         return 0
-
 
 def _swap_ix(plan):
     """Index of the plan's exactInputSingle interaction, else None."""
@@ -36,22 +31,20 @@ def _swap_ix(plan):
         pass
     return None
 
-
 def _better_fee(self, w3, cid, w, cur_fee):
-    ti, to = w[0][-40:], w[1][-40:]
+    ti, to = (w[0][-40:], w[1][-40:])
     amt = int(w[5], 16)
     quoter = _QUOTER[cid]
     if _quote(w3, quoter, ti, to, amt, cur_fee) > 0:
-        return None                      # champion's own tier is alive — leave it alone
-    best, bf = 0, None
+        return None
+    best, bf = (0, None)
     for f in _TIERS:
         if int(f) == int(cur_fee):
             continue
         o = _quote(w3, quoter, ti, to, amt, f)
         if o > best:
-            best, bf = o, f
+            best, bf = (o, f)
     return bf if best > 0 else None
-
 
 def _w3_of(self, cid):
     try:
@@ -59,7 +52,6 @@ def _w3_of(self, cid):
         return gw(cid) if callable(gw) else None
     except Exception:
         return None
-
 
 def _rescue_dead(self, plan, intent, state, snapshot):
     try:
