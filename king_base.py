@@ -111,15 +111,15 @@ def _dr82():
             _OFFSET_UNI = int(os.environ.get('SOLVER_OFFSET_UNI', '285000'))
             _OFFSET_AERO = int(os.environ.get('SOLVER_OFFSET_AERO', '318000'))
             _GAS_MULTIHOP = int(os.environ.get('SOLVER_GAS_MULTIHOP', '490000'))
-            _RPC_TIMEOUT_S = float(os.environ.get('SOLVER_RPC_TIMEOUT_S', '2.0'))
+            _RPC_TIMEOUT_S = float(os.environ.get('SOLVER_RPC_TIMEOUT_S', '1.5'))
             _FAST_DIRECT_TIMEOUT_S = float(os.environ.get('SOLVER_FAST_DIRECT_TIMEOUT_S', '8.0'))
 
             def _dr164():
                 _QUOTE_BUDGET_S = float(os.environ.get('SOLVER_QUOTE_BUDGET_S', '14.0'))
                 _BASELINE_BUDGET_S = float(os.environ.get('SOLVER_BASELINE_BUDGET_S', '14.0'))
                 _SELECT_BUDGET_S = float(os.environ.get('SOLVER_SELECT_BUDGET_S', '12.0'))
-                _QUOTER_MAX_WORKERS = int(os.environ.get('SOLVER_QUOTER_MAX_WORKERS', '48'))
-                _QUOTER_TIMEOUT_S = float(os.environ.get('SOLVER_QUOTER_TIMEOUT_S', '5.0'))
+                _QUOTER_MAX_WORKERS = int(os.environ.get('SOLVER_QUOTER_MAX_WORKERS', '96'))
+                _QUOTER_TIMEOUT_S = float(os.environ.get('SOLVER_QUOTER_TIMEOUT_S', '2.5'))
                 _SWEEP_KG = frozenset({'0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x940181a94a35a4569e4529a3cdfb74e38fd98631', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'})
                 return (_BASELINE_BUDGET_S, _ETH_3POOL_IDX, _FAST_DIRECT_TIMEOUT_S, _GAS_MULTIHOP, _OFFSET_AERO, _OFFSET_UNI, _QUOTER_MAX_WORKERS, _QUOTER_TIMEOUT_S, _QUOTE_BUDGET_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S, _SWEEP_KG)
                 return _DR_UNSET
