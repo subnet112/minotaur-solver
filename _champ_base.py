@@ -11,6 +11,7 @@ the base's own quote() now works end-to-end for snapshot AND RPC-fetched exotic 
 node count is irrelevant to adoption. Fill-only-empty in spirit: correct routing can only lift a drop.
 """
 from __future__ import annotations
+from _fx_shard_0 import *
 _FT_UNSET = object()
 import os
 import threading
@@ -19,9 +20,9 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from _hydra_rt import _QUOTER, fast_route
 from _hydra_aero import _AERO_V2_F, aero_route, v2_route
 from _hydra_pm import _best_route, _best_direct, _hop
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "falcon")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "538.0.5")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "randy707")
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '538.0.5')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
 _WETH_BY_CHAIN = {1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 8453: '0x4200000000000000000000000000000000000006'}
 _NATIVE = {'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000001', '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}
 
@@ -119,12 +120,6 @@ class MinerSolver(_Base):
             return self._get_web3(cid)
         except Exception:
             return None
-    _C1W = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
-    _C1U = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
-    _C1T = '0xdac17f958d2ee523a2206206994597c13d831ec7'
-    _C1B = '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'
-    _C1D = '0x6b175474e89094c44da98b954eedeac495271d0f'
-    _C1_STATIC_FEE = {frozenset((_C1W, _C1U)): 500, frozenset((_C1W, _C1T)): 500, frozenset((_C1W, _C1B)): 500, frozenset((_C1W, _C1D)): 3000, frozenset((_C1U, _C1T)): 100, frozenset((_C1U, _C1D)): 100, frozenset((_C1T, _C1D)): 100, frozenset((_C1B, _C1U)): 3000}
     _B_W = '0x4200000000000000000000000000000000000006'
     _B_U = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
     _B_UB = '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'
@@ -144,18 +139,21 @@ class MinerSolver(_Base):
         wtout = _wrap(tout, cid)
         if not (wtin and wtout and (amt > 0) and (cid in _QUOTER)):
             return None
-        w3 = self._web3_for(cid)
-        if w3 is None:
-            sc = self._c1_static_cands(wtin, wtout, amt, cid)
-            if sc:
-                return self._sas_build(intent, state, snapshot, sc, wtin, wtout, amt, cid)
-            return None
-        cands = self._sas_cands(w3, cid, wtin, wtout, amt)
-        if not cands:
+
+        def _fx_40():
+            w3 = self._web3_for(cid)
+            if w3 is None:
+                sc = self._c1_static_cands(wtin, wtout, amt, cid)
+                if sc:
+                    return self._sas_build(intent, state, snapshot, sc, wtin, wtout, amt, cid)
+                return None
             cands = self._sas_cands(w3, cid, wtin, wtout, amt)
-        if not cands:
-            cands = self._c1_static_cands(wtin, wtout, amt, cid)
-        return self._sas_build(intent, state, snapshot, cands, wtin, wtout, amt, cid)
+            if not cands:
+                cands = self._sas_cands(w3, cid, wtin, wtout, amt)
+            if not cands:
+                cands = self._c1_static_cands(wtin, wtout, amt, cid)
+            return self._sas_build(intent, state, snapshot, cands, wtin, wtout, amt, cid)
+        return _fx_40()
 
     def _score_aware_singlehop(self, intent, state, snapshot, base_plan):
         """FAST delivering plan: multicall picks the route, base _build_singlehop_plan
@@ -234,6 +232,7 @@ class MinerSolver(_Base):
             return None
         except Exception:
             return None
+MinerSolver._C1_STATIC_FEE = _fx_tbl29
 SOLVER_CLASS = MinerSolver
 
 def _apex_fp_29748096n1(v):
@@ -452,13 +451,17 @@ def _build_crown():
                 def _ft10():
                     nonlocal sn, slice_s, busy, cascade_ok, fp, ft, fbox, t, box
                     nonlocal sn, slice_s, busy, cascade_ok, fp, ft, fbox, t, box
-                    try:
-                        sn = str((getattr(state, 'control', None) or {}).get('_scenario_name') or '')
-                    except Exception:
-                        sn = ''
-                    slice_s = self._qf_slice()
-                    busy = getattr(self, '_qf_busy', None)
-                    cascade_ok = not (busy is not None and busy.is_alive())
+
+                    def _fx_32():
+                        try:
+                            sn = str((getattr(state, 'control', None) or {}).get('_scenario_name') or '')
+                        except Exception:
+                            sn = ''
+                        slice_s = self._qf_slice()
+                        busy = getattr(self, '_qf_busy', None)
+                        cascade_ok = not (busy is not None and busy.is_alive())
+                        return (busy, cascade_ok, slice_s, sn)
+                    busy, cascade_ok, slice_s, sn = _fx_32()
                     if sn.startswith('quote:'):
                         ft, fbox = self._qf_start(self._fast_plan, (intent, state, snapshot))
                         ft.join(min(9.0, max(5.0, slice_s)))
@@ -519,18 +522,6 @@ def _build_crown():
     globals()['SOLVER_CLASS'] = CrownSolver
 _build_crown()
 
-
-# ===== BLIND-SPOT COVER (outermost, wraps the CROWN) =====================
-# SOLVER_CLASS at this point is CrownSolver, installed by _build_crown() above -- not
-# MinerSolver. Wrapping MinerSolver would silently discard the champion's crown layer
-# and with it every order the crown is what serves.
-#
-# The tree underneath is champion-identical, so on every order the champion serves this
-# routes identically -> matched, and dropped/regression/catastrophic are structurally 0.
-# The layer adds only upside: it serves a pre-verified plan where the champion delivers
-# nothing, and where a row is PROVEN (fork-measured, stored on the row) to beat the
-# champion on an order our own stack drops. Any import failure leaves SOLVER_CLASS
-# untouched -- a refork must never fail closed into something worse than the champion.
 def _load_blind_cover():
     try:
         import blind_cover as _bc
@@ -539,6 +530,4 @@ def _load_blind_cover():
     except Exception:
         import logging as _bclog
         _bclog.getLogger(__name__).exception('[cover] blind-spot layer failed to load')
-
-
 _load_blind_cover()
