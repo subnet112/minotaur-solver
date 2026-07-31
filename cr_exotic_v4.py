@@ -74,13 +74,12 @@ def build(spec, tin, tout, amount, recipient):
     transfer, exec_call = calls
     return [{'target': tin, 'value': '0', 'data': transfer}, {'target': UNIVERSAL_ROUTER, 'value': '0', 'data': exec_call}]
 
-
 def _build_calls(spec, tin, tout, amount, recipient):
     """(transfer, execute) calldata for a v4 swap, or None on any failure."""
     from eth_utils import to_checksum_address as ck
     from cr_ur_commands import build_commands
     try:
         cmds, inputs = build_commands(spec, tout, recipient, ck)
-        return _transfer(tin, amount), _wrap_execute(cmds, inputs)
+        return (_transfer(tin, amount), _wrap_execute(cmds, inputs))
     except Exception:
         return None
