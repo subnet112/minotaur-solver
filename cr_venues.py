@@ -43,7 +43,6 @@ def _v3_args(tin, tout, fee, recipient, amount, min_out, deadline, ck):
     tail = (int(amount), int(min_out), 0)
     return head + ((_deadline(),) + tail if deadline else tail)
 
-
 def _v3_single(tin, tout, fee, recipient, amount, min_out, chain_id):
     """SwapRouter02 (no deadline) on Base; V1 layout (with deadline) on mainnet."""
     from eth_abi.abi import encode
@@ -98,7 +97,6 @@ def _swap_call(cand, tin, tout, recipient, amount, min_out, chain_id):
         return _path_call(venue, param, cand.get('mid'), tin, tout, recipient, amount, min_out, chain_id)
     return _single_call(venue, param, tin, tout, recipient, amount, min_out, chain_id)
 
-
 def _v2_swap_call(param, tin, tout, recipient, amount, chain_id):
     """(router, calldata) for a Uniswap-V2 swap over the quoted path, or None."""
     import cr_consts as consts
@@ -107,7 +105,7 @@ def _v2_swap_call(param, tin, tout, recipient, amount, chain_id):
     if not router:
         return None
     path = list(param) if param else [tin, tout]
-    return router, v2_codec._v2_call(path, amount, recipient)
+    return (router, v2_codec._v2_call(path, amount, recipient))
 
 def build(cand, tin, tout, recipient, amount, min_out, chain_id):
     """approve + swap interactions for a chosen candidate, or None if unbuildable.

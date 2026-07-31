@@ -101,7 +101,6 @@ def _multihop(w3, kind, tokens, params, amount, chain_id=8453):
     venue = 'uniswap_v3_multihop' if kind == 'uni' else 'aerodrome_slipstream_multihop'
     return {'venue': venue, 'param': tuple(params), 'out': out, 'gas_est': gas_est or base, 'gas_model': gas_model, 'mid': tokens[1]}
 
-
 def _v2_amounts_out(w3, router, path, amount):
     """Uniswap-V2 getAmountsOut(amountIn, path) -> final output wei (0 on fail)."""
     from eth_abi import decode, encode
@@ -113,21 +112,17 @@ def _v2_amounts_out(w3, router, path, amount):
     amounts = decode(['uint256[]'], raw)[0]
     return int(amounts[-1]) if amounts else 0
 
-
 def _v2_gas(mid) -> int:
     """Gas model for a V2 quote — the 2-hop offset when routed through a mid."""
     gm = consts.gas_model()
     return gm['multihop'] if mid else gm['offset_uni']
 
-
 def _v2_cand(out, path, mid) -> dict:
     """Assemble the candidate dict for a filled V2 quote."""
-    cand = {'venue': 'uniswap_v2', 'param': tuple(path), 'out': int(out),
-            'gas_est': 0, 'gas_model': _v2_gas(mid)}
+    cand = {'venue': 'uniswap_v2', 'param': tuple(path), 'out': int(out), 'gas_est': 0, 'gas_model': _v2_gas(mid)}
     if mid:
         cand['mid'] = mid
     return cand
-
 
 def _v2(w3, tin, tout, amount, chain_id, mid=None):
     """A Uniswap-V2 quote over [tin, tout] (direct) or [tin, mid, tout] (2-hop)."""
