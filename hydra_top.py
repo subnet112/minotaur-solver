@@ -1144,7 +1144,7 @@ class MinerSolver(_ChampBase):
             _MAJ = {_ETH_WETH.lower(), _ETH_USDC.lower(), _ETH_USDT.lower(), _ETH_WBTC.lower(), _ETH_DAI.lower()}
             if tin not in _MAJ or tout not in _MAJ:
                 return None
-            return p, tin, tout
+            return (p, tin, tout)
         _pr = _pre()
         if _pr is None:
             return None
