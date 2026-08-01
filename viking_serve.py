@@ -1,12 +1,12 @@
 """Viking serve chain (hoisted from VikingSolver.generate_plan / _v_gated,
 behavior-identical): override precedence, gated eval, cached-bar guard,
 stale-row engine serve, fill-only-empty."""
+_DR_UNSET = object()
 import logging
 import viking_gate as _vg
 from viking_tables import _v_gated_table, _viking_override, _viking_cached_bar, _viking_frozen_index, _viking_replay
 from minotaur_subnet.shared.types import ExecutionPlan as _EP
 logger = logging.getLogger('solver')
-
 
 def head_serve(s, intent, state, snapshot):
     key = s._v_swap_key(intent, state)
@@ -92,7 +92,7 @@ def _gated_gate(s, state, snapshot, plan, key):
     spec = _v_gated_table().get(key or '')
     if spec is None:
         return None
-    if (plan is None or s._v_is_empty(plan)) and not spec.get('z'):
+    if (plan is None or s._v_is_empty(plan)) and (not spec.get('z')):
         return None
     chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
     return None if chain_id not in (8453, 1) else (spec, chain_id)
@@ -103,13 +103,19 @@ def _gated_plan(s, intent, state, spec, tin, tout, amt, mid_q, est, chain_id):
     return _EP(intent_id=intent.app_id, interactions=ixs, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-gated', 'chain_id': chain_id})
 
 def gated_eval(s, intent, state, snapshot, plan, key):
+
+    def _dz347():
+        if hit is None:
+            return (None,)
+        spec, chain_id = hit
+        tin, tout, amt_s = key.split('|')
+        amt = int(amt_s)
+        est, mid_q = _vg.gate_est(s, spec, plan, tin, tout, amt, key, chain_id)
+        if not est:
+            return (None,)
+        return (_gated_plan(s, intent, state, spec, tin, tout, amt, mid_q, est, chain_id),)
+        return _DR_UNSET
     hit = _gated_gate(s, state, snapshot, plan, key)
-    if hit is None:
-        return None
-    spec, chain_id = hit
-    tin, tout, amt_s = key.split('|')
-    amt = int(amt_s)
-    est, mid_q = _vg.gate_est(s, spec, plan, tin, tout, amt, key, chain_id)
-    if not est:
-        return None
-    return _gated_plan(s, intent, state, spec, tin, tout, amt, mid_q, est, chain_id)
+    _r_dz347 = _dz347()
+    if _r_dz347 is not _DR_UNSET:
+        return _r_dz347[0]
