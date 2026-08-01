@@ -1,9 +1,9 @@
 """_McSolver body extractions (hoisted verbatim from solver.py): base-route
 re-quote decode, the skip-fill setup gate, and the dead-fill key table."""
+_DR_UNSET = object()
 import os
 from mc_data import _MC_QUOTER, _MC_PANCAKE_Q
 _MC_DEAD_FILL_CACHE = None
-
 
 def dead_fill():
     """Lazy dead_fill.json — 'tin|tout|amt' keys where BOTH the champion tree
@@ -27,15 +27,21 @@ def _bc_v3s(s, sel, body, tin, tout, amt):
 
 def base_call(s, base_plan, tin, tout, amt):
     """(target,callbytes) that re-quotes the champion's OWN route, or None (undecodable)."""
-    try:
-        ix = base_plan.interactions[-1]
+
+    def _dz254():
         cd = ix.call_data if ix.call_data.startswith('0x') else '0x' + ix.call_data
         sel = cd[:10]
         body = bytes.fromhex(cd[10:])
         if sel in ('0x04e45aaf', '0x414bf389'):
-            return _bc_v3s(s, sel, body, tin, tout, amt)
+            return (_bc_v3s(s, sel, body, tin, tout, amt),)
         if sel == '0xb858183f':
-            return (_MC_QUOTER, s._mc_path_qdata(body, amt))
+            return ((_MC_QUOTER, s._mc_path_qdata(body, amt)),)
+        return _DR_UNSET
+    try:
+        ix = base_plan.interactions[-1]
+        _r_dz254 = _dz254()
+        if _r_dz254 is not _DR_UNSET:
+            return _r_dz254[0]
     except Exception:
         return None
     return None
