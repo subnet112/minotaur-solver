@@ -25,7 +25,6 @@ def _build_single(kind, param, tin, tout, amount, recipient, chain_id, rt):
         return _aero_leg(param, tin, tout, amount, recipient, rt)
     return None
 
-
 def build(kind, param, tin, tout, amount, recipient, chain_id):
     """Swap leg for one exotic kind -> (router, calldata), or None."""
     rt = routers(chain_id)
