@@ -4,13 +4,11 @@ Split from quotes.py purely for the AST-region budget: the metric counts a
 module body as one region, and one file holding every def header exceeded it.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 import concurrent.futures
 import time
-
 import cr_consts as consts
 from cr_quotes import _multihop, _single, _v2
-
 
 def _single_jobs(w3, tin: str, tout: str, amount: int, chain_id: int) -> list:
     """Direct-pair quotes: Uniswap fee tiers (+ Aerodrome tick spacings on Base)
@@ -19,29 +17,25 @@ def _single_jobs(w3, tin: str, tout: str, amount: int, chain_id: int) -> list:
     ``aero_ticks`` is empty on Ethereum, so that family drops out here.
     """
     tier = consts.tiers(chain_id)
-    jobs = [lambda f=f: _single(w3, "uni", tin, tout, amount, f, chain_id)
-            for f in tier["uni_fees"]]
-    jobs += [lambda t=t: _single(w3, "aero", tin, tout, amount, t, chain_id)
-             for t in tier["aero_ticks"]]
+    jobs = [lambda f=f: _single(w3, 'uni', tin, tout, amount, f, chain_id) for f in tier['uni_fees']]
+    jobs += [lambda t=t: _single(w3, 'aero', tin, tout, amount, t, chain_id) for t in tier['aero_ticks']]
     jobs.append(lambda: _v2(w3, tin, tout, amount, chain_id))
     return jobs
-
 
 def _mid_jobs(w3, tin: str, mid: str, tout: str, amount: int, chain_id: int) -> list:
     """2-hop quotes through one intermediate token, per-chain venue families
     (Uniswap/Aerodrome v3 packed-path plus a Uniswap-V2 [tin,mid,tout] hop)."""
-    tier, route = consts.tiers(chain_id), (tin, mid, tout)
-    jobs = [
-        lambda f=f: _multihop(w3, "uni", route, f, amount, chain_id)
-        for f in tier["uni_kg_twohop_fees"]
-    ]
-    jobs += [
-        lambda t=t: _multihop(w3, "aero", route, t, amount, chain_id)
-        for t in tier["aero_twohop_ticks"]
-    ]
-    jobs.append(lambda: _v2(w3, tin, tout, amount, chain_id, mid))
-    return jobs
 
+    def _dz62():
+        jobs = [lambda f=f: _multihop(w3, 'uni', route, f, amount, chain_id) for f in tier['uni_kg_twohop_fees']]
+        jobs += [lambda t=t: _multihop(w3, 'aero', route, t, amount, chain_id) for t in tier['aero_twohop_ticks']]
+        jobs.append(lambda: _v2(w3, tin, tout, amount, chain_id, mid))
+        return (jobs,)
+        return _DR_UNSET
+    tier, route = (consts.tiers(chain_id), (tin, mid, tout))
+    _r_dz62 = _dz62()
+    if _r_dz62 is not _DR_UNSET:
+        return _r_dz62[0]
 
 def _harvest(futures: list, deadline: float) -> list:
     """Collect whatever finishes before the wall-clock deadline; drop the rest.
@@ -66,11 +60,10 @@ def _harvest(futures: list, deadline: float) -> list:
             if got:
                 out.append(got)
     except Exception:
-        pass  # global timeout — keep whatever already landed
+        pass
     for fut in futures:
         fut.cancel()
     return out
-
 
 def _run(jobs: list, deadline: float) -> list:
     """Fire a job wave concurrently and harvest it before the deadline."""
@@ -80,9 +73,7 @@ def _run(jobs: list, deadline: float) -> list:
     try:
         return _harvest([pool.submit(j) for j in jobs], deadline)
     finally:
-        # Don't join: a straggler quote must not hold the plan past its budget.
         pool.shutdown(wait=False, cancel_futures=True)
-
 
 def _all_jobs(w3, tin: str, tout: str, amount: int, chain_id: int) -> list:
     """Every quote for this pair — direct venues plus each 2-hop mid."""
@@ -93,8 +84,7 @@ def _all_jobs(w3, tin: str, tout: str, amount: int, chain_id: int) -> list:
         jobs += _mid_jobs(w3, tin, mid, tout, amount, chain_id)
     return jobs
 
-
-def enumerate_quotes(w3, tin: str, tout: str, amount: int, chain_id: int = 8453) -> list:
+def enumerate_quotes(w3, tin: str, tout: str, amount: int, chain_id: int=8453) -> list:
     """Fire every venue quote in ONE concurrent wave. Never raises.
 
     One wave, not two: splitting direct-then-2-hop makes the first wave wait on
@@ -106,5 +96,5 @@ def enumerate_quotes(w3, tin: str, tout: str, amount: int, chain_id: int = 8453)
     """
     if w3 is None or int(amount) <= 0:
         return []
-    deadline = time.monotonic() + consts.budgets()["select"]
+    deadline = time.monotonic() + consts.budgets()['select']
     return _run(_all_jobs(w3, tin, tout, amount, chain_id), deadline)
