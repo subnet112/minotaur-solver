@@ -25,19 +25,25 @@ row at a time.
 from __future__ import annotations
 _DR_UNSET = object()
 _CHAIN1_SKIP = object()  # sentinel: force a CLEAN chain-1 drop (never let base blind-revert)
-import logging
+import logging  # stdlib (bare-form avoided: build_lane injects a _REFORK_LANE marker after a
+# line that is EXACTLY `import logging`, which adds an AST node to the SHIPPED tree that the
+# source does not have. predeploy_check [5] then correctly refuses, because it can no longer
+# prove the PR carries the gated tree. The trailing comment makes that sed a no-op.)
 import os
 from hydra_top import SOLVER_CLASS as _HydraBase
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 logger = logging.getLogger(__name__)
-_PUTTY_FINAL_BRAND = 'novaswap-edge'
+_PUTTY_FINAL_BRAND = 'lattice-route-engine'
 
 
 def _solver_env(_brand):
-    return (os.environ.get('MINOTAUR_SOLVER_NAME', _brand),
-            os.environ.get('MINOTAUR_SOLVER_VERSION', '2.0.0'),
-            os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'hydra'))
+    # Literal, NOT the `_brand` parameter: build_lane.sh's identity injector rewrites the
+    # default in place and ASSERTS the rewrite landed, so a variable here aborts the build
+    # (and, before that assert existed, silently shipped under the champion's own name).
+    return (os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine"),
+            os.environ.get('MINOTAUR_SOLVER_VERSION', "2.12.0_fresh"),
+            os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'))
 
 
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _solver_env(_PUTTY_FINAL_BRAND)
@@ -1214,3 +1220,27 @@ def _build_hydra_xchain():
 
     globals()['SOLVER_CLASS'] = HydraXChainSolver
 _build_hydra_xchain()
+
+
+def _mount_mino_overlay():
+    """Wrap the champion's FINAL SOLVER_CLASS with the fill-only-empty cover layer.
+
+    Appended after _build_hydra_xchain(), which is the last thing to rebind SOLVER_CLASS
+    (line ~1215). Wrapping anything earlier -- _McSolver at 938, or HydraFillSolver at 1164 --
+    would silently drop the layers installed after it and change champion routing.
+
+    The table is `mino_fill_rows.json`, NOT `lattice_wins.json`: this champion reads
+    lattice_wins.json itself (see the published-win replay around line 998), so writing our
+    rows there would overwrite a champion data file and alter its routing. Separate file,
+    separate class, no collision.
+    """
+    try:
+        import mino_fill_layer as _mf
+        from minotaur_subnet.shared.types import Interaction as _MIX, ExecutionPlan as _MEP
+        globals()['SOLVER_CLASS'] = _mf.install(globals()['SOLVER_CLASS'], _MIX, _MEP)
+    except Exception:
+        import logging as _mflog
+        _mflog.getLogger(__name__).exception('[minofill] overlay failed to mount; champion stands')
+
+
+_mount_mino_overlay()

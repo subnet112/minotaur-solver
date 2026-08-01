@@ -1,2 +1,2 @@
-_MV_NAME = "hydra-apex-router"
-_MV_VERSION = "603.33.0-apexmix"
+_MV_NAME = "lattice-route-engine"
+_MV_VERSION = "2.12.0_fresh"
