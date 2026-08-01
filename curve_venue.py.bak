@@ -24,15 +24,35 @@ from __future__ import annotations
 from eth_abi import encode as _E, decode as _D
 from eth_utils import keccak as _K, to_checksum_address as _C
 
-# Address tables live in curve_data.py as one ast.literal_eval'd string constant
-# so this file's module region stays under the factorization floor. Pulled in as
-# module globals: _ROUTER (CurveRouterNG get_dy/exchange, one ABI covers every
-# pool type + multi-hop), _REGS (pool-discovery registries: 1->MetaRegistry probe
-# pt; 8453->stable-ng=10/twocrypto-ng=20/tricrypto-ng=30, hint authoritative for
-# exchange dispatch), _HUBS (2-hop intermediates), _Z (zero address), and the
-# pool_type probe orders _PT_STABLE=(1,10)/_PT_2=(2,20)/_PT_3=(3,30) (get_dy
-# reverts on a wrong dispatch -> 0, so probing in order is safe).
-from curve_data import *  # noqa: F401,F403
+_Z = '0x' + '0' * 40
+
+# CurveRouterNG -- get_dy/exchange over every pool type + multi-hop, one ABI.
+_ROUTER = {1: '0x45312ea0eFf7E09C83CBE249fa1d7598c4C8cd4e',      # v1.2
+           8453: '0x4f37A9d177470499A2dD084621020b023fcffc1F'}   # v1.1
+
+# Pool-discovery registries (find_pool_for_coins + coins). MetaRegistry covers
+# every pool type on Ethereum; Base has no MetaRegistry -> per-flavour factories,
+# whose pool_type hint (stable-ng=10 / twocrypto-ng=20 / tricrypto-ng=30) is
+# authoritative for the router's exchange dispatch.
+_REGS = {1: (('0xF98B45FA17DE75FB1aD0e7aFD971b0ca00e379fC', 0),),   # MetaRegistry (probe pt)
+         8453: (('0xd2002373543Ce3527023C75e7518C274A51ce712', 10),   # stableswap-ng
+                ('0xc9Fe0C63Af9A39402e8a5514f9c43Af0322b665F', 20),   # twocrypto-ng
+                ('0xA5961898870943c68037F6848d2D866Ed2016bcB', 30))}  # tricrypto-ng
+
+# Intermediate hubs for 2-hop routing when no direct pool exists.
+_HUBS = {1: ('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',      # WETH
+             '0xf939E0A03FB07F59a73314E73794Be0E57ac1b4E',      # crvUSD
+             '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),     # USDC
+         8453: ('0x4200000000000000000000000000000000000006',   # WETH
+                '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',    # USDC
+                '0x417Ac0e078398C154EdFadD9Ef675d30Be60Af93')}  # crvUSD
+
+# pool_type probe order (get_dy reverts on a wrong dispatch -> 0, so safe to try):
+# 1 stable, 10 stable-ng (int128); 2 twocrypto, 20 twocrypto-ng, 3 tricrypto,
+# 30 tricrypto-ng (uint256). n_coins picks crypto width.
+_PT_STABLE = (1, 10)
+_PT_2 = (2, 20)
+_PT_3 = (3, 30)
 
 _SC: dict = {}
 
@@ -81,18 +101,14 @@ def _pools_for(w3, cid, a, b):
 def _indices(w3, pool, tin, tout):
     """0-based coin positions of tin/tout via coins(k) -- uniform for stable and
     crypto pools. Returns (i, j, n_coins) or None."""
-    def _coin_map():
-        # {coin_addr_lower: index} + n_coins via coins(k); stop at first empty slot
-        pos, n = {}, 0
-        cs = _sel('coins(uint256)')
-        for k in range(4):
-            a = _addr(_call(w3, pool, cs + _E(['uint256'], [k])))
-            if a is None or int(a, 16) == 0:
-                break
-            pos[a.lower()] = k
-            n = k + 1
-        return pos, n
-    pos, n = _coin_map()
+    pos, n = {}, 0
+    cs = _sel('coins(uint256)')
+    for k in range(4):
+        a = _addr(_call(w3, pool, cs + _E(['uint256'], [k])))
+        if a is None or int(a, 16) == 0:
+            break
+        pos[a.lower()] = k
+        n = k + 1
     i, j = pos.get(tin.lower()), pos.get(tout.lower())
     return (i, j, n) if i is not None and j is not None else None
 
@@ -166,21 +182,21 @@ def _mk2(tin, l1, hub, l2, tout):
     return route, swap
 
 
+def _hop2(w3, cid, tin, tout, amt, hub):
+    """One tin->hub->tout candidate -> (out, route, swap) or None."""
+    l1 = _best_leg(w3, cid, _pools_for(w3, cid, tin, hub), tin, hub, amt)
+    if l1 is None:
+        return None
+    l2 = _best_leg(w3, cid, _pools_for(w3, cid, hub, tout), hub, tout, l1[0])
+    if l2 is None:
+        return None
+    route, swap = _mk2(tin, l1, hub, l2, tout)
+    o = _get_dy(w3, cid, route, swap, amt)
+    return (o, route, swap) if o > 0 else None
+
+
 def _twohop(w3, cid, tin, tout, amt):
     """Best tin->hub->tout route -> (out, route, swap) or None."""
-    def _hop2(w3, cid, tin, tout, amt, hub):
-        """One tin->hub->tout candidate -> (out, route, swap) or None."""
-        def _finish(l1, l2):
-            route, swap = _mk2(tin, l1, hub, l2, tout)
-            o = _get_dy(w3, cid, route, swap, amt)
-            return (o, route, swap) if o > 0 else None
-        l1 = _best_leg(w3, cid, _pools_for(w3, cid, tin, hub), tin, hub, amt)
-        if l1 is None:
-            return None
-        l2 = _best_leg(w3, cid, _pools_for(w3, cid, hub, tout), hub, tout, l1[0])
-        if l2 is None:
-            return None
-        return _finish(l1, l2)
     best = None
     tl = tin.lower()
     ol = tout.lower()
@@ -201,15 +217,10 @@ def curve_best(w3, cid, tin, tout, amt):
         amt = int(amt)
         if cid not in _ROUTER or amt <= 0 or tin.lower() == tout.lower():
             return None
-
-        def _best_raw():
-            # better of the direct single-hop and 2-hop routes -> (out,route,swap)
-            best = _direct(w3, cid, tin, tout, amt)
-            two = _twohop(w3, cid, tin, tout, amt)
-            if two is not None and (best is None or two[0] > best[0]):
-                best = two
-            return best
-        best = _best_raw()
+        best = _direct(w3, cid, tin, tout, amt)
+        two = _twohop(w3, cid, tin, tout, amt)
+        if two is not None and (best is None or two[0] > best[0]):
+            best = two
         if best is None:
             return None
         return (best[0], {'route': best[1], 'swap': best[2]})
