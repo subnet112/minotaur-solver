@@ -8,7 +8,7 @@ routing. Falls back to MarketSnapshot data when RPC is unavailable
 Architecture:
     1. initialize() stores rpc_urls, creates Web3 instances on demand
     2. quote()/generate_plan() query live pool states via RPC
-    3. If no RPC → fall back to snapshot.pool_states
+    3. If no RPC → fall back to the snapshot pool-state mapping
     4. Route through pools using pool_math (direct + multi-hop)
 
 Miners are expected to surpass this baseline with better strategies:
@@ -446,13 +446,13 @@ class _BaselineSwapSolverDR2DR30(_BaselineSwapSolverDR1):
                         input_token = swap_params.get('input_token', '')
                         output_token = swap_params.get('output_token', '')
                         if input_token and output_token:
-                            if snapshot is not None and snapshot.pool_states and (pool_states is snapshot.pool_states):
+                            if snapshot is not None and getattr(snapshot, "pool_states", None) and (pool_states is getattr(snapshot, "pool_states", None)):
                                 pool_states = dict(pool_states)
                             self._ensure_pools_for_route(chain_id, pool_states, input_token, output_token)
                         prices = self._derive_prices(pool_states, chain_id) if pool_states else {}
                         return (input_token, output_token, pool_states, prices)
                     input_token, output_token, pool_states, prices = _dr83()
-                    context = ProcessorContext(chain_id=chain_id, timestamp=snapshot.timestamp if snapshot else int(time.time()), block_number=snapshot.block_number if snapshot else 0, rpc_url=self._rpc_urls.get(chain_id, ''), prices=prices, dex_config=snapshot.dex_config if snapshot else {})
+                    context = ProcessorContext(chain_id=chain_id, timestamp=snapshot.timestamp if snapshot else int(time.time()), block_number=snapshot.block_number if snapshot else 0, rpc_url=self._rpc_urls.get(chain_id, ''), prices=prices, dex_config=getattr(snapshot, "dex_config", None) if snapshot else {})
                     return (context, input_token, output_token, pool_states)
                 context, input_token, output_token, pool_states = _dr15()
                 if input_token and output_token and pool_states:
@@ -770,8 +770,8 @@ class _BaselineSwapSolverDR2(_BaselineSwapSolverDR2DR88):
             rpc_pools = self._discover_pools(chain_id)
             if rpc_pools:
                 return rpc_pools
-        if snapshot is not None and snapshot.pool_states:
-            return snapshot.pool_states
+        if snapshot is not None and getattr(snapshot, "pool_states", None):
+            return getattr(snapshot, "pool_states", None)
         return {}
 
     def _build_direct_pool_plan(self, intent: AppIntentDefinition, state: IntentState, context: ProcessorContext, pool_states: dict[str, dict[str, Any]], input_token: str, output_token: str, chain_id: int) -> ExecutionPlan:
@@ -897,7 +897,7 @@ class _BaselineSwapSolverDR31(_BaselineSwapSolverDR2):
         def _dr22():
             chain_id = state.chain_id or (snapshot.chain_id if snapshot else 1)
             pool_states = self._get_pool_states(chain_id, snapshot)
-            if snapshot is not None and snapshot.pool_states and (pool_states is snapshot.pool_states):
+            if snapshot is not None and getattr(snapshot, "pool_states", None) and (pool_states is getattr(snapshot, "pool_states", None)):
                 pool_states = dict(pool_states)
 
             def _dr66():
@@ -1036,7 +1036,7 @@ class _BaselineSwapSolverDR34(_BaselineSwapSolverDR31):
             def _dr52():
                 nonlocal pool_states
                 if input_token and output_token:
-                    if snapshot and snapshot.pool_states and (pool_states is snapshot.pool_states):
+                    if snapshot and getattr(snapshot, "pool_states", None) and (pool_states is getattr(snapshot, "pool_states", None)):
                         pool_states = dict(pool_states)
                     self._ensure_pools_for_route(src_chain, pool_states, input_token, output_token)
                 def _fw7():

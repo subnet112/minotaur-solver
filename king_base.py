@@ -2958,7 +2958,7 @@ class _MinerSolverDR123(_MinerSolverDR77):
                         return None
 
                     def _dr55():
-                        pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
+                        pool_states = (getattr(snapshot, "pool_states", None) or {}) if snapshot else {}
                         a, b = (tin.lower(), tout.lower())
                         best = None
 
@@ -4089,7 +4089,7 @@ class MinerSolver(_MinerSolverDR176):
 
                     def _dr103():
                         chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                        pool_states = (snapshot.pool_states if snapshot and snapshot.pool_states else {}) or {}
+                        pool_states = (getattr(snapshot, "pool_states", None) or {}) if snapshot else {}
                         if not pool_states:
                             return None
                         try:
