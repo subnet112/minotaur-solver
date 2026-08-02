@@ -24,8 +24,8 @@ def _fw6():
         from minotaur_subnet.sdk.intent_solver import SolverMetadata
         from minotaur_subnet.shared.types import ExecutionPlan, Interaction
         logger = logging.getLogger(__name__)
-        SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
-        SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.127.0')
+        SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'reclaim-router')
+        SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.287.2')
         import king_base as _kb
         _BOTZ = '0xca179f3978137f5745e6d731591aaef985ee9d6d'
         _USDC_ = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
@@ -47,7 +47,7 @@ def _fw6():
 globals().update(_fw6())
 
 def _dr18():
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'joeknight')
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'Xayaan')
     _BASE = 8453
     _ETH = 1
     _WETH = '0x4200000000000000000000000000000000000006'

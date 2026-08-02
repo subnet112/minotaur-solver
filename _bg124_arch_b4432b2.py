@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 _PUTTY_FINAL_BRAND = 'lattice-route-engine'
 
 def _solver_env(_brand):
-    return (os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine'), os.environ.get('MINOTAUR_SOLVER_VERSION', '2.25.0_fresh'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'wisedev0103'))
+    return (os.environ.get('MINOTAUR_SOLVER_NAME', 'reclaim-router'), os.environ.get('MINOTAUR_SOLVER_VERSION', '0.287.2'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'Xayaan'))
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _solver_env(_PUTTY_FINAL_BRAND)
 import shape_lib as _sl, shape_est2 as _se, shape_build as _sb, shape_lib3 as _sl3
 import viking_gate as _vg, viking_data as _vd, shape_base as _sba, chain1 as _c1

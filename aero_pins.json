@@ -1,0 +1,380 @@
+{
+ "_note": "Measured 2026-07-30 on Base at 3 notionals ($100/$300/$1000) via live RPC. 'gain' = measured multiple over the BEST UniV3 route (the champion's reachable ceiling); 'meter' = dex-compare worst_losses median_relative for the pair. kind/param feed the champion's own _sep_kind_cand; slot = pre-measured ERC20 balanceOf storage slot so viking_sim skips its 12-call probe.",
+ "_factory": "0x420DD381b31aEf6683db6B902084cB0FFECe40Da",
+ "_note_bal": "BAL WITHOUT A BALANCER BUILDER (2026-07-30). The real BAL market IS the Balancer 80/20 vault pool, but ADOPTION SCORES BREADTH, NOT MAGNITUDE: `net_better = n_wins + n_blind_spots`, and a win is a win at 1.24x or at 600x. Measured on the 6 BAL pairs in the ETH pool, routing BAL through USDT on UniV3 already clears the 500bps gate on all six (1.24x-1.36x where the champion's naive route quotes, unbounded where it does not) using the champion's OWN chain1 builder. A queryBatchSwap builder would deliver more wei and score EXACTLY THE SAME, while adding new calldata risk. Do not build it until the corpus or the scoring rule makes magnitude pay.",
+ "_note_chain1": "CHAIN-1 PINS (2026-07-30). Only chain 1 is inside ADOPTION_SCORED_CHAINS, so the chain-1 rows are the ONLY pins that can score (every 8453 row above lands `offgate`). Each chain-1 row was measured on the ETH anvil fork against the champion's OWN zero-RPC _hydra_eth_fastpath route (tin -3000- WETH -f2- tout, f2=500 only for USDC/WBTC): 'naive' is what that route quotes, 'best' is the best UniV3 path found by the full 4-fee x 5-hub sweep. naive=0 means the champion returns a REVERTING plan and delivers 0, so the row scores `skip` and filling it is a blind_spot_cover (net_better += 1). kind=v3path -> built by the champion's own chain1._mk_plan/_build.",
+ "pins": [
+  {
+   "chain": 1,
+   "sym": "WETH->SPK",
+   "qid": "q_c5586677972e",
+   "tin": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "tout": "0xc20059e0317de91738d13af027dfc4a50781b066",
+   "kind": "v3path",
+   "param": [
+    [
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+     "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+     "0xc20059e0317DE91738d13af027DfC4a50781b066"
+    ],
+    [
+     500,
+     10000
+    ]
+   ],
+   "slot": 3,
+   "naive": "0",
+   "best": "931332183019003123384",
+   "gain": "inf (champion route has no pool)"
+  },
+  {
+   "chain": 1,
+   "sym": "USDS->USDC",
+   "meter_x": 26,
+   "corpus_n": 4,
+   "tin": "0xdc035d45d973e3ec169d2276ddab16f1e407384f",
+   "tout": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "kind": "v3path",
+   "param": [
+    [
+     "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+     "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ],
+    [
+     3000,
+     100
+    ]
+   ],
+   "slot": 2,
+   "naive": "0",
+   "best": "18415438345",
+   "gain": "inf (champion route has no pool)"
+  },
+  {
+   "chain": 1,
+   "sym": "WBTC->CFG",
+   "corpus_n": 4,
+   "tin": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+   "tout": "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94",
+   "kind": "v3path",
+   "param": [
+    [
+     "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+     "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94"
+    ],
+    [
+     3000,
+     3000
+    ]
+   ],
+   "slot": 0,
+   "naive": "0",
+   "best": "1702299454821047768820",
+   "gain": "inf (king base route reverts, cover bypassed cout=None)"
+  },
+  {
+   "chain": 1,
+   "sym": "USDC->PYUSD",
+   "corpus_n": 2,
+   "tin": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "tout": "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+   "kind": "v3path",
+   "param": [
+    [
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "0x6c3ea9036406852006290770bedfcaba0e23a0e8"
+    ],
+    [
+     3000
+    ]
+   ],
+   "slot": 9,
+   "naive": "0",
+   "best": "35513720758",
+   "gain": "inf (king base route [USDC,100,PYUSD] reverts at whale size)"
+  },
+  {
+   "chain": 1,
+   "sym": "USDT->CFG",
+   "corpus_n": 3,
+   "corpus_n500": 3,
+   "tin": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "tout": "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94",
+   "kind": "v3path",
+   "param": [
+    [
+     "0xdac17f958d2ee523a2206206994597c13d831ec7",
+     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+     "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94"
+    ],
+    [
+     100,
+     3000
+    ]
+   ],
+   "slot": 2,
+   "naive": "0",
+   "best": "1731005080122202123025",
+   "gain": "inf (atomic-surge base route ABSENT -> SwapRouter-V1 revert; sibling of WBTC->CFG)",
+   "note": "USDT-in is safe here ONLY because chain1_lib._approves emits the approve(router,0) reset first; the king's own engine does not, which is a separate rig trap (L-ALLOWANCE-POISON)."
+  },
+  {
+   "chain": 1,
+   "sym": "00->USDC",
+   "corpus_n": 10,
+   "corpus_n500": 6,
+   "tin": "0x881ba05de1e78f549cc63a8f6cabb1d4ad32250d",
+   "tout": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "kind": "v4path",
+   "param": [
+    [
+     "0x0000000000000000000000000000000000000000",
+     10000,
+     200
+    ],
+    [
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     100,
+     1
+    ]
+   ],
+   "slot": 51,
+   "naive": "0",
+   "best": "586343100",
+   "gain": "inf (the ONLY market for 00 is a Uniswap-V4 native-ETH pool; no UniV3/V2/Sushi route exists at any size, and the whole lineage has no L1 V4 path)",
+   "venue": "uniswap_v4 hooks=0, UniversalRouter 0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af"
+  },
+  {
+   "chain": 1,
+   "sym": "LBTC->tBTC",
+   "corpus_n": 7,
+   "corpus_n500": 7,
+   "tin": "0x8236a87084f8b84306f72007f36f2618a5634494",
+   "tout": "0x18084fba666a33d37592fa2633fd49a74dd93a88",
+   "kind": "v3path",
+   "param": [
+    [
+     "0x8236a87084F8B84306f72007F36F2618A5634494",
+     "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+     "0x18084fbA666a33d37592fA2633fD49a74DD93a88"
+    ],
+    [
+     500,
+     500
+    ]
+   ],
+   "slot": "0x1d71aecb7d0688f097f24a3c9e2db1a4bcfddc6f627e76835baf8a6a2195e460",
+   "venue": "univ3 LBTC/WBTC f500 (0x87428a53, 29.2 LBTC/63.9 WBTC) -> WBTC/tBTC f500",
+   "warm_champ": "0 (empty-plan)",
+   "ours": "323615736255191951 @32268335",
+   "why": "blind_spot_cover; HIGHEST-frequency chain-1 exotic in the fresh-500 window. 6/6 live notionals execute.",
+   "slot_note": "LBTC is an ERC-7201 namespaced proxy: no integer mapping base exists, so `slot` is the PRE-MEASURED storage key for viking_sim._EXEC."
+  },
+  {
+   "chain": 1,
+   "sym": "LsETH->USDC",
+   "corpus_n": 2,
+   "corpus_n500": 0,
+   "tin": "0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549",
+   "tout": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "kind": "v3path",
+   "param": [
+    [
+     "0x8c1BEd5b9a0928467c9B1341Da1D7BD5e10b6549",
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ],
+    [
+     100,
+     500
+    ]
+   ],
+   "slot": "0xf8d90f3d40c5ac5275f7562dd51041fa360f7caa9517849713c02fbc388b4dc1",
+   "venue": "univ3 LsETH/WETH f100 (0x6e7ff51f, 1232 LsETH/1773 WETH) -> WETH/USDC f500",
+   "warm_champ": "2153799401 / 2237676636 (routes the f500 DUST pool: 0.0059 LsETH / 1.99 WETH)",
+   "ours": "2319195398 (+3.79%, DEFERS \u2014 under the 500bps gate) / 2414800506 (+7.92%, SERVES)",
+   "why": "NOT a blind spot \u2014 a served-but-weak row, which is the stronger prize because it does not depend on the champion staying at zero. Only the +791bps notional clears the gate; the other defers by design.",
+   "slot_note": "namespaced proxy, pre-measured key (see LBTC)",
+   "retracted_claim": "An earlier fork returned an IDENTICAL 2234546232 for two notionals 4% apart and I read it as saturation. A fresher fork scaled correctly with input (ratio 1.0389 vs input 1.0398), so the saturation story is NOT reproducible and is NOT why this pin wins. The +7.92% delivery edge is what reproduces."
+  },
+  {
+   "chain": 1,
+   "sym": "UNI->USDC",
+   "meter_x": 39,
+   "tin": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+   "tout": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "kind": "v3path",
+   "param": [
+    [
+     "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ],
+    [
+     3000,
+     500
+    ]
+   ],
+   "measured_2026_08_02": {
+    "1e18": {
+     "direct_3000": "4189706",
+     "via_weth": "4185176"
+    },
+    "100e18": {
+     "direct_3000": "415028827",
+     "via_weth": "418490756"
+    },
+    "1000e18": {
+     "direct_3000": "3820473691",
+     "via_weth": "4182459786"
+    }
+   },
+   "why": "direct UNI/USDC fee=3000 pool is thin (liq 2.13e16) and slips ~9.5% at 1000 UNI; the two-hop uses UNI/WETH fee=3000 (liq 7.46e22) + WETH/USDC fee=500 (liq 6.80e18), both far deeper. Edge grows with notional, so it is a size-robust route, not a dust-only artifact."
+  }
+ ],
+ "_parked_base_pins": [
+  {
+   "chain": 8453,
+   "sym": "HOME->WETH",
+   "meter": 5.5e-05,
+   "severe": 7,
+   "tin": "0x4bfaa776991e85e5f8b1255461cbbd216cfc714f",
+   "tout": "0x4200000000000000000000000000000000000006",
+   "kind": "aerodrome_slipstream_multihop",
+   "param": [
+    [
+     "0x4BfAa776991E85e5f8b1255461cbbd216cFc714f",
+     "0x4200000000000000000000000000000000000006"
+    ],
+    [
+     200
+    ]
+   ],
+   "slot": 5,
+   "gain": "13064x .. 127571x",
+   "pool": "0x098a4de96305bafaea0c0ce07cf6456e2c64982a"
+  },
+  {
+   "chain": 8453,
+   "sym": "GHST->USDC",
+   "meter": 0.036587,
+   "severe": 8,
+   "tin": "0xcd2f22236dd9dfe2356d7c543161d4d260fd9bcb",
+   "tout": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+   "kind": "aero_v2",
+   "param": [
+    "0x420DD381b31aEf6683db6B902084cB0FFECe40Da",
+    "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB",
+    "0x4200000000000000000000000000000000000006",
+    false
+   ],
+   "slot": 0,
+   "gain": "9.8x .. 88.5x",
+   "pool": "0x0dfb9cb66a18468850d6216fcc691aa20ad1e091"
+  },
+  {
+   "chain": 8453,
+   "sym": "COW->USDC",
+   "meter": 4e-06,
+   "severe": 46,
+   "tin": "0xc694a91e6b071bf030a18bd3053a7fe09b6dae69",
+   "tout": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+   "kind": "aero_v2",
+   "param": [
+    "0x420DD381b31aEf6683db6B902084cB0FFECe40Da",
+    "0xc694a91e6b071bF030A18BD3053A7fE09B6DaE69",
+    "0x4200000000000000000000000000000000000006",
+    false
+   ],
+   "slot": 0,
+   "gain": "inf (UniV3 has no route)",
+   "pool": "0x155e0971a2392c446be02373a4f4c8dc4266f015"
+  },
+  {
+   "chain": 8453,
+   "sym": "USDC->COW",
+   "meter": 0.333869,
+   "severe": 30,
+   "tin": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+   "tout": "0xc694a91e6b071bf030a18bd3053a7fe09b6dae69",
+   "kind": "aero_v2",
+   "param": [
+    "0x420DD381b31aEf6683db6B902084cB0FFECe40Da",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x4200000000000000000000000000000000000006",
+    false
+   ],
+   "slot": 9,
+   "gain": "1.73x .. 2.88x",
+   "pool": "0x46cc451cd49a1c0fc50fc2eb5b9ada27666895ac"
+  },
+  {
+   "chain": 8453,
+   "sym": "MEZO->USDC",
+   "meter": 0.037888,
+   "severe": 9,
+   "tin": "0x8e4cbbcc33db6c0a18561fde1f6ba35906d4848b",
+   "tout": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+   "kind": "aero_v2",
+   "param": [
+    "0x420DD381b31aEf6683db6B902084cB0FFECe40Da",
+    "0x8e4cbBcc33dB6c0a18561fDE1F6bA35906d4848b",
+    "0x4200000000000000000000000000000000000006",
+    false
+   ],
+   "slot": 0,
+   "gain": "inf (UniV3 has no route)",
+   "pool": "0xaff04483cd9722a720368b9b5a090968aa959db4"
+  },
+  {
+   "chain": 8453,
+   "sym": "KTA->USDC",
+   "meter": 0.543794,
+   "severe": 18,
+   "tin": "0xc0634090f2fe6c6d75e61be2b949464abb498973",
+   "tout": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+   "kind": "aerodrome_slipstream_multihop",
+   "param": [
+    [
+     "0xc0634090F2Fe6c6d75e61Be2b949464aBB498973",
+     "0x4200000000000000000000000000000000000006",
+     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    ],
+    [
+     200,
+     100
+    ]
+   ],
+   "slot": 0,
+   "gain": "1.027x vs univ3 (meter implies 1.84x vs champion)",
+   "pool": "0x46d710c35bdfb800a18a820712310048ef8b5256"
+  },
+  {
+   "chain": 8453,
+   "sym": "KTA->WETH",
+   "meter": 0.641563,
+   "severe": 7,
+   "tin": "0xc0634090f2fe6c6d75e61be2b949464abb498973",
+   "tout": "0x4200000000000000000000000000000000000006",
+   "kind": "aerodrome_slipstream_multihop",
+   "param": [
+    [
+     "0xc0634090F2Fe6c6d75e61Be2b949464aBB498973",
+     "0x4200000000000000000000000000000000000006"
+    ],
+    [
+     200
+    ]
+   ],
+   "slot": 0,
+   "gain": "1.027x vs univ3 (meter implies 1.56x vs champion)",
+   "pool": "0x46d710c35bdfb800a18a820712310048ef8b5256"
+  }
+ ],
+ "_parked_why": "L-CHAIN-GATE-LIFT (2026-08-01). These 7 chain-8453 pins are PARKED, not deleted. They were mined and certified on 2026-07-30 while ADOPTION_SCORED_CHAINS='1', i.e. while EVERY Base row scored `offgate` and a Base pin could only ever be free upside. From round-e29758635 the gate is CLEARED and Base rows are FULLY SCORED both ways: a Base pin that fires on a phantom-high sim is now a CATASTROPHIC hard veto (n_catastrophic==0 and n_dropped==0 are absolute). Under L-COVER-X-BASE a cover is validated only for the base AND the gate it was benched under; both changed. COST OF PARKING (stated honestly): USDC<->COW is our highest-frequency pin (n=19/n500=4 and n=14/n500=3) \u2014 real forgone upside. TO UNPARK: re-certify each row on the Base fork (:8549) against the CURRENT king with execute_and_measure \u2014 never viking_sim alone (L-SIM-PHANTOM-HIGH) \u2014 then move the rows back into `pins`. Do NOT unpark on the 2026-07-30 measurement; that verdict expired.",
+ "_note_v4": "UNISWAP V4 ON L1 (2026-07-31, Opus escalation #6). kind='v4path' param is the V4 PathKey chain [[intermediateCurrency, fee, tickSpacing], ...] with hooks=0, executed as ONE UniversalRouter execute() carrying a single V4_SWAP (0x10) command whose action list is SETTLE(0x0b) / SWAP_EXACT_IN(0x07) / TAKE(0x0e) \u2014 the same actions and the same CONTRACT_BALANCE + OPEN_DELTA sentinels the champion's own cr_exotic_v4 emits. The ONLY difference is the router address: the champion hardcodes Base's UR 0x6ff5693b, which EXISTS on L1 but REVERTS (fork-measured), so L1 must use 0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af. Discovery: StateView 0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227 getLiquidity(poolId), poolId = keccak(abi.encode(currency0,currency1,fee,tickSpacing,hooks)) with currencies sorted and native ETH = 0x0; quotes via V4Quoter 0x52F0E24D1c21C8A0cB1e5a5dD6198556BD9E1203.",
+ "_note_chain1_stale": "SUPERSEDED 2026-08-01: `_note_chain1` says only chain 1 is inside ADOPTION_SCORED_CHAINS. That was true until round-e29757415 and is now FALSE \u2014 chain 8453 and the previously-offgate named rows all score. Kept verbatim for provenance.",
+ "_note_v277": "2026-08-01 v0.277.0: +LBTC->tBTC, +LsETH->USDC. Both tokens were on the RIG_UNFUNDABLE list and had NEVER been measured against any king; the list was a rig artifact (slot-guessing), not a token property. `slot` may now be a pre-measured storage KEY string."
+}

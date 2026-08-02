@@ -22,9 +22,9 @@ def _dr21():
     from minotaur_subnet.sdk.intent_solver import SolverMetadata
     from minotaur_subnet.shared.types import ExecutionPlan, Interaction
     logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
-    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.87.5-edge')
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'reclaim-router')
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.287.2')
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'Xayaan')
     _KING_REPLAY_CACHE = None
     _KING_OVERRIDE_CACHE = None
 
