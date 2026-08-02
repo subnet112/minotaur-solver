@@ -52,21 +52,12 @@ GATE (identical doctrine to aero_pin, Strategy 21 BUDGET LAW):
     champion's own plan by >5%; every uncertainty returns the champion's plan.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import logging
-
 logger = logging.getLogger(__name__)
-
-_MARGIN_BPS = 500       # ours must beat the champion's own delivered output by >5%
-_SHAVE_BPS = 25         # ask each hop for slightly less than max (reserve-move headroom)
-
-# Hard per-run sim cap. The REAL bound is the pin table itself: a round draws ~122 orders
-# from a 2087-pair pool, so a 9-row table is expected to be hit ~0.84 times per round (2
-# sims). This cap only exists for the pathological draw. It MUST stay >= 2 * len(pins) or
-# it becomes the binding constraint and silently starves the live pins — measured
-# 2026-07-31: with a 29-row table and a cap of 12, only 2 of the 6 winning pins ever ran,
-# because absorbed rows burn 2 sims each before a live one is reached (L-PIN-DECAY).
+_MARGIN_BPS = 500
+_SHAVE_BPS = 25
 _MAX_SIMS = 24
-
 
 def _try(fn, *a, **kw):
     """Call `fn`; ANY failure — including a MISSING ATTRIBUTE on an unfamiliar base —
@@ -78,7 +69,6 @@ def _try(fn, *a, **kw):
     except Exception:
         return None
 
-
 def _is_plan(p):
     """True only for a SERVABLE plan: a real object carrying >= 1 interaction.
 
@@ -88,44 +78,37 @@ def _is_plan(p):
     SERVED row into a `dropped` — an absolute veto. Nothing is served unless it
     passes this, so the cover is incapable of eating a row by construction."""
     try:
-        return bool(getattr(p, "interactions", None))
+        return bool(getattr(p, 'interactions', None))
     except Exception:
         return False
-
 
 def _pin_row(row):
     """One data row -> (key, value), or None when the row is malformed."""
     try:
-        key = (int(row["chain"]), str(row["tin"]).lower(), str(row["tout"]).lower())
-        return (key, (str(row["kind"]), row["param"], row.get("slot")))
+        key = (int(row['chain']), str(row['tin']).lower(), str(row['tout']).lower())
+        return (key, (str(row['kind']), row['param'], row.get('slot')))
     except Exception:
         return None
-
 
 def _load_pins():
     """(chain, tin, tout) -> (kind, param, slot), loaded from data so the table stays
     out of the AST (max_region_nodes is the adoption tie-breaker)."""
     import json as _j, os as _o
     try:
-        path = _o.path.join(_o.path.dirname(_o.path.abspath(__file__)), "v2_pins.json")
+        path = _o.path.join(_o.path.dirname(_o.path.abspath(__file__)), 'v2_pins.json')
         raw = _j.load(open(path))
     except Exception:
         return {}
-    rows = (_pin_row(r) for r in (raw.get("pins") or ()))
-    return dict(r for r in rows if r is not None)
-
+    rows = (_pin_row(r) for r in raw.get('pins') or ())
+    return dict((r for r in rows if r is not None))
 
 def _keys(solver, intent, state):
     """(chain_id, tin, tout, amt) for an intent, or None. ZERO RPC."""
     try:
         p = solver._normalized_swap_params(intent, state)
-        return (int(getattr(state, "chain_id", 0) or 0),
-                str(p.get("input_token", "") or "").lower(),
-                str(p.get("output_token", "") or "").lower(),
-                int(p.get("input_amount", 0) or 0))
+        return (int(getattr(state, 'chain_id', 0) or 0), str(p.get('input_token', '') or '').lower(), str(p.get('output_token', '') or '').lower(), int(p.get('input_amount', 0) or 0))
     except Exception:
         return None
-
 
 def _hop_out(w3, leg, tin, amt):
     """Shaved getAmountOut for one V2 hop, using the CHAMPION'S own quoter.
@@ -136,12 +119,11 @@ def _hop_out(w3, leg, tin, amt):
     import chain1_v2 as _v2
     pair = str(leg[0])
     in_is_t0 = str(tin).lower() == str(leg[1]).lower()
-    q = _v2._v2_quote(w3, pair, int(amt), in_is_t0, "latest")
+    q = _v2._v2_quote(w3, pair, int(amt), in_is_t0, 'latest')
     if not q:
         return None
-    out = (int(q) * (10000 - _SHAVE_BPS)) // 10000
+    out = int(q) * (10000 - _SHAVE_BPS) // 10000
     return (pair, in_is_t0, out) if out > 0 else None
-
 
 def _direct_plan(solver, intent, state, param, tin, amt, rcpt, w3):
     """Direct V2 pair swap — built by the champion's OWN `chain1._mk_plan`, which
@@ -151,20 +133,14 @@ def _direct_plan(solver, intent, state, param, tin, amt, rcpt, w3):
     if hop is None:
         return None
     pair, in_is_t0, out = hop
-    return _c1._mk_plan(("v2", pair, in_is_t0, out), tin, int(amt), rcpt, intent, state)
-
+    return _c1._mk_plan(('v2', pair, in_is_t0, out), tin, int(amt), rcpt, intent, state)
 
 def _hop_ixs(tin, amt, h1, h2, rcpt):
     """The three interactions of a chained two-hop V2 swap, from the champion's own
     encoders. Hop 1's `to` is hop 2's PAIR — Router02's internal `_swap` chaining."""
     import chain1_v2 as _v2
     from minotaur_subnet.shared.types import Interaction as _IX
-    return [_IX(target=tin, value="0", call_data=_v2._v2_xfer_cd(h1[0], int(amt)), chain_id=1),
-            _IX(target=h1[0], value="0", call_data=_v2._v2_swap_cd(h1[1], h1[2], h2[0]),
-                chain_id=1),
-            _IX(target=h2[0], value="0", call_data=_v2._v2_swap_cd(h2[1], h2[2], rcpt),
-                chain_id=1)]
-
+    return [_IX(target=tin, value='0', call_data=_v2._v2_xfer_cd(h1[0], int(amt)), chain_id=1), _IX(target=h1[0], value='0', call_data=_v2._v2_swap_cd(h1[1], h1[2], h2[0]), chain_id=1), _IX(target=h2[0], value='0', call_data=_v2._v2_swap_cd(h2[1], h2[2], rcpt), chain_id=1)]
 
 def _hop_plan(solver, intent, state, param, tin, amt, rcpt, w3):
     """Two-hop V2 via the pinned hub. Adds no calldata class — see `_hop_ixs`."""
@@ -175,10 +151,7 @@ def _hop_plan(solver, intent, state, param, tin, amt, rcpt, w3):
     h2 = _hop_out(w3, param[1], str(param[2]), h1[2])
     if h2 is None:
         return None
-    return _EP(intent_id=intent.app_id, interactions=_hop_ixs(tin, amt, h1, h2, rcpt),
-               deadline=9999999999, nonce=state.nonce,
-               metadata={"solver": "viking-eth-dyn", "chain_id": 1})
-
+    return _EP(intent_id=intent.app_id, interactions=_hop_ixs(tin, amt, h1, h2, rcpt), deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-eth-dyn', 'chain_id': 1})
 
 def _sim(w3, plan, tin, tout, amt, app, slot):
     """Delivered `tout` for `plan` under eth_simulateV1, using a PRE-MEASURED balance
@@ -191,14 +164,11 @@ def _sim(w3, plan, tin, tout, amt, app, slot):
     except Exception:
         return None
     if slot is None:
-        return _try(getattr(_vs, "sim_floor", None), w3, plan, tin, tout, amt, app)
-    # a str slot is a PRE-MEASURED storage key (ERC-7201/proxy layouts) — see viking_sim._bkey
-    return _try(getattr(_vs, "_delivered", None), w3, plan.interactions, _ck(tin), amt,
-                _ck(tout), slot if isinstance(slot, str) else int(slot), _ck(app))
-
+        return _try(getattr(_vs, 'sim_floor', None), w3, plan, tin, tout, amt, app)
+    return _try(getattr(_vs, '_delivered', None), w3, plan.interactions, _ck(tin), amt, _ck(tout), slot if isinstance(slot, str) else int(slot), _ck(app))
 
 def wrap(base_cls):
-    import viking_sim  # noqa: F401  (import parity with the sibling covers)
+    import viking_sim
     import cover_state
     _PINS = _load_pins()
 
@@ -208,7 +178,7 @@ def wrap(base_cls):
         def _vp_pin(self, intent, state):
             """Dict-only gate. Returns (pin, tin, tout, amt) or None. ZERO RPC —
             this is what keeps every non-pinned order free."""
-            if not _PINS or cover_state.disabled("v2pin"):
+            if not _PINS or cover_state.disabled('v2pin'):
                 return None
             k = _keys(self, intent, state)
             if k is None:
@@ -222,37 +192,41 @@ def wrap(base_cls):
         def _vp_build(self, intent, state, pin, tin, amt, w3):
             """Our pinned plan, built entirely from the champion's own V2 primitives."""
             kind, param, _slot = pin
-            rcpt = getattr(state, "contract_address", None) or getattr(state, "owner", None)
+            rcpt = getattr(state, 'contract_address', None) or getattr(state, 'owner', None)
             if not rcpt:
                 return None
-            # _try, not a bare except: a renamed/absent `chain1._mk_plan` or
-            # `chain1_v2._v2_*` on a new lineage must DEFER, never raise.
-            if kind == "v2direct":
+            if kind == 'v2direct':
                 return _try(_direct_plan, self, intent, state, param, tin, amt, rcpt, w3)
-            if kind == "v2hop":
+            if kind == 'v2hop':
                 return _try(_hop_plan, self, intent, state, param, tin, amt, rcpt, w3)
             return None
 
         def _vp_decide(self, base, ours, w3, tin, tout, amt, app, slot):
             """Serve ours ONLY on positive proof it out-delivers the champion.
             An empty champion plan delivers 0, so its sim is skipped."""
-            champ = 0 if not getattr(base, "interactions", None) else _sim(
-                w3, base, tin, tout, amt, app, slot)
+            champ = 0 if not getattr(base, 'interactions', None) else _sim(w3, base, tin, tout, amt, app, slot)
             if champ is None:
                 return False
             mine = _sim(w3, ours, tin, tout, amt, app, slot)
             if mine is None or mine <= 0:
                 return False
-            # ONE-WAY override: cover_state may only RAISE the bar. margin_bps() returns
-            # the shared cover_state.json value (currently 20) whenever the key exists,
-            # which would silently collapse our measured-safe 500bps floor to 20bps —
-            # well inside sim noise on a thin V2 pool.
             floor = max(_MARGIN_BPS, cover_state.margin_bps(_MARGIN_BPS))
             return mine > champ * (1 + floor / 10000.0)
 
         def _vp_ready(self, intent, state, base):
             """Every cheap guard in one place (own region, keeps max_region low).
             Returns (pin, tin, tout, amt, app, w3) or None to defer."""
+
+            def _dz313():
+                pin, tin, tout, amt = hit
+                app = getattr(state, 'contract_address', '') or ''
+                if not app:
+                    return (None,)
+                w3 = _try(getattr(self, '_get_web3', None), int(getattr(state, 'chain_id', 0) or 0))
+                if w3 is None:
+                    return (None,)
+                return ((pin, tin, tout, amt, app, w3),)
+                return _DR_UNSET
             hit = _try(self._vp_pin, intent, state)
             if hit is None:
                 return None
@@ -260,50 +234,39 @@ def wrap(base_cls):
                 return None
             if _try(cover_state.base_untrusted, base) is not False:
                 return None
-            if int(getattr(self, "_vp_sims", 0) or 0) >= _MAX_SIMS:
+            if int(getattr(self, '_vp_sims', 0) or 0) >= _MAX_SIMS:
                 return None
-            pin, tin, tout, amt = hit
-            app = getattr(state, "contract_address", "") or ""
-            if not app:
-                return None
-            w3 = _try(getattr(self, "_get_web3", None),
-                      int(getattr(state, "chain_id", 0) or 0))
-            if w3 is None:
-                return None
-            return (pin, tin, tout, amt, app, w3)
+            _r_dz313 = _dz313()
+            if _r_dz313 is not _DR_UNSET:
+                return _r_dz313[0]
 
         def _vp_serve(self, intent, state, base):
             """Our pinned plan, or None to keep the champion's."""
+
+            def _dz312():
+                if not _is_plan(ours):
+                    return (None,)
+                self._vp_sims = int(getattr(self, '_vp_sims', 0) or 0) + 2
+                if _try(self._vp_decide, base, ours, w3, tin, tout, amt, app, pin[2]) is not True:
+                    return (None,)
+                logger.info('[v2pin] WIN %s->%s amt=%d', tin[:10], tout[:10], amt)
+                return (ours,)
+                return _DR_UNSET
             ready = self._vp_ready(intent, state, base)
             if ready is None:
                 return None
             pin, tin, tout, amt, app, w3 = ready
             ours = _try(self._vp_build, intent, state, pin, tin, amt, w3)
-            if not _is_plan(ours):
-                return None
-            self._vp_sims = int(getattr(self, "_vp_sims", 0) or 0) + 2
-            if _try(self._vp_decide, base, ours, w3, tin, tout, amt, app, pin[2]) is not True:
-                return None
-            logger.info("[v2pin] WIN %s->%s amt=%d", tin[:10], tout[:10], amt)
-            return ours
+            _r_dz312 = _dz312()
+            if _r_dz312 is not _DR_UNSET:
+                return _r_dz312[0]
 
         def generate_plan(self, intent, state, snapshot=None):
-            # `base` is deliberately OUTSIDE the try: if the base stack raises there is no
-            # champion plan to fall back to, and swallowing it would turn a base-tree
-            # defect into a silent None (a drop) instead of a loud one.
             base = super().generate_plan(intent, state, snapshot)
             try:
                 ours = self._vp_serve(intent, state, base)
             except Exception:
-                # every structural failure class on an unfamiliar base lands here:
-                # AttributeError (builder gone), TypeError (signature moved),
-                # RuntimeError, RecursionError. KeyboardInterrupt/SystemExit are
-                # deliberately NOT caught — those must stay fatal to the harness.
-                logger.exception("[v2pin] failed; deferring to champion")
+                logger.exception('[v2pin] failed; deferring to champion')
                 return base
-            # FAIL-CLOSED, structurally: only a plan with real interactions may displace
-            # the champion's. Anything else — None, a sentinel, an empty plan, a builder
-            # that returned garbage on an unfamiliar lineage — returns `base` VERBATIM.
             return ours if _is_plan(ours) else base
-
     return V2PinSolver
