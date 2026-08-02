@@ -29,6 +29,7 @@ delivered nothing, so a rotted fill forfeits a credit instead of causing a drop.
 base each of those three scored `dropped`. On this base the same three cost nothing.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import concurrent.futures as _cf
 import json
 import logging
@@ -234,6 +235,12 @@ def _par_legs(amount, executor, d, Interaction):
     unconvertible dust, deliberately left unspent rather than rounded up into an allowance the
     wrapper would reject.
     """
+
+    def _dz238():
+        if gem <= 0:
+            return ((None, 0),)
+        return (([Interaction(target=tin, value='0', chain_id=1, call_data=_abi_addr_uint('0x095ea7b3', wrap, wad)), Interaction(target=wrap, value='0', chain_id=1, call_data=_abi_addr_uint(sel, executor, gem))], gem),)
+        return _DR_UNSET
     tin, _tout, wrap, sel, up = d
     if up:
         gem = wad = int(amount)
@@ -241,9 +248,9 @@ def _par_legs(amount, executor, d, Interaction):
         spend = int(amount) * (10000 - _PAR_HAIRCUT_BPS) // 10000
         gem = spend // 10 ** 12
         wad = gem * 10 ** 12
-    if gem <= 0:
-        return (None, 0)
-    return ([Interaction(target=tin, value='0', chain_id=1, call_data=_abi_addr_uint('0x095ea7b3', wrap, wad)), Interaction(target=wrap, value='0', chain_id=1, call_data=_abi_addr_uint(sel, executor, gem))], gem)
+    _r_dz238 = _dz238()
+    if _r_dz238 is not _DR_UNSET:
+        return _r_dz238[0]
 
 def _par_match(state):
     """The direction tuple this order matches, or None.
@@ -299,31 +306,43 @@ def install(base_cls, Interaction, ExecutionPlan):
     class _LatticeFill(base_cls):
 
         def _overlay_plan(self, intent, state):
+
+            def _dz237():
+                if not key:
+                    return (None,)
+                row = _ROWS.get(key)
+                if not isinstance(row, dict):
+                    return (None,)
+                chain = int(getattr(state, 'chain_id', 0) or 0)
+                legs = _legs(row, chain, Interaction)
+                if not legs:
+                    return (None,)
+                return (ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'lattice-fill', 'chain_id': chain}),)
+                return _DR_UNSET
             if int(getattr(state, 'chain_id', 0) or 0) != _ADOPTION_CHAIN:
                 return None
             key = _row_key(state)
-            if not key:
-                return None
-            row = _ROWS.get(key)
-            if not isinstance(row, dict):
-                return None
-            chain = int(getattr(state, 'chain_id', 0) or 0)
-            legs = _legs(row, chain, Interaction)
-            if not legs:
-                return None
-            return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'lattice-fill', 'chain_id': chain})
+            _r_dz237 = _dz237()
+            if _r_dz237 is not _DR_UNSET:
+                return _r_dz237[0]
 
         def _par_plan(self, intent, state):
             """Par-rate plan for chain-1 USDS->USDC, or None. See the header block."""
+
+            def _dz236():
+                legs, gem = _par_legs(amount, executor, d, Interaction)
+                if not legs or not _par_state_ok(d, gem):
+                    return (None,)
+                _log.info('[fill] par override %s->%s: %s in, gem %s (fixed rate)', d[0][:8], d[1][:8], amount, gem)
+                return (ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'lattice-par', 'chain_id': 1}),)
+                return _DR_UNSET
             got = _par_order(state)
             if not got:
                 return None
             amount, executor, d = got
-            legs, gem = _par_legs(amount, executor, d, Interaction)
-            if not legs or not _par_state_ok(d, gem):
-                return None
-            _log.info('[fill] par override %s->%s: %s in, gem %s (fixed rate)', d[0][:8], d[1][:8], amount, gem)
-            return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'lattice-par', 'chain_id': 1})
+            _r_dz236 = _dz236()
+            if _r_dz236 is not _DR_UNSET:
+                return _r_dz236[0]
 
         def _par_try(self, intent, state):
             """`_par_plan` with the exception boundary, so callers stay branch-free."""
