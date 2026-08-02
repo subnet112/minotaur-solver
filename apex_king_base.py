@@ -507,8 +507,6 @@ class MinerSolver(_MinerSolverDR77):
                 return 1
             kind = spec.get('kind')
 
-            def pad(a):
-                return a.lower().replace('0x', '').rjust(64, '0')
 
             def _dr46():
                 nonlocal _enc, d, r

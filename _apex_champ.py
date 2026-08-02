@@ -28,7 +28,6 @@ try:
 except Exception:
     SolverMetadata = None
 logger = logging.getLogger(__name__)
-_STRATEGIES_DIR = Path(__file__).parent / 'strategies'
 
 def _load_agent_strategies() -> dict:
     """No agent-strategy blind-spot layer: delivery is fully handled by the
