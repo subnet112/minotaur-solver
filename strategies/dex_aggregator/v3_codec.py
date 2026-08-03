@@ -14,10 +14,14 @@ exactInput on every chain we deploy to.
 """
 _DR_UNSET = object()
 from eth_abi.abi import encode
-EXACT_INPUT_SINGLE_SELECTOR_V1 = bytes.fromhex('414bf389')
-EXACT_INPUT_SINGLE_SELECTOR_V2 = bytes.fromhex('04e45aaf')
-SWAP_ROUTER_V2_CHAINS = {8453, 10, 42161}
-EXACT_INPUT_SELECTOR = bytes.fromhex('c04b8d59')
+
+def _dz122():
+    EXACT_INPUT_SINGLE_SELECTOR_V1 = bytes.fromhex('414bf389')
+    EXACT_INPUT_SINGLE_SELECTOR_V2 = bytes.fromhex('04e45aaf')
+    SWAP_ROUTER_V2_CHAINS = {8453, 10, 42161}
+    EXACT_INPUT_SELECTOR = bytes.fromhex('c04b8d59')
+    return (EXACT_INPUT_SINGLE_SELECTOR_V1, EXACT_INPUT_SINGLE_SELECTOR_V2, SWAP_ROUTER_V2_CHAINS, EXACT_INPUT_SELECTOR)
+EXACT_INPUT_SINGLE_SELECTOR_V1, EXACT_INPUT_SINGLE_SELECTOR_V2, SWAP_ROUTER_V2_CHAINS, EXACT_INPUT_SELECTOR = _dz122()
 
 def encode_exact_input_single(token_in: str, token_out: str, fee: int, recipient: str, deadline: int, amount_in: int, amount_out_minimum: int, sqrt_price_limit_x96: int=0, chain_id: int=0) -> str:
     """Encode Uniswap V3 SwapRouter.exactInputSingle calldata.
