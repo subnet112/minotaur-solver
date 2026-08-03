@@ -8,7 +8,7 @@ routing. Falls back to MarketSnapshot data when RPC is unavailable
 Architecture:
     1. initialize() stores rpc_urls, creates Web3 instances on demand
     2. quote()/generate_plan() query live pool states via RPC
-    3. If no RPC → fall back to the snapshot pool-state mapping
+    3. If no RPC → fall back to the snapshot's pool-state map
     4. Route through pools using pool_math (direct + multi-hop)
 
 Miners are expected to surpass this baseline with better strategies:
@@ -452,7 +452,7 @@ class _BaselineSwapSolverDR2DR30(_BaselineSwapSolverDR1):
                         prices = self._derive_prices(pool_states, chain_id) if pool_states else {}
                         return (input_token, output_token, pool_states, prices)
                     input_token, output_token, pool_states, prices = _dr83()
-                    context = ProcessorContext(chain_id=chain_id, timestamp=snapshot.timestamp if snapshot else int(time.time()), block_number=snapshot.block_number if snapshot else 0, rpc_url=self._rpc_urls.get(chain_id, ''), prices=prices, dex_config=getattr(snapshot, "dex_config", None) if snapshot else {})
+                    context = ProcessorContext(chain_id=chain_id, timestamp=snapshot.timestamp if snapshot else int(time.time()), block_number=snapshot.block_number if snapshot else 0, rpc_url=self._rpc_urls.get(chain_id, ''), prices=prices, dex_config=getattr(snapshot, "dex_config", {}) if snapshot else {})
                     return (context, input_token, output_token, pool_states)
                 context, input_token, output_token, pool_states = _dr15()
                 if input_token and output_token and pool_states:

@@ -1,3 +1,5 @@
+# SN112 shape library — v3/StableNg row builders.
+
 _V_V3_ROUTERS = {'uni': '0x2626664c2603336E57B271c5C0b26F421741e481', 'pancake': '0x678Aa4bF4E210cf2166753e054d5b7c31cc7fa86'}
 _V_E1_QUOTER = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e'
 _V_E1_ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
@@ -21,7 +23,7 @@ def _sg2_legs(spec, tin, amt):
     v3_r = _V_V3_ROUTERS[spec.get('l1r') or 'uni']
     sel1 = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4]
     leg1 = '0x' + (sel1 + _enc(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['l1_fee']), '0x0000000000000000000000000000000000000001', int(amt), 0, 0)])).hex()
-    return (v3_r, leg1)
+    return v3_r, leg1
 
 def _sg2_leg2(spec, q1, rcpt):
     from eth_abi import encode as _enc
@@ -58,7 +60,7 @@ def _gs2_legs(spec, amt):
     v3_r = _V_V3_ROUTERS[spec.get('l2r') or 'uni']
     sel1 = _keccak(text='exchange(int128,int128,uint256,uint256,address)')[:4]
     leg1 = '0x' + (sel1 + _enc(['int128', 'int128', 'uint256', 'uint256', 'address'], [int(spec['i']), int(spec['j']), int(amt), 0, _ck(v3_r)])).hex()
-    return (v3_r, leg1)
+    return v3_r, leg1
 
 def _gs2_leg2(spec, tout, rcpt):
     from eth_abi import encode as _enc
