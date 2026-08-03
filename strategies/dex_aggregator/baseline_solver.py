@@ -1381,5 +1381,5 @@ class BaselineSwapSolver(_BaselineSwapSolverDR89):
 
     def metadata(self) -> SolverMetadata:
         """Return baseline solver metadata."""
-        return SolverMetadata(name="reclaim-router", version="0.287.2", author="Xayaan", description='Baseline v2 solver with RPC-first pool discovery. Queries real Uniswap V3 pool states for accurate pricing. Falls back to snapshot when no RPC available.', supported_chains=[1, 8453], supported_intent_types=['swap'])
+        return SolverMetadata(name='baseline-swap-solver', version='2.0.0', author='minotaur-subnet', description='Baseline v2 solver with RPC-first pool discovery. Queries real Uniswap V3 pool states for accurate pricing. Falls back to snapshot when no RPC available.', supported_chains=[1, 8453], supported_intent_types=['swap'])
 SOLVER_CLASS = BaselineSwapSolver

@@ -59,9 +59,9 @@ def _dr142():
     logger = logging.getLogger(__name__)
 
     def _dr31():
-        SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'reclaim-router')
-        SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.287.2')
-        SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'Xayaan')
+        SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
+        SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '1.1.2')
+        SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'top')
         _FAST_DIRECT_INPUTS = frozenset({_USDBC})
         _HOLE_SPEND_CAPS = {'0x0963a1abaf36ca88c21032b82e479353126a1c4b': 1000000}
         _UR_CONTRACT_BALANCE = 1 << 255

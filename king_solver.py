@@ -22,9 +22,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 def _dr23():
     logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'reclaim-router')
-    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.287.2')
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'Xayaan')
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'putty-clean-solver')
+    SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '96.0.0')
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'martindev0207')
     _BASE = 8453
     _WETH = '0x4200000000000000000000000000000000000006'
     _MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'
