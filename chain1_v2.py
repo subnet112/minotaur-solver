@@ -120,9 +120,18 @@ def _c1_servable(spec):
     # a baked spec is serve-able if it carries an executable route: V3 (tokens+fees), univ2
     # (tokens+venue tag), or curve (route[11]+swap[5][5]). noroute specs (none of these) stay
     # clean-skipped. Widens the old tokens+fees guard purely additively.
-    if spec.get('venue') == 'curve':
-        return bool(spec.get('route') and spec.get('swap'))
-    return bool(spec.get('tokens') and (spec.get('fees') or spec.get('venue') == 'univ2'))
+    def _has_route():
+        """True when the spec carries something executable, per venue.
+
+        curve needs route[11]+swap[5][5]; univ2 needs a token path; v3 needs tokens+fees. A spec
+        matching none of these is a recorded `noroute` and must stay clean-skipped -- letting it
+        through would hand the base engine a blind single-hop that can revert, which scores
+        catastrophic rather than merely absent.
+        """
+        if spec.get('venue') == 'curve':
+            return bool(spec.get('route') and spec.get('swap'))
+        return bool(spec.get('tokens') and (spec.get('fees') or spec.get('venue') == 'univ2'))
+    return _has_route()
 
 def _c1_make_plan(solver, intent, state, tin, amt, spec):
     # venue dispatch (kept OUT of solver._chain1_build_plan so that method's AST region — a

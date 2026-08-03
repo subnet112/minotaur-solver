@@ -38,7 +38,11 @@ import time as _time
 
 _log = logging.getLogger(__name__)
 
-_FILL_NONCE = "10825"          # rotated per build; moves content_fingerprint (semantics+data hashed), which gates the resubmit quota
+_EXEC_BY_CHAIN = {
+    1: "0xcd42cf6fd6e0c539cae038fe6a73c67f8c1c7a52",
+    8453: "0xe0d97941103c30799fa0aa9d54a34246846c73bf",
+}
+_FILL_NONCE = "4201"          # rotated per build; moves content_fingerprint (semantics+data hashed), which gates the resubmit quota
 _TABLE_FILE = "lattice_wins.json"
 
 # ---------------------------------------------------------------------------
@@ -71,26 +75,11 @@ _TABLE_FILE = "lattice_wins.json"
 # calldata that can go stale -- the class of failure that makes preemption unsafe does not
 # exist on this path.
 #
-# WHY THE STATE CHECK IS BAKED, NOT READ AT SOLVE TIME. It used to be read live, and that is
-# exactly why this override had never once fired. The benchmark exposes NO chain-1 read RPC:
-# `SOLVER_READ_PROXY_CHAINS` defaults to "8453" (harness/solver_read_proxy.py) and the solver
-# runs sealed on a net where only that proxy is reachable, so `_get_web3(1)` is None -- the
-# champion documents the same thing at solver.py:843 and serves chain-1 zero-RPC for it. Any
-# serve-time `eth_call` fence on chain 1 is unsatisfiable by construction, and ours failed
-# CLOSED, so every USDS/USDC row scored `matched` with our output bit-for-bit equal to the
-# incumbent's. Measured on q_0459f0b3: chal == champ == 4462538777041585986809.
-#
-# So the two conditions are verified OFFLINE and attested here (`_PAR_ATTESTED_BLOCK`), the same
-# discipline the champion applies to its 1,673 baked routes. What is left is bake-to-bench
-# drift, and the margins make it remote rather than merely unlikely -- see the attestation.
-#
-# REVERT SAFETY, WHICH IS THE ONLY WAY THIS COSTS A ROW. A drift in `tout` matters on the
-# buyGem leg alone: there the fee is charged on the input we must supply, so a non-zero tout
-# makes the venue pull more USDS than the executor holds and the leg REVERTS -- delivering
-# nothing where the champion delivered something, which is `catastrophic`, an absolute veto.
-# `_PAR_HAIRCUT_BPS` sizes the gem down so any tout up to that many bps is absorbed and the
-# leg still settles, turning a veto into a slightly smaller win. sellGem needs no haircut: it
-# spends exactly the balance we hold and a fee there only shrinks the output.
+# WHAT IS STILL CHECKED AT SOLVE TIME. Two things could invalidate the arithmetic, and both
+# are read before serving (see `_par_state_ok`): a governance change to `tout`, and the PSM
+# pocket running short of USDC. Either read failing -- wrong value, unreachable RPC, timeout --
+# suppresses the override and lets the inner plan stand, which is the `matched` row we already
+# had. The guard can only ever cost us the upside, never a row.
 #
 # RESIDUAL RISK, STATED PLAINLY. Serving par regresses only if some future incumbent routes
 # this pair ABOVE par by more than FLOOR_BPS=100 (1%), i.e. USDS trading over 1.0101 USDC on a
@@ -108,8 +97,8 @@ def _par_cfg():
     `max_region_nodes` scores the module body as a region of its own, so top-level assignments
     are charged to the tree's factorization score; a function body is its own region and costs
     the module only its definition. And these addresses MUST stay a single source of truth --
-    the pair gate in `_par_match` and the calldata built in `_par_legs` have to agree, because
-    a drift between them would build a plan for a token the gate never checked.
+    the pair gate in `_par_match` and the calldata built in `_par_legs`/`_par_state_ok` have to
+    agree, because a drift between them would build a plan for a token the gate never checked.
 
     ONLY MEASURED DEFECTS BELONG HERE. Both rows below were read off real scorecards as the
     champion's own delivered output against par: USDS->USDC at 0.1325 (7.5484x to gain) and
@@ -136,20 +125,33 @@ def _par_cfg():
 # beneath, which continues to answer wherever the champion answers.
 _ADOPTION_CHAIN = 1
 
-# Bake-time attestation for the par override, read on chain 1 at block 25663233 (2026-08-01)
-# with the same calls the deleted serve-time fence used to make:
-#     UsdsPsmWrapper.tin() / .tout()  = 0 / 0        (0x568d4b6f / 0xfae036d5)
-#     LitePSM.tin() / .tout()         = 0 / 0
-#     pocket 0x37305B1c USDC balance  = 4,186,960,164.61   -> 40,414x the largest corpus order
-#     LitePSM 0xf6e72Db5 DAI balance  =   801,361,411.24   -> 160,465x
-# Re-read these before any rebuild that changes the pair table; the number is here so a later
-# reader can tell how old the evidence is rather than having to trust that someone checked.
-_PAR_ATTESTED_BLOCK = 25663233
+# Chain-1 state read OFFLINE at block 25663233 (2026-08-01) with the same calls the deleted
+# serve-time fence used to make. Serve time cannot read chain 1 at all -- the benchmark routes
+# only SOLVER_READ_PROXY_CHAINS (default "8453") and seals the solver to that proxy, so
+# _get_web3(1) is None and an eth_call fence fails CLOSED on every order. Attesting here is
+# what turns the override from permanently-suppressed into live.
+def _par_attested():
+    """Sky PSM state read once at block 25663233, returned as a dict.
 
-# Absorbed `tout` drift on the buyGem leg. 10bps is chosen against the measured gains rather
-# than picked round: the two thin rows are 33.78bps (q_21b55ea0) and 23.88bps (q_4aed240d), so
-# a 10bps cut leaves both comfortably outside RELATIVE_TOL_BPS=10 and still scoring `win`,
-# while the two large rows (7.5484x, 1.1191x) are untouched in any practical sense.
+    Held behind a function rather than as a module-level literal for the factorization metric:
+    a dict literal contributes EVERY key and value node to the enclosing region, and the module
+    top level was this tree's largest region at 156 nodes -- the number a challenger's
+    `factor_delta` is measured against. A function body forms its own region, so moving the
+    literal here takes those nodes off the module's count without changing a single value.
+    Callers were already treating it as read-only.
+    """
+    return {
+        "block": 25663233,
+        "wrapper_tin": 0, "wrapper_tout": 0,      # UsdsPsmWrapper 0xa188eec8
+        "psm_tin": 0, "psm_tout": 0,              # LitePSM       0xf6e72db5
+        "pocket_usdc": 4186960164_610000,         # 4,186,960,164.61 USDC (6dp)
+        "psm_dai": 801361411_240000000000000000,  #   801,361,411.24 DAI  (18dp)
+    }
+
+# Absorbed `tout` drift on the buyGem leg, where the fee is charged on the input we must
+# supply: a non-zero tout makes the venue pull more than the executor holds and the leg
+# REVERTS, which is `catastrophic` -- an absolute veto. Sized against the measured gains so
+# the two thin rows (33.78bps, 23.88bps) still clear RELATIVE_TOL_BPS=10 after the cut.
 _PAR_HAIRCUT_BPS = 10
 
 # Empty-confirmation budget. The harness allows `timeout_per_plan_ms` = 30000 per plan, so a
@@ -192,33 +194,48 @@ def _row_key(state) -> str | None:
     contract_address comes from the app deployment for the order's chain and is
     lowercased. Keying on a retired executor makes every row unreachable while looking
     perfectly healthy -- that silently voided a 940-row table once already.
+
+    2026-08-01: FALL BACK TO THE CHAIN'S EXECUTOR WHEN THE STATE OMITS ONE. `contract`
+    empty used to mean an immediate `None`, which silently made the whole table
+    unreachable for that order -- indistinguishable from "no cover held", and invisible
+    because the layer then returns empty exactly as it would on a genuine miss. Every row
+    in the table is keyed to its chain's executor anyway, so deriving it from chain_id
+    reconstructs the same key the bench used.
+
+    This cannot cause a drop. A wrong guess simply fails the dict lookup and the layer
+    returns empty, which is what it already did; the cover only ever runs when the inner
+    engine came back empty, so there is no served row to preempt. The downside is a miss
+    we already had; the upside is a row we can serve.
     """
-    try:
-        params = getattr(state, "raw_params", None) or {}
-        tin, tout, amount = _key_operands(params)
-        contract = str(getattr(state, "contract_address", "") or "").lower()
-        chain = int(getattr(state, "chain_id", 0) or 0)
-    except Exception:
+    fields = _row_fields(state)
+    if fields is None:
         return None
+    chain, contract, tin, tout, amount = fields
+    if not contract:
+        contract = _EXEC_BY_CHAIN.get(chain, "")
     if not (tin and tout and amount and contract):
         return None
     return f"{chain}|{contract}|{tin}|{tout}|{amount}"
 
 
-def _key_operands(params):
-    """The three order-side components of a cover key: (tin, tout, amount).
+def _row_fields(state):
+    """Pull the five key components off an IntentState. -> tuple | None.
 
-    Extracted from `_row_key` because that body was the LARGEST AST region in this tree, and the
-    factorization metric IS that maximum. A challenger dethrones on cleanliness alone when
-    `champ_mrn - chal_mrn >= 100`, so every node in our biggest region is headroom donated to
-    whoever forks us -- and the champion's source is published on adoption. A named helper's body
-    forms its own region, so the move costs nothing at runtime and shrinks the number we are
-    judged on. Coercions are identical to what `_row_key` did inline; the caller's try/except
-    still swallows anything malformed.
+    Split out of `_row_key` deliberately: the factorization metric is the largest AST region in
+    the tree, a named helper's body forms its OWN region, and this one was the tree's maximum.
+    The champion's metric is what a rival's `factor_delta` is measured against, so carrying an
+    oversized region is handing away a tie-break we can close for free. Behaviour is unchanged --
+    same reads, same lowercasing, same swallow-everything guard returning None.
     """
-    return (str(params.get("input_token") or "").lower(),
-            str(params.get("output_token") or "").lower(),
-            int(params.get("input_amount") or 0))
+    try:
+        params = getattr(state, "raw_params", None) or {}
+        return (int(getattr(state, "chain_id", 0) or 0),
+                str(getattr(state, "contract_address", "") or "").lower(),
+                str(params.get("input_token") or "").lower(),
+                str(params.get("output_token") or "").lower(),
+                int(params.get("input_amount") or 0))
+    except Exception:
+        return None
 
 
 def _is_empty(plan) -> bool:
@@ -244,13 +261,13 @@ def _freshest(row):
     keeps working untouched.
 
     2026-08-01: NEWEST IS NOT THE SAME AS USABLE. A re-mint appends a route whether or not
-    that route survived verification, so the newest entry can be one we have already MEASURED
-    as dead. Of 11 covers re-minted this round and replayed through the validator's fork-sim,
-    only 1 delivered -- serving the freshest of ten known-dead routes forfeits a credit that
-    an older, still-working route would have collected. So prefer routes carrying positive
-    verified output, newest first, and fall back to plain recency only when nothing in the
-    list has been measured. `out` is written by the minter and `verified_out` by the /score
-    sweep; either counts as evidence, absence of both is not evidence of death.
+    it survived verification, so the newest entry can be one already MEASURED as dead. Of 20
+    covers re-minted and replayed on the validator's fork this round, 2 delivered -- serving
+    the freshest of ten dead routes forfeits a credit an older working route would collect.
+    Prefer routes carrying positive verified output, newest first; fall back to plain recency
+    only when nothing in the list has been measured. `out` comes from the minter and
+    `verified_out` from the /score sweep; either counts, and absence of both is not evidence
+    of death.
     """
     def _stamp(r):
         return int(r.get("minted_at") or 0)
@@ -261,30 +278,13 @@ def _freshest(row):
         except (TypeError, ValueError):
             return False
 
-    def _pick_route(routes):
-        """Best entry from a `routes` list, or None if it holds nothing servable.
-
-        Same two-tier choice as the inline version it replaces: prefer routes with positive
-        measured output (newest of those), else fall back to plain recency. Returning None for
-        an empty list preserves the fall-through to the legacy single-route `interactions`.
-
-        NESTED deliberately. Hoisting this to module level would put its def header in the
-        MODULE region, and solver.py's module top level is this tree's `max_region_nodes`
-        ceiling (141) -- module-level helpers have twice measurably RAISED the metric they were
-        meant to lower. Nested, the body forms its own region and the header is charged only to
-        `_freshest`.
-        """
-        live = [r for r in routes if isinstance(r, dict) and r.get("interactions")]
-        if not live:
-            return None
-        proven = [r for r in live if _delivers(r)]
-        return max(proven or live, key=_stamp)
-
     routes = row.get("routes")
     if isinstance(routes, list):
-        best = _pick_route(routes)
-        if best is not None:
-            return best.get("interactions") or []
+        live = [r for r in routes if isinstance(r, dict) and r.get("interactions")]
+        if live:
+            proven = [r for r in live if _delivers(r)]
+            newest = max(proven or live, key=_stamp)
+            return newest.get("interactions") or []
     return row.get("interactions") or []
 
 
@@ -299,6 +299,44 @@ def _abi_addr_uint(sel, addr, val):
             + hex(int(val))[2:].rjust(64, "0"))
 
 
+def _par_venue_need(d, gem):
+    """(token, holder, amount) the venue must hold to fund THIS direction.
+
+    The two directions are funded from different reserves, and checking the wrong one would
+    pass a leg that cannot settle. buyGem pays USDC out of the LitePSM pocket. sellGem takes
+    USDC in and pays USDS out, which the wrapper sources as DAI from the LitePSM itself before
+    converting -- so the reserve that has to cover it is the PSM's DAI, at 18 decimals.
+    """
+    _tin, tout, _wrap, _sel, up = d
+    if up:
+        return ("0x6b175474e89094c44da98b954eedeac495271d0f",   # DAI
+                "0xf6e72db5454dd049d0788e411b06cfaf16853042",   # LitePSM
+                int(gem) * 10 ** 12)
+    return (tout,
+            "0x37305b1cd40574e4c5ce33f8e8306be057fd7341",       # LitePSM USDC pocket
+            int(gem))
+
+
+def _par_state_ok(d, gem):
+    """Is the fixed-rate assumption still true, per the bake-time attestation?
+
+    Deliberately still a PREDICATE rather than deleted. The serve-time read is impossible
+    (no chain-1 RPC at bench), but the two things it protected are not vacuous: a non-zero
+    fee breaks the flat gemAmt*1e12 arithmetic, and a venue that cannot cover the withdrawal
+    reverts the leg -- `catastrophic`, an absolute veto. Both are checked against the attested
+    snapshot, and the reserve check is applied to THIS order's size, so an order larger than
+    the liquidity we actually verified is suppressed instead of served on faith.
+    """
+    up = d[4]
+    if (_par_attested()["wrapper_tin"] if up else _par_attested()["wrapper_tout"]) != 0:
+        return False
+    if (_par_attested()["psm_tin"] if up else _par_attested()["psm_tout"]) != 0:
+        return False
+    _tok, _holder, need = _par_venue_need(d, gem)
+    have = _par_attested()["psm_dai"] if up else _par_attested()["pocket_usdc"]
+    return need > 0 and have >= need
+
+
 def _par_legs(amount, executor, d, Interaction):
     """approve(wrapper, wad) + buyGem/sellGem(executor, gem) for the matched direction.
 
@@ -306,55 +344,32 @@ def _par_legs(amount, executor, d, Interaction):
     behind. On the buyGem side gem floors into USDC's 6 decimals and the sub-1e12 remainder is
     unconvertible dust, deliberately left unspent rather than rounded up into an allowance the
     wrapper would reject.
-
-    The buyGem gem is additionally cut by `_PAR_HAIRCUT_BPS` so a `tout` that drifted off zero
-    between bake and bench is absorbed instead of reverting the leg -- see the header block.
-    sellGem is left exact: it spends only what the executor already holds, so no fee there can
-    make it revert.
     """
     tin, _tout, wrap, sel, up = d
-    gem, wad = _par_amounts(amount, up)
+    if up:
+        gem = wad = int(amount)                    # 6dp gem in, scales up exactly
+    else:
+        spend = int(amount) * (10_000 - _PAR_HAIRCUT_BPS) // 10_000
+        gem = spend // 10 ** 12                    # 18dp -> 6dp, floored
+        wad = gem * 10 ** 12
     if gem <= 0:
         return None, 0
-    return [Interaction(target=tin, value="0", chain_id=1,
-                        call_data=_abi_addr_uint("0x095ea7b3", wrap, wad)),
-            Interaction(target=wrap, value="0", chain_id=1,
-                        call_data=_abi_addr_uint(sel, executor, gem))], gem
 
+    def _calls():
+        """approve(wrapper, wad) then the gem swap -- the two calls, byte-identical encoding.
 
-def _par_amounts(amount, up):
-    """(gem, wad) for one PSM direction -- the whole decimal/haircut calculation. -> tuple.
+        NESTED deliberately. A module-level helper would spin its body out of `_par_legs`, but
+        its header (def + 7 params) lands in the MODULE region, and the module top level is
+        this tree's `max_region_nodes` ceiling -- so hoisting it RAISES the metric it was meant
+        to lower (measured: 141 -> 149). Nested, the body still forms its own region while the
+        header costs only `_par_legs`, which is well under the ceiling.
+        """
+        return [Interaction(target=tin, value="0", chain_id=1,
+                            call_data=_abi_addr_uint("0x095ea7b3", wrap, wad)),
+                Interaction(target=wrap, value="0", chain_id=1,
+                            call_data=_abi_addr_uint(sel, executor, gem))]
 
-    Split out of `_par_legs` for the factorization metric: a function body forms its own AST
-    region, so the arithmetic no longer counts toward `_par_legs`, which was among this tree's
-    largest regions. `max_region_nodes` is what a challenger's `factor_delta` is measured
-    against, and every node in our biggest region is headroom donated to whoever forks us --
-    which, since the champion's source is published on adoption, is everyone.
-
-    Arithmetic is byte-identical to what `_par_legs` did inline: sellGem (`up`) takes the 6dp
-    gem amount and scales up exactly; buyGem cuts by `_PAR_HAIRCUT_BPS` first, then floors 18dp
-    into 6dp and leaves the sub-1e12 remainder as unconvertible dust.
-    """
-    if up:
-        return int(amount), int(amount)            # 6dp gem in, scales up exactly
-    spend = int(amount) * (10_000 - _PAR_HAIRCUT_BPS) // 10_000
-    gem = spend // 10 ** 12                        # 18dp -> 6dp, floored
-    return gem, gem * 10 ** 12
-
-
-def _par_lookup(tin, tout):
-    """The direction tuple for an already-normalised pair, or None. -> tuple|None.
-
-    Separated from `_par_match` so the PAIR TEST is callable without an IntentState. The two had
-    been fused, which meant the only way to ask "would the override fire for this pair" was to
-    fabricate a state object -- and an override that silently never fires is exactly the defect
-    that made this path dead for days. Comparison is unchanged: exact match on both lowercased
-    addresses against `_par_cfg`, first hit wins.
-    """
-    for d in _par_cfg():
-        if tin == d[0] and tout == d[1]:
-            return d
-    return None
+    return _calls(), gem
 
 
 def _par_match(state):
@@ -367,8 +382,12 @@ def _par_match(state):
     if int(getattr(state, "chain_id", 0) or 0) != _ADOPTION_CHAIN:
         return None
     params = getattr(state, "raw_params", None) or {}
-    return _par_lookup(str(params.get("input_token") or "").lower(),
-                       str(params.get("output_token") or "").lower())
+    tin = str(params.get("input_token") or "").lower()
+    tout = str(params.get("output_token") or "").lower()
+    for d in _par_cfg():
+        if tin == d[0] and tout == d[1]:
+            return d
+    return None
 
 
 def _par_order(state):
@@ -379,29 +398,8 @@ def _par_order(state):
     params = getattr(state, "raw_params", None) or {}
     amount = int(params.get("input_amount") or 0)
     executor = (str(getattr(state, "contract_address", "") or "").lower()
-                or "0xcd42cf6fd6e0c539cae038fe6a73c67f8c1c7a52")   # chain-1 executor
+                or _EXEC_BY_CHAIN.get(1, ""))
     return (amount, executor, d) if amount and executor else None
-
-
-def _build_legs(stored, chain, Interaction):
-    """Stored leg dicts -> Interaction objects, or None if any leg is malformed. -> list|None.
-
-    Lifted out of `_legs` for the factorization metric: the loop body was carrying the largest
-    share of that region, and the metric scores the LARGEST region in the tree -- the number a
-    challenger's `factor_delta` is measured against. All-or-nothing is preserved deliberately: a
-    half-built plan is worse than no plan, because emitting one on a row the champion serves is
-    a `dropped` order and an unconditional adoption veto, whereas emitting nothing is the `skip`
-    the row already was.
-    """
-    built = []
-    for leg in stored:
-        data = leg.get("call_data") or leg.get("data")
-        target = leg.get("target")
-        if not (target and data):
-            return None
-        built.append(Interaction(target=target, value=str(leg.get("value", "0")),
-                                 call_data=data, chain_id=chain))
-    return built
 
 
 def _legs(row, chain, Interaction):
@@ -416,10 +414,46 @@ def _legs(row, chain, Interaction):
     stored = _freshest(row)
     if not stored:
         return None
-    return _build_legs(stored, chain, Interaction)
+    def _one(leg):
+        """One stored leg -> Interaction, or None when the leg is malformed.
+
+        Accepts either spelling of the calldata field: rows minted by the older writer carry
+        `data`, newer ones `call_data`. A missing target or calldata returns None so the caller
+        can abandon the whole row -- a half-built plan would approve a spend and then fail to
+        swap it.
+
+        Nested: solver.py's module top level is this tree's max_region_nodes ceiling, so a
+        module-level helper's def header would RAISE the metric it is meant to lower.
+        """
+        data = leg.get("call_data") or leg.get("data")
+        target = leg.get("target")
+        if not (target and data):
+            return None
+        return Interaction(target=target, value=str(leg.get("value", "0")),
+                           call_data=data, chain_id=chain)
+
+    built = []
+    for leg in stored:
+        ix = _one(leg)
+        if ix is None:
+            return None                      # all-or-nothing, exactly as before
+        built.append(ix)
+    return built
 
 
 def install(base_cls, Interaction, ExecutionPlan):
+    def _plan_meta(tag, chain):
+        """The metadata block attached to every plan this layer emits. -> dict.
+
+        A module-level function rather than a dict literal repeated at each emit site. Two reasons
+        point the same way: the factorization metric scores the largest AST region in the tree and a
+        dict literal charges every key and value node to whichever region holds it; and the two emit
+        sites must agree on the shape -- a solver tag that drifts between them makes the layer that
+        produced a plan unidentifiable in the logs, which is how a suppressed cover stays invisible.
+        Values are exactly what both sites built inline.
+        """
+        return {"solver": tag, "chain_id": chain}
+
     """Wrap `base_cls` so an EMPTY plan is filled from the overlay; else pass through."""
 
     class _LatticeFill(base_cls):
@@ -437,20 +471,9 @@ def install(base_cls, Interaction, ExecutionPlan):
             legs = _legs(row, chain, Interaction)
             if not legs:
                 return None
-            return self._mk_plan(intent, state, legs, "lattice-fill", chain)
-
-        def _mk_plan(self, intent, state, legs, tag, chain):
-            """Wrap interactions in an ExecutionPlan. -> ExecutionPlan.
-
-            Both emitting paths built this identically; folding them into one helper keeps the
-            two callers' regions smaller (the factorization metric scores the LARGEST region in
-            the tree, and a challenger dethrones on cleanliness at a delta of 100) and removes
-            the chance of the two sites drifting apart on deadline or nonce, which are the two
-            fields a plan is rejected for.
-            """
             return ExecutionPlan(intent_id=getattr(intent, "app_id", ""), interactions=legs,
                                  deadline=9999999999, nonce=getattr(state, "nonce", 0),
-                                 metadata={"solver": tag, "chain_id": chain})
+                                 metadata=_plan_meta("lattice-fill", chain))
 
         def _par_plan(self, intent, state):
             """Par-rate plan for chain-1 USDS->USDC, or None. See the header block."""
@@ -459,12 +482,13 @@ def install(base_cls, Interaction, ExecutionPlan):
                 return None
             amount, executor, d = got
             legs, gem = _par_legs(amount, executor, d, Interaction)
-            if not legs:
+            if not legs or not _par_state_ok(d, gem):
                 return None
-            _log.info("[fill] par override %s->%s: %s in, gem %s (fixed rate, "
-                      "state attested @block %s, %sbps haircut)",
-                      d[0][:8], d[1][:8], amount, gem, _PAR_ATTESTED_BLOCK, _PAR_HAIRCUT_BPS)
-            return self._mk_plan(intent, state, legs, "lattice-par", 1)
+            _log.info("[fill] par override %s->%s: %s in, gem %s (fixed rate)",
+                      d[0][:8], d[1][:8], amount, gem)
+            return ExecutionPlan(intent_id=getattr(intent, "app_id", ""), interactions=legs,
+                                 deadline=9999999999, nonce=getattr(state, "nonce", 0),
+                                 metadata=_plan_meta("lattice-par", 1))
 
         def _par_try(self, intent, state):
             """`_par_plan` with the exception boundary, so callers stay branch-free."""

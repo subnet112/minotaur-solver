@@ -8,9 +8,7 @@ COPY requirements.txt /app/solver/requirements.txt
 RUN python -c "import web3" 2>/dev/null || pip install --no-cache-dir -r /app/solver/requirements.txt
 
 COPY . /app/solver/
-# SDK v2 migration (#1233): the base image ships SDK 1.0.0 and `v1` is the only published
-# tag, so the 1.1.0 marker has to be vendored. Overlay onto the COMPLETE base package --
-# never a partial minotaur_subnet/ in the tree root, which would shadow the real package
-# (container sys.path puts cwd=/app/solver first) and kill every other import.
+# SDK v2 migration (#1233): re-vendor the 1.1.0 marker + Phase B shim over
+# the base image's 1.0.0 package. Overlay, so the package stays complete.
 COPY sdk_overlay/minotaur_subnet/ /app/minotaur_subnet/
 WORKDIR /app/solver
