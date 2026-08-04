@@ -1,5 +1,6 @@
 """apex cover h2 (best, 1300 rows 2026-08-04 17:33:30) — GENERATED; do not hand-edit."""
 from __future__ import annotations
+_DR_UNSET = object()
 import json, logging
 _LOG = logging.getLogger(__name__)
 _ANCHOR_ADDR = '0x0cde9a7e60a0df4b86c81490d0496ab3a8e104f1'
@@ -36,17 +37,23 @@ def _build_ident():
             return None
 
     def _rb1_ident_of(state):
+
+        def _dz241():
+            first = str(fields.get('input_token', '') or '').lower()
+            second = str(fields.get('output_token', '') or '').lower()
+            size = str(int(fields.get('input_amount', 0) or 0))
+            if not first or not second or size == '0':
+                return (None,)
+            return (first + '|' + second + '|' + size,)
+            return _DR_UNSET
         fields = dict(getattr(state, 'raw_params', None) or {})
         if not fields.get('input_token'):
             typed = getattr(state, 'typed_context', None)
             if typed is not None:
                 fields = getattr(typed, 'raw_params', fields) or fields
-        first = str(fields.get('input_token', '') or '').lower()
-        second = str(fields.get('output_token', '') or '').lower()
-        size = str(int(fields.get('input_amount', 0) or 0))
-        if not first or not second or size == '0':
-            return None
-        return first + '|' + second + '|' + size
+        _r_dz241 = _dz241()
+        if _r_dz241 is not _DR_UNSET:
+            return _r_dz241[0]
     return ident_of
 
 def _build_rewriter(anchor):
@@ -70,30 +77,42 @@ def install(base_cls):
     class _ClosureCover(base_cls):
 
         def generate_plan(self, intent, state, snapshot=None):
+
+            def _dz240():
+                occupied = incumbent is not None and bool(getattr(incumbent, 'interactions', None))
+                ident = ident_of(state)
+                if ident is None:
+                    return (incumbent,)
+                if occupied and (not contested(ident)):
+                    return (incumbent,)
+                steps = lookup(ident)
+                if not steps:
+                    return (incumbent,)
+                return (self._rf2_generate_plan(incumbent, intent, occupied, state, steps),)
+                return _DR_UNSET
             try:
                 incumbent = super().generate_plan(intent, state, snapshot)
             except Exception:
                 _LOG.exception('[cover] champion raised')
                 incumbent = None
-            occupied = incumbent is not None and bool(getattr(incumbent, 'interactions', None))
-            ident = ident_of(state)
-            if ident is None:
-                return incumbent
-            if occupied and (not contested(ident)):
-                return incumbent
-            steps = lookup(ident)
-            if not steps:
-                return incumbent
-            return self._rf2_generate_plan(incumbent, intent, occupied, state, steps)
+            _r_dz240 = _dz240()
+            if _r_dz240 is not _DR_UNSET:
+                return _r_dz240[0]
 
         def _rf2_generate_plan(self, incumbent, intent, occupied, state, steps):
-            try:
-                chain = int(getattr(state, 'chain_id', 0) or 0)
+
+            def _dz239():
                 legs = [Interaction(target=s['target'], value=str(s.get('value', '0')), call_data=rewrite(s['data'], state), chain_id=chain) for s in steps]
                 if not legs:
-                    return incumbent
+                    return (incumbent,)
                 _LOG.info('[cover] h2 %s', 'replace' if occupied else 'fill')
-                return ExecutionPlan(intent_id=intent.app_id, interactions=legs, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'apex-hybrid-best', 'chain_id': chain})
+                return (ExecutionPlan(intent_id=intent.app_id, interactions=legs, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'apex-hybrid-best', 'chain_id': chain}),)
+                return _DR_UNSET
+            try:
+                chain = int(getattr(state, 'chain_id', 0) or 0)
+                _r_dz239 = _dz239()
+                if _r_dz239 is not _DR_UNSET:
+                    return _r_dz239[0]
             except Exception:
                 _LOG.exception('[cover] hybrid failed')
                 return incumbent
