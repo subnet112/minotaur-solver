@@ -25,9 +25,6 @@ row at a time.
 from __future__ import annotations
 _DR_UNSET = object()
 _CHAIN1_SKIP = object()
-# Memo for the five major chain-1 addresses, filled on first use by _chain1_is_major_pair.
-# None means "not resolved yet", never "there are no majors" -- the difference matters because a
-# transient import failure must not be cached as a permanent answer.
 _CHAIN1_MAJ_CACHE = None
 import logging
 import os
@@ -66,18 +63,25 @@ class VikingSolver(_HydraBase):
         try:
 
             def _dr14():
+
+                def _dz6():
+                    nonlocal p
+                    if not p:
+                        p = dict(getattr(state, 'raw_params', None) or {})
+                    if not p and isinstance(state, dict):
+                        p = state
+                    tin = str(p.get('input_token', '') or '').lower()
+                    tout = str(p.get('output_token', '') or '').lower()
+                    return ((p, tin, tout),)
+                    return _DR_UNSET
                 norm = getattr(self, '_normalized_swap_params', None)
                 try:
                     p = norm(intent, state) if callable(norm) else {}
                 except Exception:
                     p = {}
-                if not p:
-                    p = dict(getattr(state, 'raw_params', None) or {})
-                if not p and isinstance(state, dict):
-                    p = state
-                tin = str(p.get('input_token', '') or '').lower()
-                tout = str(p.get('output_token', '') or '').lower()
-                return (p, tin, tout)
+                _r_dz6 = _dz6()
+                if _r_dz6 is not _DR_UNSET:
+                    return _r_dz6[0]
             p, tin, tout = _dr14()
             amt = str(int(p.get('input_amount', 0) or 0))
             if tin and tout and (amt != '0'):
@@ -119,13 +123,19 @@ class VikingSolver(_HydraBase):
             rows = (row or {}).get('ix')
 
             def _dr20():
+
+                def _dz5():
+                    ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
+                    rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
+                    return (None if self._v_is_empty(rp) else rp,)
+                    return (_DR_UNSET,)
+                    return _DR_UNSET
                 if not rows:
                     return None
                 chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
-                ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in rows]
-                rp = ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-replay', 'chain_id': chain_id})
-                return None if self._v_is_empty(rp) else rp
-                return _DR_UNSET
+                _r_dz5 = _dz5()
+                if _r_dz5 is not _DR_UNSET:
+                    return _r_dz5[0]
             _dr21 = _dr20()
             if _dr21 is not _DR_UNSET:
                 return _dr21
@@ -138,6 +148,12 @@ class VikingSolver(_HydraBase):
         try:
 
             def _dr23():
+
+                def _dz4(p):
+                    tin = str(p.get('input_token', '') or '').lower()
+                    tout = str(p.get('output_token', '') or '').lower()
+                    spec = self._VIKING_DYN_FALLBACKS.get((tin, tout))
+                    return (spec, tin, tout)
                 norm = getattr(self, '_normalized_swap_params', None)
                 try:
                     p = norm(intent, state) if callable(norm) else {}
@@ -145,9 +161,7 @@ class VikingSolver(_HydraBase):
                     p = {}
                 if not p:
                     p = dict(getattr(state, 'raw_params', None) or {})
-                tin = str(p.get('input_token', '') or '').lower()
-                tout = str(p.get('output_token', '') or '').lower()
-                spec = self._VIKING_DYN_FALLBACKS.get((tin, tout))
+                spec, tin, tout = _dz4(p)
 
                 def _dr3():
                     if not spec:
@@ -185,16 +199,22 @@ class VikingSolver(_HydraBase):
             return None
 
     def generate_plan(self, intent, state, snapshot=None):
+
+        def _dz14():
+            gp = self._v_gated(intent, state, snapshot, plan, key)
+            if gp is None:
+                gp = _c1.superset(self, intent, state, snapshot, plan)
+            if gp is None:
+                gp = _vs.tail_serve(self, key, plan, intent, state, snapshot)
+            return (gp,)
+            return _DR_UNSET
         key, ov = _vs.head_serve(self, intent, state, snapshot)
         if ov is not None:
             return ov
         plan = super().generate_plan(intent, state, snapshot)
-        gp = self._v_gated(intent, state, snapshot, plan, key)
-        if gp is None:
-            gp = _c1.superset(self, intent, state, snapshot, plan)
-        if gp is None:
-            gp = _vs.tail_serve(self, key, plan, intent, state, snapshot)
-        return gp
+        _r_dz14 = _dz14()
+        if _r_dz14 is not _DR_UNSET:
+            return _r_dz14[0]
 
 class _PuttyCleanSolver(VikingSolver):
     """Outermost brand wrapper: forces metadata().name to the clean brand
@@ -229,13 +249,19 @@ class _McMixMC:
         return bytes.fromhex(_MC_QSEL + _e(_MC_QIN, [_ck(tin), _ck(tout), amt, fee, 0]).hex())
 
     def _mc_path_qdata(self, body, amt):
+
+        def _dz13():
+            t = body[off:]
+            po = int.from_bytes(t[0:32], 'big')
+            pl = int.from_bytes(t[po:po + 32], 'big')
+            path = t[po + 32:po + 32 + pl]
+            return (bytes.fromhex('cdca1753' + _e(['bytes', 'uint256'], [path, amt]).hex()),)
+            return _DR_UNSET
         from eth_abi import encode as _e
         off = int.from_bytes(body[0:32], 'big')
-        t = body[off:]
-        po = int.from_bytes(t[0:32], 'big')
-        pl = int.from_bytes(t[po:po + 32], 'big')
-        path = t[po + 32:po + 32 + pl]
-        return bytes.fromhex('cdca1753' + _e(['bytes', 'uint256'], [path, amt]).hex())
+        _r_dz13 = _dz13()
+        if _r_dz13 is not _DR_UNSET:
+            return _r_dz13[0]
 
     def _mc_base_call(self, base_plan, tin, tout, amt):
         """(target,callbytes) that re-quotes the champion's OWN route, or None (undecodable)."""
@@ -304,31 +330,43 @@ class _McMixMC:
         return (calls, bc)
 
     def _mc_params(self, intent, state):
+
+        def _dz12():
+            tout = str(p.get('output_token', '') or '')
+            amt = int(p.get('input_amount', 0) or 0)
+            mino = int(p.get('min_output_amount', 0) or 0)
+            if amt <= 0 or not tin or (not tout) or (tin.lower() == tout.lower()):
+                return (None,)
+            return ((tin, tout, amt, mino),)
+            return _DR_UNSET
         p = self._normalized_swap_params(intent, state)
         tin = str(p.get('input_token', '') or '')
-        tout = str(p.get('output_token', '') or '')
-        amt = int(p.get('input_amount', 0) or 0)
-        mino = int(p.get('min_output_amount', 0) or 0)
-        if amt <= 0 or not tin or (not tout) or (tin.lower() == tout.lower()):
-            return None
-        return (tin, tout, amt, mino)
+        _r_dz12 = _dz12()
+        if _r_dz12 is not _DR_UNSET:
+            return _r_dz12[0]
 
     def _mc_setup(self, intent, state, base_plan):
         """One gate: chain + params + target-class + w3 + Multicall list. None to defer."""
         return _mcl.setup(self, intent, state, base_plan)
 
     def _mc_skip_sub(self, intent, state, snapshot, base_plan):
+
+        def _dz11():
+            if s is None:
+                return (None,)
+            w3, tin, tout, amt, mino, cls, calls, base_call = s
+            res = self._mc_run(w3, calls)
+            if res is None:
+                return (None,)
+            best_fee = self._mc_decide(res, cls, base_call, mino)
+            if best_fee is None:
+                return (None,)
+            return (self._mc_plan(intent, state, snapshot, tin, tout, amt, mino, best_fee),)
+            return _DR_UNSET
         s = self._mc_setup(intent, state, base_plan)
-        if s is None:
-            return None
-        w3, tin, tout, amt, mino, cls, calls, base_call = s
-        res = self._mc_run(w3, calls)
-        if res is None:
-            return None
-        best_fee = self._mc_decide(res, cls, base_call, mino)
-        if best_fee is None:
-            return None
-        return self._mc_plan(intent, state, snapshot, tin, tout, amt, mino, best_fee)
+        _r_dz11 = _dz11()
+        if _r_dz11 is not _DR_UNSET:
+            return _r_dz11[0]
 
     def _mc_decide(self, res, cls, base_call, mino):
         """Pick our best tier; None to defer. Candidate fills only if the base route re-quotes dead."""
@@ -401,7 +439,6 @@ class _McMixOracle:
             import os, json
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'route_table.json')
             try:
-                # Paired with the same fix in _chain1_load above -- see the note there.
                 with open(path) as fh:
                     _McSolver._ORACLE_TABLE = json.load(fh)
             except Exception:
@@ -465,16 +502,22 @@ class _McMixOracle:
         valhex = '0x' + self._oracle_pad(hex(amt * 2))
 
         def _try_aidx(aidx):
+
+            def _dz8():
+                res = self._oracle_rpc(w3, 'eth_call', [{'from': c, 'to': router, 'data': calldata, 'gas': '0x7a1200'}, 'latest', ov])
+                if res and len(res) >= 66:
+                    try:
+                        out = int(res[2:66], 16)
+                        if out > 0:
+                            return (out,)
+                    except Exception:
+                        pass
+                return (None,)
+                return _DR_UNSET
             ov = {token: {'stateDiff': {self._oracle_bslot(c, bs): valhex, self._oracle_aslot(c, router, aidx): valhex}}, c: {'balance': '0x8ac7230489e80000'}}
-            res = self._oracle_rpc(w3, 'eth_call', [{'from': c, 'to': router, 'data': calldata, 'gas': '0x7a1200'}, 'latest', ov])
-            if res and len(res) >= 66:
-                try:
-                    out = int(res[2:66], 16)
-                    if out > 0:
-                        return out
-                except Exception:
-                    pass
-            return None
+            _r_dz8 = _dz8()
+            if _r_dz8 is not _DR_UNSET:
+                return _r_dz8[0]
         for aidx in _oracle_aidx_seq(bs):
             out = _try_aidx(aidx)
             if out is not None:
@@ -627,17 +670,23 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
                     pass
 
             def _resolve():
+
+                def _dz3():
+                    cid = int(getattr(state, 'chain_id', 0) or 0)
+                    pr = self._mc_params(intent, state)
+                    if pr is None:
+                        return (None,)
+                    tin, tout, amt, mino = pr
+                    w3 = self._qv2_w3(cid)
+                    if w3 is None:
+                        return (None,)
+                    return ((cid, tin, tout, amt, mino, w3),)
+                    return _DR_UNSET
                 if base is not None and (getattr(base, 'metadata', None) or {}).get('solver') is not None:
                     return None
-                cid = int(getattr(state, 'chain_id', 0) or 0)
-                pr = self._mc_params(intent, state)
-                if pr is None:
-                    return None
-                tin, tout, amt, mino = pr
-                w3 = self._qv2_w3(cid)
-                if w3 is None:
-                    return None
-                return (cid, tin, tout, amt, mino, w3)
+                _r_dz3 = _dz3()
+                if _r_dz3 is not _DR_UNSET:
+                    return _r_dz3[0]
 
             def _run(cid, tin, tout, amt, mino, w3):
                 recipient = self._apex_recipient(state, self._normalized_swap_params(intent, state))
@@ -723,16 +772,20 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
         from common.abi_utils import encode_approve
 
         def _pick():
+
+            def _dz7():
+                nonlocal best_delivered, best_plan, trusted
+                for quote, tag, router, cd in sorted(cands, key=lambda x: -x[0]):
+                    delivered = self._oracle_verify(w3, tin, router, amt, cd, quote)
+                    if delivered > best_delivered:
+                        best_delivered = delivered
+                        best_plan = (tag, router, cd)
+                    elif delivered == -1 and tag != 'kyber' and (trusted is None):
+                        trusted = (tag, router, cd)
             best_plan = None
             best_delivered = 0
             trusted = None
-            for quote, tag, router, cd in sorted(cands, key=lambda x: -x[0]):
-                delivered = self._oracle_verify(w3, tin, router, amt, cd, quote)
-                if delivered > best_delivered:
-                    best_delivered = delivered
-                    best_plan = (tag, router, cd)
-                elif delivered == -1 and tag != 'kyber' and (trusted is None):
-                    trusted = (tag, router, cd)
+            _dz7()
             if best_delivered > 0:
                 return best_plan
             return trusted
@@ -749,10 +802,6 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
             import json
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'chain1_routes.json')
             try:
-                # Both table loaders in this module leaked their handle to refcounting
-                # (`json.load(open(path))`); this one and _oracle_load are fixed together
-                # because they are the same bug and splitting the fix would leave the module
-                # half-correct. Loaded once, cached on the class -- same dict, same fallback.
                 with open(path) as fh:
                     _McSolver._CHAIN1_TABLE = json.load(fh)
             except Exception:
@@ -775,10 +824,7 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
             so it belongs somewhere named rather than inlined at the end of a long expression.
             The deadline is a fixed sentinel rather than a derived one because chain-1 is served
             with no read RPC -- there is no block timestamp available to derive it from."""
-            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999,
-                                 nonce=state.nonce,
-                                 metadata={'solver': 'chain1-baked', 'chain_id': 1})
-
+            return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'chain1-baked', 'chain_id': 1})
         tokens = [str(t).lower() for t in spec['tokens']]
         fees = [int(f) for f in spec['fees']]
         p = self._normalized_swap_params(intent, state)
@@ -798,6 +844,7 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
         because the base engine's blind single-hop (exactInputSingle fee=3000, min_out=0) reverts
         on a nonexistent pool -> catastrophic 'worse' (-4), strictly worse than a clean drop.
         Un-baked MAJORS defer (None) to the proven zero-RPC _hydra_eth_fastpath."""
+
         def _is_chain1():
             """True only for a state that positively identifies as chain 1.
 
@@ -812,7 +859,6 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
                 return int(getattr(state, 'chain_id', 0) or 0) == 1
             except Exception:
                 return False
-
         if not _is_chain1():
             return None
         try:
@@ -821,14 +867,6 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
             return _CHAIN1_SKIP
 
     def _chain1_spec_key(self, tin, tout, amt):
-        # Amount-keyed override first, pair spec as the general case. The pair form still does
-        # the work — one min_out=0 route serves every draw of a pair — but it cannot be correct
-        # at every size once a pool changes regime with the trade. USDC->PYUSD is the case that
-        # forced this: fee-100 prices honestly to ~100e9 and clamps above it (a quote no swap can
-        # realise, proven to revert), while fee-3000 executes at every size but returns less where
-        # fee-100 still works. With pair-only lookup one of those is always a veto. Amount keys
-        # are safe to consult first because every one of the 1158 entries here is pair-form, so
-        # the only amount keys present are written deliberately and proven at that exact size.
         _t = self._chain1_load()
 
         def _in_precedence():
@@ -839,14 +877,9 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
             left-to-right evaluation of an `or` chain. Both forms lowercase from the same pair of
             locals -- a key built with different casing than the writer used misses silently and
             is indistinguishable from an un-baked pair."""
-            lo_in, lo_out = tin.lower(), tout.lower()
-            yield '1|%s|%s|%s' % (lo_in, lo_out, amt)
-            yield '1|%s|%s' % (lo_in, lo_out)
-
-        # `is not None` rather than truthiness: an `or` chain silently treats a falsy spec as a
-        # miss and falls through to the pair route. No falsy spec exists in this table today
-        # (verified across all three actors), so this is the same behaviour -- but the failure it
-        # would cause is a wrong route served for a size that was deliberately overridden.
+            lo_in, lo_out = (tin.lower(), tout.lower())
+            yield ('1|%s|%s|%s' % (lo_in, lo_out, amt))
+            yield ('1|%s|%s' % (lo_in, lo_out))
         for key in _in_precedence():
             spec = _t.get(key)
             if spec is not None:
@@ -854,28 +887,27 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
         return None
 
     def _chain1_is_major_pair(self, tin, tout):
-        # Module-level memo. The five addresses are constants, but this rebuilt the set -- import
-        # included -- on EVERY chain-1 order, and _chain1_baked_core asks for every un-baked pair.
-        # Resolving once at module scope keeps the per-order path to two set lookups.
         global _CHAIN1_MAJ_CACHE
         if _CHAIN1_MAJ_CACHE is None:
             try:
                 from king_consts import _ETH_WETH, _ETH_USDC, _ETH_USDT, _ETH_WBTC, _ETH_DAI
-                _CHAIN1_MAJ_CACHE = frozenset((_ETH_WETH.lower(), _ETH_USDC.lower(),
-                                               _ETH_USDT.lower(), _ETH_WBTC.lower(),
-                                               _ETH_DAI.lower()))
+                _CHAIN1_MAJ_CACHE = frozenset((_ETH_WETH.lower(), _ETH_USDC.lower(), _ETH_USDT.lower(), _ETH_WBTC.lower(), _ETH_DAI.lower()))
             except Exception:
-                # Answer False without caching: a non-major makes the caller clean-skip, which is
-                # the safe direction, and a transient import failure must not become permanent.
                 return False
-        # One set operation instead of two membership tests joined by `and`. A pair is major
-        # exactly when the cache contains BOTH addresses, which is what issuperset states
-        # directly; the `and` form said the same thing in two steps. Identical result -- it
-        # gives up the short-circuit, so tout.lower() now always runs, which is one string
-        # lower() against a five-element frozenset lookup and not worth the extra branch.
         return _CHAIN1_MAJ_CACHE.issuperset((tin.lower(), tout.lower()))
 
     def _chain1_baked_core(self, intent, state):
+
+        def _dz10():
+            dead = _deliberate_drop(spec)
+            if dead is not None:
+                return (dead,)
+            from chain1_v2 import _c1_servable, _c1_make_plan
+            if not _c1_servable(spec):
+                return (_CHAIN1_SKIP,)
+            plan = _c1_make_plan(self, intent, state, tin, amt, spec)
+            return (plan if plan is not None else _CHAIN1_SKIP,)
+            return _DR_UNSET
         pr = self._mc_params(intent, state)
         if pr is None:
             return _CHAIN1_SKIP
@@ -885,6 +917,7 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
             if self._chain1_is_major_pair(tin, tout):
                 return None
             return _CHAIN1_SKIP
+
         def _deliberate_drop(s):
             """_CHAIN1_SKIP for a spec recorded as having no route anywhere, else None.
 
@@ -895,17 +928,27 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
             facts, and only one of them is worth re-hunting later.
             """
             return _CHAIN1_SKIP if s.get('noroute') else None
-
-        dead = _deliberate_drop(spec)
-        if dead is not None:
-            return dead
-        from chain1_v2 import _c1_servable, _c1_make_plan
-        if not _c1_servable(spec):
-            return _CHAIN1_SKIP
-        plan = _c1_make_plan(self, intent, state, tin, amt, spec)
-        return plan if plan is not None else _CHAIN1_SKIP
+        _r_dz10 = _dz10()
+        if _r_dz10 is not _DR_UNSET:
+            return _r_dz10[0]
 
     def generate_plan(self, intent, state, snapshot=None):
+
+        def _dz9():
+            try:
+                best = self._best_route_serve(intent, state, snapshot, base)
+                if best is not None:
+                    return (best,)
+            except Exception:
+                pass
+            try:
+                sub = self._mc_skip_sub(intent, state, snapshot, base)
+                if sub is not None:
+                    return (sub,)
+            except Exception:
+                pass
+            return (base,)
+            return _DR_UNSET
         try:
             z = self._chain1_baked_serve(intent, state, snapshot)
             if z is _CHAIN1_SKIP:
@@ -915,19 +958,9 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
         except Exception:
             pass
         base = super().generate_plan(intent, state, snapshot)
-        try:
-            best = self._best_route_serve(intent, state, snapshot, base)
-            if best is not None:
-                return best
-        except Exception:
-            pass
-        try:
-            sub = self._mc_skip_sub(intent, state, snapshot, base)
-            if sub is not None:
-                return sub
-        except Exception:
-            pass
-        return base
+        _r_dz9 = _dz9()
+        if _r_dz9 is not _DR_UNSET:
+            return _r_dz9[0]
 
 def _oracle_aidx_seq(bs):
     return dict.fromkeys((a for a in (bs + 1, bs - 1, 1, 2, 3, 4, 5, 9, 10, 11) if a >= 0))
