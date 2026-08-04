@@ -169,24 +169,4 @@ def _quote_chain(swaps, input_amount, chain_id, rpc):
 
 
 def champ_out(plan, input_amount, chain_id, rpc):
-    """Exact output the champion's plan delivers, or None if not fully decodable.
-
-    A 0 here is load-bearing (it means "the champion's own route is dead", which is
-    what licenses our cover to override a non-empty plan). So 0 must come from a
-    quote that ACTUALLY RAN. `best_route` shares a wall-clock deadline cell with
-    eth_call; if that cell is left set from a previous search, every call
-    short-circuits to None and we would read a live route as dead — then override a
-    champion-SERVED order and DROP it (hard veto, observed once). Clear the cell
-    first so this quote always gets a real budget."""
-    try:
-        _rc._SEARCH_DEADLINE[0] = 0.0
-        swaps = _collect_swaps(plan)
-        if not swaps:
-            return None
-        if len(swaps) == 1:
-            sel, body, target = swaps[0]
-            dec = _decode_swap(sel, body, input_amount)
-            return _quote_decoded(dec, target, input_amount, chain_id, rpc) if dec else None
-        return _quote_chain(swaps, input_amount, chain_id, rpc)
-    except Exception:
-        return None
+    return None   # neutralized: never re-quote a served plan (cold-fork false-0 -> serve base verbatim)

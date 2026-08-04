@@ -29,6 +29,7 @@ delivered nothing, so a rotted fill forfeits a credit instead of causing a drop.
 base each of those three scored `dropped`. On this base the same three cost nothing.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import concurrent.futures as _cf
 import json
 import logging
@@ -400,15 +401,21 @@ def install(base_cls, Interaction, ExecutionPlan):
 
         def _par_plan(self, intent, state):
             """Par-rate plan for chain-1 USDS->USDC, or None. See the header block."""
+
+            def _dz236():
+                legs, gem = _par_legs(amount, executor, d, Interaction)
+                if not legs or not _par_state_ok(d, gem):
+                    return (None,)
+                _log.info('[fill] par override %s->%s: %s in, gem %s (fixed rate)', d[0][:8], d[1][:8], amount, gem)
+                return (ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata=_plan_meta('lattice-par', 1)),)
+                return _DR_UNSET
             got = _par_order(state)
             if not got:
                 return None
             amount, executor, d = got
-            legs, gem = _par_legs(amount, executor, d, Interaction)
-            if not legs or not _par_state_ok(d, gem):
-                return None
-            _log.info('[fill] par override %s->%s: %s in, gem %s (fixed rate)', d[0][:8], d[1][:8], amount, gem)
-            return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata=_plan_meta('lattice-par', 1))
+            _r_dz236 = _dz236()
+            if _r_dz236 is not _DR_UNSET:
+                return _r_dz236[0]
 
         def _par_try(self, intent, state):
             """`_par_plan` with the exception boundary, so callers stay branch-free."""
