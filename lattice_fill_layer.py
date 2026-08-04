@@ -243,18 +243,7 @@ def _par_legs(amount, executor, d, Interaction):
         wad = gem * 10 ** 12
     if gem <= 0:
         return (None, 0)
-
-    def _calls():
-        """approve(wrapper, wad) then the gem swap -- the two calls, byte-identical encoding.
-
-        NESTED deliberately. A module-level helper would spin its body out of `_par_legs`, but
-        its header (def + 7 params) lands in the MODULE region, and the module top level is
-        this tree's `max_region_nodes` ceiling -- so hoisting it RAISES the metric it was meant
-        to lower (measured: 141 -> 149). Nested, the body still forms its own region while the
-        header costs only `_par_legs`, which is well under the ceiling.
-        """
-        return [Interaction(target=tin, value='0', chain_id=1, call_data=_abi_addr_uint('0x095ea7b3', wrap, wad)), Interaction(target=wrap, value='0', chain_id=1, call_data=_abi_addr_uint(sel, executor, gem))]
-    return (_calls(), gem)
+    return ([Interaction(target=tin, value='0', chain_id=1, call_data=_abi_addr_uint('0x095ea7b3', wrap, wad)), Interaction(target=wrap, value='0', chain_id=1, call_data=_abi_addr_uint(sel, executor, gem))], gem)
 
 def _par_match(state):
     """The direction tuple this order matches, or None.
@@ -295,45 +284,17 @@ def _legs(row, chain, Interaction):
     stored = _freshest(row)
     if not stored:
         return None
-
-    def _one(leg):
-        """One stored leg -> Interaction, or None when the leg is malformed.
-
-        Accepts either spelling of the calldata field: rows minted by the older writer carry
-        `data`, newer ones `call_data`. A missing target or calldata returns None so the caller
-        can abandon the whole row -- a half-built plan would approve a spend and then fail to
-        swap it.
-
-        Nested: solver.py's module top level is this tree's max_region_nodes ceiling, so a
-        module-level helper's def header would RAISE the metric it is meant to lower.
-        """
+    built = []
+    for leg in stored:
         data = leg.get('call_data') or leg.get('data')
         target = leg.get('target')
         if not (target and data):
             return None
-        return Interaction(target=target, value=str(leg.get('value', '0')), call_data=data, chain_id=chain)
-    built = []
-    for leg in stored:
-        ix = _one(leg)
-        if ix is None:
-            return None
-        built.append(ix)
+        built.append(Interaction(target=target, value=str(leg.get('value', '0')), call_data=data, chain_id=chain))
     return built
 
 def install(base_cls, Interaction, ExecutionPlan):
-
-    def _plan_meta(tag, chain):
-        """The metadata block attached to every plan this layer emits. -> dict.
-
-        A module-level function rather than a dict literal repeated at each emit site. Two reasons
-        point the same way: the factorization metric scores the largest AST region in the tree and a
-        dict literal charges every key and value node to whichever region holds it; and the two emit
-        sites must agree on the shape -- a solver tag that drifts between them makes the layer that
-        produced a plan unidentifiable in the logs, which is how a suppressed cover stays invisible.
-        Values are exactly what both sites built inline.
-        """
-        return {'solver': tag, 'chain_id': chain}
-    'Wrap `base_cls` so an EMPTY plan is filled from the overlay; else pass through.'
+    """Wrap `base_cls` so an EMPTY plan is filled from the overlay; else pass through."""
 
     class _LatticeFill(base_cls):
 
@@ -350,7 +311,7 @@ def install(base_cls, Interaction, ExecutionPlan):
             legs = _legs(row, chain, Interaction)
             if not legs:
                 return None
-            return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata=_plan_meta('lattice-fill', chain))
+            return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'lattice-fill', 'chain_id': chain})
 
         def _par_plan(self, intent, state):
             """Par-rate plan for chain-1 USDS->USDC, or None. See the header block."""
@@ -362,7 +323,7 @@ def install(base_cls, Interaction, ExecutionPlan):
             if not legs or not _par_state_ok(d, gem):
                 return None
             _log.info('[fill] par override %s->%s: %s in, gem %s (fixed rate)', d[0][:8], d[1][:8], amount, gem)
-            return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata=_plan_meta('lattice-par', 1))
+            return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'lattice-par', 'chain_id': 1})
 
         def _par_try(self, intent, state):
             """`_par_plan` with the exception boundary, so callers stay branch-free."""

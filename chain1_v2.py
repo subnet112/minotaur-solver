@@ -25,10 +25,25 @@ def _v2_lookup(tin, tout):
     pair, t0 = ent
     return (pair, tin == t0)
 
+def _v2_out_amounts(in_is_t0, out):
+    """(amount0Out, amount1Out) for a UniV2 pair swap: the OTHER side receives.
+
+    The pair indexes its two tokens by address order, not by trade direction, so when the
+    input is token0 the payout is requested on token1 and vice versa. Getting this backwards
+    does not raise anywhere in the builder -- it produces a well-formed swap() asking the pair
+    to pay out the very token being sold, which its K-invariant check rejects, so the row
+    arrives at the bench as a plain revert with nothing pointing at the ordering.
+
+    Returned as a pair from one expression so both legs are read off the same `in_is_t0` in
+    one place; two separate ternaries is how the leg and its mirror drift apart.
+    """
+    return (0, int(out)) if in_is_t0 else (int(out), 0)
+
+
 def _v2_swap_cd(in_is_t0, out, rcpt):
     from eth_abi import encode as _enc
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    a0, a1 = (0, int(out)) if in_is_t0 else (int(out), 0)
+    a0, a1 = _v2_out_amounts(in_is_t0, out)
     return '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _enc(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(rcpt), b''])).hex()
 
 def _v2_xfer_cd(pair, amt):
@@ -120,18 +135,9 @@ def _c1_servable(spec):
     # a baked spec is serve-able if it carries an executable route: V3 (tokens+fees), univ2
     # (tokens+venue tag), or curve (route[11]+swap[5][5]). noroute specs (none of these) stay
     # clean-skipped. Widens the old tokens+fees guard purely additively.
-    def _has_route():
-        """True when the spec carries something executable, per venue.
-
-        curve needs route[11]+swap[5][5]; univ2 needs a token path; v3 needs tokens+fees. A spec
-        matching none of these is a recorded `noroute` and must stay clean-skipped -- letting it
-        through would hand the base engine a blind single-hop that can revert, which scores
-        catastrophic rather than merely absent.
-        """
-        if spec.get('venue') == 'curve':
-            return bool(spec.get('route') and spec.get('swap'))
-        return bool(spec.get('tokens') and (spec.get('fees') or spec.get('venue') == 'univ2'))
-    return _has_route()
+    if spec.get('venue') == 'curve':
+        return bool(spec.get('route') and spec.get('swap'))
+    return bool(spec.get('tokens') and (spec.get('fees') or spec.get('venue') == 'univ2'))
 
 def _c1_make_plan(solver, intent, state, tin, amt, spec):
     # venue dispatch (kept OUT of solver._chain1_build_plan so that method's AST region — a

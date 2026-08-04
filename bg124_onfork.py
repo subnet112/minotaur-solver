@@ -136,32 +136,6 @@ def _curve_cands(chain, tin, tout, amt):
             for p, k, i, j in _curve_pools(tin, tout)]
 
 
-def _deep_cands(chain, tin, tout, amt):
-    """Extra 2-hop mid tokens (USDT/DAI/WBTC on chain 1), tried ONLY after phase
-    1 came back empty — i.e. on the handful of blind-spot orders per pack that
-    actually decide the crown. Every recent dethrone was a single cover on an
-    order the incumbent could not route, and our 11 remaining skips are orders
-    where WETH/USDC 2-hop finds nothing. Restricting these to phase 2 buys that
-    coverage without adding a millisecond to the normal path, which is what the
-    pace budget cannot afford."""
-    out = []
-    for mid in [m.lower() for m in A.T.get("mids2", {}).get(str(chain), [])
-                if m.lower() not in (tin, tout)]:
-        out += _via(chain, tin, mid, tout, amt)
-    return out
-
-
-def _via(chain, tin, mid, tout, amt):
-    """Every V3 fee combo and V2 router for one intermediate token."""
-    q = A.ck(A.T["quoter"][str(chain)])
-    out = [(("path", tuple(f), mid), q, A.q_path(tin, mid, tout, f, amt))
-           for f in A.T.get("hops", [])]
-    for r in A.T.get("v2", {}).get(str(chain), []):
-        out.append((("v2", A.ck(r), (tin, mid, tout)), A.ck(r),
-                    A.q_v2(amt, [tin, mid, tout])))
-    return out
-
-
 def _candidates(chain, tin, tout, amt):
     """[(desc, call_target, calldata)] across every venue, one batch."""
     return (_v3_cands(chain, tin, tout, amt) + _v2_cands(chain, tin, tout, amt)
@@ -236,11 +210,11 @@ def _plan(intent, state, ix, chain):
 
 # Must beat the champion's own number by this margin to be worth the override.
 # Calibrated on the real scorecard: our 10 wins beat by 11-66 bps, and the
-# catastrophic regression was 0.00002x, so any sane margin rejects the disaster.
-# Set to the validator's OWN tie band (~10 bps): the reigning champion won the
-# crown on a +11 bps override, which a 15 bps floor would have refused. Anything
-# above the tie band registers as a `win`; below it scores `matched`.
-_WIN_BPS = 10
+# catastrophic regression was 0.00002x — so 15 bps keeps the wins and rejects
+# the disaster. 30 bps was tested first and would have rejected the wins too;
+# the validator's own tie band is ~10 bps, so this also sits just above the
+# threshold where a served override actually registers as a `win`.
+_WIN_BPS = 15
 
 
 def _beats(out, bar):
@@ -274,18 +248,11 @@ def _quote_best(w3, chain, tin, tout, amt, bar=0):
     cover budget; gating it on a genuine blind spot keeps the common path at its
     old cost (curve skipped entirely) and pays the extra call only on the orders
     that can actually win the crown — measured 5.0s when it does fire."""
-    # Corroboration ONLY when there is no baseline to compare against (bar<0 =
-    # the champion's blind plan). With bar>0 we hold their own expected_output,
-    # and beating it by the margin is complete protection on its own — the
-    # 0.00002x catastrophe could never clear it. Requiring corroboration there
-    # too was redundant and cost us every marginal win: the reigning champion
-    # took the crown on wins of +11bps and +61bps over SERVED orders.
-    strict = bar < 0
+    strict = bar != 0   # bar<0 = blind plan: no baseline, so demand corroboration
     desc, out = _phase(w3, _v3_cands(chain, tin, tout, amt)
                        + _v2_cands(chain, tin, tout, amt), strict)
     if out <= 0:
-        desc, out = _phase(w3, _curve_cands(chain, tin, tout, amt)
-                           + _deep_cands(chain, tin, tout, amt), strict)
+        desc, out = _phase(w3, _curve_cands(chain, tin, tout, amt), strict)
     return desc, out
 
 
