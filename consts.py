@@ -22,9 +22,7 @@ S_V2_AMOUNTS = "d06ca61f"     # getAmountsOut(uint256,address[])
 S_CURVE_FIND = "a87df06c"     # MetaRegistry find_pool_for_coins(address,address)
 S_CURVE_IDX = "eb85226d"      # MetaRegistry get_coin_indices(address,address,address)
 S_CURVE_GETDY = "5e0d443f"    # pool get_dy(int128,int128,uint256)
-S_CURVE_EXCH = "3df02124"     # pool exchange(int128,int128,uint256,uint256)
 S_CURVE_EXCH_RECV = "ddc1f59d" # pool exchange(int128,int128,uint256,uint256,address) -> pays receiver
-S_TRANSFER = "a9059cbb"       # ERC20 transfer
 S_AERO_GAO = "5509a1ac"       # Aerodrome Router getAmountsOut(uint256,(address,address,bool,address)[])
 S_AERO_SWAP = "cac88ea9"      # swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)
 

@@ -2,14 +2,32 @@
 from chain1_lib import _qroute, _build, _params, _champ_route
 from chain1_v2 import _v2_build, _sweep, _v2_best
 
+_BPS = 10000
+# 12bps, not 10. RELATIVE_TOL_BPS is 10, so a route winning by exactly the tolerance scores
+# `matched` anyway; the extra 2bps is the cushion that stops us spending a live-quoted route
+# to buy a verdict we already had. As the bare pair 10000/10012 this was two magic numbers
+# whose relationship -- and whose units -- appeared nowhere.
+_BEAT_MARGIN_BPS = 12
+
+
+def _clears_margin(q_mine, q_champ):
+    """Whether q_mine beats q_champ by at least the margin. Integer math end to end.
+
+    Cross-multiplied rather than divided: `q_mine / q_champ > 1.0012` puts a float on values
+    that run past 2**53 on 18-decimal tokens, i.e. the comparison stops being exact at
+    precisely the sizes worth routing. A falsy q_champ (no pool, or priced 0) is NOT a win by
+    default -- it means the comparison could not be made, and the caller must decline.
+    """
+    if not q_champ:
+        return False
+    return q_mine * _BPS >= q_champ * (_BPS + _BEAT_MARGIN_BPS)
+
+
 def _beats_champ(w3, tin, tout, amt, block, q_mine, route):
     croute = _champ_route(tin, tout)
     if route == croute:
         return False
-    q_champ = _qroute(w3, croute, amt, block)
-    if not q_champ or q_mine * 10000 < q_champ * 10012:
-        return False
-    return True
+    return _clears_margin(q_mine, _qroute(w3, croute, amt, block))
 
 def _meets_min_out(q, mo):
     """Whether quote `q` clears the order's declared minimum output.

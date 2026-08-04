@@ -1066,31 +1066,6 @@ def _c1_build_ix(tin, ROUTER, recip, tokens, fees, amt):
 
 SOLVER_CLASS = _McSolver
 
-_FP_NONCE = 'round-e29759566-n1'
-
-def _uniq_a_beam3():
-    _v = 0
-    _v = _v + 1
-    _v = _v + 2
-    _v = _v + 3
-    _v = _v + 4
-    return _v
-
-def _uniq_b_beam3():
-    _w = 0
-    _w = _w + 1
-    _w = _w + 2
-    _w = _w + 3
-    _w = _w + 4
-    _w = _w + 5
-    return _w
-
-def _uniq_c_beam3():
-    _x = 0
-    _x = _x + 1
-    return _x
-
-
 # ===== lattice blind-spot overlay (appended on the novaswap rebase) =====
 # WHY THIS SHAPE. The certified champion (c1423726) deleted the whole inherited lattice stack
 # -- lattice_fill_layer.py, router_cover.py, venues.py, clean_entry.py, _champ_base.py and the
