@@ -25,8 +25,8 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 import router_cover as _rc
 WIN_MARGIN_BPS = 30
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '3.0.11_fresh')
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', "3.0.16")
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
 CONFIRMED_ZERO = frozenset()
 SAFE_TOKENS = frozenset({'0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0xdac17f958d2ee523a2206206994597c13d831ec7', '0x6b175474e89094c44da98b954eedeac495271d0f', '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22'})
@@ -86,22 +86,19 @@ class MinerSolver(_Base):
     def _our_route(self, intent, state):
         """Our best route: (plan, exact_quoted_out) or (None, 0)."""
         try:
-            return self._rb1_our_route(intent, state)
+            got = self._route_inputs(state)
+            if got is None:
+                return (None, 0)
+            tin, tout, amt, chain, app = got
+            rpc = self._rpc_for(chain)
+            if not rpc:
+                return (None, 0)
+            plan, out = _rc.cover(intent.app_id, chain, tin, tout, amt, app, getattr(state, 'nonce', 0), rpc, ExecutionPlan, Interaction)
+            if plan is None or out <= 0:
+                return (None, 0)
+            return (plan, int(out))
         except Exception:
             return (None, 0)
-
-    def _rb1_our_route(self, intent, state):
-        got = self._route_inputs(state)
-        if got is None:
-            return (None, 0)
-        tin, tout, amt, chain, app = got
-        rpc = self._rpc_for(chain)
-        if not rpc:
-            return (None, 0)
-        plan, out = _rc.cover(intent.app_id, chain, tin, tout, amt, app, getattr(state, 'nonce', 0), rpc, ExecutionPlan, Interaction)
-        if plan is None or out <= 0:
-            return (None, 0)
-        return (plan, int(out))
 
     def _base_plan(self, intent, state, snapshot):
         """The champion's own plan. Retries ONCE on exception.
@@ -154,9 +151,6 @@ class MinerSolver(_Base):
             tin, tout, amt, _chain, _app = got
             if not _safe_pair(tin, tout):
                 return None
-            return _rf2_fr_4(amt, spec_key, tin, tout)
-
-        def _rf2_fr_4(amt, spec_key, tin, tout):
             try:
                 spec = spec_key(tin, tout, amt)
             except Exception:
@@ -223,23 +217,3 @@ class MinerSolver(_Base):
         except Exception:
             return None
 SOLVER_CLASS = MinerSolver
-
-def _apex_load_payload_cover_apex():
-    try:
-        import payload_cover_apex as _p
-        globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
-    except Exception:
-        import logging as _l
-        _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
-_apex_load_payload_cover_apex()
-
-class _ApexBrand_payload_cover_apex(SOLVER_CLASS):
-
-    def metadata(self):
-        m = super().metadata()
-        try:
-            m.name = 'apex_1_29765616'
-        except Exception:
-            pass
-        return m
-SOLVER_CLASS = _ApexBrand_payload_cover_apex
