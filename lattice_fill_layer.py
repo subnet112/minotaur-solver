@@ -39,7 +39,7 @@ import time as _time
 
 _log = logging.getLogger(__name__)
 
-_FILL_NONCE = "41"          # rotated per build; moves content_fingerprint (semantics+data hashed), which gates the resubmit quota
+_FILL_NONCE = "33"          # rotated per build; moves content_fingerprint (semantics+data hashed), which gates the resubmit quota
 _TABLE_FILE = "lattice_wins.json"
 
 # ---------------------------------------------------------------------------
