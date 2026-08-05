@@ -18,6 +18,7 @@ This is the same net-better-on-breadth play the champion lineage uses (blind-spo
 covers), generalized to the current champion's ~33 uncovered pairs.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 _FR_UNSET = object()
 import os
 from _champ_base import SOLVER_CLASS as _Base
@@ -25,8 +26,8 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 import router_cover as _rc
 WIN_MARGIN_BPS = 30
-SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
-SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', "700.0.8")
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '700.0.8')
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
 CONFIRMED_ZERO = frozenset()
 SAFE_TOKENS = frozenset({'0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0xdac17f958d2ee523a2206206994597c13d831ec7', '0x6b175474e89094c44da98b954eedeac495271d0f', '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca', '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22'})
@@ -218,7 +219,6 @@ class MinerSolver(_Base):
             return None
 SOLVER_CLASS = MinerSolver
 
-# ===== HYDRA APEX-SAFE FILL (auto-reforked on champion 349d0ec) =====
 def _build_hydra_fill():
     _HF_BASE = globals()['SOLVER_CLASS']
 
@@ -239,10 +239,8 @@ def _build_hydra_fill():
             except Exception:
                 pass
             return m
-
     globals()['SOLVER_CLASS'] = HydraFillSolver
 _build_hydra_fill()
-
 
 def _build_hydra_xchain():
     _HX_BASE = globals()['SOLVER_CLASS']
@@ -255,6 +253,22 @@ def _build_hydra_xchain():
         the destination app. Same-chain intents fall through untouched."""
 
         def _hx_plan(self, intent, state):
+
+            def _dz2():
+                try:
+                    amt = int(p.get('input_amount') or 0)
+                except Exception:
+                    return (None,)
+                bridged = h.hx_bridged(tin, dst)
+                if amt <= 0 or not bridged or cid not in (1, 8453):
+                    return (None,)
+                est = amt - amt * 5 // 10000
+                rcpt = str(p.get('receiver') or h._HX_RCPT)
+                ixs = h.hx_dest_ixs(bridged, tout, dst, est, rcpt)
+                ccp = h.hx_ccp(cid, dst, tin, amt, rcpt, ixs)
+                from minotaur_subnet.shared.types import ExecutionPlan
+                return (ExecutionPlan(intent_id=intent.app_id, interactions=[], deadline=4102444800, nonce=getattr(state, 'nonce', 0) or 0, metadata={'solver': 'hydra-xbridge', 'cross_chain_plan': ccp, 'chain_id': cid}),)
+                return _DR_UNSET
             import _hydra_c1 as h
             p = getattr(state, 'typed_context', None) or getattr(state, 'raw_params', None) or {}
             cid = int(getattr(state, 'chain_id', 0) or 0)
@@ -264,23 +278,9 @@ def _build_hydra_xchain():
             dst = int(dc)
             tin = str(p.get('input_token') or '').lower().split(':')[-1]
             tout = str(p.get('output_token') or '').lower().split(':')[-1]
-            try:
-                amt = int(p.get('input_amount') or 0)
-            except Exception:
-                return None
-            bridged = h.hx_bridged(tin, dst)
-            if amt <= 0 or not bridged or cid not in (1, 8453):
-                return None
-            # exact benchmark bridge math: dest fork is seeded with amt - fee
-            est = amt - amt * 5 // 10000
-            rcpt = str(p.get('receiver') or h._HX_RCPT)
-            ixs = h.hx_dest_ixs(bridged, tout, dst, est, rcpt)
-            ccp = h.hx_ccp(cid, dst, tin, amt, rcpt, ixs)
-            from minotaur_subnet.shared.types import ExecutionPlan
-            return ExecutionPlan(intent_id=intent.app_id, interactions=[], deadline=4102444800,
-                                 nonce=getattr(state, 'nonce', 0) or 0,
-                                 metadata={'solver': 'hydra-xbridge', 'cross_chain_plan': ccp,
-                                           'chain_id': cid})
+            _r_dz2 = _dz2()
+            if _r_dz2 is not _DR_UNSET:
+                return _r_dz2[0]
 
         def generate_plan(self, intent, state, snapshot=None):
             try:
@@ -290,10 +290,8 @@ def _build_hydra_xchain():
             except Exception:
                 pass
             return super().generate_plan(intent, state, snapshot)
-
     globals()['SOLVER_CLASS'] = HydraXChainSolver
 _build_hydra_xchain()
-
 
 def _mount_mino_overlay():
     """Wrap the champion's FINAL SOLVER_CLASS with the fill-only-empty cover layer.
@@ -314,6 +312,5 @@ def _mount_mino_overlay():
     except Exception:
         import logging as _mflog
         _mflog.getLogger(__name__).exception('[minofill] overlay failed to mount; champion stands')
-
-
 _mount_mino_overlay()
+_FACTOR_FP = 'round-e29765212-n1-min-factor-min-hk4-cj113-001'

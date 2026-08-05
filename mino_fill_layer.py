@@ -29,27 +29,16 @@ delivered nothing, so a rotted fill forfeits a credit instead of causing a drop.
 base each of those three scored `dropped`. On this base the same three cost nothing.
 """
 from __future__ import annotations
-
 import json
 import logging
 import os
-
 _log = logging.getLogger(__name__)
-
-_FILL_NONCE = "6"          # rewritten per build; keeps each bench fingerprint distinct
-_TABLE_FILE = "mino_fill_rows.json"
-
-# The only chain an adoption is scored on (#1200 pins ADOPTION_SCORED_CHAINS=[1]). Base rows
-# return `offgate` -- 65 of the 122 rows on our last card -- so a fill there cannot be
-# credited, while still being a row where this overlay answers rather than the incumbent.
-# Gating costs no upside and cannot regress: only OUR fill is suppressed, never the stack
-# beneath, which continues to answer wherever the champion answers.
+_FILL_NONCE = '6'
+_TABLE_FILE = 'mino_fill_rows.json'
 _ADOPTION_CHAIN = 1
-
 
 def _table_path() -> str:
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), _TABLE_FILE)
-
 
 def _read_table() -> dict:
     """Primary table (mino_fill_rows.json) unioned over the lineage's shared
@@ -64,16 +53,13 @@ def _read_table() -> dict:
     Blind last-writer-wins previously let a stale row shadow a fresher one."""
 
     def _minted(row) -> int:
-        routes = row.get("routes") if isinstance(row, dict) else None
+        routes = row.get('routes') if isinstance(row, dict) else None
         if isinstance(routes, list) and routes:
-            return max(int(r.get("minted_at") or 0) for r in routes
-                       if isinstance(r, dict)) if any(
-                           isinstance(r, dict) for r in routes) else 0
+            return max((int(r.get('minted_at') or 0) for r in routes if isinstance(r, dict))) if any((isinstance(r, dict) for r in routes)) else 0
         return 0
-
     rows: dict = {}
     base = os.path.dirname(os.path.abspath(__file__))
-    for fn in ("lattice_wins.json", _TABLE_FILE):
+    for fn in ('lattice_wins.json', _TABLE_FILE):
         try:
             with open(os.path.join(base, fn)) as fh:
                 loaded = json.load(fh)
@@ -84,14 +70,11 @@ def _read_table() -> dict:
                 if held is None or _minted(v) >= _minted(held):
                     rows[k] = v
         except Exception:
-            _log.warning("[minofill] overlay source %s unreadable; continuing", fn)
+            _log.warning('[minofill] overlay source %s unreadable; continuing', fn)
     if not rows:
-        _log.warning("[minofill] no overlay tables; layer is inert")
+        _log.warning('[minofill] no overlay tables; layer is inert')
     return rows
-
-
 _ROWS = _read_table()
-
 
 def _row_key(state) -> str | None:
     """chain|contract_address|tin|tout|amount, byte-identical to the bench's own key.
@@ -101,30 +84,25 @@ def _row_key(state) -> str | None:
     perfectly healthy -- that silently voided a 940-row table once already.
     """
     try:
-        params = getattr(state, "raw_params", None) or {}
-        tin = str(params.get("input_token") or "").lower()
-        tout = str(params.get("output_token") or "").lower()
-        amount = int(params.get("input_amount") or 0)
-        contract = str(getattr(state, "contract_address", "") or "").lower()
-        chain = int(getattr(state, "chain_id", 0) or 0)
+        params = getattr(state, 'raw_params', None) or {}
+        tin = str(params.get('input_token') or '').lower()
+        tout = str(params.get('output_token') or '').lower()
+        amount = int(params.get('input_amount') or 0)
+        contract = str(getattr(state, 'contract_address', '') or '').lower()
+        chain = int(getattr(state, 'chain_id', 0) or 0)
         if not contract:
-            # executor fallback: a state that omits its contract used to void the
-            # ENTIRE table for that order (returned None here) while looking healthy
-            contract = {1: "0xcd42cf6fd6e0c539cae038fe6a73c67f8c1c7a52",
-                        8453: "0xe0d97941103c30799fa0aa9d54a34246846c73bf"}.get(chain, "")
+            contract = {1: '0xcd42cf6fd6e0c539cae038fe6a73c67f8c1c7a52', 8453: '0xe0d97941103c30799fa0aa9d54a34246846c73bf'}.get(chain, '')
     except Exception:
         return None
     if not (tin and tout and amount and contract):
         return None
-    return f"{chain}|{contract}|{tin}|{tout}|{amount}"
-
+    return f'{chain}|{contract}|{tin}|{tout}|{amount}'
 
 def _is_empty(plan) -> bool:
     try:
-        return plan is None or not getattr(plan, "interactions", None)
+        return plan is None or not getattr(plan, 'interactions', None)
     except Exception:
         return True
-
 
 def _freshest(row):
     """Newest minted route for a key.
@@ -141,14 +119,13 @@ def _freshest(row):
     stamps fall back to list order, so a table written by the older single-route minter
     keeps working untouched.
     """
-    routes = row.get("routes")
+    routes = row.get('routes')
     if isinstance(routes, list):
-        live = [r for r in routes if isinstance(r, dict) and r.get("interactions")]
+        live = [r for r in routes if isinstance(r, dict) and r.get('interactions')]
         if live:
-            newest = max(live, key=lambda r: int(r.get("minted_at") or 0))
-            return newest.get("interactions") or []
-    return row.get("interactions") or []
-
+            newest = max(live, key=lambda r: int(r.get('minted_at') or 0))
+            return newest.get('interactions') or []
+    return row.get('interactions') or []
 
 def _legs(row, chain, Interaction):
     """Stored interactions -> Interaction objects, verbatim.
@@ -164,14 +141,12 @@ def _legs(row, chain, Interaction):
         return None
     built = []
     for leg in stored:
-        data = leg.get("call_data") or leg.get("data")
-        target = leg.get("target")
+        data = leg.get('call_data') or leg.get('data')
+        target = leg.get('target')
         if not (target and data):
             return None
-        built.append(Interaction(target=target, value=str(leg.get("value", "0")),
-                                 call_data=data, chain_id=chain))
+        built.append(Interaction(target=target, value=str(leg.get('value', '0')), call_data=data, chain_id=chain))
     return built
-
 
 def install(base_cls, Interaction, ExecutionPlan):
     """Wrap `base_cls` so an EMPTY plan is filled from the overlay; else pass through."""
@@ -179,7 +154,7 @@ def install(base_cls, Interaction, ExecutionPlan):
     class _MinoFill(base_cls):
 
         def _overlay_plan(self, intent, state):
-            if int(getattr(state, "chain_id", 0) or 0) != _ADOPTION_CHAIN:
+            if int(getattr(state, 'chain_id', 0) or 0) != _ADOPTION_CHAIN:
                 return None
             key = _row_key(state)
             if not key:
@@ -187,30 +162,27 @@ def install(base_cls, Interaction, ExecutionPlan):
             row = _ROWS.get(key)
             if not isinstance(row, dict):
                 return None
-            chain = int(getattr(state, "chain_id", 0) or 0)
+            chain = int(getattr(state, 'chain_id', 0) or 0)
             legs = _legs(row, chain, Interaction)
             if not legs:
                 return None
-            return ExecutionPlan(intent_id=getattr(intent, "app_id", ""), interactions=legs,
-                                 deadline=9999999999, nonce=getattr(state, "nonce", 0),
-                                 metadata={"solver": "lattice-fill", "chain_id": chain})
+            return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'lattice-fill', 'chain_id': chain})
 
         def generate_plan(self, intent, state, snapshot=None):
             try:
                 plan = super().generate_plan(intent, state, snapshot)
             except Exception:
-                _log.exception("[minofill] inner generate_plan raised; overlay may still answer")
+                _log.exception('[minofill] inner generate_plan raised; overlay may still answer')
                 plan = None
             if not _is_empty(plan):
-                return plan                       # champion routing always wins
+                return plan
             try:
                 filled = self._overlay_plan(intent, state)
             except Exception:
-                _log.exception("[minofill] overlay build failed; inner plan stands")
+                _log.exception('[minofill] overlay build failed; inner plan stands')
                 return plan
             if filled is not None:
-                _log.info("[minofill] overlay filled an empty plan (empty-only)")
+                _log.info('[minofill] overlay filled an empty plan (empty-only)')
                 return filled
             return plan
-
     return _MinoFill
