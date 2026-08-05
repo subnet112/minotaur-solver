@@ -1,4 +1,4 @@
-# chain-1 dynamic tier: quoting + v3 building helpers
+_DR_UNSET = object()
 from chain1_c import _WETH, _USDT, _QUOTER, _ROUTER, _FEES, _HUBS, _CHAMP_FEE
 
 def _pack(tokens, fees):
@@ -10,13 +10,19 @@ def _pack(tokens, fees):
     return b
 
 def _champ_route(tin, tout):
-    fs = frozenset((tin, tout))
-    if fs in _CHAMP_FEE:
-        return ((tin, tout), (_CHAMP_FEE[fs],))
-    if _WETH not in (tin, tout):
-        f1 = _CHAMP_FEE.get(frozenset((tin, _WETH)), 3000)
-        f2 = _CHAMP_FEE.get(frozenset((_WETH, tout)), 3000)
-        return ((tin, _WETH, tout), (f1, f2))
+
+    def _dz44():
+        fs = frozenset((tin, tout))
+        if fs in _CHAMP_FEE:
+            return (((tin, tout), (_CHAMP_FEE[fs],)),)
+        if _WETH not in (tin, tout):
+            f1 = _CHAMP_FEE.get(frozenset((tin, _WETH)), 3000)
+            f2 = _CHAMP_FEE.get(frozenset((_WETH, tout)), 3000)
+            return (((tin, _WETH, tout), (f1, f2)),)
+        return _DR_UNSET
+    _r_dz44 = _dz44()
+    if _r_dz44 is not _DR_UNSET:
+        return _r_dz44[0]
     return ((tin, tout), (3000,))
 
 def _direct_legs(tin, tout):
@@ -32,31 +38,8 @@ def _direct_legs(tin, tout):
     """
     return [((tin, tout), (f,)) for f in _FEES]
 
-
-# The two-hop half of the candidate list: every (route, fees) pair that reaches `tout` from
-# `tin` THROUGH one hub token, one per ordered fee pair. `_direct_legs` above already names
-# this function as its sibling -- they are separate because they differ in ARITY, and `_pack`
-# walks fees alongside tokens, so arity decides which pool actually gets quoted.
-#
-# `hub in (tin, tout)` drops the degenerate legs whose hub IS an endpoint. Those spell a
-# single-hop route with a repeated token, and the path they pack names a pool that does not
-# exist -- the quote returns None and the candidate is spent for nothing.
-#
-# Loop order is load-bearing for the same reason the direct legs go first. The sweep replaces
-# its best only on a STRICT improvement, so among equal quotes the earliest emitted wins, and
-# it stops once its quote budget is spent -- which makes this list a PREFIX, not a set.
-# Reordering the loops changes nothing about which routes exist and everything about which
-# one is served.
-# The hubs that can actually sit in the middle of THIS pair. A hub equal to either endpoint
-# spells a route with a repeated token, whose packed path names a pool that does not exist —
-# the quote comes back None and the candidate is spent for nothing.
-#
-# Order is preserved from `_HUBS` deliberately: the sweep improves only on a STRICT `>` and
-# stops when its quote budget runs out, so this sequence is a PREFIX of what gets tried, not a
-# set. Filtering must not reorder.
 def _usable_hubs(tin, tout):
     return [hub for hub in _HUBS if hub not in (tin, tout)]
-
 
 def _hub_legs(tin, tout):
     out = []
@@ -66,21 +49,12 @@ def _hub_legs(tin, tout):
                 out.append(((tin, hub, tout), (fa, fb)))
     return out
 
-
 def _candidates(tin, tout):
     return _direct_legs(tin, tout) + _hub_legs(tin, tout)
 
-# A 4-byte function selector, derived rather than pasted. Both call sites below need one and
-# both were spelling out `keccak(text=...)[:4]` in full.
-#
-# Derived on purpose: a hardcoded selector is a magic constant that cannot be checked by eye,
-# and getting one wrong does not fail loudly -- the call reverts as though the pool were dry,
-# which reads exactly like a legitimately missing route. Keeping the signature TEXT in the
-# source means the thing a reader verifies is the ABI signature itself.
 def _selector(sig):
     from eth_utils import keccak as _keccak
     return _keccak(text=sig)[:4]
-
 
 def _qdata(route, amt):
     from eth_abi import encode as _enc
@@ -119,7 +93,6 @@ def _needs_reset_approve(tin):
     """
     return tin == _USDT
 
-
 def _approves(tin, amt, chain_id):
     from eth_utils import to_checksum_address as _ck
     from common.abi_utils import encode_approve
@@ -138,22 +111,10 @@ def _build(route, tin, amt, rcpt, chain_id):
 def _amounts(p):
     amt = int(p.get('input_amount', 0) or 0)
     mo = int(p.get('min_output_amount', 0) or 0)
-    return amt, mo
+    return (amt, mo)
 
-# Is this a swap we can even attempt? Four independent reasons it might not be, and each one
-# is a real intent seen on the wire rather than a defensive flourish:
-#
-#   len != 42     the token field was empty or malformed; `str(... or '').lower()` upstream
-#                 turns a missing key into '', which is length 0, not a short address.
-#   amt <= 0      a zero-amount intent quotes to zero everywhere and would bake a useless route.
-#   tin == tout   a self-swap has no pool and every quoter reverts on it.
-#
-# Expressed as a POSITIVE predicate because the caller wants "may I proceed", while the inline
-# form stated the negation of a four-term disjunction -- the shape most likely to be misread
-# when a fifth condition is eventually added.
 def _valid_pair(tin, tout, amt):
-    return len(tin) == 42 and len(tout) == 42 and amt > 0 and tin != tout
-
+    return len(tin) == 42 and len(tout) == 42 and (amt > 0) and (tin != tout)
 
 def _params(s, intent, state):
     p = s._normalized_swap_params(intent, state)
