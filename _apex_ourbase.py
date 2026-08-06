@@ -18,6 +18,7 @@ This is the same net-better-on-breadth play the champion lineage uses (blind-spo
 covers), generalized to the current champion's ~33 uncovered pairs.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 from _fx_shard_3 import *
 _FR_UNSET = object()
 import os
@@ -89,17 +90,23 @@ class MinerSolver(_Base):
             return (None, 0)
 
     def _rb1_our_route(self, intent, state):
+
+        def _dz29():
+            rpc = self._rpc_for(chain)
+            if not rpc:
+                return ((None, 0),)
+            plan, out = _rc.cover(intent.app_id, chain, tin, tout, amt, app, getattr(state, 'nonce', 0), rpc, ExecutionPlan, Interaction)
+            if plan is None or out <= 0:
+                return ((None, 0),)
+            return ((plan, int(out)),)
+            return _DR_UNSET
         got = self._route_inputs(state)
         if got is None:
             return (None, 0)
         tin, tout, amt, chain, app = got
-        rpc = self._rpc_for(chain)
-        if not rpc:
-            return (None, 0)
-        plan, out = _rc.cover(intent.app_id, chain, tin, tout, amt, app, getattr(state, 'nonce', 0), rpc, ExecutionPlan, Interaction)
-        if plan is None or out <= 0:
-            return (None, 0)
-        return (plan, int(out))
+        _r_dz29 = _dz29()
+        if _r_dz29 is not _DR_UNSET:
+            return _r_dz29[0]
 
     def _base_plan(self, intent, state, snapshot):
         """The champion's own plan. Retries ONCE on exception.
@@ -137,22 +144,28 @@ class MinerSolver(_Base):
         amt = build = spec = tin = tout = None
 
         def _fr_4():
+
+            def _dz27():
+                spec_key = getattr(self, '_chain1_spec_key', None)
+                build = getattr(self, '_chain1_build_plan', None)
+                if not callable(spec_key) or not callable(build):
+                    return (None,)
+                got = self._route_inputs(state)
+                if got is None:
+                    return (None,)
+                tin, tout, amt, _chain, _app = got
+                if not _safe_pair(tin, tout):
+                    return (None,)
+                return (_rf4_fr_4(amt, spec_key, tin, tout),)
+                return _DR_UNSET
             nonlocal amt, build, spec, tin, tout
             'The champion\'s own plan with ONE integer changed, or None to defer.\n\n        DROP-PROOFNESS, strongest first:\n          1. Fires ONLY when metadata[\'solver\'] == \'chain1-baked\', i.e. the champion\n             definitively served from its baked table (not the engine/kyber/onfork).\n          2. The plan we return is the CHAMPION\'S OWN BUILDER output — same router,\n             same selector, same recipient, same deadline, same min_out=0 ("min_out=0\n             => never reverts", chain1_v2.py:88). Only the 3 hex chars of the fee\n             differ, so we add no revert surface.\n          3. We only switch to a tier QuoterV2 successfully quoted, which proves the\n             pool exists AND can fill this size. This is what makes a static table\n             unsafe: at 50 WETH the fee-100 pool REVERTS while 3000 fills, so a baked\n             "always 100" would drop the order. The live quote is the safety.\n          4. SYMMETRIC MEASUREMENT — both sides are quoted through the same transport\n             in the same pass. A throttled endpoint yields None for BOTH and we defer.\n             There is no one-sided zero, which is the structural fix for the failure\n             mode that vetoed us four times.\n          5. Every unknown (missing method, odd spec shape, exception) returns None.\n        '
             md = getattr(base, 'metadata', None) or {}
             if md.get('solver') != 'chain1-baked':
                 return None
-            spec_key = getattr(self, '_chain1_spec_key', None)
-            build = getattr(self, '_chain1_build_plan', None)
-            if not callable(spec_key) or not callable(build):
-                return None
-            got = self._route_inputs(state)
-            if got is None:
-                return None
-            tin, tout, amt, _chain, _app = got
-            if not _safe_pair(tin, tout):
-                return None
-            return _rf4_fr_4(amt, spec_key, tin, tout)
+            _r_dz27 = _dz27()
+            if _r_dz27 is not _DR_UNSET:
+                return _r_dz27[0]
 
         def _rf4_fr_4(amt, spec_key, tin, tout):
             try:
@@ -346,12 +359,16 @@ _G_HTTP = '0x216B4B4Ba9F3e719726886d34a177484278Bfcae'
 _G_HARVEST = _hjson.loads('{"1|0x8cddd6eea1067b78b77255e49861843f69d4703d|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|688961262299000000000000": {"to": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57", "data": "0xa94e78ef00000000000000000000000000000000000000000000000000000000000000200000000000000000000000008cddd6eea1067b78b77255e49861843f69d4703d0000000000000000000000000000000000000000000091e4aa34bbbaac54b0000000000000000000000000000000000000000000000000000021bbad8f3028f2000000000000000000000000000000000000000000000000003030aecc8df15c000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000760000000000000000000000000000000000000000000000000000000006a740ad285e340bb9ca64532bada9d0d8079a8900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000032000000000000000000000000095ad61b0a150d79219dcf64e1e6cc01f0b64c4ce00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a73000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000006000000000000000000000000e592427a0aece92de3edee1f18e0157c05861564000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a7cf0f2000000000000000000000000000000000000000000000000000000000000002b8cddd6eea1067b78b77255e49861843f69d4703d00271095ad61b0a150d79219dcf64e1e6cc01f0b64c4ce000000000000000000000000000000000000000000000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a73000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000004000000000000000000000000f9234cb08edb93c0d4a4d4c70cc3ffd070e78e07000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000004de4811beed0119b4afce20d2583eb608c6f7af1954f0000000000000000000000000000000000000000000000000000000000000000", "tin": "0x8cddd6eea1067b78b77255e49861843f69d4703d", "out": 13562969763789028}, "1|0x1abaea1f7c830bd89acc67ec4af516284b1bc33c|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|20049191270": {"to": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57", "data": "0xa94e78ef00000000000000000000000000000000000000000000000000000000000000200000000000000000000000001abaea1f7c830bd89acc67ec4af516284b1bc33c00000000000000000000000000000000000000000000000000000004ab06616600000000000000000000000000000000000000000000000000000000017cda8f00000000000000000000000000000000000000000000000000000000022013a8000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000a80000000000000000000000000000000000000000000000000000000006a740ad5f2070663cc41489a843f0aac866d6c1300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000320000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a73000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000006000000000000000000000000e592427a0aece92de3edee1f18e0157c05861564000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a7cf0f4000000000000000000000000000000000000000000000000000000000000002b1abaea1f7c830bd89acc67ec4af516284b1bc33c0001f4a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c59900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a730000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000003600000000000000000000000000000000000000000000000000000000000000006000000000000000000000000e592427a0aece92de3edee1f18e0157c0586156400000000000000000000000000000000000000000000000000000000000012c000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a7cf0f4000000000000000000000000000000000000000000000000000000000000002ba0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000bb82260fac5e5542a773aa44fbcfedf7c193bc2c5990000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000e592427a0aece92de3edee1f18e0157c0586156400000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a7cf0f4000000000000000000000000000000000000000000000000000000000000002ba0b86991c6218b36c1d19d4a2e9eb0ce3606eb480001f42260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000007f86bf177dd4f3494b841a37e810a34dd56c829b0000000000000000000000000000000000000000000000000000000000000fa000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000007f86bf177dd4f3494b841a37e810a34dd56c829b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "tin": "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c", "out": 35653066}, "1|0x13d074303c95a34d304f29928dc8a16dec797e9e|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|30000000000000000000000": {"to": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57", "data": "0x54e3f31b000000000000000000000000000000000000000000000000000000000000002000000000000000000000000013d074303c95a34d304f29928dc8a16dec797e9e000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000065a4da25d3016c00000000000000000000000000000000000000000000000000000011459994862f180000000000000000000000000000000000000000000000000018ac9241e44347400000000000000000000000000000000000000000000000000000000000001e0000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000003c00000000000000000000000000000000000000000000000000000000000000440000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb9226600000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa010000000000000000000000000000000000000000000000000000000000400100000000000000000000000000000000000000000000000000000000000004a0000000000000000000000000000000000000000000000000000000006a740ae384d661d5673a4bf7b249eb603bab2f2c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000def171fe48cf0115b1d80b88dc8eab59176fee57000000000000000000000000f9234cb08edb93c0d4a4d4c70cc3ffd070e78e070000000000000000000000000000000000000000000000000000000000000148e1f21c6700000000000000000000000013d074303c95a34d304f29928dc8a16dec797e9e000000000000000000000000f9234cb08edb93c0d4a4d4c70cc3ffd070e78e07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff91a32b6900000000000000000000000013d074303c95a34d304f29928dc8a16dec797e9e00000000000000000000000000000000000000000000065a4da25d3016c000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000001000000000000000000004de45b670a54cd8c4e6f03d5bbbedcbaa68c8b2ca2d900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000001480000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "tin": "0x13d074303c95a34d304f29928dc8a16dec797e9e", "out": 111111185558011673}, "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x8de39b057cc6522230ab19c0205080a8663331ef|400951308": {"to": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57", "data": "0xa94e78ef0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000017e6080c00000000000000000000000000000000000000000e00d3a7e610778000000000000000000000000000000000000000000000000014012e5d91ce620af1109e88000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000760000000000000000000000000000000000000000000000000000000006a740ae6f42335f38cf941299c81788dcc249fd700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000320000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a73000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000006000000000000000000000000e592427a0aece92de3edee1f18e0157c05861564000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a7cf105000000000000000000000000000000000000000000000000000000000000002ba0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000064c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000000000000000000000000000000000000000000000008de39b057cc6522230ab19c0205080a8663331ef00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a73000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000004000000000000000000000000f9234cb08edb93c0d4a4d4c70cc3ffd070e78e07000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000004de5caa3a16f8440f85303afaab1992f2b97d12469b10000000000000000000000000000000000000000000000000000000000000000", "tin": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "out": 6190509026058158340011040675}}')
 
 def _g_hkey(state):
-    p = dict(getattr(state, 'raw_params', None) or {})
-    try:
+
+    def _dz31(p, state):
         tin = str(p.get('input_token') or '').lower()
         tout = str(p.get('output_token') or '').lower()
         amt = int(p.get('input_amount') or 0)
         chain = int(getattr(state, 'chain_id', 0) or 0)
+        return (amt, chain, tin, tout)
+    p = dict(getattr(state, 'raw_params', None) or {})
+    try:
+        amt, chain, tin, tout = _dz31(p, state)
     except (TypeError, ValueError):
         return None
     if not (tin and tout and (amt > 0) and chain):
@@ -444,14 +461,18 @@ def _build_b1_fill_empty():
         _B1_VERSION = _b1os.environ.get('MINOTAUR_SOLVER_VERSION', '0.1.0+29767194')
 
         def _fx_119():
-            _B1_AUTHOR = _b1os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'b1-sortable')
-            _B1_ROUTER_8453 = '0x2626664c2603336E57B271c5C0b26F421741e481'
-            _B1_QUOTERV2_8453 = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
-            _B1_CHAINS = {8453: {'quoter': '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a', 'rsingle': '0x2626664c2603336E57B271c5C0b26F421741e481', 'rmulti': '0x2626664c2603336E57B271c5C0b26F421741e481', 'weth': '0x4200000000000000000000000000000000000006', 'usdc': '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', 'multi': 'base'}, 1: {'quoter': '0x61fFE014bA17989E743c5F6cB21bF9697530B21e', 'rsingle': '0xE592427A0AEce92De3Edee1F18E0157C05861564', 'rmulti': '0xE592427A0AEce92De3Edee1F18E0157C05861564', 'weth': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 'usdc': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 'multi': 'v1'}}
-            _B1_CBBTC = '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf'
-            _B1_USDC_BASE = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
-            _B1_WETH_BASE = '0x4200000000000000000000000000000000000006'
-            _B1_CBBTC_FEES = (3000, 500, 10000)
+
+            def _dz26():
+                _B1_AUTHOR = _b1os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'b1-sortable')
+                _B1_ROUTER_8453 = '0x2626664c2603336E57B271c5C0b26F421741e481'
+                _B1_QUOTERV2_8453 = '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'
+                _B1_CHAINS = {8453: {'quoter': '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a', 'rsingle': '0x2626664c2603336E57B271c5C0b26F421741e481', 'rmulti': '0x2626664c2603336E57B271c5C0b26F421741e481', 'weth': '0x4200000000000000000000000000000000000006', 'usdc': '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', 'multi': 'base'}, 1: {'quoter': '0x61fFE014bA17989E743c5F6cB21bF9697530B21e', 'rsingle': '0xE592427A0AEce92De3Edee1F18E0157C05861564', 'rmulti': '0xE592427A0AEce92De3Edee1F18E0157C05861564', 'weth': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 'usdc': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 'multi': 'v1'}}
+                _B1_CBBTC = '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf'
+                _B1_USDC_BASE = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
+                _B1_WETH_BASE = '0x4200000000000000000000000000000000000006'
+                _B1_CBBTC_FEES = (3000, 500, 10000)
+                return (_B1_AUTHOR, _B1_CBBTC, _B1_CBBTC_FEES, _B1_CHAINS, _B1_QUOTERV2_8453, _B1_ROUTER_8453, _B1_USDC_BASE, _B1_WETH_BASE)
+            _B1_AUTHOR, _B1_CBBTC, _B1_CBBTC_FEES, _B1_CHAINS, _B1_QUOTERV2_8453, _B1_ROUTER_8453, _B1_USDC_BASE, _B1_WETH_BASE = _dz26()
 
             def _b1_params(state):
                 try:
@@ -515,39 +536,50 @@ def _build_b1_fill_empty():
         accessor. Never hardcodes a URL. Returns None if unavailable.
         `inst` is the solver instance (self) — its bound rpc_for is the real
         production accessor, so we check it first."""
+
+                def _dz21():
+                    nonlocal rpc
+                    for src in sources:
+                        if src is None:
+                            continue
+                        for attr in ('rpc_for', '_rpc_for', 'rpc_url_for'):
+                            fn = getattr(src, attr, None)
+                            if callable(fn):
+                                try:
+                                    rpc = fn(cid)
+                                    if rpc:
+                                        break
+                                except Exception:
+                                    pass
+                        if rpc:
+                            break
+                    if not rpc:
+                        return (None,)
+                    try:
+                        from web3 import Web3
+                        return (Web3(Web3.HTTPProvider(rpc, request_kwargs={'timeout': 4})),)
+                    except Exception:
+                        return (None,)
+                    return _DR_UNSET
                 cid = int(getattr(state, 'chain_id', 0) or 0)
                 rpc = None
                 sources = [inst, state, _B1_BASE]
-                for src in sources:
-                    if src is None:
-                        continue
-                    for attr in ('rpc_for', '_rpc_for', 'rpc_url_for'):
-                        fn = getattr(src, attr, None)
-                        if callable(fn):
-                            try:
-                                rpc = fn(cid)
-                                if rpc:
-                                    break
-                            except Exception:
-                                pass
-                    if rpc:
-                        break
-                if not rpc:
-                    return None
-                try:
-                    from web3 import Web3
-                    return Web3(Web3.HTTPProvider(rpc, request_kwargs={'timeout': 4}))
-                except Exception:
-                    return None
+                _r_dz21 = _dz21()
+                if _r_dz21 is not _DR_UNSET:
+                    return _r_dz21[0]
 
             def _b1_quote_single(w3, tin, tout, amount_in, fee):
                 """quoteExactInputSingle on Base QuoterV2. Returns out amount or 0."""
+
+                def _dz20(w3):
+                    abi = [{'inputs': [{'components': [{'type': 'address'}, {'type': 'address'}, {'type': 'uint256'}, {'type': 'uint24'}, {'type': 'uint160'}], 'type': 'tuple'}], 'name': 'quoteExactInputSingle', 'outputs': [{'type': 'uint256'}, {'type': 'uint160'}, {'type': 'uint32'}, {'type': 'uint256'}], 'stateMutability': 'nonpayable', 'type': 'function'}]
+                    q = w3.eth.contract(address=Web3.to_checksum_address(_B1_QUOTERV2_8453), abi=abi)
+                    return (abi, q)
                 if w3 is None:
                     return 0
                 try:
                     from web3 import Web3
-                    abi = [{'inputs': [{'components': [{'type': 'address'}, {'type': 'address'}, {'type': 'uint256'}, {'type': 'uint24'}, {'type': 'uint160'}], 'type': 'tuple'}], 'name': 'quoteExactInputSingle', 'outputs': [{'type': 'uint256'}, {'type': 'uint160'}, {'type': 'uint32'}, {'type': 'uint256'}], 'stateMutability': 'nonpayable', 'type': 'function'}]
-                    q = w3.eth.contract(address=Web3.to_checksum_address(_B1_QUOTERV2_8453), abi=abi)
+                    abi, q = _dz20(w3)
                     return int(q.functions.quoteExactInputSingle((Web3.to_checksum_address(tin), Web3.to_checksum_address(tout), int(amount_in), int(fee), 0)).call()[0])
                 except Exception:
                     return 0
@@ -567,17 +599,23 @@ def _build_b1_fill_empty():
             return 0
 
         def _fx_121():
+
+            def _dz25():
+                data = sel + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), [(ck(tin), ck(tout), bool(stable), ck('0x420DD381b31aEf6683db6B902084cB0FFECe40Da'))]])
+                ret = w3.eth.call({'to': ck('0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'), 'data': '0x' + data.hex()})
+                from eth_abi import decode as _dec
+                amounts = _dec(['uint256[]'], ret)[0]
+                return (int(amounts[-1]) if amounts else 0,)
+                return _DR_UNSET
             try:
                 from web3 import Web3
                 from eth_abi import encode as _enc
                 from eth_utils import keccak as _kk
                 ck = Web3.to_checksum_address
                 sel = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4]
-                data = sel + _enc(['uint256', '(address,address,bool,address)[]'], [int(amount_in), [(ck(tin), ck(tout), bool(stable), ck('0x420DD381b31aEf6683db6B902084cB0FFECe40Da'))]])
-                ret = w3.eth.call({'to': ck('0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'), 'data': '0x' + data.hex()})
-                from eth_abi import decode as _dec
-                amounts = _dec(['uint256[]'], ret)[0]
-                return int(amounts[-1]) if amounts else 0
+                _r_dz25 = _dz25()
+                if _r_dz25 is not _DR_UNSET:
+                    return _r_dz25[0]
             except Exception:
                 return 0
         return _fx_121()
@@ -592,16 +630,23 @@ def _build_b1_fill_empty():
         This is the honest baseline to beat: the champion picks one best route
         (V3 tier, Aerodrome stable/volatile, V2), so an override must clear the
         MAX of them, not just the V3 tiers. Returns (out, tag)."""
+
+                def _dz19():
+                    nonlocal best, tag
+                    for fee in (100, 500, 3000):
+                        o = _b1_quote_single(w3, tin, tout, amount_in, fee)
+                        if o > best:
+                            best, tag = (o, 'v3_%d' % fee)
+                    for stable in (True, False):
+                        o = _b1_quote_aero_v2(w3, tin, tout, amount_in, stable)
+                        if o > best:
+                            best, tag = (o, 'aero_stable=%s' % stable)
+                    return ((best, tag),)
+                    return _DR_UNSET
                 best, tag = (0, None)
-                for fee in (100, 500, 3000):
-                    o = _b1_quote_single(w3, tin, tout, amount_in, fee)
-                    if o > best:
-                        best, tag = (o, 'v3_%d' % fee)
-                for stable in (True, False):
-                    o = _b1_quote_aero_v2(w3, tin, tout, amount_in, stable)
-                    if o > best:
-                        best, tag = (o, 'aero_stable=%s' % stable)
-                return (best, tag)
+                _r_dz19 = _dz19()
+                if _r_dz19 is not _DR_UNSET:
+                    return _r_dz19[0]
 
             def _b1_encode_path(tokens, fees):
                 """Packed Uniswap V3 path: token(20) + fee(3) + token(20) + ... ."""
@@ -639,12 +684,16 @@ def _build_b1_fill_empty():
 
             def _b1_qsingle(w3, quoter, tin, tout, amt, fee):
                 """quoteExactInputSingle on ANY chain's QuoterV2. 0 on revert."""
+
+                def _dz18(quoter, w3):
+                    abi = [{'inputs': [{'components': [{'type': 'address'}, {'type': 'address'}, {'type': 'uint256'}, {'type': 'uint24'}, {'type': 'uint160'}], 'type': 'tuple'}], 'name': 'quoteExactInputSingle', 'outputs': [{'type': 'uint256'}, {'type': 'uint160'}, {'type': 'uint32'}, {'type': 'uint256'}], 'stateMutability': 'nonpayable', 'type': 'function'}]
+                    q = w3.eth.contract(address=Web3.to_checksum_address(quoter), abi=abi)
+                    return (abi, q)
                 if w3 is None:
                     return 0
                 try:
                     from web3 import Web3
-                    abi = [{'inputs': [{'components': [{'type': 'address'}, {'type': 'address'}, {'type': 'uint256'}, {'type': 'uint24'}, {'type': 'uint160'}], 'type': 'tuple'}], 'name': 'quoteExactInputSingle', 'outputs': [{'type': 'uint256'}, {'type': 'uint160'}, {'type': 'uint32'}, {'type': 'uint256'}], 'stateMutability': 'nonpayable', 'type': 'function'}]
-                    q = w3.eth.contract(address=Web3.to_checksum_address(quoter), abi=abi)
+                    abi, q = _dz18(quoter, w3)
                     return int(q.functions.quoteExactInputSingle((Web3.to_checksum_address(tin), Web3.to_checksum_address(tout), int(amt), int(fee), 0)).call()[0])
                 except Exception:
                     return 0
@@ -756,24 +805,34 @@ def _build_b1_fill_empty():
                     floor = int(best_out * 0.995)
 
                     def _fx_75():
+
+                        def _dz8():
+                            return (_B1Plan(intent_id=intent.app_id, interactions=[_B1Ix(target=tin, value='0', call_data=_b1_approve(cfg['rsingle'], amount_in), chain_id=chain_id), _B1Ix(target=cfg['rsingle'] if best[0] == 'single' else cfg['rmulti'], value='0', call_data=swap_cd, chain_id=chain_id)], deadline=deadline, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'b1-generic', 'route': f'cid{cid} {best[0]}'}),)
+                            return _DR_UNSET
                         if int(amount_out_min_floor) > 0:
                             if best_out < int(amount_out_min_floor):
                                 return None
                             floor = max(floor, int(amount_out_min_floor))
 
                         def _fx_72():
-                            if best[0] == 'single':
-                                swap_cd = _b1_v3single(token_in=tin, token_out=tout, fee=best[1], recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=floor, chain_id=chain_id)
-                            else:
+
+                            def _dz4():
+                                nonlocal swap_cd
                                 _tokens, _fees = (best[1], best[2])
                                 if cfg['multi'] == 'base':
                                     swap_cd = _b1_encode_exact_input_base(_b1_encode_path(_tokens, _fees), recipient, amount_in, floor)
                                 else:
                                     from strategies.dex_aggregator.v3_codec import encode_exact_input as _b1_ei
                                     swap_cd = _b1_ei(_b1_encode_path(_tokens, _fees), recipient, deadline, amount_in, floor)
+                            if best[0] == 'single':
+                                swap_cd = _b1_v3single(token_in=tin, token_out=tout, fee=best[1], recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=floor, chain_id=chain_id)
+                            else:
+                                _dz4()
                             return swap_cd
                         swap_cd = _fx_72()
-                        return _B1Plan(intent_id=intent.app_id, interactions=[_B1Ix(target=tin, value='0', call_data=_b1_approve(cfg['rsingle'], amount_in), chain_id=chain_id), _B1Ix(target=cfg['rsingle'] if best[0] == 'single' else cfg['rmulti'], value='0', call_data=swap_cd, chain_id=chain_id)], deadline=deadline, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'b1-generic', 'route': f'cid{cid} {best[0]}'})
+                        _r_dz8 = _dz8()
+                        if _r_dz8 is not _DR_UNSET:
+                            return _r_dz8[0]
                     return _fx_75()
                 return _fx_79()
             return _fx_110()
@@ -785,13 +844,16 @@ def _build_b1_fill_empty():
                 _b1_rpath = _b1os.path.join(_b1os.path.dirname(_b1os.path.abspath(__file__)), 'b1_routes.json')
 
                 def _fx_70():
+
+                    def _dz13():
+                        _B1_ROUTES[int(_r['chain']), str(_r['tin']).lower(), str(_r['tout']).lower()] = ([str(_t) for _t in _r['path_tokens']], [int(_f) for _f in _r['path_fees']])
                     if _b1os.path.exists(_b1_rpath):
                         _B1_NO_OUT = ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x50c5725949a6f0c72e6c4a641f24049a917db0cb')
                         for _r in _b1rjson.load(open(_b1_rpath)).get('routes') or []:
                             if str(_r.get('tout', '')).lower() in _B1_NO_OUT:
                                 _b1_logger.info('[b1] skipping tabled route with stablecoin output %s — measured catastrophic', _r.get('tout'))
                                 continue
-                            _B1_ROUTES[int(_r['chain']), str(_r['tin']).lower(), str(_r['tout']).lower()] = ([str(_t) for _t in _r['path_tokens']], [int(_f) for _f in _r['path_fees']])
+                            _dz13()
                 _fx_70()
                 _b1_logger.info('[b1] loaded %d route(s) from b1_routes.json', len(_B1_ROUTES))
             except Exception:
@@ -802,11 +864,14 @@ def _build_b1_fill_empty():
                 _b1_bpath = _b1os.path.join(_b1os.path.dirname(_b1os.path.abspath(__file__)), 'b1_balancer_routes.json')
 
                 def _fx_71():
-                    if _b1os.path.exists(_b1_bpath):
+
+                    def _dz12():
                         for _bk, _bv in (_b1bjson.load(open(_b1_bpath)).get('routes') or {}).items():
                             _bp = str(_bk).split('|')
                             if len(_bp) == 3:
                                 _B1_BAL_ROUTES[int(_bp[0]), _bp[1].lower(), _bp[2].lower()] = (str(_bv['pool_id']), int(_bv['amt_min']), int(_bv['amt_max']))
+                    if _b1os.path.exists(_b1_bpath):
+                        _dz12()
                     _b1_logger.info('[b1] loaded %d balancer route(s)', len(_B1_BAL_ROUTES))
                 _fx_71()
             except Exception:
@@ -824,18 +889,24 @@ def _build_b1_fill_empty():
             cid = int(getattr(state, 'chain_id', 0) or 0)
 
             def _fx_118():
+
+                def _dz17():
+                    tout = str(p.get('output_token', '') or '').lower()
+                    amt = int(p.get('input_amount', 0) or 0)
+                    row = _B1_BAL_ROUTES.get((cid, tin, tout))
+                    if row is None:
+                        return (None,)
+                    _pid, _lo, _hi = row
+                    if amt < _lo or amt > _hi:
+                        return (None,)
+                    return ((_pid, tin, tout, amt),)
+                    return _DR_UNSET
                 if cid != 1:
                     return None
                 tin = str(p.get('input_token', '') or '').lower()
-                tout = str(p.get('output_token', '') or '').lower()
-                amt = int(p.get('input_amount', 0) or 0)
-                row = _B1_BAL_ROUTES.get((cid, tin, tout))
-                if row is None:
-                    return None
-                _pid, _lo, _hi = row
-                if amt < _lo or amt > _hi:
-                    return None
-                return (_pid, tin, tout, amt)
+                _r_dz17 = _dz17()
+                if _r_dz17 is not _DR_UNSET:
+                    return _r_dz17[0]
             return _fx_118()
         except Exception:
             return None
@@ -853,29 +924,39 @@ def _build_b1_fill_empty():
         strictly worse than a clean drop. Delivering slightly under the champion
         costs one `worse` row; reverting costs the round. The bake already refuses
         any row under a 2% margin, so the buffer lives in the TABLE, not here."""
+
+                def _dz16():
+                    try:
+                        from web3 import Web3 as _W3B
+                        from eth_abi import encode as _encb
+                        from eth_utils import keccak as _kkb
+                        ck = _W3B.to_checksum_address
+                        recipient = str(getattr(state, 'owner', '') or '')
+                        if not recipient:
+                            return (None,)
+                        vault = ck('0xBA12222222228d8Ba445958a75a0704d566BF2C8')
+                        approve = '0x095ea7b3' + _encb(['address', 'uint256'], [vault, int(amt)]).hex()
+
+                        def _fx_98():
+
+                            def _dz7():
+                                sel = _kkb(text='swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)')[:4]
+                                swap = '0x' + (sel + _encb(['(bytes32,uint8,address,address,uint256,bytes)', '(address,bool,address,bool)', 'uint256', 'uint256'], [(bytes.fromhex(pool_id[2:]), 0, ck(tin), ck(tout), int(amt), b''), (ck(recipient), False, ck(recipient), False), 1, 9999999999])).hex()
+                                return (sel, swap)
+                            sel, swap = _dz7()
+                            return _B1Plan(intent_id=intent.app_id, interactions=[_B1Ix(target=ck(tin), value='0', call_data=approve, chain_id=1), _B1Ix(target=vault, value='0', call_data=swap, chain_id=1)], deadline=None, nonce=getattr(state, 'nonce', None), metadata={})
+                        return (_fx_98(),)
+                    except Exception:
+                        _b1_logger.exception('[b1] balancer cover failed to encode')
+                        return (None,)
+                    return _DR_UNSET
                 row = _b1_bal_row(state)
                 if row is None:
                     return None
                 pool_id, tin, tout, amt = row
-                try:
-                    from web3 import Web3 as _W3B
-                    from eth_abi import encode as _encb
-                    from eth_utils import keccak as _kkb
-                    ck = _W3B.to_checksum_address
-                    recipient = str(getattr(state, 'owner', '') or '')
-                    if not recipient:
-                        return None
-                    vault = ck('0xBA12222222228d8Ba445958a75a0704d566BF2C8')
-                    approve = '0x095ea7b3' + _encb(['address', 'uint256'], [vault, int(amt)]).hex()
-
-                    def _fx_98():
-                        sel = _kkb(text='swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)')[:4]
-                        swap = '0x' + (sel + _encb(['(bytes32,uint8,address,address,uint256,bytes)', '(address,bool,address,bool)', 'uint256', 'uint256'], [(bytes.fromhex(pool_id[2:]), 0, ck(tin), ck(tout), int(amt), b''), (ck(recipient), False, ck(recipient), False), 1, 9999999999])).hex()
-                        return _B1Plan(intent_id=intent.app_id, interactions=[_B1Ix(target=ck(tin), value='0', call_data=approve, chain_id=1), _B1Ix(target=vault, value='0', call_data=swap, chain_id=1)], deadline=None, nonce=getattr(state, 'nonce', None), metadata={})
-                    return _fx_98()
-                except Exception:
-                    _b1_logger.exception('[b1] balancer cover failed to encode')
-                    return None
+                _r_dz16 = _dz16()
+                if _r_dz16 is not _DR_UNSET:
+                    return _r_dz16[0]
 
             def _b1_cover_route(intent, state, snapshot, amount_out_min_floor=0, inst=None):
                 """Serve this pair with its tabled multi-hop route, or the best direct
@@ -900,15 +981,21 @@ def _build_b1_fill_empty():
                     return None
 
                 def _fx_103():
+
+                    def _dz11():
+                        dir_out, dir_fee = (0, fees[0])
+                        for _fee in (100, 500, 3000, 10000):
+                            o = _b1_quote_single(w3, tin, tout, amount_in, _fee)
+                            if o > dir_out:
+                                dir_out, dir_fee = (o, _fee)
+                        return (_fx_89(_B1Ix, _B1Plan, _B1_ROUTER_8453, _b1_approve, _b1_encode_exact_input_base, _b1_encode_path, _b1_v3single, _b1time, amount_in, amount_out_min_floor, dir_fee, dir_out, fees, hub_out, intent, state, tin, tokens, tout),)
+                        return _DR_UNSET
                     tokens, fees = row
                     w3 = _b1_w3(state, inst)
                     hub_out = _b1_quote_path(w3, tokens, fees, amount_in)
-                    dir_out, dir_fee = (0, fees[0])
-                    for _fee in (100, 500, 3000, 10000):
-                        o = _b1_quote_single(w3, tin, tout, amount_in, _fee)
-                        if o > dir_out:
-                            dir_out, dir_fee = (o, _fee)
-                    return _fx_89(_B1Ix, _B1Plan, _B1_ROUTER_8453, _b1_approve, _b1_encode_exact_input_base, _b1_encode_path, _b1_v3single, _b1time, amount_in, amount_out_min_floor, dir_fee, dir_out, fees, hub_out, intent, state, tin, tokens, tout)
+                    _r_dz11 = _dz11()
+                    if _r_dz11 is not _DR_UNSET:
+                        return _r_dz11[0]
                 return _fx_103()
 
             def _b1_cover_usdc_weth(intent, state, snapshot, amount_out_min_floor=0, inst=None):
@@ -933,10 +1020,14 @@ def _build_b1_fill_empty():
                 recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
 
                 def _fx_106():
-                    deadline = int(_b1time.time()) + 300
-                    chain_id = int(getattr(state, 'chain_id', 0) or 0)
-                    w3 = _b1_w3(state, inst)
-                    quotes = {fee: _b1_quote_single(w3, tin, tout, amount_in, fee) for fee in (100, 500, 3000)}
+
+                    def _dz10():
+                        deadline = int(_b1time.time()) + 300
+                        chain_id = int(getattr(state, 'chain_id', 0) or 0)
+                        w3 = _b1_w3(state, inst)
+                        quotes = {fee: _b1_quote_single(w3, tin, tout, amount_in, fee) for fee in (100, 500, 3000)}
+                        return (chain_id, deadline, quotes, w3)
+                    chain_id, deadline, quotes, w3 = _dz10()
                     if max(quotes.values()) > 0:
                         best_fee = max(quotes, key=quotes.get)
                     else:
@@ -945,9 +1036,15 @@ def _build_b1_fill_empty():
                         return None
 
                     def _fx_88():
+
+                        def _dz6():
+                            approve_cd = _b1_approve(_B1_ROUTER_8453, amount_in)
+                            return (_B1Plan(intent_id=intent.app_id, interactions=[_B1Ix(target=tin, value='0', call_data=approve_cd, chain_id=chain_id), _B1Ix(target=_B1_ROUTER_8453, value='0', call_data=swap_cd, chain_id=chain_id)], deadline=deadline, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'b1-cover', 'route': f'{tin[:6]}->{tout[:6]} v3 fee={best_fee}'}),)
+                            return _DR_UNSET
                         swap_cd = _b1_v3single(token_in=tin, token_out=tout, fee=best_fee, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=int(amount_out_min_floor), chain_id=chain_id)
-                        approve_cd = _b1_approve(_B1_ROUTER_8453, amount_in)
-                        return _B1Plan(intent_id=intent.app_id, interactions=[_B1Ix(target=tin, value='0', call_data=approve_cd, chain_id=chain_id), _B1Ix(target=_B1_ROUTER_8453, value='0', call_data=swap_cd, chain_id=chain_id)], deadline=deadline, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'b1-cover', 'route': f'{tin[:6]}->{tout[:6]} v3 fee={best_fee}'})
+                        _r_dz6 = _dz6()
+                        if _r_dz6 is not _DR_UNSET:
+                            return _r_dz6[0]
                     return _fx_88()
                 return _fx_106()
             _b1_cover_bestfee = _b1_cover_usdc_weth
@@ -982,9 +1079,13 @@ def _build_b1_fill_empty():
             tin = str(p.get('input_token', '') or '')
 
             def _fx_116():
-                tout = str(p.get('output_token', '') or '')
-                amount_in = int(p.get('input_amount', 0) or 0)
-                chain_id = int(getattr(state, 'chain_id', 0) or 0)
+
+                def _dz15():
+                    tout = str(p.get('output_token', '') or '')
+                    amount_in = int(p.get('input_amount', 0) or 0)
+                    chain_id = int(getattr(state, 'chain_id', 0) or 0)
+                    return (amount_in, chain_id, tout)
+                amount_in, chain_id, tout = _dz15()
                 if amount_in <= 0 or chain_id != 8453:
                     return None
                 w3 = _b1_w3(state, inst)
@@ -997,7 +1098,20 @@ def _build_b1_fill_empty():
 
                 def _fx_93():
 
+                    def _dz9():
+                        a2 = amount_in - best_a1
+                        recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
+                        deadline = int(_b1time.time()) + 300
+                        return (a2, deadline, recipient)
+
                     def _fx_74():
+
+                        def _dz5():
+                            for stable in (True, False):
+                                q2 = _b1_quote_aero_v2(w3, tin, tout, a2, stable)
+                                if q2 > 0 and q1 + q2 > best_total:
+                                    best_total, best_a1 = (q1 + q2, a1)
+                                    best_q1, best_q2, best_stable = (q1, q2, stable)
                         nonlocal a2, best_a1, best_q1, best_q2, best_stable, best_total
                         for pct in (50, 60, 65, 70, 75, 80):
                             a1 = amount_in * pct // 100
@@ -1005,11 +1119,7 @@ def _build_b1_fill_empty():
                             q1 = _b1_quote_single(w3, tin, tout, a1, 100)
                             if q1 <= 0:
                                 continue
-                            for stable in (True, False):
-                                q2 = _b1_quote_aero_v2(w3, tin, tout, a2, stable)
-                                if q2 > 0 and q1 + q2 > best_total:
-                                    best_total, best_a1 = (q1 + q2, a1)
-                                    best_q1, best_q2, best_stable = (q1, q2, stable)
+                            _dz5()
                     _fx_74()
                     if best_total <= 0:
                         return None
@@ -1020,22 +1130,26 @@ def _build_b1_fill_empty():
                     min2 = int(best_q2 * (1.0 - _B1_SPLIT_LEG_SLACK))
                     if min1 + min2 <= champ_out:
                         return None
-                    a2 = amount_in - best_a1
-                    recipient = getattr(state, 'contract_address', '') or getattr(state, 'owner', '')
-                    deadline = int(_b1time.time()) + 300
+                    a2, deadline, recipient = _dz9()
 
                     def _fx_83():
                         try:
 
                             def _fx_77():
+
+                                def _dz3():
+                                    aero_sel = _kk(text='swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)')[:4]
+                                    aero_cd = '0x' + (aero_sel + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(a2), int(min2), [(ck(tin), ck(tout), bool(best_stable), ck('0x420DD381b31aEf6683db6B902084cB0FFECe40Da'))], ck(recipient), int(deadline)])).hex()
+                                    return ((aero_cd, v3_cd),)
+                                    return _DR_UNSET
                                 from web3 import Web3 as _W3
                                 from eth_abi import encode as _enc
                                 from eth_utils import keccak as _kk
                                 ck = _W3.to_checksum_address
                                 v3_cd = _b1_v3single(token_in=tin, token_out=tout, fee=100, recipient=recipient, deadline=deadline, amount_in=best_a1, amount_out_minimum=min1, chain_id=chain_id)
-                                aero_sel = _kk(text='swapExactTokensForTokens(uint256,uint256,(address,address,bool,address)[],address,uint256)')[:4]
-                                aero_cd = '0x' + (aero_sel + _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(a2), int(min2), [(ck(tin), ck(tout), bool(best_stable), ck('0x420DD381b31aEf6683db6B902084cB0FFECe40Da'))], ck(recipient), int(deadline)])).hex()
-                                return (aero_cd, v3_cd)
+                                _r_dz3 = _dz3()
+                                if _r_dz3 is not _DR_UNSET:
+                                    return _r_dz3[0]
                             aero_cd, v3_cd = _fx_77()
                         except Exception:
                             return None
@@ -1045,15 +1159,21 @@ def _build_b1_fill_empty():
             return _fx_116()
 
         def _fx_78():
+
+            def _dz24():
+                _B1_COVERS = {(8453, _B1_DAI_BASE, _B1_USDC_BASE): _b1_cover_split_stable, (8453, _B1_USDC_BASE, _B1_DAI_BASE): _b1_cover_split_stable, (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): _b1_cover_bestfee}
+                for _rk in _B1_ROUTES:
+                    if _rk not in _B1_COVERS:
+                        _B1_COVERS[_rk] = _b1_cover_route
+                _B1_OVERRIDE = {(8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): 100}
+                return ((_B1_COVERS, _B1_OVERRIDE, _B1_SPLIT_LEG_SLACK, _B1_SPLIT_MARGIN, _B1_SPLIT_PAIRS),)
+                return _DR_UNSET
             _B1_SPLIT_MARGIN = 1.002
             _B1_SPLIT_LEG_SLACK = 0.02
             _B1_SPLIT_PAIRS = {(8453, _B1_DAI_BASE, _B1_USDC_BASE), (8453, _B1_USDC_BASE, _B1_DAI_BASE)}
-            _B1_COVERS = {(8453, _B1_DAI_BASE, _B1_USDC_BASE): _b1_cover_split_stable, (8453, _B1_USDC_BASE, _B1_DAI_BASE): _b1_cover_split_stable, (8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): _b1_cover_bestfee}
-            for _rk in _B1_ROUTES:
-                if _rk not in _B1_COVERS:
-                    _B1_COVERS[_rk] = _b1_cover_route
-            _B1_OVERRIDE = {(8453, _B1_USDC_BASE.lower(), _B1_WETH_BASE.lower()): 100}
-            return (_B1_COVERS, _B1_OVERRIDE, _B1_SPLIT_LEG_SLACK, _B1_SPLIT_MARGIN, _B1_SPLIT_PAIRS)
+            _r_dz24 = _dz24()
+            if _r_dz24 is not _DR_UNSET:
+                return _r_dz24[0]
         _B1_COVERS, _B1_OVERRIDE, _B1_SPLIT_LEG_SLACK, _B1_SPLIT_MARGIN, _B1_SPLIT_PAIRS = _fx_78()
         try:
             import json as _b1json
@@ -1113,6 +1233,20 @@ def _build_b1_fill_empty():
                 return None
 
             def _fx_108():
+
+                def _dz14():
+                    if champ_out > 0 and best_out > int(champ_out * _B1_OVERRIDE_MARGIN):
+
+                        def _fx_102():
+                            nonlocal cover
+                            floor = int(champ_out * _B1_OVERRIDE_MARGIN)
+                            cover = _B1_COVERS.get(key)
+                            return floor
+                        floor = _fx_102()
+                        if cover is not None:
+                            return ((cover, floor),)
+                    return (None,)
+                    return _DR_UNSET
                 w3 = _b1_w3(state, inst)
                 if w3 is None:
                     return None
@@ -1137,17 +1271,9 @@ def _build_b1_fill_empty():
                             best_out = o
                     return champ_out
                 champ_out = _fx_91()
-                if champ_out > 0 and best_out > int(champ_out * _B1_OVERRIDE_MARGIN):
-
-                    def _fx_102():
-                        nonlocal cover
-                        floor = int(champ_out * _B1_OVERRIDE_MARGIN)
-                        cover = _B1_COVERS.get(key)
-                        return floor
-                    floor = _fx_102()
-                    if cover is not None:
-                        return (cover, floor)
-                return None
+                _r_dz14 = _dz14()
+                if _r_dz14 is not _DR_UNSET:
+                    return _r_dz14[0]
             return _fx_108()
         return (_B1_COVERS, _b1_should_override)
     _B1_COVERS, _b1_should_override = _fx_117()
@@ -1163,6 +1289,30 @@ def _build_b1_fill_empty():
 
         def generate_plan(self, intent, state, snapshot=None):
 
+            def _dz22():
+                if not _b1_is_empty(plan):
+                    try:
+                        ov = _b1_should_override(state, self)
+                        if ov is not None:
+
+                            def _fx_109():
+                                nonlocal cov
+                                cover_fn, floor = ov
+                                cov = cover_fn(intent, state, snapshot, amount_out_min_floor=floor, inst=self)
+                            _fx_109()
+                            if _b1_plan_is_sound(cov):
+                                _b1_logger.info('[b1] OVERRIDE: our route beats champion pinned-fee (min-out floored at champion output)')
+                                return (cov,)
+
+                            def _fx_115():
+                                if not _b1_is_empty(cov):
+                                    _b1_logger.warning('[b1] override plan failed soundness check — deferring to champion (no regression)')
+                            _fx_115()
+                    except Exception:
+                        _b1_logger.exception('[b1] override check failed; keeping champion plan')
+                    return (plan,)
+                return _DR_UNSET
+
             def _fx_101():
                 plan = None
                 try:
@@ -1171,27 +1321,9 @@ def _build_b1_fill_empty():
                     _b1_logger.exception('[b1] champion stack raised; trying cover')
                 return plan
             plan = _fx_101()
-            if not _b1_is_empty(plan):
-                try:
-                    ov = _b1_should_override(state, self)
-                    if ov is not None:
-
-                        def _fx_109():
-                            nonlocal cov
-                            cover_fn, floor = ov
-                            cov = cover_fn(intent, state, snapshot, amount_out_min_floor=floor, inst=self)
-                        _fx_109()
-                        if _b1_plan_is_sound(cov):
-                            _b1_logger.info('[b1] OVERRIDE: our route beats champion pinned-fee (min-out floored at champion output)')
-                            return cov
-
-                        def _fx_115():
-                            if not _b1_is_empty(cov):
-                                _b1_logger.warning('[b1] override plan failed soundness check — deferring to champion (no regression)')
-                        _fx_115()
-                except Exception:
-                    _b1_logger.exception('[b1] override check failed; keeping champion plan')
-                return plan
+            _r_dz22 = _dz22()
+            if _r_dz22 is not _DR_UNSET:
+                return _r_dz22[0]
             cover = _B1_COVERS.get(_b1_pair_key(state))
             for _cov_fn, _tag in ((cover, 'pair'), (_b1_cover_generic, 'generic')):
                 if _cov_fn is None:
