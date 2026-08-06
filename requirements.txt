@@ -1,3 +1,0 @@
-# Miner solver dependencies.
-# Core deps for the baseline solver (Uniswap V3 pool discovery, RPC quoting).
-web3>=6.15.0
