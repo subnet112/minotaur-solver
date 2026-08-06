@@ -1,5 +1,6 @@
 """Shared address/venue constants for the king engine (split out of
 king_base.py for the factorization metric — pure data, no logic)."""
+_DR_UNSET = object()
 
 def _fw1():
     _DR_UNSET = object()
@@ -48,14 +49,20 @@ def _fw1():
                 _HOOK_AVC_DOPPLER = '0x892d3c2b4abeaaf67d52a7b29783e2161b7cad40'
 
                 def _dr4():
+
+                    def _dz249():
+                        _BEAM_TOKEN = '0x2a66d51407b84b82b5aff3dec4d49f72cbcd322a'
+                        _FLETH_TOKEN = '0x000000000d564d5be76f7f0d28fe52605afc7cf8'
+                        _BLCK_TOKEN = '0xf5de8697232a16a942f7cf706415f553ce53e27f'
+                        return ((_AERO, _AMPR_TOKEN, _AUCTION_TOKEN, _AVC_TOKEN, _BASE, _BEAM_TOKEN, _BEATS_TOKEN, _BLCK_TOKEN, _BRAIN_TOKEN, _BUTLER_TOKEN, _CBBTC, _CLANKER_HOOK, _DAI, _DEGEN_TOKEN, _DEPLOYER_TOKEN, _EDGE_TOKEN, _FLETH_TOKEN, _HOOK_AUCTION_AQUINAS, _HOOK_AVC_DOPPLER, _HOOK_BDF9, _HOOK_BEAM_FLAUNCH, _HOOK_ZORA_CREATOR, _MAVERICK_ROUTER, _T15B1, _T2FC3, _T3639, _T462F, _T753F, _TAE4A, _TAX_EDGE_TOKEN, _TCA41, _TCAF7, _TFAD8, _UNIV2_ROUTER, _UNIVERSAL_ROUTER, _UNI_SWAPROUTER02, _USDBC, _USDC, _VIRTUAL_TOKEN, _VU_TOKEN, _WETH, _ZERO, _ZORA, _ZORA_HOOK),)
+                        return _DR_UNSET
                     _HOOK_AUCTION_AQUINAS = '0xd3c1f2174f37f88811f99b1b1b4c1356c0246000'
                     _HOOK_BEAM_FLAUNCH = '0x8dc3b85e1dc1c846ebf3971179a751896842e5dc'
                     _AVC_TOKEN = '0x06fc3d5d2369561e28f261148576520f5e49d6ea'
                     _AUCTION_TOKEN = '0x05af98aebec91aef2bd893614a2c333c58855012'
-                    _BEAM_TOKEN = '0x2a66d51407b84b82b5aff3dec4d49f72cbcd322a'
-                    _FLETH_TOKEN = '0x000000000d564d5be76f7f0d28fe52605afc7cf8'
-                    _BLCK_TOKEN = '0xf5de8697232a16a942f7cf706415f553ce53e27f'
-                    return (_AERO, _AMPR_TOKEN, _AUCTION_TOKEN, _AVC_TOKEN, _BASE, _BEAM_TOKEN, _BEATS_TOKEN, _BLCK_TOKEN, _BRAIN_TOKEN, _BUTLER_TOKEN, _CBBTC, _CLANKER_HOOK, _DAI, _DEGEN_TOKEN, _DEPLOYER_TOKEN, _EDGE_TOKEN, _FLETH_TOKEN, _HOOK_AUCTION_AQUINAS, _HOOK_AVC_DOPPLER, _HOOK_BDF9, _HOOK_BEAM_FLAUNCH, _HOOK_ZORA_CREATOR, _MAVERICK_ROUTER, _T15B1, _T2FC3, _T3639, _T462F, _T753F, _TAE4A, _TAX_EDGE_TOKEN, _TCA41, _TCAF7, _TFAD8, _UNIV2_ROUTER, _UNIVERSAL_ROUTER, _UNI_SWAPROUTER02, _USDBC, _USDC, _VIRTUAL_TOKEN, _VU_TOKEN, _WETH, _ZERO, _ZORA, _ZORA_HOOK)
+                    _r_dz249 = _dz249()
+                    if _r_dz249 is not _DR_UNSET:
+                        return _r_dz249[0]
                     return _DR_UNSET
                 return (_dr4,)
             _dr4, = _fw2()
@@ -74,23 +81,27 @@ def _fw1():
         _PKT_TOKEN = '0x917f39bb33b2483dd19546b1e8d2f09ce481ee44'
 
         def _dr10():
-            _SINBAD_TOKEN = '0x5682a3ba66eeb60e82d18865849b513ab9c9692d'
-            _MID_E502 = '0xe5020a6d073a794b6e7f05678707de47986fb0b6'
-            _USDP_TOKEN = '0x76a9a0062ec6712b99b4f63bd2b4270185759dd5'
-            _COOKIE_V2 = '0x614747c53cb1636b4b962e15e1d66d3214621100'
-            _BOB_TOKEN = '0xd9ea811a51d6fe491d27c2a0442b3f577852874d'
-            _MANEKI_MID = '0x05e3d6741e4ea10f73e2c7d7d5bc40bcd6c4e5a0'
-            _MANEKI_TOKEN = '0xe6ab1cc1307b496748753e017f3dbb4d4378ca3f'
-            _FETCHR_TOKEN = '0x610a5a297fe2135289b8565ef645de2a7c00eba3'
-            _AERO_ALT_ROUTER_ADE = '0xcbbb8035cac7d4b3ca7abb74cf7bdf900215ce0d'
-            _AERO_ALT_ROUTER_F8F = '0x698cb2b6dd822994581fea6ea4fc755d1363a92f'
-            _AERO_ALT_ROUTER_LARRY = '0x8888eea5c97af36f764259557d2d4ca23e6b19ff'
-            _SKY_PSM3 = '0x1601843c5E9bc251A3272907010AFa41Fa18347E'
-            _T_USDS = '0x820c137fa70c8691f0e44dc420a5e53c168921dc'
-            _T_SUSDS = '0x5875eee11cf8398102fdad704c9e96607675467a'
-            _T_SOFTWARE = '0xa100000000000d6e18bc155f425685e4badfe11c'
-            _T_VITAFOXO = '0xe8f802b0cb13adf1a4333b541d4d3f703b8a69fa'
-            _T_CADD = '0x16f93ebc5320c89efc8701577efe49d14a276a06'
+
+            def _dz250():
+                _SINBAD_TOKEN = '0x5682a3ba66eeb60e82d18865849b513ab9c9692d'
+                _MID_E502 = '0xe5020a6d073a794b6e7f05678707de47986fb0b6'
+                _USDP_TOKEN = '0x76a9a0062ec6712b99b4f63bd2b4270185759dd5'
+                _COOKIE_V2 = '0x614747c53cb1636b4b962e15e1d66d3214621100'
+                _BOB_TOKEN = '0xd9ea811a51d6fe491d27c2a0442b3f577852874d'
+                _MANEKI_MID = '0x05e3d6741e4ea10f73e2c7d7d5bc40bcd6c4e5a0'
+                _MANEKI_TOKEN = '0xe6ab1cc1307b496748753e017f3dbb4d4378ca3f'
+                _FETCHR_TOKEN = '0x610a5a297fe2135289b8565ef645de2a7c00eba3'
+                _AERO_ALT_ROUTER_ADE = '0xcbbb8035cac7d4b3ca7abb74cf7bdf900215ce0d'
+                _AERO_ALT_ROUTER_F8F = '0x698cb2b6dd822994581fea6ea4fc755d1363a92f'
+                _AERO_ALT_ROUTER_LARRY = '0x8888eea5c97af36f764259557d2d4ca23e6b19ff'
+                _SKY_PSM3 = '0x1601843c5E9bc251A3272907010AFa41Fa18347E'
+                _T_USDS = '0x820c137fa70c8691f0e44dc420a5e53c168921dc'
+                _T_SUSDS = '0x5875eee11cf8398102fdad704c9e96607675467a'
+                _T_SOFTWARE = '0xa100000000000d6e18bc155f425685e4badfe11c'
+                _T_VITAFOXO = '0xe8f802b0cb13adf1a4333b541d4d3f703b8a69fa'
+                _T_CADD = '0x16f93ebc5320c89efc8701577efe49d14a276a06'
+                return (_AERO_ALT_ROUTER_ADE, _AERO_ALT_ROUTER_F8F, _AERO_ALT_ROUTER_LARRY, _BOB_TOKEN, _COOKIE_V2, _FETCHR_TOKEN, _MANEKI_MID, _MANEKI_TOKEN, _MID_E502, _SINBAD_TOKEN, _SKY_PSM3, _T_CADD, _T_SOFTWARE, _T_SUSDS, _T_USDS, _T_VITAFOXO, _USDP_TOKEN)
+            _AERO_ALT_ROUTER_ADE, _AERO_ALT_ROUTER_F8F, _AERO_ALT_ROUTER_LARRY, _BOB_TOKEN, _COOKIE_V2, _FETCHR_TOKEN, _MANEKI_MID, _MANEKI_TOKEN, _MID_E502, _SINBAD_TOKEN, _SKY_PSM3, _T_CADD, _T_SOFTWARE, _T_SUSDS, _T_USDS, _T_VITAFOXO, _USDP_TOKEN = _dz250()
             _V4_DYNAMIC_FEE = 8388608
             _UR_ADDRESS_THIS = '0x0000000000000000000000000000000000000002'
             _T61FD = '0x61fd8d4ad84bf7a20e12f00b7e33cb698977dc7d'
