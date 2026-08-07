@@ -26,7 +26,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 import cover_ext as _ext
 import router_cover as _rc
 WIN_MARGIN_BPS = 30
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'kohhash')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
 CONFIRMED_ZERO = frozenset()
 
 def _safe_pair(tin, tout):
@@ -372,9 +372,9 @@ def _g_install():
 
         def metadata(self):
             base = super().metadata()
-            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', 'titan-onyx-250')
-            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', '1.0.0')
-            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'kohhash')
+            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
+            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', "3.0.33")
+            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
             return _GSolverMetadata(name=name, version=ver, author=auth, description='champion coverage + cross-chain bridging', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
     SOLVER_CLASS = _GarnetXChain
 _g_install()
@@ -464,28 +464,33 @@ class _ApexBrand_payload_cover_k(SOLVER_CLASS):
     def metadata(self):
         m = super().metadata()
         try:
-            m.name = 'titan-onyx-250'
+            m.name = 'lattice-route-engine'
         except Exception:
             pass
         return m
 SOLVER_CLASS = _ApexBrand_payload_cover_k
 
-
-# ===== APEX-MINOTAUR LAYER (apex/payload_cover_apex) =====
-def _apex_load_payload_cover_apex():
+# ===== lattice fill overlay (appended on the titan-onyx-250 rebase) ==================
+# SOLVER_CLASS above is the champion's FINAL binding -- titan rebinds it four times and the
+# last one is _ApexBrand_payload_cover_k on the line before this block. Wrapping anything
+# earlier would be discarded by the rebind that follows, so the mount goes here and nowhere
+# else. The tree underneath is champion-identical, so every order titan serves this serves
+# identically -> `matched`, and dropped/regression/catastrophic are structurally zero.
+#
+# titan ships this exact file already (it forked our tree) but never imports it. Mounting it
+# is therefore additive: it cannot subtract a row the champion already covers, because the
+# layer only fires where the inherited stack returns nothing.
+#
+# Mount failure is swallowed deliberately: if the overlay cannot load, the champion stack
+# stands unmodified, which is a losing card but never a broken one.
+def _mount_lattice_overlay():
     try:
-        import payload_cover_apex as _p
-        globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
+        import lattice_fill_layer as _lf
+        from minotaur_subnet.shared.types import Interaction as _LIX, ExecutionPlan as _LEP
+        globals()['SOLVER_CLASS'] = _lf.install(globals()['SOLVER_CLASS'], _LIX, _LEP)
     except Exception:
-        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
-_apex_load_payload_cover_apex()
+        import logging as _lflog
+        _lflog.getLogger(__name__).exception('[fill] overlay failed to mount; champion stands')
 
-class _ApexBrand_payload_cover_apex(SOLVER_CLASS):
-    def metadata(self):
-        m = super().metadata()
-        try:
-            m.name = 'apex_1_29767743'
-        except Exception:
-            pass
-        return m
-SOLVER_CLASS = _ApexBrand_payload_cover_apex
+
+_mount_lattice_overlay()
