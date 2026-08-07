@@ -469,3 +469,23 @@ class _ApexBrand_payload_cover_k(SOLVER_CLASS):
             pass
         return m
 SOLVER_CLASS = _ApexBrand_payload_cover_k
+
+
+# ===== APEX-MINOTAUR LAYER (apex/payload_cover_apex) =====
+def _apex_load_payload_cover_apex():
+    try:
+        import payload_cover_apex as _p
+        globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
+_apex_load_payload_cover_apex()
+
+class _ApexBrand_payload_cover_apex(SOLVER_CLASS):
+    def metadata(self):
+        m = super().metadata()
+        try:
+            m.name = 'apex_1_29767743'
+        except Exception:
+            pass
+        return m
+SOLVER_CLASS = _ApexBrand_payload_cover_apex
