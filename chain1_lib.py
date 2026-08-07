@@ -1,6 +1,5 @@
 # chain-1 dynamic tier: quoting + v3 building helpers
 from chain1_c import _WETH, _USDT, _QUOTER, _ROUTER, _FEES, _HUBS, _CHAMP_FEE
-from chain1_hub_ext import _usable_hubs  # relocated leaf; see that module for why
 
 # One address as the 20 RAW bytes a V3 path is built from -- not hex text, and not ABI-encoded.
 #
@@ -81,6 +80,8 @@ def _direct_legs(tin, tout):
 # Order is preserved from `_HUBS` deliberately: the sweep improves only on a STRICT `>` and
 # stops when its quote budget runs out, so this sequence is a PREFIX of what gets tried, not a
 # set. Filtering must not reorder.
+def _usable_hubs(tin, tout):
+    return [hub for hub in _HUBS if hub not in (tin, tout)]
 
 
 def _hub_legs(tin, tout):
