@@ -494,3 +494,18 @@ def _mount_lattice_overlay():
 
 
 _mount_lattice_overlay()
+# g2 overlay mount — same failure contract as the stack beneath: if the
+# overlay cannot load, the champion stack stands unmodified (a losing card,
+# never a broken one). Mounted LAST so it wraps the fully-assembled champion
+# stack and only ever overrides rows the reigning image is measured-zero on.
+def _mount_g2_overlay():
+    try:
+        import g2_fill as _g2
+        from minotaur_subnet.shared.types import Interaction as _GIX, ExecutionPlan as _GEP
+        globals()['SOLVER_CLASS'] = _g2.install(globals()['SOLVER_CLASS'], _GIX, _GEP)
+    except Exception:
+        import logging as _g2log
+        _g2log.getLogger(__name__).exception('[g2] overlay failed to mount; base stands')
+
+
+_mount_g2_overlay()
