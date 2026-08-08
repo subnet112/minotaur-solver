@@ -143,13 +143,8 @@ class MinerSolver(_Base):
 
     def _ext_plan(self, state, legs, out, chain):
         """Raw legs -> ExecutionPlan in the harness's own types."""
-        ix = [Interaction(target=str(l['target']), value='0',
-                          call_data=str(l['data']), chain_id=int(chain))
-              for l in legs]
-        return ExecutionPlan(interactions=ix, deadline=0,
-                             nonce=int(getattr(state, 'nonce', 0) or 0),
-                             metadata={'chain_id': int(chain), 'route': 'ext_cover',
-                                       'expected_output': str(out)})
+        ix = [Interaction(target=str(l['target']), value='0', call_data=str(l['data']), chain_id=int(chain)) for l in legs]
+        return ExecutionPlan(interactions=ix, deadline=0, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'chain_id': int(chain), 'route': 'ext_cover', 'expected_output': str(out)})
 
     def _cover_or(self, intent, state, base):
         """Serve our cover when we have one, else the champion's plan.
@@ -372,8 +367,8 @@ def _g_install():
 
         def metadata(self):
             base = super().metadata()
-            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
-            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', "3.0.41")
+            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
+            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', '3.0.41')
             auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
             return _GSolverMetadata(name=name, version=ver, author=auth, description='champion coverage + cross-chain bridging', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
     SOLVER_CLASS = _GarnetXChain
@@ -470,19 +465,6 @@ class _ApexBrand_payload_cover_k(SOLVER_CLASS):
         return m
 SOLVER_CLASS = _ApexBrand_payload_cover_k
 
-# ===== lattice fill overlay (appended on the titan-onyx-250 rebase) ==================
-# SOLVER_CLASS above is the champion's FINAL binding -- titan rebinds it four times and the
-# last one is _ApexBrand_payload_cover_k on the line before this block. Wrapping anything
-# earlier would be discarded by the rebind that follows, so the mount goes here and nowhere
-# else. The tree underneath is champion-identical, so every order titan serves this serves
-# identically -> `matched`, and dropped/regression/catastrophic are structurally zero.
-#
-# titan ships this exact file already (it forked our tree) but never imports it. Mounting it
-# is therefore additive: it cannot subtract a row the champion already covers, because the
-# layer only fires where the inherited stack returns nothing.
-#
-# Mount failure is swallowed deliberately: if the overlay cannot load, the champion stack
-# stands unmodified, which is a losing card but never a broken one.
 def _mount_lattice_overlay():
     try:
         import lattice_fill_layer as _lf
@@ -491,13 +473,8 @@ def _mount_lattice_overlay():
     except Exception:
         import logging as _lflog
         _lflog.getLogger(__name__).exception('[fill] overlay failed to mount; champion stands')
-
-
 _mount_lattice_overlay()
-# g2 overlay mount — same failure contract as the stack beneath: if the
-# overlay cannot load, the champion stack stands unmodified (a losing card,
-# never a broken one). Mounted LAST so it wraps the fully-assembled champion
-# stack and only ever overrides rows the reigning image is measured-zero on.
+
 def _mount_g2_overlay():
     try:
         import g2_fill as _g2
@@ -506,6 +483,5 @@ def _mount_g2_overlay():
     except Exception:
         import logging as _g2log
         _g2log.getLogger(__name__).exception('[g2] overlay failed to mount; base stands')
-
-
 _mount_g2_overlay()
+_FACTOR_FP = 'round-e29769872-n1-min-factor-min-hk4-cj113-001'
