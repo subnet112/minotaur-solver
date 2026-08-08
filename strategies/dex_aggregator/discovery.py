@@ -129,10 +129,11 @@ def _fz3():
                                                     ETH_USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
                                                     ETH_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
                                                     ETH_V4_QUOTER = '0x52f0e24d1c21c8a0cb1e5a5dd6198556bd9e1203'
+
                                                     def _grid():
                                                         ETH_V4_BASES = (_ZERO, ETH_WETH, ETH_USDC, ETH_DAI, ETH_USDT, ETH_WBTC)
                                                         ETH_V4_KEY_GRID = ((3000, 60, _ZERO), (500, 10, _ZERO), (10000, 200, _ZERO), (100, 1, _ZERO), (10, 1, _ZERO), (7, 1, _ZERO))
-                                                        return ETH_V4_BASES, ETH_V4_KEY_GRID
+                                                        return (ETH_V4_BASES, ETH_V4_KEY_GRID)
                                                     ETH_V4_BASES, ETH_V4_KEY_GRID = _grid()
                                                     MAX_CALLS = 90
                                                     return (ETH_V4_BASES, ETH_V4_KEY_GRID, ETH_V4_QUOTER, ETH_WETH, HOOK_BDF9, MAX_CALLS, V4_BASES, V4_KEY_GRID, ZORA_CREATOR_HOOK, ZORA_HOOK)
