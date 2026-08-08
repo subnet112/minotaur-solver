@@ -111,6 +111,7 @@ class SwapIntentProcessor(IntentProcessor):
             ValueError: If required metadata is missing or chain unsupported.
         """
         params = self._extract_swap_params(intent, state)
+
         def _fw1():
             input_token: str = params['input_token']
             output_token: str = params['output_token']
@@ -131,7 +132,6 @@ class SwapIntentProcessor(IntentProcessor):
         _dr2 = _dr1()
         if _dr2 is not _DR_UNSET:
             return _dr2
-
 
     def _extract_swap_params(self, intent: AppIntentDefinition, state: IntentState) -> dict[str, Any]:
         """Extract and validate swap parameters from intent + state.
