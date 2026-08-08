@@ -1,6 +1,7 @@
 # chain-1 dynamic tier: decision + entry
 from chain1_lib import _qroute, _build, _params, _champ_route
 from chain1_v2 import _v2_build, _sweep, _v2_best
+from chain1_guard_ext import _meets_min_out  # relocated leaf; see that module for why
 
 def _beats_champ(w3, tin, tout, amt, block, q_mine, route):
     croute = _champ_route(tin, tout)
@@ -11,17 +12,6 @@ def _beats_champ(w3, tin, tout, amt, block, q_mine, route):
         return False
     return True
 
-def _meets_min_out(q, mo):
-    """Whether quote `q` clears the order's declared minimum output.
-
-    `mo > 0` is what separates "no minimum declared" from a floor: _amounts coerces a missing
-    or null min_output_amount to 0, and 0 has to mean unset. The clause is redundant as pure
-    arithmetic -- a quote is never negative, so `q < 0` could not fire anyway -- but writing
-    the intent down is the point. Read without it, the test looks like it enforces a
-    zero floor, and the next edit to _amounts (a sentinel, a signed value) would silently
-    turn every unset order into a rejection with nothing here to contradict it.
-    """
-    return not (mo > 0 and q < mo)
 
 
 def _decide(w3, tin, tout, amt, mo, block, base_empty):

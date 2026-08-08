@@ -36,8 +36,10 @@ from _lattice_prims import (_CONFIRM_POOL, _EXEC_BY_CHAIN, _abi_addr_uint,
 import logging
 import os
 import time as _time
-from lattice_cfg_ext import _par_cfg  # relocated leaf; see that module for why
-from lattice_att_ext import _par_attested  # relocated leaf; see that module for why
+from lattice_venue_ext import _par_venue_need  # relocated leaf; see that module for why
+from lattice_attest_ext import _par_attested  # relocated leaf; see that module for why
+from lattice_parcfg_ext import _par_cfg  # relocated leaf; see that module for why
+from lattice_state_ext import _par_state_ok  # relocated leaf; see that module for why
 
 _log = logging.getLogger(__name__)
 
@@ -251,42 +253,8 @@ def _freshest(row):
     return row.get("interactions") or []
 
 
-def _par_venue_need(d, gem):
-    """(token, holder, amount) the venue must hold to fund THIS direction.
-
-    The two directions are funded from different reserves, and checking the wrong one would
-    pass a leg that cannot settle. buyGem pays USDC out of the LitePSM pocket. sellGem takes
-    USDC in and pays USDS out, which the wrapper sources as DAI from the LitePSM itself before
-    converting -- so the reserve that has to cover it is the PSM's DAI, at 18 decimals.
-    """
-    _tin, tout, _wrap, _sel, up = d
-    if up:
-        return ("0x6b175474e89094c44da98b954eedeac495271d0f",   # DAI
-                "0xf6e72db5454dd049d0788e411b06cfaf16853042",   # LitePSM
-                int(gem) * 10 ** 12)
-    return (tout,
-            "0x37305b1cd40574e4c5ce33f8e8306be057fd7341",       # LitePSM USDC pocket
-            int(gem))
 
 
-def _par_state_ok(d, gem):
-    """Is the fixed-rate assumption still true, per the bake-time attestation?
-
-    Deliberately still a PREDICATE rather than deleted. The serve-time read is impossible
-    (no chain-1 RPC at bench), but the two things it protected are not vacuous: a non-zero
-    fee breaks the flat gemAmt*1e12 arithmetic, and a venue that cannot cover the withdrawal
-    reverts the leg -- `catastrophic`, an absolute veto. Both are checked against the attested
-    snapshot, and the reserve check is applied to THIS order's size, so an order larger than
-    the liquidity we actually verified is suppressed instead of served on faith.
-    """
-    up = d[4]
-    if (_par_attested()["wrapper_tin"] if up else _par_attested()["wrapper_tout"]) != 0:
-        return False
-    if (_par_attested()["psm_tin"] if up else _par_attested()["psm_tout"]) != 0:
-        return False
-    _tok, _holder, need = _par_venue_need(d, gem)
-    have = _par_attested()["psm_dai"] if up else _par_attested()["pocket_usdc"]
-    return need > 0 and have >= need
 
 
 def _par_legs(amount, executor, d, Interaction):

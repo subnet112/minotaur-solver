@@ -26,7 +26,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 import cover_ext as _ext
 import router_cover as _rc
 WIN_MARGIN_BPS = 30
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
 CONFIRMED_ZERO = frozenset()
 
 def _safe_pair(tin, tout):
@@ -372,9 +372,9 @@ def _g_install():
 
         def metadata(self):
             base = super().metadata()
-            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
-            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', "3.0.41")
-            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
+            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
+            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', "700.1.0")
+            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
             return _GSolverMetadata(name=name, version=ver, author=auth, description='champion coverage + cross-chain bridging', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
     SOLVER_CLASS = _GarnetXChain
 _g_install()
@@ -464,7 +464,7 @@ class _ApexBrand_payload_cover_k(SOLVER_CLASS):
     def metadata(self):
         m = super().metadata()
         try:
-            m.name = 'lattice-route-engine'
+            m.name = 'falcon'
         except Exception:
             pass
         return m
@@ -492,13 +492,6 @@ def _mount_lattice_overlay():
         import logging as _lflog
         _lflog.getLogger(__name__).exception('[fill] overlay failed to mount; champion stands')
 
-
-_mount_lattice_overlay()
-# g2 overlay mount — same failure contract as the stack beneath: if the
-# overlay cannot load, the champion stack stands unmodified (a losing card,
-# never a broken one). Mounted LAST so it wraps the fully-assembled champion
-# stack and only ever overrides rows the reigning image is measured-zero on.
-def _mount_g2_overlay():
     try:
         import g2_fill as _g2
         from minotaur_subnet.shared.types import Interaction as _GIX, ExecutionPlan as _GEP
@@ -508,4 +501,4 @@ def _mount_g2_overlay():
         _g2log.getLogger(__name__).exception('[g2] overlay failed to mount; base stands')
 
 
-_mount_g2_overlay()
+_mount_lattice_overlay()

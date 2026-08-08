@@ -1,6 +1,9 @@
 # chain-1 dynamic tier: quoting + v3 building helpers
 from chain1_c import _WETH, _USDT, _QUOTER, _ROUTER, _FEES, _HUBS, _CHAMP_FEE
-from chain1_hub_ext import _usable_hubs  # relocated leaf; see that module for why
+from chain1_appr_ext import _needs_reset_approve  # relocated leaf; see that module for why
+from chain1_dleg_ext import _direct_legs  # relocated leaf; see that module for why
+from chain1_appr2_ext import _approves  # relocated leaf; see that module for why
+from chain1_abytes_ext import _addr_bytes  # relocated leaf; see that module for why
 
 # One address as the 20 RAW bytes a V3 path is built from -- not hex text, and not ABI-encoded.
 #
@@ -10,8 +13,6 @@ from chain1_hub_ext import _usable_hubs  # relocated leaf; see that module for w
 # twice, or empty packs a path of the WRONG LENGTH -- and a mis-sized path does not raise. It
 # names some other pool, or none, and the quote comes back as an ordinary None while the real
 # fault sits two functions upstream.
-def _addr_bytes(t):
-    return bytes.fromhex(t[2:])
 
 
 def _pack(tokens, fees):
@@ -46,18 +47,6 @@ def _champ_route(tin, tout):
         return ((tin, _WETH, tout), (_champ_fee(tin, _WETH), _champ_fee(_WETH, tout)))
     return ((tin, tout), (3000,))
 
-def _direct_legs(tin, tout):
-    """Every (route, fees) pair for the single-hop tin -> tout, one per fee tier.
-
-    Sibling of `_hub_legs`, named for the same reason: the two differ in ARITY -- a direct
-    route carries ONE fee, a two-hop an ordered pair -- and `_pack` walks fees alongside
-    tokens, so a one-element tuple written `(f)` instead of `(f,)` is not a tuple at all and
-    packs a truncated path that quotes some other pool rather than raising.
-
-    ORDER IS LOAD-BEARING and belongs to the caller: these are emitted BEFORE any hub leg so
-    the sweep's strict `>` leaves a direct route in place when a two-hop merely ties it.
-    """
-    return [((tin, tout), (f,)) for f in _FEES]
 
 
 # The two-hop half of the candidate list: every (route, fees) pair that reaches `tout` from
@@ -81,6 +70,8 @@ def _direct_legs(tin, tout):
 # Order is preserved from `_HUBS` deliberately: the sweep improves only on a STRICT `>` and
 # stops when its quote budget runs out, so this sequence is a PREFIX of what gets tried, not a
 # set. Filtering must not reorder.
+def _usable_hubs(tin, tout):
+    return [hub for hub in _HUBS if hub not in (tin, tout)]
 
 
 def _hub_legs(tin, tout):
@@ -143,31 +134,8 @@ def _swap_leg(route, amt, rcpt):
     sel = _selector('exactInput((bytes,address,uint256,uint256,uint256))')
     return '0x' + (sel + _enc(['(bytes,address,uint256,uint256,uint256)'], [(_pack(tokens, fees), _ck(rcpt), 9999999999, int(amt), 0)])).hex()
 
-def _needs_reset_approve(tin):
-    """Whether `tin` must be approved to 0 before being approved to the real amount.
-
-    USDT's approve() reverts outright when it would move a NON-ZERO allowance to another
-    non-zero value -- it is not ERC-20 compliant on that path. Every other token in the
-    corpus overwrites its allowance happily, so the extra interaction is spent only where it
-    is load-bearing.
-
-    The failure mode this guards is quiet and expensive: the approve reverts, the whole plan
-    reverts with it, and the row scores as a delivery failure rather than as anything that
-    points at an allowance. Naming the condition keeps the reason attached to the test, which
-    a bare `tin == _USDT` beside a zero-amount approve does not.
-    """
-    return tin == _USDT
 
 
-def _approves(tin, amt, chain_id):
-    from eth_utils import to_checksum_address as _ck
-    from common.abi_utils import encode_approve
-    from minotaur_subnet.shared.types import Interaction as _IX
-    ixs = []
-    if _needs_reset_approve(tin):
-        ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), 0), chain_id=chain_id))
-    ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), int(amt)), chain_id=chain_id))
-    return ixs
 
 def _build(route, tin, amt, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX

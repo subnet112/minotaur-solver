@@ -39,7 +39,6 @@ from g2_codec import _bal_serve_legs, _chain_ready, _legs, _set_rpc, _v4_serve_l
 
 _log = logging.getLogger(__name__)
 
-_BRAND = ("g2-cover-engine", "0.3.0")
 _TABLE_FILE = "g2_covers.json"
 _TABLE = None
 # Serve-time drift floor for win-class entries, in basis points above the
@@ -164,18 +163,6 @@ def _cover_plan(hit, intent, state, Interaction, ExecutionPlan):
     )
 
 
-def _rebrand(m):
-    try:
-        import dataclasses as _dc
-        if _dc.is_dataclass(m):
-            return _dc.replace(m, name=_BRAND[0], version=_BRAND[1])
-    except Exception:
-        pass
-    try:
-        m.name, m.version = _BRAND
-    except Exception:
-        pass
-    return m
 
 
 def install(base_cls, Interaction, ExecutionPlan):
@@ -191,8 +178,6 @@ def install(base_cls, Interaction, ExecutionPlan):
             _set_rpc((config or {}).get("rpc_urls") or {})
             return super().initialize(config)
 
-        def metadata(self):
-            return _rebrand(super().metadata())
 
         def generate_plan(self, intent, state, snapshot=None):
             # Table-first: the bench budget charges wall-clock per row, so a
