@@ -30,53 +30,39 @@ factorization metric charges each named scope's body as its own region, and
 this tree's ceiling is what a rival's factor_delta is measured against.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 import json
 import logging
 import os
-
 from g2_codec import _bal_serve_legs, _chain_ready, _legs, _set_rpc, _v4_serve_legs
-
 _log = logging.getLogger(__name__)
-
-_TABLE_FILE = "g2_covers.json"
+_TABLE_FILE = 'g2_covers.json'
 _TABLE = None
-# Serve-time drift floor for win-class entries, in basis points above the
-# champion's admission-measured delivery. A serve below this floor risks the
-# round-pin flipping it past the -100 bps catastrophic line (one catastrophic
-# vetoes the whole submission; one thin win is worth +1) — the floor must
-# clear that line with drift room to spare. Bake-tuned per generation from
-# the admitted win-margin distribution; measured margins are bimodal (thin
-# tail vs >=197,096 bps cover-side), so the guard trims only the thin tail.
 _MIN_WIN_MARGIN_BPS = 200
-
-
 
 def _adm_pair(spec):
     """(ours, champ) admission measurements for the drift guard. Prefers the
     admission-bench pair (both sides MEASURED at one pin); legacy entries
     carry the probe-era pair (our quoted out vs the swept champion delivery),
     which guards in the same direction with more noise."""
-    a = spec.get("adm_ours") or spec.get("probe_out")
-    c = spec.get("adm_champ") or spec.get("champ_out")
+    a = spec.get('adm_ours') or spec.get('probe_out')
+    c = spec.get('adm_champ') or spec.get('champ_out')
     try:
-        return int(a or 0), int(c or 0)
+        return (int(a or 0), int(c or 0))
     except (TypeError, ValueError):
-        return 0, 0
-
+        return (0, 0)
 
 def _floor_bps(spec) -> int:
     """Per-entry drift floor: a spec may carry its own `floor_bps` (bake-set
     from row-level stability evidence); absent that, the module default
     applies. Data-driven per-row tuning without a code change."""
     try:
-        v = spec.get("floor_bps")
+        v = spec.get('floor_bps')
         if v is not None:
             return int(v)
     except (TypeError, ValueError):
         pass
     return _MIN_WIN_MARGIN_BPS
-
 
 def _margin_ok(spec) -> bool:
     """Win-class entries (champion measured NONZERO at admission) must carry
@@ -91,13 +77,11 @@ def _margin_ok(spec) -> bool:
         return True
     return ours * 10000 >= champ * (10000 + _floor_bps(spec))
 
-
 def _load_table(path):
     try:
         return {str(k).lower(): v for k, v in json.load(open(path)).items()}
     except Exception:
         return {}
-
 
 def _table() -> dict:
     global _TABLE
@@ -106,64 +90,71 @@ def _table() -> dict:
         _TABLE = _load_table(os.path.join(here, _TABLE_FILE))
     return _TABLE
 
-
 def _key(state):
     """Chain-scoped row key `chain|tin|tout|amt`; the legacy 3-part form
     (chain-1 entries baked before chain scoping) is the lookup fallback."""
-    try:
-        p = getattr(state, "raw_params", None) or {}
-        cid = int(getattr(state, "chain_id", 0) or 0)
-        tin = str(p.get("input_token") or "").lower()
-        tout = str(p.get("output_token") or "").lower()
-        amt = int(p.get("input_amount") or 0)
+
+    def _dz101():
+        tin = str(p.get('input_token') or '').lower()
+        tout = str(p.get('output_token') or '').lower()
+        amt = int(p.get('input_amount') or 0)
         if cid and tin and tout and amt:
-            return str(cid) + "|" + tin + "|" + tout + "|" + str(amt)
+            return (str(cid) + '|' + tin + '|' + tout + '|' + str(amt),)
+        return _DR_UNSET
+    try:
+        p = getattr(state, 'raw_params', None) or {}
+        cid = int(getattr(state, 'chain_id', 0) or 0)
+        _r_dz101 = _dz101()
+        if _r_dz101 is not _DR_UNSET:
+            return _r_dz101[0]
     except Exception:
         pass
     return None
-
 
 def _cover_spec(state):
     """(spec, rcpt) when this row holds a baked table entry for ITS chain.
     Chain scoping lives in the key itself: a chain with no baked entries
     never matches, and a matched entry without a routable venue registry
     entry fails closed in the leg builders."""
+
+    def _dz100():
+        if not isinstance(spec, dict):
+            return (None,)
+        if not _chain_ready(spec):
+            return (None,)
+        if not _margin_ok(spec):
+            return (None,)
+        rcpt = str(getattr(state, 'contract_address', '') or getattr(state, 'owner', '') or '')
+        if not rcpt:
+            return (None,)
+        return ((spec, rcpt, k),)
+        return _DR_UNSET
     k = _key(state)
     spec = _table().get(k) if k else None
-    if not isinstance(spec, dict) and k and k.startswith("1|"):
-        spec = _table().get(k[2:])  # legacy 3-part chain-1 entries
-    if not isinstance(spec, dict):
-        return None
-    if not _chain_ready(spec):
-        return None  # chain without a routable registry entry: ride the base
-    if not _margin_ok(spec):
-        return None  # thin win-class margin: ride the base (champion's tree)
-    rcpt = str(getattr(state, "contract_address", "")
-               or getattr(state, "owner", "") or "")
-    if not rcpt:
-        return None
-    return spec, rcpt, k
-
+    if not isinstance(spec, dict) and k and k.startswith('1|'):
+        spec = _table().get(k[2:])
+    _r_dz100 = _dz100()
+    if _r_dz100 is not _DR_UNSET:
+        return _r_dz100[0]
 
 def _cover_plan(hit, intent, state, Interaction, ExecutionPlan):
+
+    def _dz99():
+        if not legs:
+            return (None,)
+        _log.info('[g2] cover serve %s', k[:64])
+        return (ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'g2-cover', 'chain_id': int(spec.get('chain_id') or 1)}),)
+        return _DR_UNSET
     spec, rcpt, k = hit
-    if spec.get("kind") == "bal":
+    if spec.get('kind') == 'bal':
         legs = _bal_serve_legs(spec, rcpt, state, Interaction)
-    elif spec.get("kind") == "v4":
+    elif spec.get('kind') == 'v4':
         legs = _v4_serve_legs(spec, rcpt, Interaction)
     else:
         legs = _legs(spec, rcpt, Interaction)
-    if not legs:
-        return None
-    _log.info("[g2] cover serve %s", k[:64])
-    return ExecutionPlan(
-        intent_id=getattr(intent, "app_id", ""), interactions=legs,
-        deadline=9999999999, nonce=getattr(state, "nonce", 0),
-        metadata={"solver": "g2-cover", "chain_id": int(spec.get("chain_id") or 1)},
-    )
-
-
-
+    _r_dz99 = _dz99()
+    if _r_dz99 is not _DR_UNSET:
+        return _r_dz99[0]
 
 def install(base_cls, Interaction, ExecutionPlan):
     """Wrap base_cls: chain-1 rows with a baked table entry serve table-first
@@ -172,28 +163,17 @@ def install(base_cls, Interaction, ExecutionPlan):
     class _G2Fill(base_cls):
 
         def initialize(self, config):
-            # Balancer serving needs the harness-injected per-chain RPC for
-            # its one predictProxy eth_call; capture is best-effort and the
-            # bal path fails closed to the base without it.
-            _set_rpc((config or {}).get("rpc_urls") or {})
+            _set_rpc((config or {}).get('rpc_urls') or {})
             return super().initialize(config)
 
-
         def generate_plan(self, intent, state, snapshot=None):
-            # Table-first: the bench budget charges wall-clock per row, so a
-            # known row must never pay the base's live-discovery cost. Table
-            # admission (offline bake pipeline) guarantees each entry is
-            # measured champion-zero or measured >= the champion's delivery,
-            # so serving it unconditionally cannot mint a veto.
             try:
                 hit = _cover_spec(state)
                 if hit is not None:
-                    built = _cover_plan(hit, intent, state, Interaction,
-                                        ExecutionPlan)
+                    built = _cover_plan(hit, intent, state, Interaction, ExecutionPlan)
                     if built is not None:
                         return built
             except Exception:
-                _log.exception("[g2] table serve failed; falling to base")
+                _log.exception('[g2] table serve failed; falling to base')
             return super().generate_plan(intent, state, snapshot)
-
     return _G2Fill

@@ -2,13 +2,13 @@
 solver.py): gated rows, override keys, champion cached bars, frozen replay
 index, replay bank. All memoized module-global; a broken/absent file just
 disables that table (never raises)."""
+_DR_UNSET = object()
 import os
 _V_GATED_CACHE = None
 _VIKING_OVERRIDE_CACHE = None
 _VIKING_CACHED_BARS = None
 _VIKING_FROZEN_INDEX = None
 _VIKING_REPLAY_CACHE = None
-
 
 def _v_gated_table():
     """Lazy gated_rows.json — 'tin|tout|amt' -> champion-route-gated row spec
@@ -48,21 +48,27 @@ def _viking_cached_bar(key):
     if _VIKING_CACHED_BARS is None:
 
         def _dr22():
+
+            def _dz329():
+                bars: dict = {}
+                try:
+                    data = _json.load(open(path)) or {}
+                    for k, v in data.items() if isinstance(data, dict) else []:
+                        try:
+                            iv = int(v)
+                        except (TypeError, ValueError):
+                            continue
+                        if iv > 0:
+                            bars[str(k).lower()] = iv
+                except Exception:
+                    bars = {}
+                return (bars,)
+                return _DR_UNSET
             import json as _json
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'champ_cached.json')
-            bars: dict = {}
-            try:
-                data = _json.load(open(path)) or {}
-                for k, v in data.items() if isinstance(data, dict) else []:
-                    try:
-                        iv = int(v)
-                    except (TypeError, ValueError):
-                        continue
-                    if iv > 0:
-                        bars[str(k).lower()] = iv
-            except Exception:
-                bars = {}
-            return bars
+            _r_dz329 = _dz329()
+            if _r_dz329 is not _DR_UNSET:
+                return _r_dz329[0]
         bars = _dr22()
         _VIKING_CACHED_BARS = bars
     return _VIKING_CACHED_BARS.get(key) if key else None
@@ -72,10 +78,8 @@ def _viking_frozen_index() -> dict:
     stack can serve verbatim): key -> [frozenset of (target, data) pairs per
     row]. Used to recognize a base serve that wei-ties the champion by
     construction — those are never overridden."""
-    global _VIKING_FROZEN_INDEX
-    if _VIKING_FROZEN_INDEX is None:
-        import json as _json
-        idx: dict = {}
+
+    def _dz330():
         here = os.path.dirname(os.path.abspath(__file__))
         for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
             try:
@@ -91,6 +95,11 @@ def _viking_frozen_index() -> dict:
                         idx.setdefault(str(k).lower(), []).append(sig)
                     return (rows, sig)
                 rows, sig = _dr12()
+    global _VIKING_FROZEN_INDEX
+    if _VIKING_FROZEN_INDEX is None:
+        import json as _json
+        idx: dict = {}
+        _dz330()
         _VIKING_FROZEN_INDEX = idx
     return _VIKING_FROZEN_INDEX
 

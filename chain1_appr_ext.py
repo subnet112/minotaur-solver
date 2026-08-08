@@ -10,7 +10,6 @@ change resolution of any name it uses.
 """
 from chain1_c import _USDT
 
-
 def _needs_reset_approve(tin):
     """Whether `tin` must be approved to 0 before being approved to the real amount.
 
