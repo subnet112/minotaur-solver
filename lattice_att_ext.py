@@ -19,10 +19,4 @@ def _par_attested():
     literal here takes those nodes off the module's count without changing a single value.
     Callers were already treating it as read-only.
     """
-    return {
-        "block": 25663233,
-        "wrapper_tin": 0, "wrapper_tout": 0,      # UsdsPsmWrapper 0xa188eec8
-        "psm_tin": 0, "psm_tout": 0,              # LitePSM       0xf6e72db5
-        "pocket_usdc": 4186960164_610000,         # 4,186,960,164.61 USDC (6dp)
-        "psm_dai": 801361411_240000000000000000,  #   801,361,411.24 DAI  (18dp)
-    }
+    return {'block': 25663233, 'wrapper_tin': 0, 'wrapper_tout': 0, 'psm_tin': 0, 'psm_tout': 0, 'pocket_usdc': 4186960164610000, 'psm_dai': 801361411240000000000000000}

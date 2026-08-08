@@ -31,8 +31,7 @@ def _par_cfg():
     gem it pays out, so the 18-decimal input must be floored into 6 first and the sub-1e12
     remainder is unconvertible dust.
     """
-    usds = "0xdc035d45d973e3ec169d2276ddab16f1e407384f"
-    usdc = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
-    wrap = "0xa188eec8f81263234da3622a406892f3d630f98c"       # UsdsPsmWrapper
-    return ((usds, usdc, wrap, "0x8d7ef9bb", False),          # buyGem  -- 7.5484x measured
-            (usdc, usds, wrap, "0x95991276", True))           # sellGem -- 1.1191x measured
+    usds = '0xdc035d45d973e3ec169d2276ddab16f1e407384f'
+    usdc = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    wrap = '0xa188eec8f81263234da3622a406892f3d630f98c'
+    return ((usds, usdc, wrap, '0x8d7ef9bb', False), (usdc, usds, wrap, '0x95991276', True))
