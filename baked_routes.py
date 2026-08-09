@@ -6,17 +6,12 @@ purely for the region metric: a module's top level is itself a scored region, an
 holding both the generic sweep and this table pushed that region to 182.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 import json
 import os
-
 from eth_abi import encode as _enc
-
 import time
-
-from venues import (CHAINS, DEADLINE, S_V2_SWAP, _SEARCH_DEADLINE, _v3_path_bytes,
-                    q_v2, q_v3_path, q_v3_single)
-
+from venues import CHAINS, DEADLINE, S_V2_SWAP, _SEARCH_DEADLINE, _v3_path_bytes, q_v2, q_v3_path, q_v3_single
 
 def _load():
     """Route table, preferring the generated PYTHON module over the JSON.
@@ -33,21 +28,15 @@ def _load():
     except Exception:
         pass
     try:
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                               'ext_routes.json')) as fh:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ext_routes.json')) as fh:
             return {k: v.get('route', v) for k, v in json.load(fh).items()}
     except Exception:
         return {}
-
-
 ROUTES = _load()
-
 
 def _approve(spender, amount):
     from eth_utils import keccak
-    return '0x' + keccak(text='approve(address,uint256)')[:4].hex() + \
-        _enc(['address', 'uint256'], [spender, int(amount)]).hex()
-
+    return '0x' + keccak(text='approve(address,uint256)')[:4].hex() + _enc(['address', 'uint256'], [spender, int(amount)]).hex()
 
 def _rebuild(rpc, cfg, route, tin, tout, amount, recipient):
     """Re-quote one baked route and rebuild its legs, or (None, 0).
@@ -66,7 +55,6 @@ def _rebuild(rpc, cfg, route, tin, tout, amount, recipient):
         return (_v3_single_swap(cfg, tin, tout, amount, recipient, route['fee']), out)
     return (_v3_path_swap(cfg, route, amount, recipient), out)
 
-
 def _requote(rpc, cfg, route, tin, tout, amount):
     """Live output for a baked route right now, or 0 if it no longer fills."""
     kind = route.get('kind')
@@ -78,33 +66,31 @@ def _requote(rpc, cfg, route, tin, tout, amount):
         return int(q_v3_path(rpc, cfg, route['tokens'], route['fees'], amount) or 0)
     return 0
 
-
 def baked_legs(rpc, tin, tout, amount, chain_id, recipient):
     """(interactions, out) from the pre-solved table, or (None, 0)."""
-    row = ROUTES.get(f"{int(chain_id)}|{str(tin).lower()}|{str(tout).lower()}")
-    if not row:
-        return (None, 0)
-    prev = _SEARCH_DEADLINE[0]
-    _SEARCH_DEADLINE[0] = time.monotonic() + 3.0
-    try:
-        cfg = CHAINS.get(int(chain_id)) or {}
-        return _rebuild(rpc, cfg, row, tin, tout, amount, recipient)
-    except Exception:
-        return (None, 0)
-    finally:
-        # ALWAYS hand the shared deadline back: leaving an expired one behind
-        # made the inherited solver refuse every later quote and return empty
-        # plans — 41 dropped orders on sub_63ae4707f360.
-        _SEARCH_DEADLINE[0] = prev
 
+    def _dz43():
+        if not row:
+            return ((None, 0),)
+        prev = _SEARCH_DEADLINE[0]
+        _SEARCH_DEADLINE[0] = time.monotonic() + 3.0
+        try:
+            cfg = CHAINS.get(int(chain_id)) or {}
+            return (_rebuild(rpc, cfg, row, tin, tout, amount, recipient),)
+        except Exception:
+            return ((None, 0),)
+        finally:
+            _SEARCH_DEADLINE[0] = prev
+        return _DR_UNSET
+    row = ROUTES.get(f'{int(chain_id)}|{str(tin).lower()}|{str(tout).lower()}')
+    _r_dz43 = _dz43()
+    if _r_dz43 is not _DR_UNSET:
+        return _r_dz43[0]
 
 def _v2_path_swap(route, amount, recipient):
     """approve + swapExactTokensForTokens over the baked path."""
-    body = _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'],
-                [int(amount), 0, route['path'], recipient, DEADLINE])
-    return [{'target': route['path'][0], 'data': _approve(route['router'], amount)},
-            {'target': route['router'], 'data': '0x' + S_V2_SWAP + body.hex()}]
-
+    body = _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount), 0, route['path'], recipient, DEADLINE])
+    return [{'target': route['path'][0], 'data': _approve(route['router'], amount)}, {'target': route['router'], 'data': '0x' + S_V2_SWAP + body.hex()}]
 
 def _tuple_body(cfg, args, types, at):
     """ABI-encode a router tuple, inserting the deadline only where the chain's
@@ -114,22 +100,14 @@ def _tuple_body(cfg, args, types, at):
         types = types[:at] + ['uint256'] + types[at:]
     return _enc(['(' + ','.join(types) + ')'], [tuple(args)])
 
-
 def _v3_single_swap(cfg, tin, tout, amount, recipient, fee):
     """approve + exactInputSingle, in the chain's own selector/layout."""
     r = cfg['v3router']
-    body = _tuple_body(cfg, [tin, tout, int(fee), recipient, int(amount), 0, 0],
-                       ['address', 'address', 'uint24', 'address', 'uint256',
-                        'uint256', 'uint160'], 4)
-    return [{'target': tin, 'data': _approve(r, amount)},
-            {'target': r, 'data': '0x' + cfg['v3sel_single'] + body.hex()}]
-
+    body = _tuple_body(cfg, [tin, tout, int(fee), recipient, int(amount), 0, 0], ['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint160'], 4)
+    return [{'target': tin, 'data': _approve(r, amount)}, {'target': r, 'data': '0x' + cfg['v3sel_single'] + body.hex()}]
 
 def _v3_path_swap(cfg, route, amount, recipient):
     """approve + exactInput over the baked multi-hop path."""
     r = cfg['v3router']
-    body = _tuple_body(cfg, [_v3_path_bytes(route['tokens'], route['fees']),
-                             recipient, int(amount), 0],
-                       ['bytes', 'address', 'uint256', 'uint256'], 2)
-    return [{'target': route['tokens'][0], 'data': _approve(r, amount)},
-            {'target': r, 'data': '0x' + cfg['v3sel_path'] + body.hex()}]
+    body = _tuple_body(cfg, [_v3_path_bytes(route['tokens'], route['fees']), recipient, int(amount), 0], ['bytes', 'address', 'uint256', 'uint256'], 2)
+    return [{'target': route['tokens'][0], 'data': _approve(r, amount)}, {'target': r, 'data': '0x' + cfg['v3sel_path'] + body.hex()}]

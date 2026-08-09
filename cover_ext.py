@@ -19,37 +19,13 @@ runs on Base, and every aToken we serve is a Base token. That layer could not
 fire, and it measured 320 nodes against both the region and deadwood metrics.
 """
 from __future__ import annotations
-
 from eth_abi import decode, encode
 from eth_utils import keccak, to_checksum_address as ck
-
 from eth_abi import encode as _enc
-
 import time
-
-from venues import (CHAINS, DEADLINE, S_V2_SWAP, _SEARCH_DEADLINE,
-                    eth_call as _eth_call, q_v2)
-
-# Pre-solved routes for pairs the incumbent cannot serve — see route_bake.py.
-# Baked OFFLINE where there is no 6s limit, so the online path costs one dict
-# lookup instead of ~37 quotes. That reclaimed budget is what lets the generic
-# sweep below reach genuinely NEW pairs (~4 arrive every round, forever, and are
-# unbakeable by definition).
-from baked_routes import baked_legs  # noqa: F401  (re-exported for the solver)
-
-# Our own quote budget, in seconds. MUST be armed before any quoting here.
-#
-# `venues.eth_call` refuses to START a call once `_SEARCH_DEADLINE` has passed,
-# and the inherited `best_route()` sets that deadline to now+6s and then spends
-# it. By the time `_cover_or` falls through to us it is usually EXPIRED, so every
-# quote this module makes returns None and the whole cover silently does nothing
-# — precisely on the orders it exists to serve. Measured directly: with a fresh
-# deadline DOGEUS->WETH quotes 1.031e16; with an expired one it returns 0.
-#
-# Kept well under the inherited 6s: this runs only after the main scan gave up,
-# so the plan's remaining time is already partly spent.
+from venues import CHAINS, DEADLINE, S_V2_SWAP, _SEARCH_DEADLINE, eth_call as _eth_call, q_v2
+from baked_routes import baked_legs
 _COVER_BUDGET_S = 3.0
-
 
 def _arm():
     """Give this cover its own quote window; returns the PREVIOUS value.
@@ -66,17 +42,13 @@ def _arm():
     _SEARCH_DEADLINE[0] = time.monotonic() + _COVER_BUDGET_S
     return prev
 
-
 def _disarm(prev):
     """Hand the shared deadline back exactly as we found it."""
     _SEARCH_DEADLINE[0] = prev
-
 METAREGISTRY = {1: '0xF98B45FA17DE75FB1aD0e7aFD971b0ca00e379fC'}
-
 
 def _sel(sig):
     return keccak(text=sig)[:4].hex()
-
 
 def _call(rpc, to, data):
     """eth_call through the TREE'S OWN transport.
@@ -98,28 +70,21 @@ def _call(rpc, to, data):
         raise ValueError('eth_call returned nothing')
     return raw
 
-
 def _approve(spender, amount):
-    return '0x' + _sel('approve(address,uint256)') + \
-        encode(['address', 'uint256'], [ck(spender), int(amount)]).hex()
-
+    return '0x' + _sel('approve(address,uint256)') + encode(['address', 'uint256'], [ck(spender), int(amount)]).hex()
 
 def _pool(rpc, tin, tout, chain_id):
     reg = METAREGISTRY.get(int(chain_id))
     if not reg:
         return None
-    data = '0x' + _sel('find_pool_for_coins(address,address,uint256)') + \
-        encode(['address', 'address', 'uint256'], [ck(tin), ck(tout), 0]).hex()
+    data = '0x' + _sel('find_pool_for_coins(address,address,uint256)') + encode(['address', 'address', 'uint256'], [ck(tin), ck(tout), 0]).hex()
     pool = decode(['address'], _call(rpc, reg, data))[0]
     return None if int(pool, 16) == 0 else pool
 
-
 def _indices(rpc, pool, tin, tout, chain_id):
     reg = METAREGISTRY[int(chain_id)]
-    data = '0x' + _sel('get_coin_indices(address,address,address)') + \
-        encode(['address', 'address', 'address'], [ck(pool), ck(tin), ck(tout)]).hex()
+    data = '0x' + _sel('get_coin_indices(address,address,address)') + encode(['address', 'address', 'address'], [ck(pool), ck(tin), ck(tout)]).hex()
     return decode(['int128', 'int128', 'bool'], _call(rpc, reg, data))
-
 
 def _shapes(underlying):
     base = ('get_dy_underlying', 'exchange_underlying') if underlying else ('get_dy', 'exchange')
@@ -127,7 +92,6 @@ def _shapes(underlying):
     if underlying:
         out += [('get_dy', 'exchange', 'int128'), ('get_dy', 'exchange', 'uint256')]
     return out
-
 
 def _probe(rpc, pool, i, j, underlying, amount):
     """(out, swap_fn, typ) for the first signature the pool answers.
@@ -137,17 +101,20 @@ def _probe(rpc, pool, i, j, underlying, amount):
     base coins only through the `_underlying` variants. Mixing them reverts, and
     a revert here is a delivered zero.
     """
+
+    def _dz56(amount, i, j, pool, rpc, sig, typ):
+        data = '0x' + _sel(sig) + encode([typ, typ, 'uint256'], [i, j, int(amount)]).hex()
+        out = int(decode(['uint256'], _call(rpc, pool, data))[0])
+        return (data, out)
     for quote_fn, swap_fn, typ in _shapes(underlying):
         sig = f'{quote_fn}({typ},{typ},uint256)'
         try:
-            data = '0x' + _sel(sig) + encode([typ, typ, 'uint256'], [i, j, int(amount)]).hex()
-            out = int(decode(['uint256'], _call(rpc, pool, data))[0])
+            data, out = _dz56(amount, i, j, pool, rpc, sig, typ)
         except Exception:
             continue
         if out > 0:
             return (out, swap_fn, typ)
     return (0, None, None)
-
 
 def _exchange(pool, i, j, amount, swap_fn, typ):
     """The exchange leg, in the same shape that produced the quote.
@@ -156,10 +123,8 @@ def _exchange(pool, i, j, amount, swap_fn, typ):
     a per-swap minimum only adds a revert path.
     """
     sig = f'{swap_fn}({typ},{typ},uint256,uint256)'
-    data = '0x' + _sel(sig) + encode([typ, typ, 'uint256', 'uint256'],
-                                     [int(i), int(j), int(amount), 0]).hex()
+    data = '0x' + _sel(sig) + encode([typ, typ, 'uint256', 'uint256'], [int(i), int(j), int(amount), 0]).hex()
     return [{'target': pool, 'data': data}]
-
 
 def _resolve(rpc, tin, tout, amount, chain_id):
     """(pool, i, j, out, swap_fn, typ) for a Curve pair, or None."""
@@ -169,7 +134,6 @@ def _resolve(rpc, tin, tout, amount, chain_id):
     i, j, und = _indices(rpc, pool, tin, tout, chain_id)
     out, swap_fn, typ = _probe(rpc, pool, i, j, und, amount)
     return None if out <= 0 else (pool, i, j, out, swap_fn, typ)
-
 
 def curve_legs(rpc, tin, tout, amount, chain_id):
     """(interactions, out) for a Curve pair, or (None, 0). Never raises."""
@@ -185,7 +149,6 @@ def curve_legs(rpc, tin, tout, amount, chain_id):
         return (None, 0)
     finally:
         _disarm(prev)
-
 
 def v2_legs(rpc, tin, tout, amount, chain_id, recipient):
     """Direct Uniswap-V2 cover for tokens no V3 tier and no Curve pool quotes.
@@ -212,7 +175,6 @@ def v2_legs(rpc, tin, tout, amount, chain_id, recipient):
     finally:
         _disarm(prev)
 
-
 def _v2_paths(cfg, tin, tout):
     """Direct pair first, then one hop through each hub.
 
@@ -226,7 +188,6 @@ def _v2_paths(cfg, tin, tout):
         if hub.lower() not in (tin.lower(), tout.lower()):
             paths.append([tin, hub, tout])
     return paths
-
 
 def _best_v2(rpc, tin, tout, amount, chain_id):
     """(out, router, path) for the richest V2 route here, or (0, None, None)."""
@@ -242,7 +203,6 @@ def _best_v2(rpc, tin, tout, amount, chain_id):
                 best = (out, router, path)
     return best
 
-
 def _v2_swap(path, amount, recipient, router):
     """approve + swapExactTokensForTokens, in the tree's own codec.
 
@@ -250,9 +210,5 @@ def _v2_swap(path, amount, recipient, router):
     only adds a revert path — and a revert on a cover row throws away the very
     delivery it exists to make.
     """
-    body = _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'],
-                [int(amount), 0, path, recipient, DEADLINE])
-    return [{'target': path[0], 'data': _approve(router, amount)},
-            {'target': router, 'data': '0x' + S_V2_SWAP + body.hex()}]
-
-
+    body = _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount), 0, path, recipient, DEADLINE])
+    return [{'target': path[0], 'data': _approve(router, amount)}, {'target': router, 'data': '0x' + S_V2_SWAP + body.hex()}]
