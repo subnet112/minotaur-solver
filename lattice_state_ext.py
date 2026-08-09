@@ -11,7 +11,6 @@ change resolution of any name it uses.
 from lattice_venue_ext import _par_venue_need
 from lattice_attest_ext import _par_attested
 
-
 def _par_state_ok(d, gem):
     """Is the fixed-rate assumption still true, per the bake-time attestation?
 
@@ -23,10 +22,10 @@ def _par_state_ok(d, gem):
     the liquidity we actually verified is suppressed instead of served on faith.
     """
     up = d[4]
-    if (_par_attested()["wrapper_tin"] if up else _par_attested()["wrapper_tout"]) != 0:
+    if (_par_attested()['wrapper_tin'] if up else _par_attested()['wrapper_tout']) != 0:
         return False
-    if (_par_attested()["psm_tin"] if up else _par_attested()["psm_tout"]) != 0:
+    if (_par_attested()['psm_tin'] if up else _par_attested()['psm_tout']) != 0:
         return False
     _tok, _holder, need = _par_venue_need(d, gem)
-    have = _par_attested()["psm_dai"] if up else _par_attested()["pocket_usdc"]
+    have = _par_attested()['psm_dai'] if up else _par_attested()['pocket_usdc']
     return need > 0 and have >= need

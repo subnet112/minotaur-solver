@@ -10,7 +10,6 @@ change resolution of any name it uses.
 """
 from chain1_c import _FEES
 
-
 def _direct_legs(tin, tout):
     """Every (route, fees) pair for the single-hop tin -> tout, one per fee tier.
 
