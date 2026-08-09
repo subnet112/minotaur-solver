@@ -12,6 +12,6 @@ def _curve_args(i, j, dx, recv, rcpt, _ck):
     The "6a" form is the NG-crypto receiver overload and takes a use_eth flag the plain receiver
     overload does not -- the two arg lists are not interchangeable, so both branches move together.
     """
-    if recv == "6a":
+    if recv == '6a':
         return [i, j, dx, 0, False, _ck(rcpt)]
     return [i, j, dx, 0] + ([_ck(rcpt)] if recv else [])
