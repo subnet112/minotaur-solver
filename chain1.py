@@ -1,7 +1,8 @@
 # chain-1 dynamic tier: decision + entry
 from chain1_lib import _qroute, _build, _params, _champ_route
 from chain1_v2 import _v2_build, _sweep, _v2_best
-from chain1_guard_ext import _meets_min_out  # relocated leaf; see that module for why
+from chain1_rdctx_ext import _rdctx  # relocated leaf; see that module for why
+from chain1_guards_ext import _guards  # relocated leaf; see that module for why
 
 def _beats_champ(w3, tin, tout, amt, block, q_mine, route):
     croute = _champ_route(tin, tout)
@@ -12,6 +13,17 @@ def _beats_champ(w3, tin, tout, amt, block, q_mine, route):
         return False
     return True
 
+def _meets_min_out(q, mo):
+    """Whether quote `q` clears the order's declared minimum output.
+
+    `mo > 0` is what separates "no minimum declared" from a floor: _amounts coerces a missing
+    or null min_output_amount to 0, and 0 has to mean unset. The clause is redundant as pure
+    arithmetic -- a quote is never negative, so `q < 0` could not fire anyway -- but writing
+    the intent down is the point. Read without it, the test looks like it enforces a
+    zero floor, and the next edit to _amounts (a sentinel, a signed value) would silently
+    turn every unset order into a rejection with nothing here to contradict it.
+    """
+    return not (mo > 0 and q < mo)
 
 
 def _decide(w3, tin, tout, amt, mo, block, base_empty):
@@ -33,27 +45,7 @@ def _mk_plan(route, tin, amt, rcpt, intent, state):
         ixs = _build(route, tin, amt, rcpt, 1)
     return _EP(intent_id=intent.app_id, interactions=ixs, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-eth-dyn', 'chain_id': 1})
 
-def _rdctx(s, snapshot):
-    w3 = s._get_web3(1) or s._get_web3(31337)
-    if w3 is None:
-        return None
-    block = getattr(snapshot, 'block_number', None) if snapshot else None
-    block = int(block) if block else 'latest'
-    return w3, block
 
-def _guards(s, intent, state, snapshot):
-    if int(getattr(state, 'chain_id', 0) or 0) != 1:
-        return None
-    pr = _params(s, intent, state)
-    if pr is None:
-        return None
-    rcpt = getattr(state, 'contract_address', None) or getattr(state, 'owner', None)
-    if not rcpt:
-        return None
-    rd = _rdctx(s, snapshot)
-    if rd is None:
-        return None
-    return pr, rcpt, rd[0], rd[1]
 
 def superset(s, intent, state, snapshot, base_plan):
     """Chain-1 candidate sweep; a plan only when strictly better than the

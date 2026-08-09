@@ -33,6 +33,7 @@ from eth_utils import keccak as _K, to_checksum_address as _C
 # pool_type probe orders _PT_STABLE=(1,10)/_PT_2=(2,20)/_PT_3=(3,30) (get_dy
 # reverts on a wrong dispatch -> 0, so probing in order is safe).
 from curve_data import *  # noqa: F401,F403
+from curve_addr_ext import _addr  # relocated leaf; see that module for why
 
 _SC: dict = {}
 
@@ -52,8 +53,6 @@ def _call(w3, to, data):
         return None
 
 
-def _addr(r):
-    return ('0x' + r[-20:].hex()) if r is not None and len(r) >= 32 else None
 
 
 def _find_pool(w3, reg, a, b, k):

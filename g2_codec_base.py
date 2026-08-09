@@ -92,27 +92,8 @@ def _transfer_leg(token, amt, rcpt, Interaction, cid=1):
     return Interaction(target=token, value="0", call_data=cd, chain_id=cid)
 _BAL_VAULT = "0xBA12222222228d8Ba445958a75a0704d566BF2C8"
 _RPC_URLS = {}
-def _bal_order_id32(order_id) -> bytes:
-    # The simulator's order-id normalization, byte-exact: hex ids
-    # pad-and-truncate, non-hex ids keccak.
-    from eth_utils import keccak as _keccak
-
-    s = str(order_id).replace("0x", "")
-    try:
-        return bytes.fromhex(s.ljust(64, "0"))[:32]
-    except ValueError:
-        return _keccak(str(order_id).encode())
-def _lift_bal_swap_cd_0(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout):
-    """Lifted from _bal_swap_cd: a return-terminated branch, verbatim."""
-    sel = _keccak(text=(
-        "swap((bytes32,uint8,address,address,uint256,bytes),"
-        "(address,bool,address,bool),uint256,uint256)"))[:4]
-    single = (bytes.fromhex(str(route[1]).replace("0x", "")), 0,
-              _ck(tin), _ck(tout), amount, b"")
-    return sel + _enc(
-        ["(bytes32,uint8,address,address,uint256,bytes)",
-         "(address,bool,address,bool)", "uint256", "uint256"],
-        [single, funds, 0, int(deadline)])
+from g2_orderid_ext import _bal_order_id32
+from g2_bal0_ext import _lift_bal_swap_cd_0
 def _lift_bal_swap_cd_1(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout):
     def _c_lift_bal_swap_cd_1_0(_ck, _keccak, amount, route, tin, tout):
         # Chunked out to lower _lift_bal_swap_cd_1's AST region: a nested def's body forms

@@ -245,6 +245,17 @@
   ],
   "venue": "v2"
  },
+ "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|66297251000000000000": {
+  "amt_in": "66297251000000000000",
+  "quote_head": "257708035",
+  "quote_pin": "256910951",
+  "tokens": [
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "venue": "v2"
+ },
  "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|8000000000000000000000": {
   "amt_in": "8000000000000000000000",
   "quote_head": "30224726547",
@@ -359,23 +370,6 @@
   ],
   "venue": "v2"
  },
- "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|3546881376427": {
-  "amt_in": "3546881376427",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   3000,
-   100
-  ],
-  "qid": "q_bc10834b3f1681278a13b4eddb57d3df",
-  "quote_pin": "59946001",
-  "tokens": [
-   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
- },
  "0x3432b6a60d23ca0dfca7761b7ab56459d9c964d0|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|23048052014505495503": {
   "amt_in": "23048052014505495503",
   "quote_head": "3375276910063664",
@@ -478,23 +472,6 @@
   ],
   "unwrap_weth": false,
   "wrap_out": false
- },
- "0x514910771AF9Ca656af840dff83E8264EcF986CA|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|36379028215990573": {
-  "amt_in": "36379028215990573",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   500,
-   100
-  ],
-  "qid": "q_7353953f9781f520190688ae8e466289",
-  "quote_pin": "300913",
-  "tokens": [
-   "0x514910771AF9Ca656af840dff83E8264EcF986CA",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
  },
  "0x57aB1E0003F623289CD798B1824Be09a793e4Bec|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|1385690080881609544029": {
   "adm_champ": "None",
@@ -658,23 +635,6 @@
   ],
   "venue": "v2"
  },
- "0x6982508145454Ce325dDbE47a25d4ec3d2311933|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|57358076798057150935024586": {
-  "amt_in": "57358076798057150935024586",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   3000,
-   100
-  ],
-  "qid": "q_6c6355b652c5b591a9d3465e837c9494",
-  "quote_pin": "163886721",
-  "tokens": [
-   "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
- },
  "0x6B175474E89094C44Da98b954EedeAC495271d0F|0xA27EC0006e59f245217Ff08CD52A7E8b169E62D2|27000000000000000000": {
   "adm_champ": "None",
   "adm_ours": "1913055815036388816516",
@@ -759,35 +719,37 @@
   ],
   "venue": "v2"
  },
- "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0|0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|28000000000000000000": {
-  "amt_in": "28000000000000000000",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   100
+ "0x856c4Efb76C1D1AE02e20CEB03A2A6a08b0b8dC3|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|13935500000000000000": {
+  "amt": 13935500000000000000,
+  "hops": [
+   {
+    "dx": 13935500000000000000,
+    "flavor": "stable",
+    "i": 0,
+    "j": 1,
+    "kind": "curve",
+    "out": 13930711798947179576,
+    "pool": "0xcc7d5785AD5755B6164e21495E07aDb0Ff11C2A8",
+    "tokens": [
+     "0x856c4Efb76C1D1AE02e20CEB03A2A6a08b0b8dC3",
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ]
+   },
+   {
+    "dx": 13512790444978764188,
+    "fees": [
+     500
+    ],
+    "kind": "v3",
+    "out": 25914396368,
+    "tokens": [
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ]
+   }
   ],
-  "qid": "q_7d65faff0b036966dfe9d5b0cd544e70",
-  "quote_pin": "34746248243245546438",
-  "tokens": [
-   "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
- },
- "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0|0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|455601055751528915": {
-  "amt_in": "455601055751528915",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   100
-  ],
-  "qid": "q_30374c48bf67fa445377f5036b09b72f",
-  "quote_pin": "565374252416068360",
-  "tokens": [
-   "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
+  "out": 25914396368,
+  "venue": "route"
  },
  "0x8881562783028F5c1BCB985d2283D5E170D88888|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|2500000000000000000000": {
   "adm_champ": "None",
@@ -963,40 +925,6 @@
   ],
   "unwrap_weth": false,
   "wrap_out": false
- },
- "0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|1029104332564": {
-  "amt_in": "1029104332564",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   10000,
-   100
-  ],
-  "qid": "q_9716dbab4c47e5d1792efa8628b4810e",
-  "quote_pin": "468573418",
-  "tokens": [
-   "0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
- },
- "0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|732462808656": {
-  "amt_in": "732462808656",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   10000,
-   100
-  ],
-  "qid": "q_ccc5b99bec4e4627b25c6be9f9dad1bc",
-  "quote_pin": "334550936",
-  "tokens": [
-   "0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
  },
  "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|0x12992613fDd35aBe95DEc5a4964331b1ee23B50d|2000000000": {
   "adm_champ": "None",
@@ -1343,21 +1271,6 @@
   "unwrap_weth": false,
   "wrap_out": false
  },
- "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|613821": {
-  "amt_in": "613821",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   100
-  ],
-  "qid": "q_e1c2f7da6490ae3e255ffe458531ce2a",
-  "quote_pin": "320491894823650",
-  "tokens": [
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
- },
  "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|0xEc169F9Ac2161723a2D4febd9748BB529D6C12B5|1000000000": {
   "adm_champ": "0",
   "adm_ours": "455593430269290080",
@@ -1591,23 +1504,6 @@
   "unwrap_weth": false,
   "wrap_out": false
  },
- "0xA27EC0006e59f245217Ff08CD52A7E8b169E62D2|0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0|103867732461322952584518": {
-  "amt_in": "103867732461322952584518",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   10000,
-   100
-  ],
-  "qid": "q_a798b1d0741f1929ab4b7acecca731de",
-  "quote_pin": "233790102120031572",
-  "tokens": [
-   "0xA27EC0006e59f245217Ff08CD52A7E8b169E62D2",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
-  ],
-  "venue": "v3"
- },
  "0xA27EC0006e59f245217Ff08CD52A7E8b169E62D2|0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|13125000000000000000000": {
   "adm_champ": "92824639833343734",
   "adm_ours": "96432911439726478",
@@ -1756,23 +1652,6 @@
   "unwrap_weth": false,
   "wrap_out": false
  },
- "0xB98d4C97425d9908E66E53A6fDf673ACcA0BE986|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|2529563077290000000000": {
-  "amt_in": "2529563077290000000000",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   10000,
-   100
-  ],
-  "qid": "q_4f20c3f281d9c883437b030ca26c19c5",
-  "quote_pin": "451080582",
-  "tokens": [
-   "0xB98d4C97425d9908E66E53A6fDf673ACcA0BE986",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
- },
  "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|0x2A79324c19Ef2B89Ea98b23BC669B7E7c9f8A517|47288030000000000": {
   "adm_champ": "None",
   "adm_ours": "30066462991",
@@ -1831,23 +1710,6 @@
   "unwrap_weth": true,
   "wrap_out": false
  },
- "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|0x6B175474E89094C44Da98b954EedeAC495271d0F|19872700000000000000": {
-  "amt_in": "19872700000000000000",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   500,
-   100
-  ],
-  "qid": "q_c484ca36309b5ac9978bbedbc1d385a8",
-  "quote_pin": "38030592494123070062383",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-  ],
-  "venue": "v3"
- },
  "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|0x9414E9af3a531E47f0F2B48d1a7fAf8178cF0BD7|13200000000000000": {
   "adm_champ": "None",
   "adm_ours": "426276451032700271980608",
@@ -1876,21 +1738,6 @@
   ],
   "unwrap_weth": true,
   "wrap_out": false
- },
- "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|1426609385110806098": {
-  "amt_in": "1426609385110806098",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   100
-  ],
-  "qid": "q_63d9049f9ed3ad7aa4cf93cd61f1d6ab",
-  "quote_pin": "2731500501",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
  },
  "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|0xEe7527841A932d2912224E20a405e1a1FF747084|18580045840615263": {
   "adm_champ": "None",
@@ -2065,75 +1912,6 @@
   ],
   "unwrap_weth": true,
   "wrap_out": false
- },
- "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29|0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA|1417556819415906171167": {
-  "amt": 1417556819415906171167,
-  "chain_id": 1,
-  "class": "provisional",
-  "hops": [
-   {
-    "dx": 1417556819415906171167,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 2035416024144541811626,
-    "pool": "0x9A9e2e70919c75D80aAaA1D483c46CdBb8ac4d1b",
-    "tokens": [
-     "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
-     "0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA"
-    ]
-   }
-  ],
-  "out": 2035416024144541811626,
-  "qid": "q_6b3157ec6eae3fbb311be7407804700a",
-  "venue": "route"
- },
- "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29|0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA|2033157741127970700697": {
-  "amt": 2033157741127970700697,
-  "chain_id": 1,
-  "class": "provisional",
-  "hops": [
-   {
-    "dx": 2033157741127970700697,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 2918224742295816199387,
-    "pool": "0x9A9e2e70919c75D80aAaA1D483c46CdBb8ac4d1b",
-    "tokens": [
-     "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
-     "0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA"
-    ]
-   }
-  ],
-  "out": 2918224742295816199387,
-  "qid": "q_c1ed6e1c564c520064f4ddbd19e1d5d7",
-  "venue": "route"
- },
- "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29|0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA|328592966392894823040": {
-  "amt": 328592966392894823040,
-  "chain_id": 1,
-  "class": "provisional",
-  "hops": [
-   {
-    "dx": 328592966392894823040,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 472132397516239084849,
-    "pool": "0x9A9e2e70919c75D80aAaA1D483c46CdBb8ac4d1b",
-    "tokens": [
-     "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
-     "0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA"
-    ]
-   }
-  ],
-  "out": 472132397516239084849,
-  "qid": "q_89f98bb25c55a8ddc31364e112df3dce",
-  "venue": "route"
  },
  "0xCBF4D5efa82e32a9187385480A7c74cB062b956C|0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|1000000000000": {
   "adm_champ": "158384752654477823",
@@ -2445,36 +2223,6 @@
   "unwrap_weth": false,
   "wrap_out": false
  },
- "0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94|0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|1222309108241925001147": {
-  "amt_in": "1222309108241925001147",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   3000
-  ],
-  "qid": "q_d758e00431040d6f99df6268090f4802",
-  "quote_pin": "103488013025469990",
-  "tokens": [
-   "0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
- },
- "0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94|0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|1235009244173222086801": {
-  "amt_in": "1235009244173222086801",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   3000
-  ],
-  "qid": "q_fa0b5724fd4306216310899fb6c5ae95",
-  "quote_pin": "104559740286189816",
-  "tokens": [
-   "0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
- },
  "0xdAC17F958D2ee523a2206206994597C13D831ec7|0x3557Ba345B01EFa20A1bdDC61F573BFD87195081|100000000": {
   "adm_champ": "None",
   "adm_ours": "305642470011211630",
@@ -2513,21 +2261,6 @@
   ],
   "unwrap_weth": false,
   "wrap_out": false
- },
- "0xdAC17F958D2ee523a2206206994597C13D831ec7|0x6B175474E89094C44Da98b954EedeAC495271d0F|17326125737": {
-  "amt_in": "17326125737",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   100
-  ],
-  "qid": "q_1cd2d633eabf1cfb95c9489b424759a6",
-  "quote_pin": "17316836659331400079151",
-  "tokens": [
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-   "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-  ],
-  "venue": "v3"
  },
  "0xdAC17F958D2ee523a2206206994597C13D831ec7|0x6c3ea9036406852006290770BEdFcAbA0e23A0e8|165356530982": {
   "adm_champ": "None",
@@ -2568,23 +2301,6 @@
   "probe_out": "160226833725",
   "qid": "q_e2999950907c2c27875e7e4872e51f6e",
   "venue": "route"
- },
- "0xdAC17F958D2ee523a2206206994597C13D831ec7|0x99991c6AAbba5a096f24f250b73580F5179b9999|200000000": {
-  "amt_in": "200000000",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   100,
-   10000
-  ],
-  "qid": "q_de91c72829d100348847d0eb111b06a7",
-  "quote_pin": "5277688726644117645392",
-  "tokens": [
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0x99991c6AAbba5a096f24f250b73580F5179b9999"
-  ],
-  "venue": "v3"
  },
  "0xdAC17F958D2ee523a2206206994597C13D831ec7|0xDAe0faFD65385E7775Cf75b1398735155EF6aCD2|295000000": {
   "adm_champ": "None",
@@ -2756,23 +2472,6 @@
   ],
   "unwrap_weth": false,
   "wrap_out": false
- },
- "0xdC035D45d973E3EC169d2276DDab16f1e407384F|0x64aa3364F17a4D01c6f1751Fd97C2BD3D7e7f1D5|9228515625000000000000": {
-  "amt_in": "9228515625000000000000",
-  "chain_id": 1,
-  "class": "provisional",
-  "fees": [
-   3000,
-   3000
-  ],
-  "qid": "q_5b0a86893b32203e73984a84394d675f",
-  "quote_pin": "451802694674",
-  "tokens": [
-   "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0x64aa3364F17a4D01c6f1751Fd97C2BD3D7e7f1D5"
-  ],
-  "venue": "v3"
  },
  "0xdC035D45d973E3EC169d2276DDab16f1e407384F|0xc20059e0317DE91738d13af027DfC4a50781b066|25000000000000000000": {
   "adm_champ": "None",
@@ -3198,18 +2897,6 @@
   "unwrap_weth": false,
   "wrap_out": false
  },
- "0xf280B16EF293D8e534e370794ef26bF312694126|0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|3972191000000000": {
-  "amt_in": "3972191000000000",
-  "chain_id": 1,
-  "class": "provisional",
-  "qid": "q_8b74e2309f1d94de40b72c66d1f94ebd",
-  "quote_pin": "117870921108934775",
-  "tokens": [
-   "0xf280B16EF293D8e534e370794ef26bF312694126",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v2"
- },
  "1|0x090185f2135308bad17527004364ebcc2d37e5f6|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|4012014647223050000000000": {
   "adm_champ": "11956204",
   "adm_ours": "165444568",
@@ -3284,24 +2971,6 @@
   "qid": "q_a703a915ba743aa793af70541599e5fe",
   "venue": "route"
  },
- "1|0x18084fba666a33d37592fa2633fd49a74dd93a88|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|18930000000000000": {
-  "adm_champ": "1195357233",
-  "adm_ours": "1226913668",
-  "amt_in": "18930000000000000",
-  "class": "win",
-  "fees": [
-   100,
-   500
-  ],
-  "qid": "q_a9d6c8da3777792fb2a6f16d5ae87ff0",
-  "quote_pin": "1226913668",
-  "tokens": [
-   "0x18084fbA666a33d37592fA2633fD49a74DD93a88",
-   "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
- },
  "1|0x19640000000ba88d36206beb10d0e86011c8d08c|0xdac17f958d2ee523a2206206994597c13d831ec7|96000000000000000000000": {
   "adm_champ": "86255",
   "adm_ours": "86255",
@@ -3360,24 +3029,6 @@
   ],
   "venue": "v2"
  },
- "1|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|14040757949659": {
-  "adm_champ": "212072302",
-  "adm_ours": "212394343",
-  "amt_in": "14040757949659",
-  "class": "win",
-  "fees": [
-   3000,
-   100
-  ],
-  "qid": "q_cbd566211b0d289406e4eb0cc4a19b1c",
-  "quote_pin": "212394343",
-  "tokens": [
-   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
- },
  "1|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|20263455889700": {
   "adm_champ": "164738472065429312",
   "adm_ours": "164738472065429312",
@@ -3385,19 +3036,6 @@
   "class": "win",
   "qid": "q_b8237b1b225ce9b36c5e94dc62251515",
   "quote_pin": "110592481006428786",
-  "tokens": [
-   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v2"
- },
- "1|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|23602573242188": {
-  "adm_champ": "185834466207584712",
-  "adm_ours": "186745665596235775",
-  "amt_in": "23602573242188",
-  "class": "win",
-  "qid": "q_16cfa499c8ce9675de555124584f51af",
-  "quote_pin": "186745665596235775",
   "tokens": [
    "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
@@ -3482,43 +3120,6 @@
   ],
   "out": 48470077,
   "qid": "q_46a58b9a47d879ec61abade954e4d62e",
-  "venue": "route"
- },
- "1|0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|15000000000000000000000": {
-  "adm_champ": "8163140080",
-  "adm_ours": "19943450619",
-  "amt": 15000000000000000000000,
-  "class": "win",
-  "hops": [
-   {
-    "dx": 15000000000000000000000,
-    "flavor": "crypto",
-    "i": 1,
-    "j": 0,
-    "kind": "curve",
-    "out": 11344621018481144859,
-    "pool": "0xB576491F1E6e5E62f1d8F26062Ee822B40B0E0d4",
-    "tokens": [
-     "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B",
-     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-    ]
-   },
-   {
-    "dx": 11004282387926710513,
-    "flavor": "crypto",
-    "i": 2,
-    "j": 0,
-    "kind": "curve",
-    "out": 20993105915,
-    "pool": "0x7F86Bf177Dd4F3494b841a37e810A34dD56c829B",
-    "tokens": [
-     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-    ]
-   }
-  ],
-  "out": 20993105915,
-  "qid": "q_5aca47c824e170fb9f10d6d96f5210b6",
   "venue": "route"
  },
  "1|0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b|0xf05e58fcea29ab4da01a495140b349f8410ba904|220979151883862744074": {
@@ -3731,37 +3332,18 @@
   "venue": "v2"
  },
  "1|0x77777feddddffc19ff86db637967013e6c6a116c|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1900000000000000000": {
-  "adm_champ": "10642598",
-  "adm_ours": "10686227",
+  "adm_champ": "10792820",
+  "adm_ours": "10931747",
   "amt_in": "1900000000000000000",
   "class": "win",
-  "floor_bps": 0,
   "qid": "q_d47adc938f668c6920bfd52f3e2d0012",
-  "quote_pin": "10686227",
-  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F",
+  "quote_pin": "10933950",
   "tokens": [
    "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
   ],
   "venue": "v2"
- },
- "1|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|5696566607": {
-  "adm_champ": "569223000034185356",
-  "adm_ours": "575538880651410930",
-  "amt_in": "5696566607",
-  "class": "win",
-  "fees": [
-   3000
-  ],
-  "floor_bps": 0,
-  "qid": "q_999a6ff0f0b95335da6428a1e515438b",
-  "quote_pin": "575538880651410930",
-  "tokens": [
-   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
  },
  "1|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|500000000000000000": {
   "adm_champ": "99379715982582713",
@@ -4058,20 +3640,6 @@
   "out": 17020585812,
   "qid": "q_4b03e6c2a2efff0784cb10d7e1edba6a",
   "venue": "route"
- },
- "1|0xa0246c9032bc3a600820415ae600c6388619a14d|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1903000000000000000": {
-  "adm_champ": "9793722",
-  "adm_ours": "9803745",
-  "amt_in": "1903000000000000000",
-  "class": "win",
-  "floor_bps": 0,
-  "qid": "q_447589398969b5e50eb99575f0cf0973",
-  "quote_pin": "9803745",
-  "tokens": [
-   "0xa0246c9032bC3A600820415aE600c6388619A14D",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v2"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x0b38210ea11411557c13457d4da7dc6ea731b88a|372957": {
   "adm_champ": "1971859999480922718",
@@ -4539,42 +4107,6 @@
   "qid": "q_1a8aea851ffda6b0b0e457ed3f37cc7b",
   "venue": "route"
  },
- "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x514910771af9ca656af840dff83e8264ecf986ca|50000000": {
-  "adm_champ": "6024808576813120379",
-  "adm_ours": "6038820407466634926",
-  "amt_in": "50000000",
-  "class": "win",
-  "fees": [
-   100,
-   500
-  ],
-  "qid": "q_1d8385f026d6927c4c3cc7c947f784f7",
-  "quote_pin": "6038820407466634926",
-  "tokens": [
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0x514910771AF9Ca656af840dff83E8264EcF986CA"
-  ],
-  "venue": "v3"
- },
- "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x58d7fa7356d68c494c2de09f95d55c2ff2d38bd3|30814621": {
-  "adm_champ": "29751252338412878846",
-  "adm_ours": "1269776030528236199133",
-  "amt_in": "30814621",
-  "class": "win",
-  "fees": [
-   100,
-   10000
-  ],
-  "qid": "q_5bf83b7a64ddec4d225478f11602d86b",
-  "quote_pin": "1269776030528236199133",
-  "tokens": [
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0x58d7Fa7356D68C494c2De09f95d55C2Ff2D38BD3"
-  ],
-  "venue": "v3"
- },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x66641fcfca7d919629d5e4a72d9f13787fcaf304|52807093": {
   "adm_champ": "7137920806162765431793505180",
   "adm_ours": "7137920806162765431793505180",
@@ -4856,24 +4388,6 @@
   ],
   "venue": "v2"
  },
- "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf|100000000000": {
-  "adm_champ": "149148440",
-  "adm_ours": "153765744",
-  "amt_in": "100000000000",
-  "class": "win",
-  "fees": [
-   3000,
-   100
-  ],
-  "qid": "q_4f6fac60bcd0fd428ad1387b67dda283",
-  "quote_pin": "153765744",
-  "tokens": [
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-   "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
-   "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
-  ],
-  "venue": "v3"
- },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xdfc5964141c018485b4d017634660f85aa667714|50000000": {
   "adm_champ": "38240928506221302727680",
   "adm_ours": "38240928506221302727680",
@@ -5087,19 +4601,6 @@
   ],
   "venue": "v2"
  },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|342075977916574919": {
-  "adm_champ": "42578929084495",
-  "adm_ours": "42798798303822",
-  "amt_in": "342075977916574919",
-  "class": "win",
-  "qid": "q_585c0f90fb1636cd561a5977c9269924",
-  "quote_pin": "42798798303822",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39"
-  ],
-  "venue": "v2"
- },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|370249253912625592": {
   "adm_champ": "52716040253264",
   "adm_ours": "53145825389963",
@@ -5207,22 +4708,6 @@
   ],
   "venue": "v2"
  },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|781947397363306880": {
-  "adm_champ": "7608038406",
-  "adm_ours": "7631343515",
-  "amt_in": "781947397363306880",
-  "class": "win",
-  "fees": [
-   3000
-  ],
-  "qid": "q_290aef85802cfe12ba77a567ef0d01b8",
-  "quote_pin": "7631343515",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
-  ],
-  "venue": "v3"
- },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa9e8acf069c58aec8825542845fd754e41a9489a|206070522835814072": {
   "adm_champ": "4897328893206719155514",
   "adm_ours": "4897328893206719155514",
@@ -5313,30 +4798,6 @@
   "qid": "q_1b96721db741aff04a4c81b45faeeab7",
   "venue": "route"
  },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee|7710900000000000000": {
-  "adm_champ": "None",
-  "adm_ours": "6653468736962685685",
-  "amt": 7710900000000000000,
-  "class": "cover",
-  "hops": [
-   {
-    "dx": 7710900000000000000,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 7003651302065984932,
-    "pool": "0xDB74dfDD3BB46bE8Ce6C33dC9D82777BCFc3dEd5",
-    "tokens": [
-     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-     "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee"
-    ]
-   }
-  ],
-  "out": 7003651302065984932,
-  "qid": "q_bb0973bb89d88f429cf3224c899acd0a",
-  "venue": "route"
- },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|280000000000000000": {
   "adm_champ": "534468087",
   "adm_ours": "534468087",
@@ -5417,126 +4878,6 @@
    "0xdAC17F958D2ee523a2206206994597C13D831ec7"
   ],
   "venue": "v2"
- },
- "1|0xcacd6fd266af91b8aed52accc382b4e165586e29|0xab5eb14c09d416f0ac63661e57edb7aecdb9befa|1347384721748692605818": {
-  "adm_champ": "None",
-  "adm_ours": "1833265880946919306549",
-  "amt": 1347384721748692605818,
-  "class": "cover",
-  "hops": [
-   {
-    "dx": 1347384721748692605818,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 1929753558891494006894,
-    "pool": "0x9A9e2e70919c75D80aAaA1D483c46CdBb8ac4d1b",
-    "tokens": [
-     "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
-     "0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA"
-    ]
-   }
-  ],
-  "out": 1929753558891494006894,
-  "qid": "q_5d4f58f8608a7c0bd0a4e44ae57739d1",
-  "venue": "route"
- },
- "1|0xcacd6fd266af91b8aed52accc382b4e165586e29|0xab5eb14c09d416f0ac63661e57edb7aecdb9befa|1771135903861401708346": {
-  "adm_champ": "None",
-  "adm_ours": "2409203157456113631566",
-  "amt": 1771135903861401708346,
-  "class": "cover",
-  "hops": [
-   {
-    "dx": 1771135903861401708346,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 2536003323638014349017,
-    "pool": "0x9A9e2e70919c75D80aAaA1D483c46CdBb8ac4d1b",
-    "tokens": [
-     "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
-     "0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA"
-    ]
-   }
-  ],
-  "out": 2536003323638014349017,
-  "qid": "q_9a820f67593299bbc39d08743a3e262c",
-  "venue": "route"
- },
- "1|0xcacd6fd266af91b8aed52accc382b4e165586e29|0xab5eb14c09d416f0ac63661e57edb7aecdb9befa|1817156661897847033082": {
-  "adm_champ": "None",
-  "adm_ours": "2471733938724144999889",
-  "amt": 1817156661897847033082,
-  "class": "cover",
-  "hops": [
-   {
-    "dx": 1817156661897847033082,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 2601825198656994736726,
-    "pool": "0x9A9e2e70919c75D80aAaA1D483c46CdBb8ac4d1b",
-    "tokens": [
-     "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
-     "0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA"
-    ]
-   }
-  ],
-  "out": 2601825198656994736726,
-  "qid": "q_5ee81f8b442c53df4cad748f40ca2847",
-  "venue": "route"
- },
- "1|0xcacd6fd266af91b8aed52accc382b4e165586e29|0xab5eb14c09d416f0ac63661e57edb7aecdb9befa|2777657425756967435629": {
-  "adm_champ": "None",
-  "adm_ours": "3776018605442368401555",
-  "amt": 2777657425756967435629,
-  "class": "cover",
-  "hops": [
-   {
-    "dx": 2777657425756967435629,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 3974756426781440422690,
-    "pool": "0x9A9e2e70919c75D80aAaA1D483c46CdBb8ac4d1b",
-    "tokens": [
-     "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
-     "0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA"
-    ]
-   }
-  ],
-  "out": 3974756426781440422690,
-  "qid": "q_25e84bad9659d780a58c9d589b2bee39",
-  "venue": "route"
- },
- "1|0xcacd6fd266af91b8aed52accc382b4e165586e29|0xab5eb14c09d416f0ac63661e57edb7aecdb9befa|4891639072238740917421": {
-  "adm_champ": "None",
-  "adm_ours": "6641260925895619627227",
-  "amt": 4891639072238740917421,
-  "class": "cover",
-  "hops": [
-   {
-    "dx": 4891639072238740917421,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 6990800974626968028661,
-    "pool": "0x9A9e2e70919c75D80aAaA1D483c46CdBb8ac4d1b",
-    "tokens": [
-     "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
-     "0xab5eB14c09D416F0aC63661E57EDB7AEcDb9BEfA"
-    ]
-   }
-  ],
-  "out": 6990800974626968028661,
-  "qid": "q_74c49508edf865cbba0e36c4fe50681c",
-  "venue": "route"
  },
  "1|0xcdf7028ceab81fa0c6971208e83fa7872994bee5|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|169620532052130000000000": {
   "adm_champ": "270168223",
@@ -5787,23 +5128,6 @@
   ],
   "venue": "v2"
  },
- "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1331000000": {
-  "adm_champ": "693231162745093912",
-  "adm_ours": "695157199853339503",
-  "amt_in": "1331000000",
-  "class": "win",
-  "fees": [
-   100
-  ],
-  "floor_bps": 0,
-  "qid": "q_2838ea2419a0fcf30bf445967392d93d",
-  "quote_pin": "695157199853339503",
-  "tokens": [
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
- },
  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee|2000000000": {
   "adm_champ": "None",
   "adm_ours": "928560192817689819",
@@ -5892,36 +5216,6 @@
   "tokens": [
    "0xDe7D85157d9714EADf595045CC12Ca4A5f3E2aDb",
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v2"
- },
- "1|0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|73235057899024146034994": {
-  "adm_champ": "3900925121329171578",
-  "adm_ours": "3962135826072999233",
-  "amt_in": "73235057899024146034994",
-  "class": "win",
-  "fees": [
-   3000
-  ],
-  "qid": "q_6ff336b31e59a548580eebbe6bc9f845",
-  "quote_pin": "3962135826072999233",
-  "tokens": [
-   "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
- },
- "1|0xdfc5964141c018485b4d017634660f85aa667714|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|17051448942325316908304": {
-  "adm_champ": "21727254",
-  "adm_ours": "21815110",
-  "amt_in": "17051448942325316908304",
-  "class": "drift-unstable-inert",
-  "qid": "q_bf6bbc98464982234e39a8dda644ca22",
-  "quote_pin": "21815110",
-  "tokens": [
-   "0xDfC5964141c018485b4d017634660f85aa667714",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
   ],
   "venue": "v2"
  },
@@ -6053,5 +5347,1191 @@
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
   ],
   "venue": "v2"
+ },
+ "1|0xfd1450a131599ff34f3be1775d8c8bf79e353d8c|0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce|58873306923696728670000000000": {
+  "amt": 58873306923696728670000000000,
+  "venue": "v2",
+  "amt_in": 58873306923696728670000000000,
+  "out": 771992101610327582149180,
+  "chain_id": 1,
+  "tokens": [
+   "0xfD1450a131599ff34f3Be1775D8c8Bf79E353D8c",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE"
+  ]
+ },
+ "1|0x68bbed6a47194eff1cf514b50ea91895597fc91e|0x67466be17df832165f8c80a5a120ccc652bd7e69|97995158294363461502674007": {
+  "amt": 97995158294363461502674007,
+  "venue": "v2",
+  "amt_in": 97995158294363461502674007,
+  "out": 94707355266685235750896008,
+  "chain_id": 1,
+  "tokens": [
+   "0x68BbEd6A47194EFf1CF514B50Ea91895597fc91E",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x67466BE17df832165F8C80a5A120CCc652bD7E69"
+  ]
+ },
+ "1|0x812ba41e071c7b7fa4ebcfb62df5f45f6fa853ee|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1196611334201000": {
+  "amt": 1196611334201000,
+  "venue": "v2",
+  "amt_in": 1196611334201000,
+  "out": 40574552091260345,
+  "chain_id": 1,
+  "tokens": [
+   "0x812Ba41e071C7b7fA4EBcFB62dF5F45f6fA853Ee",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xf477ac7719e2e659001455cdda0cc8f3ad10b604|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|46406266880000000000000": {
+  "amt": 46406266880000000000000,
+  "venue": "v2",
+  "amt_in": 46406266880000000000000,
+  "out": 12381471,
+  "chain_id": 1,
+  "tokens": [
+   "0xf477AC7719e2e659001455cDDA0cc8f3aD10b604",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc56c7a0eaa804f854b536a5f3d5f49d2ec4b12b8|687570876": {
+  "amt": 687570876,
+  "venue": "v2",
+  "amt_in": 687570876,
+  "out": 137125169963616016,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xc56C7A0eAA804f854B536A5F3D5f49D2EC4B12b8"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|2640235571342102512": {
+  "amt": 2640235571342102512,
+  "venue": "v2",
+  "amt_in": 2640235571342102512,
+  "out": 90460447733262960,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf280B16EF293D8e534e370794ef26bF312694126"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|1757971468389066266": {
+  "amt": 1757971468389066266,
+  "venue": "v2",
+  "amt_in": 1757971468389066266,
+  "out": 60346895814232595,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf280B16EF293D8e534e370794ef26bF312694126"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|374972": {
+  "amt": 374972,
+  "venue": "v3",
+  "amt_in": 374972,
+  "out": 195097602526520,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xdac17f958d2ee523a2206206994597c13d831ec7|350000000000": {
+  "amt": 350000000000,
+  "venue": "v3",
+  "amt_in": 350000000000,
+  "out": 350137230756,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|4230000000000000000": {
+  "amt": 4230000000000000000,
+  "venue": "v3",
+  "amt_in": 4230000000000000000,
+  "out": 8129363862,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xddb3422497e61e13543bea06989c0789117555c5|115359321": {
+  "amt": 115359321,
+  "venue": "v2",
+  "amt_in": 115359321,
+  "out": 9043439658294528816111,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xDDB3422497E61e13543BeA06989C0789117555c5"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|7133847284901315000": {
+  "amt": 7133847284901315000,
+  "venue": "v2",
+  "amt_in": 7133847284901315000,
+  "out": 242075980215746832,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf280B16EF293D8e534e370794ef26bF312694126"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|386077790538162688": {
+  "amt": 386077790538162688,
+  "venue": "v2",
+  "amt_in": 386077790538162688,
+  "out": 13292513775087464,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf280B16EF293D8e534e370794ef26bF312694126"
+  ]
+ },
+ "1|0x40e3d1a4b2c47d9aa61261f5606136ef73e28042|0x73d7c860998ca3c01ce8c808f5577d94d545d1b4|2544423287275125117180": {
+  "amt": 2544423287275125117180,
+  "venue": "v2",
+  "amt_in": 2544423287275125117180,
+  "out": 1196427454992305916528,
+  "chain_id": 1,
+  "tokens": [
+   "0x40e3d1A4B2C47d9AA61261F5606136ef73E28042",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x73d7c860998CA3c01Ce8c808F5577d94d545d1b4"
+  ]
+ },
+ "1|0xa00453052a36d43a99ac1ca145dfe4a952ca33b8|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|100000000000000": {
+  "amt": 100000000000000,
+  "venue": "v2",
+  "amt_in": 100000000000000,
+  "out": 13943727405267527,
+  "chain_id": 1,
+  "tokens": [
+   "0xa00453052A36D43A99Ac1ca145DFe4A952cA33B8",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|5555210726": {
+  "amt": 5555210726,
+  "venue": "v3",
+  "amt_in": 5555210726,
+  "out": 2888976522147014353,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|21900000000000000000": {
+  "amt": 21900000000000000000,
+  "venue": "v3",
+  "amt_in": 21900000000000000000,
+  "out": 42075705111,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|1027343750000000000": {
+  "amt": 1027343750000000000,
+  "venue": "v2",
+  "amt_in": 1027343750000000000,
+  "out": 35321976763861006,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf280B16EF293D8e534e370794ef26bF312694126"
+  ]
+ },
+ "1|0x761d38e5ddf6ccf6cf7c55759d5210750b5d60f3|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|94701234629140947440228571428": {
+  "amt": 94701234629140947440228571428,
+  "venue": "v2",
+  "amt_in": 94701234629140947440228571428,
+  "out": 2525884192,
+  "chain_id": 1,
+  "tokens": [
+   "0x761D38e5ddf6ccf6Cf7c55759d5210750B5D60F3",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0x5732046a883704404f284ce41ffadd5b007fd668|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|46184166898020000000000": {
+  "amt": 46184166898020000000000,
+  "venue": "v2",
+  "amt_in": 46184166898020000000000,
+  "out": 286120814,
+  "chain_id": 1,
+  "tokens": [
+   "0x5732046A883704404F284Ce41FfADd5b007FD668",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xda7c0810ce6f8329786160bb3d1734cf6661ca6e|58803735458881694": {
+  "amt": 58803735458881694,
+  "venue": "v2",
+  "amt_in": 58803735458881694,
+  "out": 22483877542928572733,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xDA7C0810cE6F8329786160bb3d1734cf6661CA6E"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|117564864788612927": {
+  "amt": 117564864788612927,
+  "venue": "v2",
+  "amt_in": 117564864788612927,
+  "out": 4050070864669538,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf280B16EF293D8e534e370794ef26bF312694126"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xfb7b4564402e5500db5bb6d63ae671302777c75a|514953788": {
+  "amt": 514953788,
+  "venue": "v2",
+  "amt_in": 514953788,
+  "out": 4896480512093437385906,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xfB7B4564402E5500dB5bB6d63Ae671302777C75a"
+  ]
+ },
+ "1|0x7f792db54b0e580cdc755178443f0430cf799aca|0x4200000623d0242cccd4e907008583dcb4af6472|304603107458217000": {
+  "amt": 304603107458217000,
+  "venue": "v2",
+  "amt_in": 304603107458217000,
+  "out": 31017463739680129662856275978,
+  "chain_id": 1,
+  "tokens": [
+   "0x7f792db54B0e580Cdc755178443f0430Cf799aCa",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x4200000623d0242cCCD4E907008583dCb4aF6472"
+  ]
+ },
+ "1|0x77777feddddffc19ff86db637967013e6c6a116c|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|19044066627181157620": {
+  "amt": 19044066627181157620,
+  "venue": "v2",
+  "amt_in": 19044066627181157620,
+  "out": 107819123,
+  "chain_id": 1,
+  "tokens": [
+   "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x75c97384ca209f915381755c582ec0e2ce88c1ba|46700000000000000": {
+  "amt": 46700000000000000,
+  "venue": "v2",
+  "amt_in": 46700000000000000,
+  "out": 203648495269269905479995506758,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x75C97384cA209f915381755c582EC0E2cE88c1BA"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x25b4f5d4c314bcd5d7962734936c957b947cb7cf|60000000000000000": {
+  "amt": 60000000000000000,
+  "venue": "v2",
+  "amt_in": 60000000000000000,
+  "out": 879114026366384945369,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x25B4f5D4C314bCD5d7962734936C957B947cb7CF"
+  ]
+ },
+ "1|0x57b946008913b82e4df85f501cbaed910e58d26c|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|410487893714660000000000": {
+  "amt": 410487893714660000000000,
+  "venue": "v2",
+  "amt_in": 410487893714660000000000,
+  "out": 301585257,
+  "chain_id": 1,
+  "tokens": [
+   "0x57B946008913B82E4dF85f501cbAeD910e58D26C",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0x5a98fcbea516cf06857215779fd812ca3bef1b32|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|3486370609830140811": {
+  "amt": 3486370609830140811,
+  "venue": "v2",
+  "amt_in": 3486370609830140811,
+  "out": 529459032921316,
+  "chain_id": 1,
+  "tokens": [
+   "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xc114cf69972e3c1b4b529e0418012c01fcf9e725|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|104898253329000": {
+  "amt": 104898253329000,
+  "venue": "v2",
+  "amt_in": 104898253329000,
+  "out": 47994662543199570,
+  "chain_id": 1,
+  "tokens": [
+   "0xC114cF69972e3c1b4B529e0418012C01fcf9E725",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0x6243d8cea23066d098a15582d81a598b4e8391f4|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|162189308478001822671": {
+  "amt": 162189308478001822671,
+  "venue": "v2",
+  "amt_in": 162189308478001822671,
+  "out": 112505580659597726,
+  "chain_id": 1,
+  "tokens": [
+   "0x6243d8CEA23066d098a15582d81a598b4e8391F4",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0x812ba41e071c7b7fa4ebcfb62df5f45f6fa853ee|0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce|4645745487907313": {
+  "amt": 4645745487907313,
+  "venue": "v2",
+  "amt_in": 4645745487907313,
+  "out": 64755864721486407020300898,
+  "chain_id": 1,
+  "tokens": [
+   "0x812Ba41e071C7b7fA4EBcFB62dF5F45f6fA853Ee",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|721284977981374332": {
+  "amt": 721284977981374332,
+  "venue": "v2",
+  "amt_in": 721284977981374332,
+  "out": 24815545996613083,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf280B16EF293D8e534e370794ef26bF312694126"
+  ]
+ },
+ "1|0xaaaaaa20d9e0e2461697782ef11675f668207961|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|602430000000000000000": {
+  "amt": 602430000000000000000,
+  "venue": "v2",
+  "amt_in": 602430000000000000000,
+  "out": 9672650,
+  "chain_id": 1,
+  "tokens": [
+   "0xAaAAAA20D9E0e2461697782ef11675f668207961",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xe76c6c83af64e4c60245d8c7de953df673a7a33d|1000000000000000000": {
+  "amt": 1000000000000000000,
+  "venue": "v2",
+  "amt_in": 1000000000000000000,
+  "out": 1303801478918011685216,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xe76C6c83af64e4C60245D8C7dE953DF673a7A33D"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|4999458513": {
+  "amt": 4999458513,
+  "venue": "v3",
+  "amt_in": 4999458513,
+  "out": 2601331186547787980,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x67466be17df832165f8c80a5a120ccc652bd7e69|1000000000": {
+  "amt": 1000000000,
+  "venue": "v2",
+  "amt_in": 1000000000,
+  "out": 169084839092301742871213383,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x67466BE17df832165F8C80a5A120CCc652bD7E69"
+  ]
+ },
+ "1|0x5732046a883704404f284ce41ffadd5b007fd668|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|55210859853180000000000": {
+  "amt": 55210859853180000000000,
+  "venue": "v2",
+  "amt_in": 55210859853180000000000,
+  "out": 341779215,
+  "chain_id": 1,
+  "tokens": [
+   "0x5732046A883704404F284Ce41FfADd5b007FD668",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|5047151189507006613": {
+  "amt": 5047151189507006613,
+  "venue": "v2",
+  "amt_in": 5047151189507006613,
+  "out": 3990602595397921,
+  "chain_id": 1,
+  "tokens": [
+   "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0xf280b16ef293d8e534e370794ef26bf312694126|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|217393189652625282": {
+  "amt": 217393189652625282,
+  "venue": "v2",
+  "amt_in": 217393189652625282,
+  "out": 11825659964,
+  "chain_id": 1,
+  "tokens": [
+   "0xf280B16EF293D8e534e370794ef26bF312694126",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|52949395243741023": {
+  "amt": 52949395243741023,
+  "venue": "v3",
+  "amt_in": 52949395243741023,
+  "out": 101724970,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|300000000": {
+  "amt": 300000000,
+  "venue": "v3",
+  "amt_in": 300000000,
+  "out": 156121298184687504,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa00453052a36d43a99ac1ca145dfe4a952ca33b8|47000000000000000": {
+  "amt": 47000000000000000,
+  "venue": "v2",
+  "amt_in": 47000000000000000,
+  "out": 334252979475112,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xa00453052A36D43A99Ac1ca145DFe4A952cA33B8"
+  ]
+ },
+ "1|0xaa95f26e30001251fb905d264aa7b00ee9df6c18|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|31562000000000000000000000": {
+  "amt": 31562000000000000000000000,
+  "venue": "v2",
+  "amt_in": 31562000000000000000000000,
+  "out": 92686085,
+  "chain_id": 1,
+  "tokens": [
+   "0xaa95f26e30001251fb905d264Aa7b00eE9dF6C18",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|342075977916574919": {
+  "amt": 342075977916574919,
+  "venue": "v2",
+  "amt_in": 342075977916574919,
+  "out": 40430269834866,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39"
+  ]
+ },
+ "1|0x39b8b6385416f4ca36a20319f70d28621895279d|0x1abaea1f7c830bd89acc67ec4af516284b1bc33c|700000000000000000000": {
+  "amt": 700000000000000000000,
+  "venue": "v3",
+  "amt_in": 700000000000000000000,
+  "out": 700034156,
+  "chain_id": 1,
+  "tokens": [
+   "0x39b8B6385416f4cA36a20319F70D28621895279D",
+   "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xd9fcd98c322942075a5c3860693e9f4f03aae07b|35234542": {
+  "amt": 35234542,
+  "venue": "v2",
+  "amt_in": 35234542,
+  "out": 28478118724084048438,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa00453052a36d43a99ac1ca145dfe4a952ca33b8|5000000000000000": {
+  "amt": 5000000000000000,
+  "venue": "v2",
+  "amt_in": 5000000000000000,
+  "out": 35617158876996,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xa00453052A36D43A99Ac1ca145DFe4A952cA33B8"
+  ]
+ },
+ "1|0x8e6cd950ad6ba651f6dd608dc70e5886b1aa6b24|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|216250724981213000000000000": {
+  "amt": 216250724981213000000000000,
+  "venue": "v2",
+  "amt_in": 216250724981213000000000000,
+  "out": 12745124024399991,
+  "chain_id": 1,
+  "tokens": [
+   "0x8E6cd950Ad6ba651F6DD608Dc70e5886B1AA6B24",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|23602573242188": {
+  "amt": 23602573242188,
+  "venue": "v2",
+  "amt_in": 23602573242188,
+  "out": 197692699157587499,
+  "chain_id": 1,
+  "tokens": [
+   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xdac17f958d2ee523a2206206994597c13d831ec7|238449000400": {
+  "amt": 238449000400,
+  "venue": "v3",
+  "amt_in": 238449000400,
+  "out": 238542942135,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x68bbed6a47194eff1cf514b50ea91895597fc91e|1500000000": {
+  "amt": 1500000000,
+  "venue": "v2",
+  "amt_in": 1500000000,
+  "out": 260074435816411213476396039,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x68BbEd6A47194EFf1CF514B50Ea91895597fc91E"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|287703589762813464854": {
+  "amt": 287703589762813464854,
+  "venue": "v3",
+  "amt_in": 287703589762813464854,
+  "out": 552312362242,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b|0xdac17f958d2ee523a2206206994597c13d831ec7|316106548868559700000": {
+  "amt": 316106548868559700000,
+  "venue": "v2",
+  "amt_in": 316106548868559700000,
+  "out": 475643134,
+  "chain_id": 1,
+  "tokens": [
+   "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|10608105005100": {
+  "amt": 10608105005100,
+  "venue": "v2",
+  "amt_in": 10608105005100,
+  "out": 88925849461805959,
+  "chain_id": 1,
+  "tokens": [
+   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|154546590000000000": {
+  "amt": 154546590000000000,
+  "venue": "v2",
+  "amt_in": 154546590000000000,
+  "out": 321186416,
+  "chain_id": 1,
+  "tokens": [
+   "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0x4e9623b7e5b6438542458f5ee828d65c24d3af8c|0xd8c978de79e12728e38aa952a6cb4166f891790f|5500000000000000000000000": {
+  "amt": 5500000000000000000000000,
+  "venue": "v2",
+  "amt_in": 5500000000000000000000000,
+  "out": 13786014358007616941623,
+  "chain_id": 1,
+  "tokens": [
+   "0x4E9623B7e5b6438542458f5EE828d65c24d3AF8c",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xD8C978de79E12728e38aa952a6cB4166F891790f"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x68bbed6a47194eff1cf514b50ea91895597fc91e|1000000000": {
+  "amt": 1000000000,
+  "venue": "v2",
+  "amt_in": 1000000000,
+  "out": 173580397133663533661478061,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x68BbEd6A47194EFf1CF514B50Ea91895597fc91E"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|158000000000000000": {
+  "amt": 158000000000000000,
+  "venue": "v2",
+  "amt_in": 158000000000000000,
+  "out": 5442570784557327,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf280B16EF293D8e534e370794ef26bF312694126"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b|701108328": {
+  "amt": 701108328,
+  "venue": "v2",
+  "amt_in": 701108328,
+  "out": 451456231660566263224,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|28000000000000000000": {
+  "amt": 28000000000000000000,
+  "venue": "v3",
+  "amt_in": 28000000000000000000,
+  "out": 34747347447304904074,
+  "chain_id": 1,
+  "tokens": [
+   "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0x95af4af910c28e8ece4512bfe46f1f33687424ce|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|158693043506132832000": {
+  "amt": 158693043506132832000,
+  "venue": "v2",
+  "amt_in": 158693043506132832000,
+  "out": 411494272185057430,
+  "chain_id": 1,
+  "tokens": [
+   "0x95AF4aF910c28E8EcE4512BFE46F1F33687424ce",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0x4c19596f5aaff459fa38b0f7ed92f11ae6543784|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|3701051533900": {
+  "amt": 3701051533900,
+  "venue": "v2",
+  "amt_in": 3701051533900,
+  "out": 15268087190058948,
+  "chain_id": 1,
+  "tokens": [
+   "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x66769c7deb8b5638039c427c014cbe06b6434811|929220000": {
+  "amt": 929220000,
+  "venue": "v2",
+  "amt_in": 929220000,
+  "out": 4590460947084723081471928,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66769C7dEB8B5638039c427c014cbE06b6434811"
+  ]
+ },
+ "1|0x95af4af910c28e8ece4512bfe46f1f33687424ce|0x66641fcfca7d919629d5e4a72d9f13787fcaf304|12008266184192256000": {
+  "amt": 12008266184192256000,
+  "venue": "v2",
+  "amt_in": 12008266184192256000,
+  "out": 8275938816900337286684752368,
+  "chain_id": 1,
+  "tokens": [
+   "0x95AF4aF910c28E8EcE4512BFE46F1F33687424ce",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66641FCFCa7D919629D5e4A72D9F13787fcAF304"
+  ]
+ },
+ "1|0x594daad7d77592a2b97b725a7ad59d7e188b5bfa|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|568642267598000000000000": {
+  "amt": 568642267598000000000000,
+  "venue": "v2",
+  "amt_in": 568642267598000000000000,
+  "out": 5869487522672963,
+  "chain_id": 1,
+  "tokens": [
+   "0x594DaaD7D77592a2b97b725A7AD59D7E188b5bFa",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x0b38210ea11411557c13457d4da7dc6ea731b88a|199012573": {
+  "amt": 199012573,
+  "venue": "v2",
+  "amt_in": 199012573,
+  "out": 1013830214951343398049,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x0b38210ea11411557c13457D4dA7dC6ea731B88a"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x57b946008913b82e4df85f501cbaed910e58d26c|365331": {
+  "amt": 365331,
+  "venue": "v2",
+  "amt_in": 365331,
+  "out": 488591146315123862115,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0x57B946008913B82E4dF85f501cbAeD910e58D26C"
+  ]
+ },
+ "1|0xb0ac2b5a73da0e67a8e5489ba922b3f8d582e058|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|5834529294521191340582578515": {
+  "amt": 5834529294521191340582578515,
+  "venue": "v2",
+  "amt_in": 5834529294521191340582578515,
+  "out": 6485530,
+  "chain_id": 1,
+  "tokens": [
+   "0xb0AC2b5a73da0e67A8e5489Ba922B3f8d582e058",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xf3b9569f82b18aef890de263b84189bd33ebe452|673385962": {
+  "amt": 673385962,
+  "venue": "v2",
+  "amt_in": 673385962,
+  "out": 25105506393961317569061744580,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf3b9569F82B18aEf890De263B84189bd33EBe452"
+  ]
+ },
+ "1|0x614a48c41be6ba6762b63a92cc33cfb5e8149332|0xdac17f958d2ee523a2206206994597c13d831ec7|2821429584414793728000": {
+  "amt": 2821429584414793728000,
+  "venue": "v2",
+  "amt_in": 2821429584414793728000,
+  "out": 98035812,
+  "chain_id": 1,
+  "tokens": [
+   "0x614A48C41BE6BA6762B63A92Cc33cFb5E8149332",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xf280b16ef293d8e534e370794ef26bf312694126|649676299": {
+  "amt": 649676299,
+  "venue": "v2",
+  "amt_in": 649676299,
+  "out": 11654024684764593,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf280B16EF293D8e534e370794ef26bF312694126"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x66769c7deb8b5638039c427c014cbe06b6434811|220000000000000000": {
+  "amt": 220000000000000000,
+  "venue": "v2",
+  "amt_in": 220000000000000000,
+  "out": 2110637735416555051516595,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66769C7dEB8B5638039c427c014cbE06b6434811"
+  ]
+ },
+ "1|0xb0ac2b5a73da0e67a8e5489ba922b3f8d582e058|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|21533207263367144000000000000": {
+  "amt": 21533207263367144000000000000,
+  "venue": "v2",
+  "amt_in": 21533207263367144000000000000,
+  "out": 12505133375666944,
+  "chain_id": 1,
+  "tokens": [
+   "0xb0AC2b5a73da0e67A8e5489Ba922B3f8d582e058",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x66769c7deb8b5638039c427c014cbe06b6434811|30000000000000000": {
+  "amt": 30000000000000000,
+  "venue": "v2",
+  "amt_in": 30000000000000000,
+  "out": 289515636688634236553748,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66769C7dEB8B5638039c427c014cbE06b6434811"
+  ]
+ },
+ "1|0x6b3595068778dd592e39a122f4f5a5cf09c90fe2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|3011243481000000000000": {
+  "amt": 3011243481000000000000,
+  "venue": "v2",
+  "amt_in": 3011243481000000000000,
+  "out": 491778533,
+  "chain_id": 1,
+  "tokens": [
+   "0x6B3595068778DD592e39A122f4f5a5cF09C90fE2",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x66769c7deb8b5638039c427c014cbe06b6434811|9900000000000000": {
+  "amt": 9900000000000000,
+  "venue": "v2",
+  "amt_in": 9900000000000000,
+  "out": 95599945387195238999569,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66769C7dEB8B5638039c427c014cbE06b6434811"
+  ]
+ },
+ "1|0x6e79b51959cf968d87826592f46f819f92466615|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|2414423314034343": {
+  "amt": 2414423314034343,
+  "venue": "v2",
+  "amt_in": 2414423314034343,
+  "out": 6462093,
+  "chain_id": 1,
+  "tokens": [
+   "0x6E79B51959CF968d87826592f46f819F92466615",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x759f8b83db57033aed95545694f6ada480b6e987|220000000000000000": {
+  "amt": 220000000000000000,
+  "venue": "v2",
+  "amt_in": 220000000000000000,
+  "out": 1194568362619065,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x759F8B83db57033aed95545694F6AdA480b6e987"
+  ]
+ },
+ "1|0xaaee1a9723aadb7afa2810263653a34ba2c21c7a|0xe0f63a424a4439cbe457d80e4f4b51ad25b2c56c|8942000000000000000000000000": {
+  "amt": 8942000000000000000000000000,
+  "venue": "v2",
+  "amt_in": 8942000000000000000000000000,
+  "out": 278880336646,
+  "chain_id": 1,
+  "tokens": [
+   "0xaaeE1A9723aaDB7afA2810263653A34bA2C21C7a",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x04fa0d235c4abf4bcf4787af4cf447de572ef828|375000000": {
+  "amt": 375000000,
+  "venue": "v2",
+  "amt_in": 375000000,
+  "out": 1070707063202599774573,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x66769c7deb8b5638039c427c014cbe06b6434811|115000000000000000": {
+  "amt": 115000000000000000,
+  "venue": "v2",
+  "amt_in": 115000000000000000,
+  "out": 1106882682084403497104267,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66769C7dEB8B5638039c427c014cbE06b6434811"
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x9813037ee2218799597d83d4a5b6f3b6778218d9|78000000": {
+  "amt": 78000000,
+  "venue": "v2",
+  "amt_in": 78000000,
+  "out": 1761022586728476696097,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x9813037ee2218799597d83D4a5B6F3b6778218d9"
+  ]
+ },
+ "1|0x67466be17df832165f8c80a5a120ccc652bd7e69|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|500000000000000000000000000": {
+  "amt": 500000000000000000000000000,
+  "venue": "v2",
+  "amt_in": 500000000000000000000000000,
+  "out": 1500621305208607878,
+  "chain_id": 1,
+  "tokens": [
+   "0x67466BE17df832165F8C80a5A120CCc652bD7E69",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x66769c7deb8b5638039c427c014cbe06b6434811|152000000000000000": {
+  "amt": 152000000000000000,
+  "venue": "v2",
+  "amt_in": 152000000000000000,
+  "out": 1461332337962058514296006,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66769C7dEB8B5638039c427c014cbE06b6434811"
+  ]
+ },
+ "1|0xe485e2f1bab389c08721b291f6b59780fec83fd7|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|429663931457555186322470": {
+  "amt": 429663931457555186322470,
+  "venue": "v2",
+  "amt_in": 429663931457555186322470,
+  "out": 600221371,
+  "chain_id": 1,
+  "tokens": [
+   "0xe485E2f1bab389C08721B291f6b59780feC83Fd7",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x66769c7deb8b5638039c427c014cbe06b6434811|50000000000000000": {
+  "amt": 50000000000000000,
+  "venue": "v2",
+  "amt_in": 50000000000000000,
+  "out": 482225992116255244538934,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66769C7dEB8B5638039c427c014cbE06b6434811"
+  ]
+ },
+ "1|0xa9e8acf069c58aec8825542845fd754e41a9489a|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|126985170090345552824": {
+  "amt": 126985170090345552824,
+  "venue": "v2",
+  "amt_in": 126985170090345552824,
+  "out": 9947101,
+  "chain_id": 1,
+  "tokens": [
+   "0xA9E8aCf069C58aEc8825542845Fd754e41a9489A",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x66769c7deb8b5638039c427c014cbe06b6434811|97500000000000000": {
+  "amt": 97500000000000000,
+  "venue": "v2",
+  "amt_in": 97500000000000000,
+  "out": 938953902335460806631432,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66769C7dEB8B5638039c427c014cbE06b6434811"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x66769c7deb8b5638039c427c014cbe06b6434811|101000000000000000": {
+  "amt": 101000000000000000,
+  "venue": "v2",
+  "amt_in": 101000000000000000,
+  "out": 972554255346273017098273,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66769C7dEB8B5638039c427c014cbE06b6434811"
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x66769c7deb8b5638039c427c014cbe06b6434811|825566000": {
+  "amt": 825566000,
+  "venue": "v2",
+  "amt_in": 825566000,
+  "out": 4085179481354405556306101,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x66769C7dEB8B5638039c427c014cbE06b6434811"
+  ]
+ },
+ "1|0x68bbed6a47194eff1cf514b50ea91895597fc91e|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|500000000000000000000000000": {
+  "amt": 500000000000000000000000000,
+  "venue": "v2",
+  "amt_in": 500000000000000000000000000,
+  "out": 2775146842,
+  "chain_id": 1,
+  "tokens": [
+   "0x68BbEd6A47194EFf1CF514B50Ea91895597fc91E",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|5353876257113442": {
+  "amt": 5353876257113442,
+  "venue": "v2",
+  "amt_in": 5353876257113442,
+  "out": 10193825,
+  "chain_id": 1,
+  "tokens": [
+   "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|150000000000000000000": {
+  "amt": 150000000000000000000,
+  "venue": "v2",
+  "amt_in": 150000000000000000000,
+  "out": 225983697,
+  "chain_id": 1,
+  "tokens": [
+   "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0xaff2565091e7207191dbe340b8528d02fa78d044|0xc4fa51e5208b835bc6db3144f25067aa194befba|27569123889000000000000": {
+  "amt": 27569123889000000000000,
+  "venue": "v2",
+  "amt_in": 27569123889000000000000,
+  "out": 512348830158,
+  "chain_id": 1,
+  "tokens": [
+   "0xAFF2565091E7207191dBe340B8528D02FA78d044",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xC4FA51E5208b835Bc6dB3144F25067aA194BEfBa"
+  ]
+ },
+ "1|0x0f2d719407fdbeff09d87557abb7232601fd9f29|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1023101016523391100000": {
+  "amt": 1023101016523391100000,
+  "venue": "v2",
+  "amt_in": 1023101016523391100000,
+  "out": 108755280,
+  "chain_id": 1,
+  "tokens": [
+   "0x0f2D719407FdBeFF09D87557AbB7232601FD9F29",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0x6ecf5fe60e27cd03abdba3a19af8dc6845a0da58|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|296000000000000000000000": {
+  "amt": 296000000000000000000000,
+  "venue": "v2",
+  "amt_in": 296000000000000000000000,
+  "out": 67092189890648411,
+  "chain_id": 1,
+  "tokens": [
+   "0x6eCf5FE60e27cd03ABdBA3a19Af8dC6845A0dA58",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xd6203889c22d9fe5e938a9200f50fdffe9dd8e02|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|4259370069000": {
+  "amt": 4259370069000,
+  "venue": "v2",
+  "amt_in": 4259370069000,
+  "out": 39056979840754047,
+  "chain_id": 1,
+  "tokens": [
+   "0xd6203889C22D9fe5e938a9200f50FDFFE9dD8e02",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0x14fee680690900ba0cccfc76ad70fd1b95d10e16|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|10738239660000": {
+  "amt": 10738239660000,
+  "venue": "v2",
+  "amt_in": 10738239660000,
+  "out": 61001477,
+  "chain_id": 1,
+  "tokens": [
+   "0x14feE680690900BA0ccCfC76AD70Fd1b95D10e16",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0x774eaf7a53471628768dc679da945847d34b9a55|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|76780210134561728000000000000": {
+  "amt": 76780210134561728000000000000,
+  "venue": "v2",
+  "amt_in": 76780210134561728000000000000,
+  "out": 30125164691878746,
+  "chain_id": 1,
+  "tokens": [
+   "0x774eaF7A53471628768dc679dA945847d34b9a55",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
  }
 }

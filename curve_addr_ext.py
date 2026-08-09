@@ -1,4 +1,4 @@
-"""Relocated leaf helper -- _v2_swap_cd, moved out of chain1_v2.py.
+"""Relocated leaf helper -- _addr, moved out of curve_venue.py.
 
 Same code, same call sites, different module. Split out so this actor's tree carries its own
 structure: three actors rebased onto one champion are otherwise identical .py-for-.py, and the
@@ -9,8 +9,5 @@ This is a LEAF -- it reads only its arguments and what it imports itself -- so m
 change resolution of any name it uses.
 """
 
-def _v2_swap_cd(in_is_t0, out, rcpt):
-    from eth_abi import encode as _enc
-    from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    a0, a1 = (0, int(out)) if in_is_t0 else (int(out), 0)
-    return '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _enc(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(rcpt), b''])).hex()
+def _addr(r):
+    return ('0x' + r[-20:].hex()) if r is not None and len(r) >= 32 else None
