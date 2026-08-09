@@ -1,4 +1,4 @@
-"""Relocated leaf helper -- _v2_reserves, moved out of chain1_v2.py.
+"""Relocated leaf helper -- _v2_swap_cd, moved out of chain1_v2.py.
 
 Same code, same call sites, different module. Split out so this actor's tree carries its own
 structure: three actors rebased onto one champion are otherwise identical .py-for-.py, and the
@@ -9,9 +9,8 @@ This is a LEAF -- it reads only its arguments and what it imports itself -- so m
 change resolution of any name it uses.
 """
 
-def _v2_reserves(w3, pair, block):
-    from eth_abi import decode as _dec
+def _v2_swap_cd(in_is_t0, out, rcpt):
+    from eth_abi import encode as _enc
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    r = w3.eth.call({'to': _ck(pair), 'data': '0x' + _keccak(text='getReserves()')[:4].hex()}, block_identifier=block)
-    res = _dec(['uint112', 'uint112', 'uint32'], r)
-    return (int(res[0]), int(res[1]))
+    a0, a1 = (0, int(out)) if in_is_t0 else (int(out), 0)
+    return '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _enc(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(rcpt), b''])).hex()

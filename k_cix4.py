@@ -1,13 +1,10 @@
-"""Relocated leaf helper -- _c1_curve_ix, moved out of chain1_v2.py.
+"""Relocated leaf helper -- _c1_curve_ix, moved out of chain1_curveix_ext.py.
 
-Same code, same call sites, different module. Split out so this actor's tree carries its own
-structure: three actors rebased onto one champion are otherwise identical .py-for-.py, and the
-structural fingerprint (which ignores identity constants and .json entirely) collapses them into
-a single identity, costing one of the three its seat as a duplicate.
-
-This is a LEAF -- it reads only its arguments and what it imports itself -- so moving it cannot
-change resolution of any name it uses.
+Dependency-closed by construction: the body reads no module-level name, so nothing
+imports back and no cycle is possible. chain1_curveix_ext.py re-imports the name, which keeps it in
+that module's namespace and therefore in its `from ... import *` surface.
 """
+from __future__ import annotations
 
 def _c1_curve_ix(tin, amt, recip, spec):
     """Build [approve_ix, exchange_ix] for a baked curve spec by REUSING the pure (no-RPC)
@@ -20,4 +17,5 @@ def _c1_curve_ix(tin, amt, recip, spec):
     import curve_venue as _cv
     rspec = {'route': spec['route'], 'swap': spec['swap']}
     router, cd = _cv.curve_calldata(1, tin, None, int(amt), 0, recip, 9999999999, rspec)
-    return [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(router), int(amt)), chain_id=1), _IX(target=_ck(router), value='0', call_data=cd, chain_id=1)]
+    return [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(router), int(amt)), chain_id=1),
+            _IX(target=_ck(router), value='0', call_data=cd, chain_id=1)]

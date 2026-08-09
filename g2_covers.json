@@ -719,38 +719,6 @@
   ],
   "venue": "v2"
  },
- "0x856c4Efb76C1D1AE02e20CEB03A2A6a08b0b8dC3|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|13935500000000000000": {
-  "amt": 13935500000000000000,
-  "hops": [
-   {
-    "dx": 13935500000000000000,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 13930711798947179576,
-    "pool": "0xcc7d5785AD5755B6164e21495E07aDb0Ff11C2A8",
-    "tokens": [
-     "0x856c4Efb76C1D1AE02e20CEB03A2A6a08b0b8dC3",
-     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-    ]
-   },
-   {
-    "dx": 13512790444978764188,
-    "fees": [
-     500
-    ],
-    "kind": "v3",
-    "out": 25914396368,
-    "tokens": [
-     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-    ]
-   }
-  ],
-  "out": 25914396368,
-  "venue": "route"
- },
  "0x8881562783028F5c1BCB985d2283D5E170D88888|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|2500000000000000000000": {
   "adm_champ": "None",
   "adm_ours": "998421",
@@ -6532,6 +6500,653 @@
   "tokens": [
    "0x774eaF7A53471628768dc679dA945847d34b9a55",
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|85865181988469170": {
+  "amt": 85865181988469170,
+  "venue": "v2",
+  "amt_in": 85865181988469170,
+  "out": 2982337074903992,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xf280B16EF293D8e534e370794ef26bF312694126"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77777feddddffc19ff86db637967013e6c6a116c|400000000000000000": {
+  "amt": 400000000000000000,
+  "venue": "v3",
+  "amt_in": 400000000000000000,
+  "out": 134527021366266153671,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C"
+  ],
+  "fees": [
+   10000
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|600000000": {
+  "amt": 600000000,
+  "venue": "v3",
+  "amt_in": 600000000,
+  "out": 312828191682294954,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100,
+   100
+  ]
+ },
+ "1|0x767fe9edc9e0df98e07454847909b5e959d7ca0e|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|10000000000000000000": {
+  "amt": 10000000000000000000,
+  "venue": "v2",
+  "amt_in": 10000000000000000000,
+  "out": 16010861236882244,
+  "chain_id": 1,
+  "tokens": [
+   "0x767FE9EDC9E0dF98E07454847909b5E959D7ca0E",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|290000000": {
+  "amt": 290000000,
+  "venue": "v3",
+  "amt_in": 290000000,
+  "out": 289799432,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x56072c95faa701256059aa122697b133aded9279|150019816": {
+  "amt": 150019816,
+  "venue": "v3",
+  "amt_in": 150019816,
+  "out": 2761944421991881998846,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x56072C95FAA701256059aa122697B133aDEd9279"
+  ],
+  "fees": [
+   100,
+   3000
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x99991c6aabba5a096f24f250b73580f5179b9999|200000000": {
+  "amt": 200000000,
+  "venue": "v3",
+  "amt_in": 200000000,
+  "out": 5168270526710112832849,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x99991c6AAbba5a096f24f250b73580F5179b9999"
+  ],
+  "fees": [
+   500,
+   10000
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|103358721": {
+  "amt": 103358721,
+  "venue": "v3",
+  "amt_in": 103358721,
+  "out": 53993642693492048,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|225437388": {
+  "amt": 225437388,
+  "venue": "v3",
+  "amt_in": 225437388,
+  "out": 117765036861964317,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|568360156": {
+  "amt": 568360156,
+  "venue": "v3",
+  "amt_in": 568360156,
+  "out": 296857768412096228,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0x514910771af9ca656af840dff83e8264ecf986ca|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|36379028215990573": {
+  "amt": 36379028215990573,
+  "venue": "v2",
+  "amt_in": 36379028215990573,
+  "out": 301370,
+  "chain_id": 1,
+  "tokens": [
+   "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x514910771af9ca656af840dff83e8264ecf986ca|50000000": {
+  "amt": 50000000,
+  "venue": "v3",
+  "amt_in": 50000000,
+  "out": 6042051291758256210,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x514910771AF9Ca656af840dff83E8264EcF986CA"
+  ],
+  "fees": [
+   100,
+   500
+  ]
+ },
+ "1|0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1235009244173222086801": {
+  "amt": 1235009244173222086801,
+  "venue": "v3",
+  "amt_in": 1235009244173222086801,
+  "out": 106266908829343351,
+  "chain_id": 1,
+  "tokens": [
+   "0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|411050": {
+  "amt": 411050,
+  "venue": "v3",
+  "amt_in": 411050,
+  "out": 214920990207454,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100,
+   100
+  ]
+ },
+ "1|0x66761fa41377003622aee3c7675fc7b5c1c2fac5|0xdac17f958d2ee523a2206206994597c13d831ec7|7753948074588367745164": {
+  "amt": 7753948074588367745164,
+  "venue": "v3",
+  "amt_in": 7753948074588367745164,
+  "out": 136466567,
+  "chain_id": 1,
+  "tokens": [
+   "0x66761Fa41377003622aEE3c7675Fc7b5c1C2FaC5",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   3000,
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|8364986972": {
+  "amt": 8364986972,
+  "venue": "v3",
+  "amt_in": 8364986972,
+  "out": 4372637425994163448,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|3546881376427": {
+  "amt": 3546881376427,
+  "venue": "v2",
+  "amt_in": 3546881376427,
+  "out": 52923980,
+  "chain_id": 1,
+  "tokens": [
+   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xf280b16ef293d8e534e370794ef26bf312694126|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|3972191000000000": {
+  "amt": 3972191000000000,
+  "venue": "v2",
+  "amt_in": 3972191000000000,
+  "out": 116989364029817492,
+  "chain_id": 1,
+  "tokens": [
+   "0xf280B16EF293D8e534e370794ef26bF312694126",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|14040757949659": {
+  "amt": 14040757949659,
+  "venue": "v2",
+  "amt_in": 14040757949659,
+  "out": 209367390,
+  "chain_id": 1,
+  "tokens": [
+   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|10799204": {
+  "amt": 10799204,
+  "venue": "v3",
+  "amt_in": 10799204,
+  "out": 5647833316922810,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|646403376774637280": {
+  "amt": 646403376774637280,
+  "venue": "v3",
+  "amt_in": 646403376774637280,
+  "out": 1236355246,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|1528611115420748384": {
+  "amt": 1528611115420748384,
+  "venue": "v3",
+  "amt_in": 1528611115420748384,
+  "out": 2925011448,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   100,
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xdac17f958d2ee523a2206206994597c13d831ec7|10012028928": {
+  "amt": 10012028928,
+  "venue": "v3",
+  "amt_in": 10012028928,
+  "out": 10016969204,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0x66761fa41377003622aee3c7675fc7b5c1c2fac5|0xdac17f958d2ee523a2206206994597c13d831ec7|8288216039625303402899": {
+  "amt": 8288216039625303402899,
+  "venue": "v3",
+  "amt_in": 8288216039625303402899,
+  "out": 145826534,
+  "chain_id": 1,
+  "tokens": [
+   "0x66761Fa41377003622aEE3c7675Fc7b5c1C2FaC5",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   3000,
+   500
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|24933356": {
+  "amt": 24933356,
+  "venue": "v3",
+  "amt_in": 24933356,
+  "out": 13032769578073522,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|2499966475": {
+  "amt": 2499966475,
+  "venue": "v3",
+  "amt_in": 2499966475,
+  "out": 1305323073753508131,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|63867071": {
+  "amt": 63867071,
+  "venue": "v3",
+  "amt_in": 63867071,
+  "out": 16071445362116650232,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
+  ],
+  "fees": [
+   100,
+   500
+  ]
+ },
+ "1|0x66761fa41377003622aee3c7675fc7b5c1c2fac5|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|17805544269685019463569": {
+  "amt": 17805544269685019463569,
+  "venue": "v3",
+  "amt_in": 17805544269685019463569,
+  "out": 163362645801416111,
+  "chain_id": 1,
+  "tokens": [
+   "0x66761Fa41377003622aEE3c7675Fc7b5c1C2FaC5",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   3000,
+   100
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|185930181": {
+  "amt": 185930181,
+  "venue": "v3",
+  "amt_in": 185930181,
+  "out": 97102377124753262,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|473838124443015919": {
+  "amt": 473838124443015919,
+  "venue": "v3",
+  "amt_in": 473838124443015919,
+  "out": 1398615,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xe2ad0bf751834f2fbdc62a41014f84d67ca1de2a|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|523638400000000000000": {
+  "amt": 523638400000000000000,
+  "venue": "v3",
+  "amt_in": 523638400000000000000,
+  "out": 18289752000382143,
+  "chain_id": 1,
+  "tokens": [
+   "0xE2AD0BF751834f2fbdC62A41014f84d67cA1de2A",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   3000,
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|5764832899": {
+  "amt": 5764832899,
+  "venue": "v3",
+  "amt_in": 5764832899,
+  "out": 3012084023869820650,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xd533a949740bb3306d119cc777fa900ba034cd52|2264550460": {
+  "amt": 2264550460,
+  "venue": "v3",
+  "amt_in": 2264550460,
+  "out": 9877603808066493818034,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xD533a949740bb3306d119CC777fa900bA034cd52"
+  ],
+  "fees": [
+   500,
+   3000
+  ]
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|17316010054667288208586": {
+  "amt": 17316010054667288208586,
+  "venue": "v3",
+  "amt_in": 17316010054667288208586,
+  "out": 3924670775,
+  "chain_id": 1,
+  "tokens": [
+   "0xD533a949740bb3306d119CC777fa900bA034cd52",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   3000,
+   100
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|8198884359": {
+  "amt": 8198884359,
+  "venue": "v3",
+  "amt_in": 8198884359,
+  "out": 12641526,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|1500000000000000000": {
+  "amt": 1500000000000000000,
+  "venue": "v3",
+  "amt_in": 1500000000000000000,
+  "out": 4427317,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|3500000": {
+  "amt": 3500000,
+  "venue": "v3",
+  "amt_in": 3500000,
+  "out": 2265691735,
+  "chain_id": 1,
+  "tokens": [
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   500,
+   100
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|613476586600464113": {
+  "amt": 613476586600464113,
+  "venue": "v3",
+  "amt_in": 613476586600464113,
+  "out": 1173379577,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|7995875803103646": {
+  "amt": 7995875803103646,
+  "venue": "v3",
+  "amt_in": 7995875803103646,
+  "out": 15296414,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   100,
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|5716472244": {
+  "amt": 5716472244,
+  "venue": "v3",
+  "amt_in": 5716472244,
+  "out": 2986816142414780341,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xdac17f958d2ee523a2206206994597c13d831ec7|7258384033": {
+  "amt": 7258384033,
+  "venue": "v3",
+  "amt_in": 7258384033,
+  "out": 7261965875,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0x18084fba666a33d37592fa2633fd49a74dd93a88|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|199580560000000000": {
+  "amt": 199580560000000000,
+  "venue": "v3",
+  "amt_in": 199580560000000000,
+  "out": 19907140,
+  "chain_id": 1,
+  "tokens": [
+   "0x18084fbA666a33d37592fA2633fD49a74DD93a88",
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|45000000000000000": {
+  "amt": 45000000000000000,
+  "venue": "v3",
+  "amt_in": 45000000000000000,
+  "out": 86058198,
+  "chain_id": 1,
+  "tokens": [
+   "0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   500,
+   100
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|2000000000": {
+  "amt": 2000000000,
+  "venue": "v3",
+  "amt_in": 2000000000,
+  "out": 3083909,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|437000678764804516": {
+  "amt": 437000678764804516,
+  "venue": "v3",
+  "amt_in": 437000678764804516,
+  "out": 1289910,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+  ],
+  "fees": [
+   100
   ]
  }
 }

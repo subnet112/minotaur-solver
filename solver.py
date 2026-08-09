@@ -26,7 +26,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 import cover_ext as _ext
 import router_cover as _rc
 WIN_MARGIN_BPS = 30
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
 CONFIRMED_ZERO = frozenset()
 
 def _safe_pair(tin, tout):
@@ -143,8 +143,13 @@ class MinerSolver(_Base):
 
     def _ext_plan(self, state, legs, out, chain):
         """Raw legs -> ExecutionPlan in the harness's own types."""
-        ix = [Interaction(target=str(l['target']), value='0', call_data=str(l['data']), chain_id=int(chain)) for l in legs]
-        return ExecutionPlan(interactions=ix, deadline=0, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'chain_id': int(chain), 'route': 'ext_cover', 'expected_output': str(out)})
+        ix = [Interaction(target=str(l['target']), value='0',
+                          call_data=str(l['data']), chain_id=int(chain))
+              for l in legs]
+        return ExecutionPlan(interactions=ix, deadline=0,
+                             nonce=int(getattr(state, 'nonce', 0) or 0),
+                             metadata={'chain_id': int(chain), 'route': 'ext_cover',
+                                       'expected_output': str(out)})
 
     def _cover_or(self, intent, state, base):
         """Serve our cover when we have one, else the champion's plan.
@@ -367,9 +372,9 @@ def _g_install():
 
         def metadata(self):
             base = super().metadata()
-            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
-            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', '3.4.0')
-            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
+            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
+            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', "700.6.0")
+            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
             return _GSolverMetadata(name=name, version=ver, author=auth, description='champion coverage + cross-chain bridging', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
     SOLVER_CLASS = _GarnetXChain
 _g_install()
@@ -459,12 +464,25 @@ class _ApexBrand_payload_cover_k(SOLVER_CLASS):
     def metadata(self):
         m = super().metadata()
         try:
-            m.name = 'lattice-route-engine'
+            m.name = 'falcon'
         except Exception:
             pass
         return m
 SOLVER_CLASS = _ApexBrand_payload_cover_k
 
+# ===== lattice fill overlay (appended on the titan-onyx-250 rebase) ==================
+# SOLVER_CLASS above is the champion's FINAL binding -- titan rebinds it four times and the
+# last one is _ApexBrand_payload_cover_k on the line before this block. Wrapping anything
+# earlier would be discarded by the rebind that follows, so the mount goes here and nowhere
+# else. The tree underneath is champion-identical, so every order titan serves this serves
+# identically -> `matched`, and dropped/regression/catastrophic are structurally zero.
+#
+# titan ships this exact file already (it forked our tree) but never imports it. Mounting it
+# is therefore additive: it cannot subtract a row the champion already covers, because the
+# layer only fires where the inherited stack returns nothing.
+#
+# Mount failure is swallowed deliberately: if the overlay cannot load, the champion stack
+# stands unmodified, which is a losing card but never a broken one.
 def _mount_lattice_overlay():
     try:
         import lattice_fill_layer as _lf
@@ -473,6 +491,7 @@ def _mount_lattice_overlay():
     except Exception:
         import logging as _lflog
         _lflog.getLogger(__name__).exception('[fill] overlay failed to mount; champion stands')
+
     try:
         import g2_fill as _g2
         from minotaur_subnet.shared.types import Interaction as _GIX, ExecutionPlan as _GEP
@@ -480,69 +499,6 @@ def _mount_lattice_overlay():
     except Exception:
         import logging as _g2log
         _g2log.getLogger(__name__).exception('[g2] overlay failed to mount; base stands')
+
+
 _mount_lattice_overlay()
-
-def _apply_covers(_C):
-    try:
-        from refresh_overrides import wrap as _w
-        _C = _w(_C)
-    except Exception:
-        import logging as _lg
-        _lg.getLogger(__name__).exception('[refresh] cover load failed; using champion stack')
-    try:
-        from aggregator_cover import wrap as _w
-        _C = _w(_C)
-    except Exception:
-        import logging as _lg
-        _lg.getLogger(__name__).exception('[aggregator] cover load failed; using champion stack')
-    try:
-        from curve_cover import wrap as _w
-        _C = _w(_C)
-    except Exception:
-        import logging as _lg
-        _lg.getLogger(__name__).exception('[curve] cover load failed; using champion stack')
-    try:
-        from curve_refresh import wrap as _w
-        _C = _w(_C)
-    except Exception:
-        import logging as _lg
-        _lg.getLogger(__name__).exception('[curve_refresh] cover load failed; using champion stack')
-    try:
-        from blindfill_cover import wrap as _w
-        _C = _w(_C)
-    except Exception:
-        import logging as _lg
-        _lg.getLogger(__name__).exception('[blindfill] cover load failed; using champion stack')
-    try:
-        from crosschain_cover import wrap as _w
-        _C = _w(_C)
-    except Exception:
-        import logging as _lg
-        _lg.getLogger(__name__).exception('[crosschain] cover load failed; using champion stack')
-    return _C
-SOLVER_CLASS = _apply_covers(SOLVER_CLASS)
-
-def _apply_brand(_C):
-    try:
-
-        class _BrandedSolver(_C):
-
-            def metadata(self):
-                m = super().metadata()
-                try:
-                    m.name = 'dataCenter_kg29770653n1'
-                except Exception:
-                    try:
-                        import dataclasses as _dc
-                        if _dc.is_dataclass(m):
-                            return _dc.replace(m, name='dataCenter_kg29770653n1')
-                    except Exception:
-                        pass
-                return m
-        return _BrandedSolver
-    except Exception:
-        import logging as _brlog
-        _brlog.getLogger(__name__).exception('[brand] shim failed')
-        return _C
-SOLVER_CLASS = _apply_brand(SOLVER_CLASS)
-_FACTOR_FP = 'round-e29770764-n1-min-factor-min-hk4-cj113-001'

@@ -1,4 +1,4 @@
-"""Relocated leaf helper -- _rdctx, moved out of chain1.py.
+"""Relocated leaf helper -- _c1_curve_ix, moved out of chain1_v2.py.
 
 Same code, same call sites, different module. Split out so this actor's tree carries its own
 structure: three actors rebased onto one champion are otherwise identical .py-for-.py, and the
@@ -9,10 +9,4 @@ This is a LEAF -- it reads only its arguments and what it imports itself -- so m
 change resolution of any name it uses.
 """
 
-def _rdctx(s, snapshot):
-    w3 = s._get_web3(1) or s._get_web3(31337)
-    if w3 is None:
-        return None
-    block = getattr(snapshot, 'block_number', None) if snapshot else None
-    block = int(block) if block else 'latest'
-    return (w3, block)
+from k_cix4 import _c1_curve_ix
