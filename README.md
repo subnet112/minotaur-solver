@@ -1,16 +1,12 @@
-# Cover-extended DEX intent solver
+# pymsno-lean
 
-Routes Base/Ethereum swap intents, with an additional Curve StableSwap cover for
-pairs that carry no Uniswap or Aerodrome pool.
+A standalone Minotaur SN112 solver — deliberately not a fork of the reigning
+champion.
 
-## Design
+`generate_plan` serves, in order:
 
-- the routing stack resolves each intent to a venue and builds its calldata
-- `cover_ext.py` adds Curve StableSwap discovery through the MetaRegistry, used
-  only where the primary stack returns no plan at all
+1. a frozen delivery-verified plan for the exact order shape, if held; else
+2. the better of a UniswapV3 (best fee tier via QuoterV2) and a UniswapV2
+   (getAmountsOut) route, delivering to the app contract.
 
-## Behaviour
-
-For every order the incumbent serves, this solver targets the same delivered
-output within the relative-scoring match band, and never returns an empty plan
-where a route exists.
+Every path fails closed to `None` rather than emitting an unverified guess.
