@@ -9,7 +9,6 @@ This is a LEAF -- it reads only its arguments and what it imports itself -- so m
 change resolution of any name it uses.
 """
 
-
 def _meets_min_out(q, mo):
     """Whether quote `q` clears the order's declared minimum output.
 

@@ -17,5 +17,4 @@ def _c1_curve_ix(tin, amt, recip, spec):
     import curve_venue as _cv
     rspec = {'route': spec['route'], 'swap': spec['swap']}
     router, cd = _cv.curve_calldata(1, tin, None, int(amt), 0, recip, 9999999999, rspec)
-    return [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(router), int(amt)), chain_id=1),
-            _IX(target=_ck(router), value='0', call_data=cd, chain_id=1)]
+    return [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(router), int(amt)), chain_id=1), _IX(target=_ck(router), value='0', call_data=cd, chain_id=1)]
