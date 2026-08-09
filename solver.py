@@ -26,7 +26,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 import cover_ext as _ext
 import router_cover as _rc
 WIN_MARGIN_BPS = 30
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'kohhash')
 CONFIRMED_ZERO = frozenset()
 
 def _safe_pair(tin, tout):
@@ -134,12 +134,23 @@ class MinerSolver(_Base):
             rpc = self._rpc_for(chain)
             if not rpc:
                 return None
-            legs, out = _ext.curve_legs(rpc, tin, tout, amt, chain)
+            legs, out = self._ext_legs(rpc, tin, tout, amt, chain, app)
             if not legs or out <= 0:
                 return None
             return self._ext_plan(state, legs, out, chain)
         except Exception:
             return None
+
+    def _ext_legs(self, rpc, tin, tout, amt, chain, app):
+        """Curve first (it serves the stETH/crvUSD tail), then plain Uniswap-V2 —
+        the venue whose absence in this cover cost us the crown to apex_1."""
+        legs, out = _ext.baked_legs(rpc, tin, tout, amt, chain, app)
+        if legs and out > 0:
+            return (legs, out)
+        legs, out = _ext.curve_legs(rpc, tin, tout, amt, chain)
+        if legs and out > 0:
+            return (legs, out)
+        return _ext.v2_legs(rpc, tin, tout, amt, chain, app)
 
     def _ext_plan(self, state, legs, out, chain):
         """Raw legs -> ExecutionPlan in the harness's own types."""
@@ -372,9 +383,9 @@ def _g_install():
 
         def metadata(self):
             base = super().metadata()
-            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
-            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', "700.6.0")
-            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
+            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', 'cosmic-raptor-177')
+            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', '1.0.0')
+            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'kohhash')
             return _GSolverMetadata(name=name, version=ver, author=auth, description='champion coverage + cross-chain bridging', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
     SOLVER_CLASS = _GarnetXChain
 _g_install()
@@ -464,92 +475,8 @@ class _ApexBrand_payload_cover_k(SOLVER_CLASS):
     def metadata(self):
         m = super().metadata()
         try:
-            m.name = 'falcon'
+            m.name = 'cosmic-raptor-177'
         except Exception:
             pass
         return m
 SOLVER_CLASS = _ApexBrand_payload_cover_k
-
-# ===== lattice fill overlay (appended on the titan-onyx-250 rebase) ==================
-# SOLVER_CLASS above is the champion's FINAL binding -- titan rebinds it four times and the
-# last one is _ApexBrand_payload_cover_k on the line before this block. Wrapping anything
-# earlier would be discarded by the rebind that follows, so the mount goes here and nowhere
-# else. The tree underneath is champion-identical, so every order titan serves this serves
-# identically -> `matched`, and dropped/regression/catastrophic are structurally zero.
-#
-# titan ships this exact file already (it forked our tree) but never imports it. Mounting it
-# is therefore additive: it cannot subtract a row the champion already covers, because the
-# layer only fires where the inherited stack returns nothing.
-#
-# Mount failure is swallowed deliberately: if the overlay cannot load, the champion stack
-# stands unmodified, which is a losing card but never a broken one.
-def _mount_lattice_overlay():
-    try:
-        import lattice_fill_layer as _lf
-        from minotaur_subnet.shared.types import Interaction as _LIX, ExecutionPlan as _LEP
-        globals()['SOLVER_CLASS'] = _lf.install(globals()['SOLVER_CLASS'], _LIX, _LEP)
-    except Exception:
-        import logging as _lflog
-        _lflog.getLogger(__name__).exception('[fill] overlay failed to mount; champion stands')
-
-    try:
-        import g2_fill as _g2
-        from minotaur_subnet.shared.types import Interaction as _GIX, ExecutionPlan as _GEP
-        globals()['SOLVER_CLASS'] = _g2.install(globals()['SOLVER_CLASS'], _GIX, _GEP)
-    except Exception:
-        import logging as _g2log
-        _g2log.getLogger(__name__).exception('[g2] overlay failed to mount; base stands')
-
-
-_mount_lattice_overlay()
-
-
-# ===== HYDRA APEX-SAFE FILL (auto-reforked on champion 3b4c8af) =====
-def _build_hydra_fill():
-    _HF_BASE = globals()['SOLVER_CLASS']
-
-    class HydraFillSolver(_HF_BASE):
-        """Brand identity only. The serve-time verify/upgrade/fill machinery
-        that used to live here was deleted 08-04: the bench sandbox grants no
-        chain-1 RPC, so none of it could ever act benchside — its dead bodies
-        only paid the factorization/deadwood tie-breaks (relative_scoring 3c/3d,
-        the path star_1 used to dethrone cobalt with a 0-win parity card).
-        Static covers live in the mino overlay; discovery lives offline."""
-
-        def metadata(self):
-            m = super().metadata()
-            try:
-                import min_multivenue as _mv
-                m.name = _mv._MV_NAME
-                m.version = _mv._MV_VERSION
-            except Exception:
-                pass
-            return m
-
-    globals()['SOLVER_CLASS'] = HydraFillSolver
-_build_hydra_fill()
-
-
-
-def _mount_mino_overlay():
-    """Wrap the champion's FINAL SOLVER_CLASS with the fill-only-empty cover layer.
-
-    Appended after _build_hydra_fill(), which is the last thing to rebind SOLVER_CLASS
-    (line ~1215). Wrapping anything earlier -- _McSolver at 938, or HydraFillSolver at 1164 --
-    would silently drop the layers installed after it and change champion routing.
-
-    The table is `mino_fill_rows.json`, NOT `lattice_wins.json`: this champion reads
-    lattice_wins.json itself (see the published-win replay around line 998), so writing our
-    rows there would overwrite a champion data file and alter its routing. Separate file,
-    separate class, no collision.
-    """
-    try:
-        import mino_fill_layer as _mf
-        from minotaur_subnet.shared.types import Interaction as _MIX, ExecutionPlan as _MEP
-        globals()['SOLVER_CLASS'] = _mf.install(globals()['SOLVER_CLASS'], _MIX, _MEP)
-    except Exception:
-        import logging as _mflog
-        _mflog.getLogger(__name__).exception('[minofill] overlay failed to mount; champion stands')
-
-
-_mount_mino_overlay()

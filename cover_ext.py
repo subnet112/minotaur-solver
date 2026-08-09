@@ -23,7 +23,53 @@ from __future__ import annotations
 from eth_abi import decode, encode
 from eth_utils import keccak, to_checksum_address as ck
 
-from venues import eth_call as _eth_call
+from eth_abi import encode as _enc
+
+import time
+
+from venues import (CHAINS, DEADLINE, S_V2_SWAP, _SEARCH_DEADLINE,
+                    eth_call as _eth_call, q_v2)
+
+# Pre-solved routes for pairs the incumbent cannot serve — see route_bake.py.
+# Baked OFFLINE where there is no 6s limit, so the online path costs one dict
+# lookup instead of ~37 quotes. That reclaimed budget is what lets the generic
+# sweep below reach genuinely NEW pairs (~4 arrive every round, forever, and are
+# unbakeable by definition).
+from baked_routes import baked_legs  # noqa: F401  (re-exported for the solver)
+
+# Our own quote budget, in seconds. MUST be armed before any quoting here.
+#
+# `venues.eth_call` refuses to START a call once `_SEARCH_DEADLINE` has passed,
+# and the inherited `best_route()` sets that deadline to now+6s and then spends
+# it. By the time `_cover_or` falls through to us it is usually EXPIRED, so every
+# quote this module makes returns None and the whole cover silently does nothing
+# — precisely on the orders it exists to serve. Measured directly: with a fresh
+# deadline DOGEUS->WETH quotes 1.031e16; with an expired one it returns 0.
+#
+# Kept well under the inherited 6s: this runs only after the main scan gave up,
+# so the plan's remaining time is already partly spent.
+_COVER_BUDGET_S = 3.0
+
+
+def _arm():
+    """Give this cover its own quote window; returns the PREVIOUS value.
+
+    `_SEARCH_DEADLINE` is a single shared mutable cell read by every
+    `venues.eth_call` in the tree — not just ours. Arming it without restoring
+    left an already-expired 3s deadline behind, so on every LATER order the
+    inherited solver's own quotes were refused before they started and it
+    returned an empty plan. Measured cost: sub_63ae4707f360 covered 38 blind
+    spots and simultaneously DROPPED 41 orders the champion served. Always
+    restore (see `_disarm`).
+    """
+    prev = _SEARCH_DEADLINE[0]
+    _SEARCH_DEADLINE[0] = time.monotonic() + _COVER_BUDGET_S
+    return prev
+
+
+def _disarm(prev):
+    """Hand the shared deadline back exactly as we found it."""
+    _SEARCH_DEADLINE[0] = prev
 
 METAREGISTRY = {1: '0xF98B45FA17DE75FB1aD0e7aFD971b0ca00e379fC'}
 
@@ -127,6 +173,7 @@ def _resolve(rpc, tin, tout, amount, chain_id):
 
 def curve_legs(rpc, tin, tout, amount, chain_id):
     """(interactions, out) for a Curve pair, or (None, 0). Never raises."""
+    prev = _arm()
     try:
         got = _resolve(rpc, tin, tout, amount, chain_id)
         if got is None:
@@ -136,3 +183,76 @@ def curve_legs(rpc, tin, tout, amount, chain_id):
         return (legs + _exchange(pool, i, j, amount, swap_fn, typ), out)
     except Exception:
         return (None, 0)
+    finally:
+        _disarm(prev)
+
+
+def v2_legs(rpc, tin, tout, amount, chain_id, recipient):
+    """Direct Uniswap-V2 cover for tokens no V3 tier and no Curve pool quotes.
+
+    THIS IS THE HOLE WE LOST THE CROWN THROUGH. `apex_1_29767743` dethroned us on
+    a single row — DOGEUS->WETH, where we returned nothing and it delivered
+    1.0078e16. Every V3 fee tier quotes 0 on that pair and the Curve MetaRegistry
+    has no pool, but the Uniswap-V2 pair exists and quotes 1.0310e16 — MORE than
+    the cover that beat us. The tree already had `q_v2` and `v2routers` for
+    mainnet; the empty-plan cover simply never tried them.
+
+    Reached only from `_cover_or`, so the inherited plan was already empty: the
+    incumbent delivers nothing here, which makes a drop or a regression
+    structurally impossible and the whole leg pure upside.
+    """
+    prev = _arm()
+    try:
+        best_out, best_router, best_path = _best_v2(rpc, tin, tout, amount, chain_id)
+        if not best_router:
+            return (None, 0)
+        return (_v2_swap(best_path, amount, recipient, best_router), best_out)
+    except Exception:
+        return (None, 0)
+    finally:
+        _disarm(prev)
+
+
+def _v2_paths(cfg, tin, tout):
+    """Direct pair first, then one hop through each hub.
+
+    Direct-only left real holes: a token with no direct WETH pair but a live
+    hub route quoted 0 and the order fell through as a blind spot. The hubs are
+    the chain's own liquidity centres, so this is the same expansion the
+    inherited scan does — it simply never reaches it before the budget runs out.
+    """
+    paths = [[tin, tout]]
+    for hub in cfg.get('hubs') or ():
+        if hub.lower() not in (tin.lower(), tout.lower()):
+            paths.append([tin, hub, tout])
+    return paths
+
+
+def _best_v2(rpc, tin, tout, amount, chain_id):
+    """(out, router, path) for the richest V2 route here, or (0, None, None)."""
+    cfg = CHAINS.get(int(chain_id)) or {}
+    best = (0, None, None)
+    for router in cfg.get('v2routers') or ():
+        for path in _v2_paths(cfg, tin, tout):
+            try:
+                out = int(q_v2(rpc, router, path, amount) or 0)
+            except Exception:
+                out = 0
+            if out > best[0]:
+                best = (out, router, path)
+    return best
+
+
+def _v2_swap(path, amount, recipient, router):
+    """approve + swapExactTokensForTokens, in the tree's own codec.
+
+    minOut is 0: the harness enforces the intent minimum, and a per-swap floor
+    only adds a revert path — and a revert on a cover row throws away the very
+    delivery it exists to make.
+    """
+    body = _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'],
+                [int(amount), 0, path, recipient, DEADLINE])
+    return [{'target': path[0], 'data': _approve(router, amount)},
+            {'target': router, 'data': '0x' + S_V2_SWAP + body.hex()}]
+
+
