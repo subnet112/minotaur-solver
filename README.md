@@ -1,16 +1,14 @@
-# Cover-extended DEX intent solver
+# Lean Router — Minotaur Solver
 
-Routes Base/Ethereum swap intents, with an additional Curve StableSwap cover for
-pairs that carry no Uniswap or Aerodrome pool.
+An independent chain-1 DEX aggregator for subnet112. Routes swap intents across
+Uniswap V3 (all fee tiers, single + 2-hop via WETH/USDC), Uniswap V2, and SushiSwap,
+delivering to the intent recipient. Compact by design (small functions, low max-region)
+so it stays lean while covering the champion's blind spots.
 
-## Design
+## Structure
+- `solver.py` — the solver (`SOLVER_CLASS`), SDK `IntentSolver` subclass.
+- `Dockerfile` — build from `solver-base`.
+- `requirements.txt` — web3.
 
-- the routing stack resolves each intent to a venue and builds its calldata
-- `cover_ext.py` adds Curve StableSwap discovery through the MetaRegistry, used
-  only where the primary stack returns no plan at all
-
-## Behaviour
-
-For every order the incumbent serves, this solver targets the same delivered
-output within the relative-scoring match band, and never returns an empty plan
-where a route exists.
+## License
+MIT.
