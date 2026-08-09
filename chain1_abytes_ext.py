@@ -8,5 +8,4 @@ a single identity, costing one of the three its seat as a duplicate.
 This is a LEAF -- it reads only its arguments and what it imports itself -- so moving it cannot
 change resolution of any name it uses.
 """
-
 from k_abytes2 import _addr_bytes

@@ -19,9 +19,5 @@ def _par_venue_need(d, gem):
     """
     _tin, tout, _wrap, _sel, up = d
     if up:
-        return ("0x6b175474e89094c44da98b954eedeac495271d0f",   # DAI
-                "0xf6e72db5454dd049d0788e411b06cfaf16853042",   # LitePSM
-                int(gem) * 10 ** 12)
-    return (tout,
-            "0x37305b1cd40574e4c5ce33f8e8306be057fd7341",       # LitePSM USDC pocket
-            int(gem))
+        return ('0x6b175474e89094c44da98b954eedeac495271d0f', '0xf6e72db5454dd049d0788e411b06cfaf16853042', int(gem) * 10 ** 12)
+    return (tout, '0x37305b1cd40574e4c5ce33f8e8306be057fd7341', int(gem))
