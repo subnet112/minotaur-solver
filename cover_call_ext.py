@@ -10,7 +10,6 @@ change resolution of any name it uses.
 """
 from venues import eth_call as _eth_call
 
-
 def _call(rpc, to, data):
     """eth_call through the TREE'S OWN transport.
 

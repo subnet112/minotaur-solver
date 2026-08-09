@@ -11,7 +11,6 @@ change resolution of any name it uses.
 from chain1_c import _FEES
 from chain1_hub_ext import _usable_hubs
 
-
 def _hub_legs(tin, tout):
     out = []
     for hub in _usable_hubs(tin, tout):

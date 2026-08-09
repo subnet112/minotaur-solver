@@ -29,109 +29,36 @@ delivered nothing, so a rotted fill forfeits a credit instead of causing a drop.
 base each of those three scored `dropped`. On this base the same three cost nothing.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 import json
-from _lattice_prims import (_CONFIRM_POOL, _EXEC_BY_CHAIN, _abi_addr_uint,
-                            _addr, _num, _word)
+from _lattice_prims import _CONFIRM_POOL, _EXEC_BY_CHAIN, _abi_addr_uint, _addr, _num, _word
 import logging
 import os
 import time as _time
-from lattice_cfg_ext import _par_cfg  # relocated leaf; see that module for why
-from lattice_att_ext import _par_attested  # relocated leaf; see that module for why
+from lattice_cfg_ext import _par_cfg
+from lattice_att_ext import _par_attested
 
-_log = logging.getLogger(__name__)
-
-_TABLE_FILE = "lattice_wins.json"
-
-# ---------------------------------------------------------------------------
-# PAR-RATE OVERRIDE -- chain-1 USDS -> USDC
-#
-# The one place this file answers a row the inner engine ALSO answers. Everything else here
-# is empty-only; read the reasoning below before widening it.
-#
-# THE DEFECT. The inherited engine has a Sky PSM route (`_sky_psm_plan`), but it is wired
-# entirely to Base: `_SKY_PSM3` is the L2 PSM3 deployment and the pair set that reaches it
-# holds Base token addresses (`_USDC` 0x833589fc..., `_T_USDS` 0x820c137f...). Mainnet USDS
-# 0xdC035D45... -> mainnet USDC 0xA0b86991... matches none of them, so the order falls
-# through to generic DEX routing, finds a thin pool, and pays an 87% haircut: order
-# q_d6b2ea0d43873e28199433364f37cfa6 returned 13,725.061424 USDC for 103,602.343974 USDS.
-# Chain 1 is the ONLY adoption-scored chain, so the gap sits precisely on the scored surface,
-# and reclaim-router took a round off this lineage on that single row.
-#
-# WHY THIS PREEMPTS WHERE NOTHING ELSE DOES. A preempting cover that fails delivers nothing
-# where the incumbent delivered something, which scores `dropped` -- a hard veto that kills
-# the whole submission, not just the row. That asymmetry is why frozen aggregator calldata is
-# never allowed to preempt: 18 of 20 fresh Kyber mints failed to reproduce at bench, because
-# a mint-time `minReturnAmount` is frozen against pools that then move.
-#
-# This route has no such parameter. UsdsPsmWrapper accepts USDS, sells into LitePSM and
-# forwards USDC at a rate fixed by contract arithmetic:
-#     buyGem(usr, gemAmt) pulls gemAmt * to18ConversionFactor * (WAD + tout) / WAD
-# With tout = 0 that is exactly gemAmt * 1e12, flat. No pool reserve, no slippage argument, no
-# venue another trade can drain in the same block. The plan is also BUILT FRESH on every call
-# from the live order amount rather than replayed from the table, so there is no stored
-# calldata that can go stale -- the class of failure that makes preemption unsafe does not
-# exist on this path.
-#
-# WHAT IS STILL CHECKED AT SOLVE TIME. Two things could invalidate the arithmetic, and both
-# are read before serving (see `_par_state_ok`): a governance change to `tout`, and the PSM
-# pocket running short of USDC. Either read failing -- wrong value, unreachable RPC, timeout --
-# suppresses the override and lets the inner plan stand, which is the `matched` row we already
-# had. The guard can only ever cost us the upside, never a row.
-#
-# RESIDUAL RISK, STATED PLAINLY. Serving par regresses only if some future incumbent routes
-# this pair ABOVE par by more than FLOOR_BPS=100 (1%), i.e. USDS trading over 1.0101 USDC on a
-# DEX while a 1:1 redemption sits open at the PSM. That is the arbitrage the peg exists to
-# close, and it is the only exposure this override carries.
-#
-# Verified end-to-end on the validator's own fork-sim before shipping: delivered
-# 103,602,343,974 (gas 327,468) against the engine's 13,725,061,424 -- 7.5484x, and 462.73
-# USDC ahead of reclaim-router's DEX route, which paid the spread this path does not.
-# ---------------------------------------------------------------------------
-
-# The only chain an adoption is scored on (#1200 pins ADOPTION_SCORED_CHAINS=[1]). Base rows
-# return `offgate` -- 65 of the 122 rows on our last card -- so a fill there cannot be
-# credited, while still being a row where this overlay answers rather than the incumbent.
-# Gating costs no upside and cannot regress: only OUR fill is suppressed, never the stack
-# beneath, which continues to answer wherever the champion answers.
-_ADOPTION_CHAIN = 1
-
-# Chain-1 state read OFFLINE at block 25663233 (2026-08-01) with the same calls the deleted
-# serve-time fence used to make. Serve time cannot read chain 1 at all -- the benchmark routes
-# only SOLVER_READ_PROXY_CHAINS (default "8453") and seals the solver to that proxy, so
-# _get_web3(1) is None and an eth_call fence fails CLOSED on every order. Attesting here is
-# what turns the override from permanently-suppressed into live.
-
-# Absorbed `tout` drift on the buyGem leg, where the fee is charged on the input we must
-# supply: a non-zero tout makes the venue pull more than the executor holds and the leg
-# REVERTS, which is `catastrophic` -- an absolute veto. Sized against the measured gains so
-# the two thin rows (33.78bps, 23.88bps) still clear RELATIVE_TOL_BPS=10 after the cut.
-_PAR_HAIRCUT_BPS = 10
-
-# Empty-confirmation budget. The harness allows `timeout_per_plan_ms` = 30000 per plan, so a
-# 6s fenced retry started no later than 8s in finishes by 14s and leaves better than half the
-# window untouched. _RETRY_MAX_S is a hard wall-clock cap on the ONE retry; _RETRY_START_BY_S
-# is the latest point at which starting one is still worth it. A first call that took longer
-# than that did not flake, it ran out of budget, and re-running it would only burn what is
-# left.
-_RETRY_MAX_S = 6.0
-_RETRY_START_BY_S = 8.0
+def _dz251():
+    _log = logging.getLogger(__name__)
+    _TABLE_FILE = 'lattice_wins.json'
+    _ADOPTION_CHAIN = 1
+    _PAR_HAIRCUT_BPS = 10
+    _RETRY_MAX_S = 6.0
+    _RETRY_START_BY_S = 8.0
+    return (_log, _TABLE_FILE, _ADOPTION_CHAIN, _PAR_HAIRCUT_BPS, _RETRY_MAX_S, _RETRY_START_BY_S)
+_log, _TABLE_FILE, _ADOPTION_CHAIN, _PAR_HAIRCUT_BPS, _RETRY_MAX_S, _RETRY_START_BY_S = _dz251()
 
 def _table_path() -> str:
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), _TABLE_FILE)
-
 
 def _read_table() -> dict:
     try:
         with open(_table_path()) as fh:
             return json.load(fh)
     except Exception:
-        _log.warning("[fill] no overlay table at %s; layer is inert", _table_path())
+        _log.warning('[fill] no overlay table at %s; layer is inert', _table_path())
         return {}
-
-
 _ROWS = _read_table()
-
 
 def _row_key(state) -> str | None:
     """chain|contract_address|tin|tout|amount, byte-identical to the bench's own key.
@@ -159,8 +86,7 @@ def _row_key(state) -> str | None:
     contract = _executor_for(chain, contract)
     if not (tin and tout and amount and contract):
         return None
-    return f"{chain}|{contract}|{tin}|{tout}|{amount}"
-
+    return f'{chain}|{contract}|{tin}|{tout}|{amount}'
 
 def _executor_for(chain, contract):
     """The executor a row is keyed to: the order's own, else the chain's.
@@ -173,13 +99,11 @@ def _executor_for(chain, contract):
     Empty-string and None collapse to the same fallback here, which is what the caller's
     subsequent truthiness check already assumed.
     """
-    return contract or _EXEC_BY_CHAIN.get(chain, "")
-
+    return contract or _EXEC_BY_CHAIN.get(chain, '')
 
 def _chain_of(state) -> int:
     """The order's chain id. Read at four sites, three of them to compare _ADOPTION_CHAIN."""
-    return _num(getattr(state, "chain_id", 0))
-
+    return _num(getattr(state, 'chain_id', 0))
 
 def _row_fields(state):
     """Pull the five key components off an IntentState. -> tuple | None.
@@ -191,22 +115,16 @@ def _row_fields(state):
     same reads, same lowercasing, same swallow-everything guard returning None.
     """
     try:
-        params = getattr(state, "raw_params", None) or {}
-        return (_chain_of(state),
-                _addr(getattr(state, "contract_address", "")),
-                _addr(params.get("input_token")),
-                _addr(params.get("output_token")),
-                _num(params.get("input_amount")))
+        params = getattr(state, 'raw_params', None) or {}
+        return (_chain_of(state), _addr(getattr(state, 'contract_address', '')), _addr(params.get('input_token')), _addr(params.get('output_token')), _num(params.get('input_amount')))
     except Exception:
         return None
 
-
 def _is_empty(plan) -> bool:
     try:
-        return plan is None or not getattr(plan, "interactions", None)
+        return plan is None or not getattr(plan, 'interactions', None)
     except Exception:
         return True
-
 
 def _freshest(row):
     """Newest minted route for a key.
@@ -232,24 +150,23 @@ def _freshest(row):
     `verified_out` from the /score sweep; either counts, and absence of both is not evidence
     of death.
     """
+
     def _stamp(r):
-        return int(r.get("minted_at") or 0)
+        return int(r.get('minted_at') or 0)
 
     def _delivers(r):
         try:
-            return int(r.get("verified_out") or r.get("out") or 0) > 0
+            return int(r.get('verified_out') or r.get('out') or 0) > 0
         except (TypeError, ValueError):
             return False
-
-    routes = row.get("routes")
+    routes = row.get('routes')
     if isinstance(routes, list):
-        live = [r for r in routes if isinstance(r, dict) and r.get("interactions")]
+        live = [r for r in routes if isinstance(r, dict) and r.get('interactions')]
         if live:
             proven = [r for r in live if _delivers(r)]
             newest = max(proven or live, key=_stamp)
-            return newest.get("interactions") or []
-    return row.get("interactions") or []
-
+            return newest.get('interactions') or []
+    return row.get('interactions') or []
 
 def _par_venue_need(d, gem):
     """(token, holder, amount) the venue must hold to fund THIS direction.
@@ -261,13 +178,8 @@ def _par_venue_need(d, gem):
     """
     _tin, tout, _wrap, _sel, up = d
     if up:
-        return ("0x6b175474e89094c44da98b954eedeac495271d0f",   # DAI
-                "0xf6e72db5454dd049d0788e411b06cfaf16853042",   # LitePSM
-                int(gem) * 10 ** 12)
-    return (tout,
-            "0x37305b1cd40574e4c5ce33f8e8306be057fd7341",       # LitePSM USDC pocket
-            int(gem))
-
+        return ('0x6b175474e89094c44da98b954eedeac495271d0f', '0xf6e72db5454dd049d0788e411b06cfaf16853042', int(gem) * 10 ** 12)
+    return (tout, '0x37305b1cd40574e4c5ce33f8e8306be057fd7341', int(gem))
 
 def _par_state_ok(d, gem):
     """Is the fixed-rate assumption still true, per the bake-time attestation?
@@ -280,14 +192,13 @@ def _par_state_ok(d, gem):
     the liquidity we actually verified is suppressed instead of served on faith.
     """
     up = d[4]
-    if (_par_attested()["wrapper_tin"] if up else _par_attested()["wrapper_tout"]) != 0:
+    if (_par_attested()['wrapper_tin'] if up else _par_attested()['wrapper_tout']) != 0:
         return False
-    if (_par_attested()["psm_tin"] if up else _par_attested()["psm_tout"]) != 0:
+    if (_par_attested()['psm_tin'] if up else _par_attested()['psm_tout']) != 0:
         return False
     _tok, _holder, need = _par_venue_need(d, gem)
-    have = _par_attested()["psm_dai"] if up else _par_attested()["pocket_usdc"]
+    have = _par_attested()['psm_dai'] if up else _par_attested()['pocket_usdc']
     return need > 0 and have >= need
-
 
 def _par_legs(amount, executor, d, Interaction):
     """approve(wrapper, wad) + buyGem/sellGem(executor, gem) for the matched direction.
@@ -299,13 +210,13 @@ def _par_legs(amount, executor, d, Interaction):
     """
     tin, _tout, wrap, sel, up = d
     if up:
-        gem = wad = int(amount)                    # 6dp gem in, scales up exactly
+        gem = wad = int(amount)
     else:
-        spend = int(amount) * (10_000 - _PAR_HAIRCUT_BPS) // 10_000
-        gem = spend // 10 ** 12                    # 18dp -> 6dp, floored
+        spend = int(amount) * (10000 - _PAR_HAIRCUT_BPS) // 10000
+        gem = spend // 10 ** 12
         wad = gem * 10 ** 12
     if gem <= 0:
-        return None, 0
+        return (None, 0)
 
     def _calls():
         """approve(wrapper, wad) then the gem swap -- the two calls, byte-identical encoding.
@@ -316,13 +227,8 @@ def _par_legs(amount, executor, d, Interaction):
         to lower (measured: 141 -> 149). Nested, the body still forms its own region while the
         header costs only `_par_legs`, which is well under the ceiling.
         """
-        return [Interaction(target=tin, value="0", chain_id=1,
-                            call_data=_abi_addr_uint("0x095ea7b3", wrap, wad)),
-                Interaction(target=wrap, value="0", chain_id=1,
-                            call_data=_abi_addr_uint(sel, executor, gem))]
-
-    return _calls(), gem
-
+        return [Interaction(target=tin, value='0', chain_id=1, call_data=_abi_addr_uint('0x095ea7b3', wrap, wad)), Interaction(target=wrap, value='0', chain_id=1, call_data=_abi_addr_uint(sel, executor, gem))]
+    return (_calls(), gem)
 
 def _par_match(state):
     """The direction tuple this order matches, or None.
@@ -333,26 +239,23 @@ def _par_match(state):
     """
     if _chain_of(state) != _ADOPTION_CHAIN:
         return None
-    params = getattr(state, "raw_params", None) or {}
-    tin = _addr(params.get("input_token"))
-    tout = _addr(params.get("output_token"))
+    params = getattr(state, 'raw_params', None) or {}
+    tin = _addr(params.get('input_token'))
+    tout = _addr(params.get('output_token'))
     for d in _par_cfg():
         if tin == d[0] and tout == d[1]:
             return d
     return None
-
 
 def _par_order(state):
     """(amount, executor, direction) for a matched order, else None."""
     d = _par_match(state)
     if d is None:
         return None
-    params = getattr(state, "raw_params", None) or {}
-    amount = _num(params.get("input_amount"))
-    executor = (_addr(getattr(state, "contract_address", ""))
-                or _EXEC_BY_CHAIN.get(1, ""))
+    params = getattr(state, 'raw_params', None) or {}
+    amount = _num(params.get('input_amount'))
+    executor = _addr(getattr(state, 'contract_address', '')) or _EXEC_BY_CHAIN.get(1, '')
     return (amount, executor, d) if amount and executor else None
-
 
 def _legs(row, chain, Interaction):
     """Stored interactions -> Interaction objects, verbatim.
@@ -366,6 +269,7 @@ def _legs(row, chain, Interaction):
     stored = _freshest(row)
     if not stored:
         return None
+
     def _one(leg):
         """One stored leg -> Interaction, or None when the leg is malformed.
 
@@ -377,23 +281,21 @@ def _legs(row, chain, Interaction):
         Nested: solver.py's module top level is this tree's max_region_nodes ceiling, so a
         module-level helper's def header would RAISE the metric it is meant to lower.
         """
-        data = leg.get("call_data") or leg.get("data")
-        target = leg.get("target")
+        data = leg.get('call_data') or leg.get('data')
+        target = leg.get('target')
         if not (target and data):
             return None
-        return Interaction(target=target, value=str(leg.get("value", "0")),
-                           call_data=data, chain_id=chain)
-
+        return Interaction(target=target, value=str(leg.get('value', '0')), call_data=data, chain_id=chain)
     built = []
     for leg in stored:
         ix = _one(leg)
         if ix is None:
-            return None                      # all-or-nothing, exactly as before
+            return None
         built.append(ix)
     return built
 
-
 def install(base_cls, Interaction, ExecutionPlan):
+
     def _plan_meta(tag, chain):
         """The metadata block attached to every plan this layer emits. -> dict.
 
@@ -404,9 +306,8 @@ def install(base_cls, Interaction, ExecutionPlan):
         produced a plan unidentifiable in the logs, which is how a suppressed cover stays invisible.
         Values are exactly what both sites built inline.
         """
-        return {"solver": tag, "chain_id": chain}
-
-    """Wrap `base_cls` so an EMPTY plan is filled from the overlay; else pass through."""
+        return {'solver': tag, 'chain_id': chain}
+    'Wrap `base_cls` so an EMPTY plan is filled from the overlay; else pass through.'
 
     class _LatticeFill(base_cls):
 
@@ -423,31 +324,32 @@ def install(base_cls, Interaction, ExecutionPlan):
             legs = _legs(row, chain, Interaction)
             if not legs:
                 return None
-            return ExecutionPlan(intent_id=getattr(intent, "app_id", ""), interactions=legs,
-                                 deadline=9999999999, nonce=getattr(state, "nonce", 0),
-                                 metadata=_plan_meta("lattice-fill", chain))
+            return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata=_plan_meta('lattice-fill', chain))
 
         def _par_plan(self, intent, state):
             """Par-rate plan for chain-1 USDS->USDC, or None. See the header block."""
+
+            def _dz251():
+                legs, gem = _par_legs(amount, executor, d, Interaction)
+                if not legs or not _par_state_ok(d, gem):
+                    return (None,)
+                _log.info('[fill] par override %s->%s: %s in, gem %s (fixed rate)', d[0][:8], d[1][:8], amount, gem)
+                return (ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata=_plan_meta('lattice-par', 1)),)
+                return _DR_UNSET
             got = _par_order(state)
             if not got:
                 return None
             amount, executor, d = got
-            legs, gem = _par_legs(amount, executor, d, Interaction)
-            if not legs or not _par_state_ok(d, gem):
-                return None
-            _log.info("[fill] par override %s->%s: %s in, gem %s (fixed rate)",
-                      d[0][:8], d[1][:8], amount, gem)
-            return ExecutionPlan(intent_id=getattr(intent, "app_id", ""), interactions=legs,
-                                 deadline=9999999999, nonce=getattr(state, "nonce", 0),
-                                 metadata=_plan_meta("lattice-par", 1))
+            _r_dz251 = _dz251()
+            if _r_dz251 is not _DR_UNSET:
+                return _r_dz251[0]
 
         def _par_try(self, intent, state):
             """`_par_plan` with the exception boundary, so callers stay branch-free."""
             try:
                 return self._par_plan(intent, state)
             except Exception:
-                _log.exception("[fill] par override failed; inner plan stands")
+                _log.exception('[fill] par override failed; inner plan stands')
                 return None
 
         def _confirm_empty(self, intent, state, snapshot, elapsed):
@@ -464,12 +366,10 @@ def install(base_cls, Interaction, ExecutionPlan):
                 fut = _CONFIRM_POOL.submit(super().generate_plan, intent, state, snapshot)
                 retry = fut.result(timeout=_RETRY_MAX_S)
             except Exception:
-                # Timeout, or the engine raised again. Either way the empty stands confirmed
-                # as far as we can establish, and the cover path proceeds as before.
                 return None
             if _is_empty(retry):
                 return None
-            _log.info("[fill] inner was transiently empty; retry answered, cover suppressed")
+            _log.info('[fill] inner was transiently empty; retry answered, cover suppressed')
             return retry
 
         def generate_plan(self, intent, state, snapshot=None):
@@ -477,37 +377,28 @@ def install(base_cls, Interaction, ExecutionPlan):
             try:
                 plan = super().generate_plan(intent, state, snapshot)
             except Exception:
-                _log.exception("[fill] inner generate_plan raised; overlay may still answer")
+                _log.exception('[fill] inner generate_plan raised; overlay may still answer')
                 plan = None
             if not _is_empty(plan):
-                # The ONE exception to "champion routing always wins": a pair the inherited
-                # engine routes through a thin DEX pool because its Sky PSM path is wired to
-                # Base only. Any failure inside returns None and the inner plan stands.
                 par = self._par_try(intent, state)
                 return par if par is not None else plan
             return self._on_empty(intent, state, snapshot, plan, _t0)
 
         def _on_empty(self, intent, state, snapshot, plan, t0):
             """The empty-inner branch: confirm, then par, then the baked cover table."""
-            # Before standing a cover on it, establish that the emptiness is the champion's
-            # answer and not our own transient failure to produce one.
             confirmed = self._confirm_empty(intent, state, snapshot, _time.time() - t0)
             if confirmed is not None:
                 return confirmed
-            # Par first even here: on a confirmed-empty row it is a blind-spot fill with no
-            # floor, and a freshly built fixed-rate plan cannot be the stale calldata that
-            # makes most held covers forfeit their credit.
             par = self._par_try(intent, state)
             if par is not None:
                 return par
             try:
                 filled = self._overlay_plan(intent, state)
             except Exception:
-                _log.exception("[fill] overlay build failed; inner plan stands")
+                _log.exception('[fill] overlay build failed; inner plan stands')
                 return plan
             if filled is not None:
-                _log.info("[fill] overlay filled an empty plan (empty-only)")
+                _log.info('[fill] overlay filled an empty plan (empty-only)')
                 return filled
             return plan
-
     return _LatticeFill
