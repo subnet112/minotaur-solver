@@ -1,13 +1,9 @@
-
 from __future__ import annotations
 import logging
-
 logger = logging.getLogger(__name__)
-_BRAND = "dataCenter_kg29771551n1"  # coin our OWN solver name (not a copycat of the forked champion)
-_MARGIN_BPS = 10       # fresh must beat frozen by >0.1% (the scorer's own noise band)
-_MIN_BUDGET_S = 8.0    # our extra sims+requote cost; below this, DEFER so we never
-                       # trip the champion's governor into a self-inflicted drop
-
+_BRAND = 'dataCenter_kg29771551n1'
+_MARGIN_BPS = 10
+_MIN_BUDGET_S = 8.0
 
 def wrap(base_cls):
     from solver import _GORAN_OVERRIDES, _goran_key, _McSolver
@@ -34,21 +30,21 @@ def wrap(base_cls):
             k = _goran_key(state)
             if not k or k not in _GORAN_OVERRIDES:
                 return None
-            cid, con, tin, tout, amt = k.split("|")
-            return int(cid), con, tin, tout, int(amt)
+            cid, con, tin, tout, amt = k.split('|')
+            return (int(cid), con, tin, tout, int(amt))
 
         def generate_plan(self, intent, state, snapshot=None):
-            base = super().generate_plan(intent, state, snapshot)  # champion (frozen on override keys)
+            base = super().generate_plan(intent, state, snapshot)
             try:
-                if cover_state.disabled("refresh"):
+                if cover_state.disabled('refresh'):
                     return base
                 if cover_state.is_cross_chain(base) or cover_state.base_untrusted(base):
-                    return base                      # cross-chain / UR-V4 base -> defer (platform owns bridges; sim is a lie)
+                    return base
                 o = self._order5(state)
                 if o is None:
-                    return base                      # not an override key -> untouched
-                if float(getattr(self, "_dyn_order_budget", None) or 99.0) < _MIN_BUDGET_S:
-                    return base                      # tight budget -> defer (no self-inflicted drop)
+                    return base
+                if float(getattr(self, '_dyn_order_budget', None) or 99.0) < _MIN_BUDGET_S:
+                    return base
                 cid, con, tin, tout, amt = o
                 w3 = self._get_web3(cid)
                 if w3 is None:
@@ -57,7 +53,7 @@ def wrap(base_cls):
                 if served is not None:
                     return served
             except Exception:
-                logger.exception("[refresh] gate failed; deferring to champion")
+                logger.exception('[refresh] gate failed; deferring to champion')
             return base
 
         def _refresh_decide(self, w3, base, intent, state, snapshot, con, tin, tout, amt):
@@ -65,17 +61,15 @@ def wrap(base_cls):
             (esp. frozen==0 revert). Own region for factorization. None -> defer to champion."""
             f_out = viking_sim.sim_floor(w3, base, tin, tout, amt, con)
             if f_out is None:
-                return None                          # can't verify champion delivery -> defer
-            fresh = _McSolver.generate_plan(self, intent, state, snapshot)   # champion WITHOUT frozen layer
-            if fresh is None or not getattr(fresh, "interactions", None):
+                return None
+            fresh = _McSolver.generate_plan(self, intent, state, snapshot)
+            if fresh is None or not getattr(fresh, 'interactions', None):
                 return None
             b_out = viking_sim.sim_floor(w3, fresh, tin, tout, amt, con)
             if b_out is None:
                 return None
             if b_out > f_out * (1 + cover_state.margin_bps(_MARGIN_BPS) / 10000):
-                logger.info("[refresh] override key requote WIN frozen=%d fresh=%d %s->%s amt=%d",
-                            f_out, b_out, tin[:10], tout[:10], amt)
-                return fresh                         # strictly out-delivers
+                logger.info('[refresh] override key requote WIN frozen=%d fresh=%d %s->%s amt=%d', f_out, b_out, tin[:10], tout[:10], amt)
+                return fresh
             return None
-
     return RefreshOverridesSolver
