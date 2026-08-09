@@ -11,6 +11,5 @@ import with it. Leaving it behind made every call raise NameError, which _hub_le
 """
 from chain1_c import _HUBS
 
-
 def _usable_hubs(tin, tout):
     return [hub for hub in _HUBS if hub not in (tin, tout)]

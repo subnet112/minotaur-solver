@@ -1,6 +1,5 @@
-from shape_sng_ext import _v_sng_dy  # relocated leaf; see that module for why
-from shape_gao_ext import _v_pair_gao  # relocated leaf; see that module for why
-# SN112 shape library — quote helpers (builders live in shape_lib2/shape_lib3).
+from shape_sng_ext import _v_sng_dy
+from shape_gao_ext import _v_pair_gao
 
 def _res_call(s, pair, chain_id):
     from eth_abi import decode as _dec
@@ -19,7 +18,7 @@ def _v_v2_out(s, pair, amt_in, in_is_t0, chain_id):
             return None
         rin, rout = (res[0], res[1]) if in_is_t0 else (res[1], res[0])
         ai = int(amt_in) * 997
-        return ((ai * rout) // (rin * 1000 + ai)) or None
+        return ai * rout // (rin * 1000 + ai) or None
     except Exception:
         return None
 
@@ -33,8 +32,6 @@ def _v_bs_quote(s, venue, param, tin, tout, amt, chain_id):
         return s._hydra_quote_leg1({'leg1_router': router, 'leg1_fee': int(param), 'mid': tout}, tin, amt, chain_id)
     except Exception:
         return None
-
-
 
 def pair_out(s, pair, amt, tok_in, chain_id):
     """Aerodrome/V2 pair getAmountOut(uint256,address) — the pair's own

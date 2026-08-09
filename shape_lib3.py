@@ -1,4 +1,3 @@
-# SN112 shape library — pair/composite row builders.
 from shape_lib2 import _V_V3_ROUTERS
 
 def _xfer_cd(pair, amt):
@@ -28,7 +27,7 @@ def _sv3_parts(spec, tin, tout, amt, exec_addr, chain_id):
     from strategies.dex_aggregator import aerodrome as _aero
     slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
     leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid1'], tick_spacing=int(spec['slip_ts']), recipient=exec_addr, deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
-    return slip_router, leg1, _sv3_path(spec, tout)
+    return (slip_router, leg1, _sv3_path(spec, tout))
 
 def _sv3_leg2(path, q1, rcpt):
     from eth_abi import encode as _enc

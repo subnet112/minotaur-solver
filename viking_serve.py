@@ -7,7 +7,6 @@ from viking_tables import _v_gated_table, _viking_override, _viking_cached_bar, 
 from minotaur_subnet.shared.types import ExecutionPlan as _EP
 logger = logging.getLogger('solver')
 
-
 def head_serve(s, intent, state, snapshot):
     key = s._v_swap_key(intent, state)
     return (key, override_serve(s, key, intent, state, snapshot))
@@ -92,7 +91,7 @@ def _gated_gate(s, state, snapshot, plan, key):
     spec = _v_gated_table().get(key or '')
     if spec is None:
         return None
-    if (plan is None or s._v_is_empty(plan)) and not spec.get('z'):
+    if (plan is None or s._v_is_empty(plan)) and (not spec.get('z')):
         return None
     chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
     return None if chain_id not in (8453, 1) else (spec, chain_id)

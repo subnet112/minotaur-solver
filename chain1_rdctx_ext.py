@@ -15,4 +15,4 @@ def _rdctx(s, snapshot):
         return None
     block = getattr(snapshot, 'block_number', None) if snapshot else None
     block = int(block) if block else 'latest'
-    return w3, block
+    return (w3, block)

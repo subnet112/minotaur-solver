@@ -11,7 +11,6 @@ change resolution of any name it uses.
 from chain1_lib import _params
 from chain1_rdctx_ext import _rdctx
 
-
 def _guards(s, intent, state, snapshot):
     if int(getattr(state, 'chain_id', 0) or 0) != 1:
         return None
@@ -24,4 +23,4 @@ def _guards(s, intent, state, snapshot):
     rd = _rdctx(s, snapshot)
     if rd is None:
         return None
-    return pr, rcpt, rd[0], rd[1]
+    return (pr, rcpt, rd[0], rd[1])

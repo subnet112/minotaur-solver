@@ -243,6 +243,7 @@ class MinerSolver(_MinerSolverDR41):
         def _dr38():
             if w3 is None or not uni_router:
                 return None
+
             def _fw4():
                 best_out, best_fee = (0, 3000)
                 for fee in (3000, 500, 10000, 100):
@@ -334,6 +335,7 @@ class MinerSolver(_MinerSolverDR41):
         def _dr53():
             w3 = self._get_web3(int(chain_id))
             uni_router = UNISWAP_V3_ROUTERS.get(int(chain_id))
+
             def _fw3():
                 if w3 is None or not uni_router:
                     return (None,)
@@ -513,6 +515,7 @@ class MinerSolver(_MinerSolverDR41):
             via_weth = _dr15()
             ex = fut = None
             if via_weth:
+
                 def _fwvw(weth_fee=weth_fee, weth_out=weth_out):
                     with ThreadPoolExecutor(max_workers=6) as ex:
 
@@ -526,6 +529,7 @@ class MinerSolver(_MinerSolverDR41):
                                 weth_out, weth_fee = (o, f)
                     return (weth_fee, weth_out)
                 weth_fee, weth_out = _fwvw()
+
             def _fw1():
                 wi = weth_out * 995 // 1000 if weth_out > 0 else 0
                 tasks = self._afs_build_tasks(w3, tin, tout, amount_in, wi)
@@ -538,6 +542,7 @@ class MinerSolver(_MinerSolverDR41):
                 def _dr1():
                     nonlocal ex, extra, fut, reachable
                     with ThreadPoolExecutor(max_workers=16) as ex:
+
                         def _fw2():
                             futs = [(tag, spec, ex.submit(fn)) for tag, spec, fn in tasks]
                             return (futs,)

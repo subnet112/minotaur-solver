@@ -7,12 +7,9 @@ that module's namespace and therefore in its `from ... import *` surface.
 from __future__ import annotations
 
 def _bal_order_id32(order_id) -> bytes:
-    # The simulator's order-id normalization, byte-exact: hex ids
-    # pad-and-truncate, non-hex ids keccak.
     from eth_utils import keccak as _keccak
-
-    s = str(order_id).replace("0x", "")
+    s = str(order_id).replace('0x', '')
     try:
-        return bytes.fromhex(s.ljust(64, "0"))[:32]
+        return bytes.fromhex(s.ljust(64, '0'))[:32]
     except ValueError:
         return _keccak(str(order_id).encode())

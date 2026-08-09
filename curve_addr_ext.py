@@ -10,4 +10,4 @@ change resolution of any name it uses.
 """
 
 def _addr(r):
-    return ('0x' + r[-20:].hex()) if r is not None and len(r) >= 32 else None
+    return '0x' + r[-20:].hex() if r is not None and len(r) >= 32 else None
