@@ -502,3 +502,54 @@ def _mount_lattice_overlay():
 
 
 _mount_lattice_overlay()
+
+
+# ===== HYDRA APEX-SAFE FILL (auto-reforked on champion 3b4c8af) =====
+def _build_hydra_fill():
+    _HF_BASE = globals()['SOLVER_CLASS']
+
+    class HydraFillSolver(_HF_BASE):
+        """Brand identity only. The serve-time verify/upgrade/fill machinery
+        that used to live here was deleted 08-04: the bench sandbox grants no
+        chain-1 RPC, so none of it could ever act benchside — its dead bodies
+        only paid the factorization/deadwood tie-breaks (relative_scoring 3c/3d,
+        the path star_1 used to dethrone cobalt with a 0-win parity card).
+        Static covers live in the mino overlay; discovery lives offline."""
+
+        def metadata(self):
+            m = super().metadata()
+            try:
+                import min_multivenue as _mv
+                m.name = _mv._MV_NAME
+                m.version = _mv._MV_VERSION
+            except Exception:
+                pass
+            return m
+
+    globals()['SOLVER_CLASS'] = HydraFillSolver
+_build_hydra_fill()
+
+
+
+def _mount_mino_overlay():
+    """Wrap the champion's FINAL SOLVER_CLASS with the fill-only-empty cover layer.
+
+    Appended after _build_hydra_fill(), which is the last thing to rebind SOLVER_CLASS
+    (line ~1215). Wrapping anything earlier -- _McSolver at 938, or HydraFillSolver at 1164 --
+    would silently drop the layers installed after it and change champion routing.
+
+    The table is `mino_fill_rows.json`, NOT `lattice_wins.json`: this champion reads
+    lattice_wins.json itself (see the published-win replay around line 998), so writing our
+    rows there would overwrite a champion data file and alter its routing. Separate file,
+    separate class, no collision.
+    """
+    try:
+        import mino_fill_layer as _mf
+        from minotaur_subnet.shared.types import Interaction as _MIX, ExecutionPlan as _MEP
+        globals()['SOLVER_CLASS'] = _mf.install(globals()['SOLVER_CLASS'], _MIX, _MEP)
+    except Exception:
+        import logging as _mflog
+        _mflog.getLogger(__name__).exception('[minofill] overlay failed to mount; champion stands')
+
+
+_mount_mino_overlay()
