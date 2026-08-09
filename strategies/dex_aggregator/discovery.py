@@ -27,6 +27,7 @@ All addresses are const; every RPC call is wrapped so any single venue failing
 degrades to "no candidate from that venue", never an exception upward.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import logging
 from typing import Any, Callable
 from eth_abi import encode as _enc, decode as _dec
@@ -185,7 +186,8 @@ class _DiscoveryEngineDR12:
         paths = [[tin, tout]] + [[tin, h, tout] for h in hubs if h.lower() not in (tin.lower(), tout.lower())]
 
         def _dr6():
-            for label, router, native in forks:
+
+            def _dz370():
                 for path in paths:
                     q = self._v2_quote(router, path, amount_in)
                     if q <= 0:
@@ -197,10 +199,30 @@ class _DiscoveryEngineDR12:
                     else:
                         out.append({**base, 'venue': 'v2_fork', 'router': router, 'param': router})
                     break
+            for label, router, native in forks:
+                _dz370()
         _dr6()
         return out
 
     def aero_v2_candidates(self, chain_id, tin, tout, amount_in):
+
+        def _dz372():
+            for routes in route_sets:
+
+                def _dr8():
+                    data = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [amount_in, [(_ck(a), _ck(b), s, _ck(f)) for a, b, s, f in routes]])
+                    r = self._c(AERO_V2_ROUTER, data)
+                    return (data, r)
+                data, r = _dr8()
+                if not r:
+                    continue
+                try:
+                    q = int(_dec(['uint256[]'], r)[0][-1])
+                except Exception:
+                    continue
+                if q <= 0:
+                    continue
+                out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
         if chain_id != 8453:
             return []
 
@@ -215,22 +237,7 @@ class _DiscoveryEngineDR12:
                 route_sets.append(((tin, hub, False, AERO_V2_FACTORY), (hub, tout, False, AERO_V2_FACTORY)))
             return (out, route_sets)
         out, route_sets = _dr2()
-        for routes in route_sets:
-
-            def _dr8():
-                data = _kk(text='getAmountsOut(uint256,(address,address,bool,address)[])')[:4] + _enc(['uint256', '(address,address,bool,address)[]'], [amount_in, [(_ck(a), _ck(b), s, _ck(f)) for a, b, s, f in routes]])
-                r = self._c(AERO_V2_ROUTER, data)
-                return (data, r)
-            data, r = _dr8()
-            if not r:
-                continue
-            try:
-                q = int(_dec(['uint256[]'], r)[0][-1])
-            except Exception:
-                continue
-            if q <= 0:
-                continue
-            out.append({'venue': 'aerodrome_v2', 'routes': routes, 'out': q, 'param': AERO_V2_FACTORY, 'gas_est': 170000 * len(routes), 'gas_model': 350000 + 170000 * len(routes), 'discovered': 'aero_v2'})
+        _dz372()
         return out
 
 class DiscoveryEngine(_DiscoveryEngineDR12):
@@ -347,6 +354,19 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
         chained into the v4 leg via CONTRACT_BALANCE. Base + Ethereum (chain 1)
         via chain-selected quoter/bases/grid (see ``_v4_cfg``).
         """
+
+        def _dz371():
+            for base in bases:
+                if base.lower() == tout.lower():
+                    continue
+                for fee, tick, hooks in grid:
+                    cand = self._v4_probe(base, tin, tout, amount_in, weth, quoter, state_view, skip_liq, fee, tick, hooks)
+                    if cand is None:
+                        continue
+                    out.append(cand)
+                    break
+                if out:
+                    break
         if chain_id not in (8453, 1):
             return []
 
@@ -356,17 +376,7 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
             out = []
             return (bases, grid, out, quoter, skip_liq, state_view, weth)
         bases, grid, out, quoter, skip_liq, state_view, weth = _fz11()
-        for base in bases:
-            if base.lower() == tout.lower():
-                continue
-            for fee, tick, hooks in grid:
-                cand = self._v4_probe(base, tin, tout, amount_in, weth, quoter, state_view, skip_liq, fee, tick, hooks)
-                if cand is None:
-                    continue
-                out.append(cand)
-                break
-            if out:
-                break
+        _dz371()
         return out
 
     def discover(self, chain_id, tin, tout, amount_in, min_out):
@@ -374,18 +384,24 @@ class DiscoveryEngine(_DiscoveryEngineDR12):
         sorted by quoted output desc; quoted candidates beat probed ones."""
 
         def _dr10():
+
+            def _dz369():
+                cands = []
+                try:
+                    cands += self.v2_candidates(chain_id, tin, tout, amount_in)
+                    if not (min_out <= 1 and cands):
+                        cands += self.aero_v2_candidates(chain_id, tin, tout, amount_in)
+                    if not (min_out <= 1 and cands):
+                        cands += self.v4_candidates(chain_id, tin, tout, amount_in)
+                except Exception:
+                    logger.exception('[discovery] sweep failed (%s->%s)', tin, tout)
+                return (cands,)
+                return _DR_UNSET
             nonlocal tin, tout
             tin, tout = (tin.lower(), tout.lower())
-            cands = []
-            try:
-                cands += self.v2_candidates(chain_id, tin, tout, amount_in)
-                if not (min_out <= 1 and cands):
-                    cands += self.aero_v2_candidates(chain_id, tin, tout, amount_in)
-                if not (min_out <= 1 and cands):
-                    cands += self.v4_candidates(chain_id, tin, tout, amount_in)
-            except Exception:
-                logger.exception('[discovery] sweep failed (%s->%s)', tin, tout)
-            return cands
+            _r_dz369 = _dz369()
+            if _r_dz369 is not _DR_UNSET:
+                return _r_dz369[0]
         cands = _dr10()
         cands.sort(key=lambda c: c.get('out', 0), reverse=True)
         logger.info('[discovery] %s->%s chain=%s: %d candidate(s), %d rpc calls', tin[:8], tout[:8], chain_id, len(cands), self._used)

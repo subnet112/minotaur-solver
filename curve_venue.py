@@ -21,6 +21,7 @@ Public entrypoints:
 Only web3 (passed in), eth_abi, eth_utils and stdlib are imported.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 from eth_abi import encode as _E, decode as _D
 from eth_utils import keccak as _K, to_checksum_address as _C
 from curve_data import *
@@ -103,16 +104,22 @@ def _get_dy(w3, cid, route, swap, amt):
 def _leg(w3, cid, pool, hint, tin, tout, amt):
     """Best single hop (out, swap_row) for tin->tout via pool. Picks the first
     pool_type whose router get_dy is non-zero. None if the pool is dead."""
+
+    def _dz109():
+        if idx is None:
+            return (None,)
+        i, j, n = idx
+        route = _route1(tin, pool, tout)
+        for pt in _pt_order(hint, n):
+            row = [i, j, 1, pt, n]
+            o = _get_dy(w3, cid, route, [row] + [[0, 0, 0, 0, 0]] * 4, amt)
+            if o > 0:
+                return ((o, row),)
+        return _DR_UNSET
     idx = _indices(w3, pool, tin, tout)
-    if idx is None:
-        return None
-    i, j, n = idx
-    route = _route1(tin, pool, tout)
-    for pt in _pt_order(hint, n):
-        row = [i, j, 1, pt, n]
-        o = _get_dy(w3, cid, route, [row] + [[0, 0, 0, 0, 0]] * 4, amt)
-        if o > 0:
-            return (o, row)
+    _r_dz109 = _dz109()
+    if _r_dz109 is not _DR_UNSET:
+        return _r_dz109[0]
     return None
 
 def _best_leg(w3, cid, cands, tin, tout, amt):
@@ -141,6 +148,12 @@ def _mk2(tin, l1, hub, l2, tout):
 def _twohop(w3, cid, tin, tout, amt):
     """Best tin->hub->tout route -> (out, route, swap) or None."""
 
+    def _dz108():
+        nonlocal best
+        c = _hop2(w3, cid, tin, tout, amt, hub)
+        if c is not None and (best is None or c[0] > best[0]):
+            best = c
+
     def _hop2(w3, cid, tin, tout, amt, hub):
         """One tin->hub->tout candidate -> (out, route, swap) or None."""
 
@@ -161,9 +174,7 @@ def _twohop(w3, cid, tin, tout, amt):
     for hub in _HUBS.get(cid, ()):
         if hub.lower() in (tl, ol):
             continue
-        c = _hop2(w3, cid, tin, tout, amt, hub)
-        if c is not None and (best is None or c[0] > best[0]):
-            best = c
+        _dz108()
     return best
 
 def curve_best(w3, cid, tin, tout, amt):

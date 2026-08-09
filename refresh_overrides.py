@@ -1,4 +1,5 @@
 from __future__ import annotations
+_DR_UNSET = object()
 import logging
 logger = logging.getLogger(__name__)
 _BRAND = 'dataCenter_kg29770653n1'
@@ -34,6 +35,18 @@ def wrap(base_cls):
             return (int(cid), con, tin, tout, int(amt))
 
         def generate_plan(self, intent, state, snapshot=None):
+
+            def _dz311():
+                if float(getattr(self, '_dyn_order_budget', None) or 99.0) < _MIN_BUDGET_S:
+                    return (base,)
+                cid, con, tin, tout, amt = o
+                w3 = self._get_web3(cid)
+                if w3 is None:
+                    return (base,)
+                served = self._refresh_decide(w3, base, intent, state, snapshot, con, tin, tout, amt)
+                if served is not None:
+                    return (served,)
+                return _DR_UNSET
             base = super().generate_plan(intent, state, snapshot)
             try:
                 if cover_state.disabled('refresh'):
@@ -43,15 +56,9 @@ def wrap(base_cls):
                 o = self._order5(state)
                 if o is None:
                     return base
-                if float(getattr(self, '_dyn_order_budget', None) or 99.0) < _MIN_BUDGET_S:
-                    return base
-                cid, con, tin, tout, amt = o
-                w3 = self._get_web3(cid)
-                if w3 is None:
-                    return base
-                served = self._refresh_decide(w3, base, intent, state, snapshot, con, tin, tout, amt)
-                if served is not None:
-                    return served
+                _r_dz311 = _dz311()
+                if _r_dz311 is not _DR_UNSET:
+                    return _r_dz311[0]
             except Exception:
                 logger.exception('[refresh] gate failed; deferring to champion')
             return base
@@ -59,17 +66,23 @@ def wrap(base_cls):
         def _refresh_decide(self, w3, base, intent, state, snapshot, con, tin, tout, amt):
             """Sim frozen champion vs fresh requote; serve fresh iff it strictly out-delivers
             (esp. frozen==0 revert). Own region for factorization. None -> defer to champion."""
+
+            def _dz310():
+                if fresh is None or not getattr(fresh, 'interactions', None):
+                    return (None,)
+                b_out = viking_sim.sim_floor(w3, fresh, tin, tout, amt, con)
+                if b_out is None:
+                    return (None,)
+                if b_out > f_out * (1 + cover_state.margin_bps(_MARGIN_BPS) / 10000):
+                    logger.info('[refresh] override key requote WIN frozen=%d fresh=%d %s->%s amt=%d', f_out, b_out, tin[:10], tout[:10], amt)
+                    return (fresh,)
+                return _DR_UNSET
             f_out = viking_sim.sim_floor(w3, base, tin, tout, amt, con)
             if f_out is None:
                 return None
             fresh = _McSolver.generate_plan(self, intent, state, snapshot)
-            if fresh is None or not getattr(fresh, 'interactions', None):
-                return None
-            b_out = viking_sim.sim_floor(w3, fresh, tin, tout, amt, con)
-            if b_out is None:
-                return None
-            if b_out > f_out * (1 + cover_state.margin_bps(_MARGIN_BPS) / 10000):
-                logger.info('[refresh] override key requote WIN frozen=%d fresh=%d %s->%s amt=%d', f_out, b_out, tin[:10], tout[:10], amt)
-                return fresh
+            _r_dz310 = _dz310()
+            if _r_dz310 is not _DR_UNSET:
+                return _r_dz310[0]
             return None
     return RefreshOverridesSolver

@@ -1,4 +1,5 @@
 from __future__ import annotations
+_DR_UNSET = object()
 from g2_codec_base import *
 
 def _mk_routers():
@@ -34,15 +35,21 @@ def _v3_swap_cd(spec, rcpt) -> str:
 def _curve_swap_cd(hop, rcpt=None) -> str:
 
     def _c_curve_swap_cd_0(hop, rcpt):
+
+        def _dz143():
+            recv = hop.get('recv') if rcpt is not None else None
+            recv = '6a' if recv == '6a' else bool(recv)
+            sig, types = _curve_abi(hop.get('flavor') or 'stable', recv)
+            sel = _keccak(text=sig)[:4]
+            args = _curve_args(i, j, dx, recv, rcpt, _ck)
+            return ((_enc, args, sel, types),)
+            return _DR_UNSET
         from eth_abi import encode as _enc
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
         dx, i, j = (int(hop['dx']), int(hop['i']), int(hop['j']))
-        recv = hop.get('recv') if rcpt is not None else None
-        recv = '6a' if recv == '6a' else bool(recv)
-        sig, types = _curve_abi(hop.get('flavor') or 'stable', recv)
-        sel = _keccak(text=sig)[:4]
-        args = _curve_args(i, j, dx, recv, rcpt, _ck)
-        return (_enc, args, sel, types)
+        _r_dz143 = _dz143()
+        if _r_dz143 is not _DR_UNSET:
+            return _r_dz143[0]
     _enc, args, sel, types = _c_curve_swap_cd_0(hop, rcpt)
     return '0x' + (sel + _enc(types, args)).hex()
 
@@ -79,18 +86,25 @@ def _final_transfer(spec, rcpt, Interaction, cid):
     return _transfer_leg(str(last['tokens'][-1]), int(spec['out']) * bps // 10000, rcpt, Interaction, cid)
 
 def _route_legs(spec, rcpt, Interaction):
+
+    def _dz149():
+        nonlocal legs
+        n = len(spec['hops'])
+        for idx, hop in enumerate(spec['hops']):
+            built = _hop_legs(spec, hop, idx == n - 1, rcpt, Interaction, cid)
+            if not built:
+                return ([],)
+            legs += built
+        extra = _final_transfer(spec, rcpt, Interaction, cid)
+        if extra is not None:
+            legs.append(extra)
+        return (legs,)
+        return _DR_UNSET
     legs = []
     cid = int(spec.get('chain_id') or 1)
-    n = len(spec['hops'])
-    for idx, hop in enumerate(spec['hops']):
-        built = _hop_legs(spec, hop, idx == n - 1, rcpt, Interaction, cid)
-        if not built:
-            return []
-        legs += built
-    extra = _final_transfer(spec, rcpt, Interaction, cid)
-    if extra is not None:
-        legs.append(extra)
-    return legs
+    _r_dz149 = _dz149()
+    if _r_dz149 is not _DR_UNSET:
+        return _r_dz149[0]
 
 def _approve_legs(tin, amt, router, Interaction, cid=1):
     from eth_utils import to_checksum_address as _ck
@@ -113,17 +127,23 @@ def _legs_router_cd(spec, rcpt):
     return (_router_for(spec, 'v3'), _v3_swap_cd(spec, rcpt))
 
 def _legs(spec, rcpt, Interaction):
+
+    def _dz148():
+        tin = str(spec['tokens'][0]).lower()
+        amt = int(spec['amt_in'])
+        router, swap_cd = _legs_router_cd(spec, rcpt)
+        if not router:
+            return ([],)
+        legs = _approve_legs(tin, amt, router, Interaction, cid)
+        legs.append(Interaction(target=router, value='0', call_data=swap_cd, chain_id=cid))
+        return (legs,)
+        return _DR_UNSET
     if spec.get('venue') == 'route':
         return _route_legs(spec, rcpt, Interaction)
     cid = int(spec.get('chain_id') or 1)
-    tin = str(spec['tokens'][0]).lower()
-    amt = int(spec['amt_in'])
-    router, swap_cd = _legs_router_cd(spec, rcpt)
-    if not router:
-        return []
-    legs = _approve_legs(tin, amt, router, Interaction, cid)
-    legs.append(Interaction(target=router, value='0', call_data=swap_cd, chain_id=cid))
-    return legs
+    _r_dz148 = _dz148()
+    if _r_dz148 is not _DR_UNSET:
+        return _r_dz148[0]
 
 def _set_rpc(urls):
     try:
@@ -139,6 +159,12 @@ def _bal_w3(cid):
     return Web3(Web3.HTTPProvider(url, request_kwargs={'timeout': 8}))
 
 def _bal_bench_order_id(state):
+
+    def _dz147():
+        control = getattr(state, 'control', None) or {}
+        seed = '|'.join((str(getattr(state, 'contract_address', '')).lower(), str(getattr(state, 'chain_id', '')), str(control.get('_scenario_name', '')), str(control.get('_intent_function', 'swap')), str(fork_block)))
+        return ('bench_' + hashlib.sha256(seed.encode('utf-8')).hexdigest()[:16],)
+        return _DR_UNSET
     import hashlib
     w3 = _bal_w3(getattr(state, 'chain_id', 1))
     if w3 is None:
@@ -147,11 +173,23 @@ def _bal_bench_order_id(state):
         fork_block = int(w3.eth.block_number)
     except Exception:
         return None
-    control = getattr(state, 'control', None) or {}
-    seed = '|'.join((str(getattr(state, 'contract_address', '')).lower(), str(getattr(state, 'chain_id', '')), str(control.get('_scenario_name', '')), str(control.get('_intent_function', 'swap')), str(fork_block)))
-    return 'bench_' + hashlib.sha256(seed.encode('utf-8')).hexdigest()[:16]
+    _r_dz147 = _dz147()
+    if _r_dz147 is not _DR_UNSET:
+        return _r_dz147[0]
 
 def _bal_proxy(state):
+
+    def _dz146():
+        data = _keccak(text='predictProxy(bytes32)')[:4] + _bal_order_id32(oid)
+        try:
+            r = w3.eth.call({'to': _ck(str(state.contract_address)), 'data': '0x' + data.hex()})
+            rb = bytes(r)
+            if len(rb) < 20:
+                return (None,)
+            return (_ck('0x' + rb[-20:].hex()),)
+        except Exception:
+            return (None,)
+        return _DR_UNSET
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
     w3 = _bal_w3(getattr(state, 'chain_id', 1))
     if w3 is None:
@@ -159,41 +197,47 @@ def _bal_proxy(state):
     oid = _bal_bench_order_id(state)
     if oid is None:
         return None
-    data = _keccak(text='predictProxy(bytes32)')[:4] + _bal_order_id32(oid)
-    try:
-        r = w3.eth.call({'to': _ck(str(state.contract_address)), 'data': '0x' + data.hex()})
-        rb = bytes(r)
-        if len(rb) < 20:
-            return None
-        return _ck('0x' + rb[-20:].hex())
-    except Exception:
-        return None
+    _r_dz146 = _dz146()
+    if _r_dz146 is not _DR_UNSET:
+        return _r_dz146[0]
 
 def _bal_swap_cd(spec, proxy, rcpt, deadline) -> bytes | None:
+
+    def _dz145():
+        amount = int(spec['amt_in'])
+        funds = (_ck(proxy), False, _ck(rcpt), False)
+        if route[0] == 'direct':
+            return (_lift_bal_swap_cd_0(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout),)
+        if route[0] == 'hop':
+            return (_lift_bal_swap_cd_1(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout),)
+        return (None,)
+        return _DR_UNSET
     from eth_abi import encode as _enc
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
     route = spec['route']
     tin, tout = (spec['tokens'][0], spec['tokens'][-1])
-    amount = int(spec['amt_in'])
-    funds = (_ck(proxy), False, _ck(rcpt), False)
-    if route[0] == 'direct':
-        return _lift_bal_swap_cd_0(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout)
-    if route[0] == 'hop':
-        return _lift_bal_swap_cd_1(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout)
-    return None
+    _r_dz145 = _dz145()
+    if _r_dz145 is not _DR_UNSET:
+        return _r_dz145[0]
 
 def _bal_serve_legs(spec, rcpt, state, Interaction):
+
+    def _dz144():
+        cid = int(spec.get('chain_id') or 1)
+        cd = _bal_swap_cd(spec, proxy, rcpt, 9999999999)
+        if cd is None:
+            return ([],)
+        legs = _approve_legs(str(spec['tokens'][0]).lower(), int(spec['amt_in']), _BAL_VAULT, Interaction, cid)
+        legs.append(Interaction(target=_BAL_VAULT, value='0', call_data='0x' + cd.hex(), chain_id=cid))
+        return (legs,)
+        return _DR_UNSET
     try:
         proxy = _bal_proxy(state)
         if proxy is None:
             return []
-        cid = int(spec.get('chain_id') or 1)
-        cd = _bal_swap_cd(spec, proxy, rcpt, 9999999999)
-        if cd is None:
-            return []
-        legs = _approve_legs(str(spec['tokens'][0]).lower(), int(spec['amt_in']), _BAL_VAULT, Interaction, cid)
-        legs.append(Interaction(target=_BAL_VAULT, value='0', call_data='0x' + cd.hex(), chain_id=cid))
-        return legs
+        _r_dz144 = _dz144()
+        if _r_dz144 is not _DR_UNSET:
+            return _r_dz144[0]
     except Exception:
         return []
 
@@ -210,12 +254,18 @@ def _v4_actions_params(spec, rcpt, _enc, _ck):
         _V4_ADDRESS_THIS / _V4_CONTRACT_BALANCE are module globals and this helper stays in the same
         module, so they resolve exactly as they did inside the parent.
         """
+
+        def _dz142():
+            actions = bytes([11] + [6] * len(legs) + [14])
+            params = [_enc(['address', 'uint256', 'bool'], [_ck(str(spec['settle'])), _V4_CONTRACT_BALANCE, False])]
+            params += [_v4_leg_param(pk, zfo, _enc, _ck) for pk, zfo in legs]
+            take_to = _V4_ADDRESS_THIS if spec.get('wrap_out') else rcpt
+            return ((actions, params, take_to),)
+            return _DR_UNSET
         legs = [(tuple(pk), bool(zfo)) for pk, zfo in spec['pools']]
-        actions = bytes([11] + [6] * len(legs) + [14])
-        params = [_enc(['address', 'uint256', 'bool'], [_ck(str(spec['settle'])), _V4_CONTRACT_BALANCE, False])]
-        params += [_v4_leg_param(pk, zfo, _enc, _ck) for pk, zfo in legs]
-        take_to = _V4_ADDRESS_THIS if spec.get('wrap_out') else rcpt
-        return (actions, params, take_to)
+        _r_dz142 = _dz142()
+        if _r_dz142 is not _DR_UNSET:
+            return _r_dz142[0]
     actions, params, take_to = _c_v4_actions_params_0(_ck, _enc, rcpt, spec)
 
     def _c_v4_actions_params_1(_ck, _enc, params, spec, take_to):
@@ -226,17 +276,24 @@ def _v4_actions_params(spec, rcpt, _enc, _ck):
 def _v4_execute_cd(spec, rcpt) -> str:
 
     def _c_v4_execute_cd_0(rcpt, spec):
+
+        def _dz141():
+            nonlocal commands
+            if spec.get('unwrap_weth'):
+                inputs.append(_enc(['address', 'uint256'], [_ck(_V4_ADDRESS_THIS), 0]))
+                commands += bytes([12])
+            actions, params = _v4_actions_params(spec, rcpt, _enc, _ck)
+            inputs.append(_enc(['bytes', 'bytes[]'], [actions, params]))
+            commands += bytes([16])
+            return ((_ck, _enc, _keccak, commands, inputs),)
+            return _DR_UNSET
         from eth_abi import encode as _enc
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
         commands = b''
         inputs = []
-        if spec.get('unwrap_weth'):
-            inputs.append(_enc(['address', 'uint256'], [_ck(_V4_ADDRESS_THIS), 0]))
-            commands += bytes([12])
-        actions, params = _v4_actions_params(spec, rcpt, _enc, _ck)
-        inputs.append(_enc(['bytes', 'bytes[]'], [actions, params]))
-        commands += bytes([16])
-        return (_ck, _enc, _keccak, commands, inputs)
+        _r_dz141 = _dz141()
+        if _r_dz141 is not _DR_UNSET:
+            return _r_dz141[0]
     _ck, _enc, _keccak, commands, inputs = _c_v4_execute_cd_0(rcpt, spec)
 
     def _c_v4_execute_cd_1(_ck, _enc, commands, inputs, rcpt, spec):

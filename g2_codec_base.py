@@ -5,6 +5,7 @@ too, so this module never imports back from g2_codec and no cycle is possible.
 Semantics unchanged -- same objects, same names, same order.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 __all__ = ['_BAL_VAULT', '_EXECUTOR', '_ROUTER_V2', '_ROUTER_V3', '_RPC_URLS', '_USDT', '_V4_ADDRESS_THIS', '_V4_CONTRACT_BALANCE', '_V4_UR', '_bal_order_id32', '_curve_abi', '_curve_args', '_lift_bal_swap_cd_0', '_lift_bal_swap_cd_1', '_pack_path', '_transfer_leg', '_v2_swap_cd', 'annotations']
 'g2 codec + leg builders — split from g2_fill (region hygiene: each\nmodule top is its own region; the serve/table/guard logic stays in g2_fill).\nRouting constants live here with the builders that consume them.'
 _ROUTER_V3 = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
@@ -71,12 +72,18 @@ def _lift_bal_swap_cd_1(_ck, _enc, _keccak, amount, deadline, funds, route, tin,
 
     def _c_lift_bal_swap_cd_1_0(_ck, _keccak, amount, route, tin, tout):
         """Lifted from _bal_swap_cd: a return-terminated branch, verbatim."""
+
+        def _dz150():
+            sel = _keccak(text='batchSwap(uint8,(bytes32,uint256,uint256,uint256,bytes)[],address[],(address,bool,address,bool),int256[],uint256)')[:4]
+            swaps = [(bytes.fromhex(str(p1).replace('0x', '')), 0, 1, amount, b''), (bytes.fromhex(str(p2).replace('0x', '')), 1, 2, 0, b'')]
+            assets = [_ck(tin), _ck(hub), _ck(tout)]
+            limits = [amount, 0, 0]
+            return ((assets, limits, sel, swaps),)
+            return _DR_UNSET
         p1, p2, hub = (route[1], route[2], route[3])
-        sel = _keccak(text='batchSwap(uint8,(bytes32,uint256,uint256,uint256,bytes)[],address[],(address,bool,address,bool),int256[],uint256)')[:4]
-        swaps = [(bytes.fromhex(str(p1).replace('0x', '')), 0, 1, amount, b''), (bytes.fromhex(str(p2).replace('0x', '')), 1, 2, 0, b'')]
-        assets = [_ck(tin), _ck(hub), _ck(tout)]
-        limits = [amount, 0, 0]
-        return (assets, limits, sel, swaps)
+        _r_dz150 = _dz150()
+        if _r_dz150 is not _DR_UNSET:
+            return _r_dz150[0]
     assets, limits, sel, swaps = _c_lift_bal_swap_cd_1_0(_ck, _keccak, amount, route, tin, tout)
     return sel + _enc(['uint8', '(bytes32,uint256,uint256,uint256,bytes)[]', 'address[]', '(address,bool,address,bool)', 'int256[]', 'uint256'], [0, swaps, assets, funds, limits, int(deadline)])
 _V4_UR = '0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af'

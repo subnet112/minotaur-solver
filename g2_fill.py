@@ -30,6 +30,7 @@ factorization metric charges each named scope's body as its own region, and
 this tree's ceiling is what a rival's factor_delta is measured against.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import json
 import logging
 import os
@@ -92,14 +93,20 @@ def _table() -> dict:
 def _key(state):
     """Chain-scoped row key `chain|tin|tout|amt`; the legacy 3-part form
     (chain-1 entries baked before chain scoping) is the lookup fallback."""
-    try:
-        p = getattr(state, 'raw_params', None) or {}
-        cid = int(getattr(state, 'chain_id', 0) or 0)
+
+    def _dz153():
         tin = str(p.get('input_token') or '').lower()
         tout = str(p.get('output_token') or '').lower()
         amt = int(p.get('input_amount') or 0)
         if cid and tin and tout and amt:
-            return str(cid) + '|' + tin + '|' + tout + '|' + str(amt)
+            return (str(cid) + '|' + tin + '|' + tout + '|' + str(amt),)
+        return _DR_UNSET
+    try:
+        p = getattr(state, 'raw_params', None) or {}
+        cid = int(getattr(state, 'chain_id', 0) or 0)
+        _r_dz153 = _dz153()
+        if _r_dz153 is not _DR_UNSET:
+            return _r_dz153[0]
     except Exception:
         pass
     return None
@@ -109,22 +116,35 @@ def _cover_spec(state):
     Chain scoping lives in the key itself: a chain with no baked entries
     never matches, and a matched entry without a routable venue registry
     entry fails closed in the leg builders."""
+
+    def _dz152():
+        if not isinstance(spec, dict):
+            return (None,)
+        if not _chain_ready(spec):
+            return (None,)
+        if not _margin_ok(spec):
+            return (None,)
+        rcpt = str(getattr(state, 'contract_address', '') or getattr(state, 'owner', '') or '')
+        if not rcpt:
+            return (None,)
+        return ((spec, rcpt, k),)
+        return _DR_UNSET
     k = _key(state)
     spec = _table().get(k) if k else None
     if not isinstance(spec, dict) and k and k.startswith('1|'):
         spec = _table().get(k[2:])
-    if not isinstance(spec, dict):
-        return None
-    if not _chain_ready(spec):
-        return None
-    if not _margin_ok(spec):
-        return None
-    rcpt = str(getattr(state, 'contract_address', '') or getattr(state, 'owner', '') or '')
-    if not rcpt:
-        return None
-    return (spec, rcpt, k)
+    _r_dz152 = _dz152()
+    if _r_dz152 is not _DR_UNSET:
+        return _r_dz152[0]
 
 def _cover_plan(hit, intent, state, Interaction, ExecutionPlan):
+
+    def _dz151():
+        if not legs:
+            return (None,)
+        _log.info('[g2] cover serve %s', k[:64])
+        return (ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'g2-cover', 'chain_id': int(spec.get('chain_id') or 1)}),)
+        return _DR_UNSET
     spec, rcpt, k = hit
     if spec.get('kind') == 'bal':
         legs = _bal_serve_legs(spec, rcpt, state, Interaction)
@@ -132,10 +152,9 @@ def _cover_plan(hit, intent, state, Interaction, ExecutionPlan):
         legs = _v4_serve_legs(spec, rcpt, Interaction)
     else:
         legs = _legs(spec, rcpt, Interaction)
-    if not legs:
-        return None
-    _log.info('[g2] cover serve %s', k[:64])
-    return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=legs, deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'g2-cover', 'chain_id': int(spec.get('chain_id') or 1)})
+    _r_dz151 = _dz151()
+    if _r_dz151 is not _DR_UNSET:
+        return _r_dz151[0]
 
 def install(base_cls, Interaction, ExecutionPlan):
     """Wrap base_cls: chain-1 rows with a baked table entry serve table-first

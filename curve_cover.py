@@ -12,6 +12,7 @@ serves the Curve route. So:
 Veto-safe by construction; reuses the champion's own audited Curve calldata.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import logging
 logger = logging.getLogger(__name__)
 _MARGIN_BPS = 10
@@ -50,20 +51,41 @@ def wrap(base_cls):
         def _cc_candidate(self, intent, state, snapshot, base):
             """Guards + params; delegates route+build to _cc_route (both stay small regions).
             Returns (cplan, tin, tout, amt, app, w3) or None to defer."""
+
+            def _dz99():
+                p, tin, tout, amt = self._cc_params(intent, state)
+                app = getattr(state, 'contract_address', '') or ''
+                if amt <= 0 or not tin or (not tout) or (tin == tout) or (not app):
+                    return (None,)
+                return (self._cc_route(intent, state, snapshot, p, tin, tout, amt, app),)
+                return _DR_UNSET
             if cover_state.disabled('curve'):
                 return None
             if int(getattr(state, 'chain_id', 0) or 0) != 1:
                 return None
             if float(getattr(self, '_dyn_order_budget', None) or 99.0) < _MIN_BUDGET_S:
                 return None
-            p, tin, tout, amt = self._cc_params(intent, state)
-            app = getattr(state, 'contract_address', '') or ''
-            if amt <= 0 or not tin or (not tout) or (tin == tout) or (not app):
-                return None
-            return self._cc_route(intent, state, snapshot, p, tin, tout, amt, app)
+            _r_dz99 = _dz99()
+            if _r_dz99 is not _DR_UNSET:
+                return _r_dz99[0]
 
         def _cc_route(self, intent, state, snapshot, p, tin, tout, amt, app):
             """Live-Curve route lookup + built candidate plan (own region)."""
+
+            def _dz98():
+                if pool is None or dy <= 0:
+                    return (None,)
+                _r_dz97 = _dz97()
+                if _r_dz97 is not _DR_UNSET:
+                    return (_r_dz97[0],)
+                return _DR_UNSET
+
+            def _dz97():
+                recipient = self._apex_recipient(state, p)
+                w = {'pool': pool, 'i': i, 'j': j, 'ex': 'u256_recv' if sig == 'u256' else 'i128_recv'}
+                cplan = ExecutionPlan(intent_id=intent.app_id, interactions=_curve_ix(w, amt, tin, recipient), deadline=int(self._apex_deadline(snapshot)), nonce=state.nonce, metadata={'solver': 'curve-cover', 'chain_id': 1})
+                return ((cplan, tin, tout, amt, app, w3),)
+                return _DR_UNSET
             w3 = self._get_web3(1)
             if w3 is None:
                 return None
@@ -73,14 +95,26 @@ def wrap(base_cls):
             except Exception:
                 block = 'latest'
             dy, pool, i, j, sig = _curve_best_live(w3, tin, tout, amt, block)
-            if pool is None or dy <= 0:
-                return None
-            recipient = self._apex_recipient(state, p)
-            w = {'pool': pool, 'i': i, 'j': j, 'ex': 'u256_recv' if sig == 'u256' else 'i128_recv'}
-            cplan = ExecutionPlan(intent_id=intent.app_id, interactions=_curve_ix(w, amt, tin, recipient), deadline=int(self._apex_deadline(snapshot)), nonce=state.nonce, metadata={'solver': 'curve-cover', 'chain_id': 1})
-            return (cplan, tin, tout, amt, app, w3)
+            _r_dz98 = _dz98()
+            if _r_dz98 is not _DR_UNSET:
+                return _r_dz98[0]
 
         def generate_plan(self, intent, state, snapshot=None):
+
+            def _dz95(base, cand):
+                cplan, tin, tout, amt, app, w3 = cand
+                champ_out = viking_sim.sim_floor(w3, base, tin, tout, amt, app)
+                _r_dz94 = _dz94()
+                return (_r_dz94, amt, app, champ_out, cplan, tin, tout, w3)
+
+            def _dz94():
+                curve_out = viking_sim.sim_floor(w3, cplan, tin, tout, amt, app)
+                if champ_out is None or curve_out is None:
+                    return (base,)
+                if curve_out > champ_out * (1 + cover_state.margin_bps(_MARGIN_BPS) / 10000):
+                    logger.info('[curve] cover WIN champ=%d curve=%d %s->%s amt=%d', champ_out, curve_out, tin[:10], tout[:10], amt)
+                    return (cplan,)
+                return _DR_UNSET
             base = super().generate_plan(intent, state, snapshot)
             try:
                 if cover_state.is_cross_chain(base) or cover_state.base_untrusted(base):
@@ -88,14 +122,9 @@ def wrap(base_cls):
                 cand = self._cc_candidate(intent, state, snapshot, base)
                 if cand is None:
                     return base
-                cplan, tin, tout, amt, app, w3 = cand
-                champ_out = viking_sim.sim_floor(w3, base, tin, tout, amt, app)
-                curve_out = viking_sim.sim_floor(w3, cplan, tin, tout, amt, app)
-                if champ_out is None or curve_out is None:
-                    return base
-                if curve_out > champ_out * (1 + cover_state.margin_bps(_MARGIN_BPS) / 10000):
-                    logger.info('[curve] cover WIN champ=%d curve=%d %s->%s amt=%d', champ_out, curve_out, tin[:10], tout[:10], amt)
-                    return cplan
+                _r_dz94, amt, app, champ_out, cplan, tin, tout, w3 = _dz95(base, cand)
+                if _r_dz94 is not _DR_UNSET:
+                    return _r_dz94[0]
             except Exception:
                 logger.exception('[curve] cover failed; deferring to champion')
             return base

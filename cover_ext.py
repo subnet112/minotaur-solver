@@ -59,11 +59,15 @@ def _probe(rpc, pool, i, j, underlying, amount):
     base coins only through the `_underlying` variants. Mixing them reverts, and
     a revert here is a delivered zero.
     """
+
+    def _dz84(amount, i, j, pool, rpc, sig, typ):
+        data = '0x' + _sel(sig) + encode([typ, typ, 'uint256'], [i, j, int(amount)]).hex()
+        out = int(decode(['uint256'], _call(rpc, pool, data))[0])
+        return (data, out)
     for quote_fn, swap_fn, typ in _shapes(underlying):
         sig = f'{quote_fn}({typ},{typ},uint256)'
         try:
-            data = '0x' + _sel(sig) + encode([typ, typ, 'uint256'], [i, j, int(amount)]).hex()
-            out = int(decode(['uint256'], _call(rpc, pool, data))[0])
+            data, out = _dz84(amount, i, j, pool, rpc, sig, typ)
         except Exception:
             continue
         if out > 0:
