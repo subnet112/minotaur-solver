@@ -1,4 +1,3 @@
-# SN112 per-shape estimators + gated-row dispatch (split from shape_lib).
 import shape_lib as _sl
 
 def est_v3s(s, spec, tin, amt, chain_id):
@@ -33,4 +32,3 @@ def est_sgs(s, spec, tin, amt, chain_id):
 def est_v2p(s, spec, tin, amt, chain_id):
     q = _sl._v_pair_gao(s, spec['pair'], amt, tin, chain_id)
     return (q, None) if q else (None, None)
-

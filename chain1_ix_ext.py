@@ -20,8 +20,6 @@ def _c1_build_ix_v2(tin, recip, tokens, amt):
     from eth_utils import to_checksum_address as _ck
     from common.abi_utils import encode_approve
     from minotaur_subnet.shared.types import Interaction as _IX
-    ROUTER_V2 = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'  # Uniswap V2 Router02 (mainnet)
-    swap_data = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'],
-                                    [int(amt), 0, [_ck(t) for t in tokens], _ck(recip), 9999999999]).hex()
-    return [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(ROUTER_V2), int(amt)), chain_id=1),
-            _IX(target=_ck(ROUTER_V2), value='0', call_data=swap_data, chain_id=1)]
+    ROUTER_V2 = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+    swap_data = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amt), 0, [_ck(t) for t in tokens], _ck(recip), 9999999999]).hex()
+    return [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(ROUTER_V2), int(amt)), chain_id=1), _IX(target=_ck(ROUTER_V2), value='0', call_data=swap_data, chain_id=1)]
