@@ -1,7 +1,7 @@
-# chain-1 dynamic tier: decision + entry
+_DR_UNSET = object()
 from chain1_lib import _qroute, _build, _params, _champ_route
 from chain1_v2 import _v2_build, _sweep, _v2_best
-from chain1_guard_ext import _meets_min_out  # relocated leaf; see that module for why
+from chain1_guard_ext import _meets_min_out
 
 def _beats_champ(w3, tin, tout, amt, block, q_mine, route):
     croute = _champ_route(tin, tout)
@@ -12,8 +12,6 @@ def _beats_champ(w3, tin, tout, amt, block, q_mine, route):
         return False
     return True
 
-
-
 def _decide(w3, tin, tout, amt, mo, block, base_empty):
     best = _v2_best(w3, tin, tout, amt, block, _sweep(w3, tin, tout, amt, block))
     if best is None:
@@ -21,13 +19,13 @@ def _decide(w3, tin, tout, amt, mo, block, base_empty):
     q_mine, route = best
     if not _meets_min_out(q_mine, mo):
         return None
-    if not base_empty and not _beats_champ(w3, tin, tout, amt, block, q_mine, route):
+    if not base_empty and (not _beats_champ(w3, tin, tout, amt, block, q_mine, route)):
         return None
     return route
 
 def _mk_plan(route, tin, amt, rcpt, intent, state):
     from minotaur_subnet.shared.types import ExecutionPlan as _EP
-    if isinstance(route, tuple) and route and route[0] == 'v2':
+    if isinstance(route, tuple) and route and (route[0] == 'v2'):
         ixs = _v2_build(route[1], route[2], tin, amt, route[3], rcpt, 1)
     else:
         ixs = _build(route, tin, amt, rcpt, 1)
@@ -39,7 +37,7 @@ def _rdctx(s, snapshot):
         return None
     block = getattr(snapshot, 'block_number', None) if snapshot else None
     block = int(block) if block else 'latest'
-    return w3, block
+    return (w3, block)
 
 def _guards(s, intent, state, snapshot):
     if int(getattr(state, 'chain_id', 0) or 0) != 1:
@@ -53,20 +51,26 @@ def _guards(s, intent, state, snapshot):
     rd = _rdctx(s, snapshot)
     if rd is None:
         return None
-    return pr, rcpt, rd[0], rd[1]
+    return (pr, rcpt, rd[0], rd[1])
 
 def superset(s, intent, state, snapshot, base_plan):
     """Chain-1 candidate sweep; a plan only when strictly better than the
     engine's own quoted route by the margin (or the base plan is empty)."""
-    try:
-        g = _guards(s, intent, state, snapshot)
+
+    def _dz43():
         if g is None:
-            return None
+            return (None,)
         (tin, tout, amt, mo), rcpt, w3, block = g
         base_empty = base_plan is None or not getattr(base_plan, 'interactions', None)
         route = _decide(w3, tin, tout, amt, mo, block, base_empty)
         if route is None:
-            return None
-        return _mk_plan(route, tin, amt, rcpt, intent, state)
+            return (None,)
+        return (_mk_plan(route, tin, amt, rcpt, intent, state),)
+        return _DR_UNSET
+    try:
+        g = _guards(s, intent, state, snapshot)
+        _r_dz43 = _dz43()
+        if _r_dz43 is not _DR_UNSET:
+            return _r_dz43[0]
     except Exception:
         return None

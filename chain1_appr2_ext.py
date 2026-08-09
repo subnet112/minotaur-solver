@@ -11,7 +11,6 @@ change resolution of any name it uses.
 from chain1_c import _ROUTER
 from chain1_appr_ext import _needs_reset_approve
 
-
 def _approves(tin, amt, chain_id):
     from eth_utils import to_checksum_address as _ck
     from common.abi_utils import encode_approve
