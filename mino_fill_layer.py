@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 
 _log = logging.getLogger(__name__)
 
@@ -211,6 +212,184 @@ def _legs(row, chain, Interaction):
     return built
 
 
+_AGG_MAX_AGE_S = 86400.0   # an aggregator mint older than this is assumed drifted
+
+# DRIFT MARGIN for the evidence override. `out` and `tgt` are both measured when the
+# row is mined; by bench time BOTH have moved, and independently. Measured on
+# q_4d42ad14 (round e29772728): we overrode on a +1.67% recorded edge, but by the
+# bench the champion had improved +1.12% while our own route drifted -0.67%, so the
+# edge became a -0.124% LOSS — one regression, and it cancelled our only win and cost
+# the round (1 better / 1 worse; adoption needs wins >= regressions + 1).
+#
+# The payoff is asymmetric, which is what sets the size: standing aside on a marginal
+# row costs at most a few bps of `win`, while overriding into a regression BLOCKS
+# ADOPTION outright. So demand an edge wider than plausible drift rather than any edge
+# at all. 200 bps comfortably covers the ~180 bps of combined drift observed.
+_EVIDENCE_MARGIN_BPS = 200
+
+# ...but drift is a RATE, not a constant, and a flat margin prices every row as if its
+# evidence were hours old. That is wrong in both directions, and the cost of being
+# wrong the strict way is now measured: cards e29772887 and e29773123 came back
+# 0 better / 50 matched. Standing aside everywhere is not safe, it is a guaranteed
+# non-adoption — `performance_adopt` needs net_better >= n_regressions + 1, so a card
+# that never overrides can never clear the margin no matter how clean it is.
+#
+# The 180 bps of combined drift behind the constant above accumulated over ~3.5 h
+# (q_4d42ad14 minted 12:28, benched ~16:00). Per hour that is ~50 bps, and evidence
+# minted minutes before a fire has barely moved at all. So scale the demand by the
+# age of the evidence: a fresh measured edge fires on a modest margin, an old one must
+# clear far more than the flat constant ever asked. Both ends are tighter than a flat
+# 200 — more wins available where we actually know the answer, more caution where we
+# do not.
+_EVIDENCE_DUEL_BPS = 30         # same-block head-to-head: no drift to absorb, noise only
+_EVIDENCE_FLOOR_BPS = 60        # never fire on less, however fresh (bench noise)
+_EVIDENCE_DRIFT_BPS_PER_H = 50  # measured: ~180 bps over ~3.5 h, both sides combined
+_EVIDENCE_MAX_BPS = 600         # beyond ~11 h the row is a guess; demand a lot
+
+
+def _evidence_margin_bps(row) -> int:
+    """Required edge, in bps, for evidence of this row's age.
+
+    An UNKNOWN mint time keeps the flat constant rather than the strict ceiling.
+    ~800 of our rows carry no stamp, and treating them as maximally stale would
+    silently withdraw the override from all of them — a coverage cut dressed up as
+    caution, on cards that are already losing 0-better. Unknown means "no new
+    information", so it earns the behaviour we have always had, and only rows whose
+    age we can actually read move off it.
+
+    PROVENANCE OUTRANKS AGE. The margin exists to absorb ONE error: `out` and `tgt`
+    are measured at different times and against different states, so by bench time
+    the recorded edge has decayed by an unknown amount. A DUEL-measured row does not
+    carry that error at all — both numbers come from the same fork at the same block,
+    ours against the base's own plan, executed from a throwaway sender and credited to
+    the app contract. There is no drift between them to absorb, only simulation noise.
+
+    Charging such a row the same margin as a quoted one is not caution, it is
+    discarding the better measurement. It is also expensive: of 32 quoted candidates
+    only 2 survived a duel (+2381.9 bps collapsed to +0.0, one +106 bps row delivered
+    a flat ZERO), so duel-proven rows are precisely the scarce, trustworthy ones.
+    They earn the noise floor; everything else keeps the age curve.
+    """
+    if str((row or {}).get("src") or "") == "duel":
+        return _EVIDENCE_DUEL_BPS
+    try:
+        minted = _minted(row)
+    except Exception:
+        minted = 0
+    if minted <= 0:
+        return _EVIDENCE_MARGIN_BPS
+    age_h = max(0.0, (time.time() - minted) / 3600.0)
+    need = _EVIDENCE_FLOOR_BPS + int(age_h * _EVIDENCE_DRIFT_BPS_PER_H)
+    return max(_EVIDENCE_FLOOR_BPS, min(_EVIDENCE_MAX_BPS, need))
+
+
+def _expired_agg(row) -> bool:
+    """Is this row served by aggregator calldata old enough to have drifted?
+
+    Only the AGGREGATOR class carries an embedded minReturn that can expire; a direct
+    venue route (minOut 0, deadline 2100) cannot, so age is irrelevant there and this
+    returns False for it at any age.
+    """
+    try:
+        legs = _served(row)
+        if not any(str(leg.get("target", "")).lower() in _AGG_ROUTERS
+                   for leg in legs if isinstance(leg, dict)):
+            return False
+        minted = _minted(row)
+        return minted <= 0 or (time.time() - minted) > _AGG_MAX_AGE_S
+    except Exception:
+        return False
+
+
+def _floor(state) -> int:
+    """The order's minimum acceptable output, 0 when the row has no floor.
+
+    An ORDER (unlike a bare quote) carries `min_output_amount`, and the app's scoring
+    module is all-or-nothing about it: a fill even one wei short scores ZERO, with
+    raw_output reported as "0". So under the floor is not "a worse fill" — it is
+    indistinguishable from having no route at all, and it lands as `dropped`, the
+    absolute veto.
+
+    Round e29772401 was lost exactly here: ord_4bff4e44ca9a43dc and
+    ord_57be10f7e1b4486b both benched ours=0 against a champion serving 1916351, and
+    nothing in this layer had any concept that a floor existed.
+    """
+    params = getattr(state, "raw_params", None) or {}
+    for k in ("min_output_amount", "suggested_min_output", "min_output"):
+        try:
+            v = int(params.get(k) or 0)
+        except Exception:
+            continue
+        if v > 0:
+            return v
+    return 0
+
+
+def _clears_floor(row, state) -> bool:
+    """Would this stored row actually SCORE, or is it a zero wearing a route's clothes?
+
+    Only judged when we hold a recorded `out` for the row and the row has a floor;
+    absent either, fall through unchanged (never suppress a route on a guess).
+    """
+    floor = _floor(state)
+    if floor <= 0:
+        return True
+    try:
+        out = int((row or {}).get("out") or 0)
+    except Exception:
+        return True
+    return out <= 0 or out >= floor
+
+
+def _pays_executor(row, chain) -> bool:
+    """Does this plan actually DELIVER to the address the scorer credits?
+
+    AppIntentBase never runs a plan from the executor. It deploys a throwaway
+    EphemeralProxy per execution (CREATE2, salt = keccak(orderId, executionCount)),
+    calls it, and then credits output as the balance delta on ITSELF —
+    `_checkIntent` reads `IERC20(token).balanceOf(address(this))`. The proxy hands
+    back leftover ETH and nothing else: an ERC-20 left sitting on it is stranded on
+    an address that is different every execution and worthless after.
+
+    So a leg that pays its output to `msg.sender` pays the PROXY, and the row scores
+    a flat zero — `dropped`, the absolute veto, not merely a worse fill. A leg that
+    names the executor explicitly (v3 `exactInput` carries `recipient`; v2 carries
+    `to`) survives, because the destination is written into the calldata rather than
+    inferred from who is calling.
+
+    That distinction is invisible to a harness that replays a plan AS the executor,
+    since msg.sender is then the credited address and both shapes look identical.
+    Ours did exactly that, and 08-10 round e29772887 is the bill: a Universal-Router
+    v4 route ending in TAKE_ALL (pays msgSender()) replaced a working v3 route on
+    ord_710c91401286409a. Fork replay from a proxy-shaped sender, credited to the
+    app: v3 delivers 18722055, the v4 row delivers 0 with 18709502 stranded. The
+    card benched 2 better / 1 worse / 1 DROPPED — it cleared the adoption margin on
+    performance and died on the drop veto alone.
+
+    The test is deliberately ABI-free: a plan that never mentions the credited
+    address ANYWHERE outside its approve legs cannot be paying it on purpose. That
+    holds for routers this file has never heard of, which is the point — the next
+    landmine will not be a Universal Router. Approve legs are excluded because their
+    argument is the spender, never the recipient; unknown chains fall through
+    permissively so this can only ever suppress a route we can positively indict.
+    """
+    app = _EXECUTORS.get(int(chain or 0))
+    if not app:
+        return True
+    legs = _served(row)
+    if not legs:
+        return True
+    for leg in legs:
+        if not isinstance(leg, dict):
+            continue
+        data = str(leg.get("call_data") or leg.get("data") or "").lower()
+        if data[:10] == "0x095ea7b3":
+            continue
+        if app.lower()[2:] in data:
+            return True
+    return False
+
+
 def _override(state) -> bool:
     """Has this row been MEASURED to beat the base's own plan by a material margin?
 
@@ -241,14 +420,28 @@ def _override(state) -> bool:
     conservative in the direction that matters: `tgt` is only set on champ-target
     rows (rows the champion demonstrably serves), and a route that does not beat his
     number is never baked at all, so a row can only reach this test by having won it.
+
+    NEVER OVERRIDE WITH EXPIRED AGGREGATOR CALLDATA (08-10). An aggregator route
+    embeds a minReturn fixed at mint time; once price drifts past it the call REVERTS
+    and the row scores 0. 932 of our 3620 rows are served by aggregator calldata and
+    every one is older than two days — one of them (WETH->USDC, 9 days old) is exactly
+    what benched `dropped` and cost us the crown.
+
+    The trade-off is NOT symmetric, so the guard is deliberately one-sided:
+      * base EMPTY  -> serving a stale route risks 0, but standing aside IS 0. There
+        is nothing to lose, so serve it — that path is untouched here.
+      * base ANSWERS (this override path) -> serving a reverting route converts a
+        `matched` into a `dropped`, the absolute veto. Strictly worse. So refuse.
     """
     try:
         key = _row_key(state)
+        row = _ROWS.get(key) or {}
+        if _expired_agg(row):
+            return False            # never trade a match for a probable revert
         if key in _OVR:
             return True
-        row = _ROWS.get(key) or {}
         out, tgt = int(row.get("out") or 0), int(row.get("tgt") or 0)
-        return tgt > 0 and out > tgt
+        return tgt > 0 and out * 10000 >= tgt * (10000 + _evidence_margin_bps(row))
     except Exception:
         return False
 
@@ -323,7 +516,22 @@ def install(base_cls, Interaction, ExecutionPlan):
             row = _ROWS.get(key)
             if not isinstance(row, dict):
                 return None
+            # FLOOR GATE: on an order row, a stored route whose recorded output is
+            # below `min_output_amount` scores ZERO, not "less" — the app's scorer is
+            # all-or-nothing about the floor. Serving it is therefore strictly worse
+            # than standing aside: it buys nothing and it shadows whatever the stack
+            # beneath would have produced. Stand down and let the base answer.
+            if not _clears_floor(row, state):
+                _log.info("[minofill] row below order floor; standing aside")
+                return None
             chain = int(getattr(state, "chain_id", 0) or 0)
+            # DELIVERY GATE: the plan runs from a disposable EphemeralProxy, so a
+            # route that pays `msg.sender` strands its output on an address the
+            # scorer never reads. That is a zero — the drop veto — no matter how
+            # good the fill was. Serve only what names the credited address.
+            if not _pays_executor(row, chain):
+                _log.info("[minofill] row pays msg.sender, not the executor; standing aside")
+                return None
             legs = _legs(row, chain, Interaction)
             if not legs:
                 return None
