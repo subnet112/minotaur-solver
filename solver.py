@@ -26,7 +26,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 import cover_ext as _ext
 import router_cover as _rc
 WIN_MARGIN_BPS = 30
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'kohhash')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'Xayaan')
 CONFIRMED_ZERO = frozenset()
 
 def _safe_pair(tin, tout):
@@ -383,9 +383,9 @@ def _g_install():
 
         def metadata(self):
             base = super().metadata()
-            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', 'cosmic-raptor-177')
-            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', '1.0.0')
-            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'kohhash')
+            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', 'reclaim-router')
+            ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
+            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'Xayaan')
             return _GSolverMetadata(name=name, version=ver, author=auth, description='champion coverage + cross-chain bridging', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
     SOLVER_CLASS = _GarnetXChain
 _g_install()
@@ -545,3 +545,79 @@ def _mount_g2_overlay():
 
 
 _mount_g2_overlay()
+
+
+def _build_aero_pin():
+    try:
+        from aero_pin import wrap as _w
+        globals()['SOLVER_CLASS'] = _w(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _aplog
+        _aplog.getLogger(__name__).exception('[aeropin] cover load failed; using champion stack')
+
+
+_build_aero_pin()
+
+
+def _build_v2_pin():
+    try:
+        from v2_pin import wrap as _w
+        globals()['SOLVER_CLASS'] = _w(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _v2log
+        _v2log.getLogger(__name__).exception('[v2pin] cover load failed; using champion stack')
+
+
+_build_v2_pin()
+
+
+def _bsfill_install():
+    _cls = globals().get('SOLVER_CLASS')
+    if _cls is None or getattr(_cls, '_bsfill_on', False):
+        return
+
+    def generate_plan(self, intent, state, snapshot=None):
+        plan = super(_cls, self).generate_plan(intent, state, snapshot)
+        try:
+            if plan is not None and getattr(plan, 'interactions', None):
+                return plan            # base served it — return BYTE-IDENTICAL, never touch
+        except Exception:
+            return plan
+        try:
+            import min_bsfill as _bf
+            alt = _bf.blind_fill(self, intent, state, snapshot)
+            if alt is not None and getattr(alt, 'interactions', None):
+                return alt
+        except Exception:
+            pass
+        return plan
+
+    _cls.generate_plan = generate_plan
+    _cls._bsfill_on = True
+
+
+_bsfill_install()
+
+
+def _build_amt_alias():
+    try:
+        from min_amt_alias import install as _w
+        globals()['SOLVER_CLASS'] = _w(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _aalog
+        _aalog.getLogger(__name__).exception('[amtalias] load failed; champion stack stands')
+
+
+_build_amt_alias()
+
+
+def _build_pacing_bridge():
+    try:
+        from pacing_bridge import install as _w
+        globals()['SOLVER_CLASS'] = _w(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _pblog
+        _pblog.getLogger(__name__).exception('[pacing-bridge] load failed; refusing at gate')
+
+
+_build_pacing_bridge()
