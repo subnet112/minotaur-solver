@@ -498,8 +498,10 @@
   "venue": "v3"
  },
  "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|241059882763451810208": {
-  "adm_champ": "378365676",
-  "adm_ours": "378611534",
+  "adm_champ": "417434136",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "417434136",
+  "adm_pin": 25738772,
   "amt_in": "241059882763451810208",
   "chain_id": 1,
   "class": "provisional",
@@ -2995,8 +2997,10 @@
   "venue": "v3"
  },
  "0xdC035D45d973E3EC169d2276DDab16f1e407384F|0x02f92800F57BCD74066F5709F1Daa1A4302Df875|522060239755793210496": {
-  "adm_champ": "294034321037824218581",
-  "adm_ours": "294034321037824218581",
+  "adm_champ": "303868007009479554090",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "303868007009479554090",
+  "adm_pin": 25738772,
   "amt_in": "522060239755793210496",
   "chain_id": 1,
   "class": "provisional",
@@ -3688,6 +3692,48 @@
   ],
   "venue": "v3"
  },
+ "1|0x04c154b66cb340f3ae24111cc767e0184ed00cc6|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1056765635595649863": {
+  "adm_champ": "90073727798127671",
+  "adm_champ_sha": "bd2dbc8bd9e45898d895cacb68f64c28177f8f15",
+  "adm_ours": "98127356284225717",
+  "adm_pin": 25734771,
+  "amt": 1056765635595649863,
+  "class": "win",
+  "hops": [
+   {
+    "dx": 1056765635595649863,
+    "flavor": "stable",
+    "i": 1,
+    "j": 0,
+    "kind": "curve",
+    "out": 98127356284225717,
+    "pool": "0xC8Eb2Cf2f792F77AF0Cd9e203305a585E588179D",
+    "recv": true,
+    "tokens": [
+     "0x04C154b66CB340F3Ae24111CC767e0184Ed00Cc6",
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ]
+   }
+  ],
+  "out": 98127356284225717,
+  "qid": "q_b9838f3f320450da574c87e9dcd37ee8",
+  "venue": "route"
+ },
+ "1|0x06450dee7fd2fb8e39061434babcfc05599a6fb8|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|3123921432000000000000000000": {
+  "adm_champ": "258347251000768",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "6358629215543056",
+  "adm_pin": 25738148,
+  "amt_in": "3123921432000000000000000000",
+  "class": "win",
+  "qid": "q_ae0f43466159cf1dc489a113c61b5922",
+  "quote_pin": "6288654170636978",
+  "tokens": [
+   "0x06450dEe7FD2Fb8E39061434BAbCFC05599a6Fb8",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "venue": "v2"
+ },
  "1|0x06450dee7fd2fb8e39061434babcfc05599a6fb8|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|4910351274739573441274007998": {
   "adm_champ": "10370901508822349",
   "adm_ours": "10370901508822349",
@@ -4216,8 +4262,10 @@
   "venue": "v3"
  },
  "1|0x1abaea1f7c830bd89acc67ec4af516284b1bc33c|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1349525658": {
-  "adm_champ": "1558961745",
-  "adm_ours": "1558961745",
+  "adm_champ": "1556622009",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "1556622009",
+  "adm_pin": 25738772,
   "amt_in": "1349525658",
   "class": "provisional",
   "fees": [
@@ -4261,9 +4309,31 @@
   ],
   "venue": "v3"
  },
+ "1|0x1abaea1f7c830bd89acc67ec4af516284b1bc33c|0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab|1500597281": {
+  "adm_champ": "11797492311399109856",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "4971068329250112472172",
+  "adm_pin": 25738148,
+  "amt_in": "1500597281",
+  "class": "win",
+  "fees": [
+   500,
+   3000
+  ],
+  "qid": "q_6ddf36899b8789bd9ff5c03888d3fd2c",
+  "quote_pin": "4909138787194170156946",
+  "tokens": [
+   "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
+  ],
+  "venue": "v3"
+ },
  "1|0x1cfa5641c01406ab8ac350ded7d735ec41298372|0xf939e0a03fb07f59a73314e73794be0e57ac1b4e|78512619789713549767179": {
-  "adm_champ": "353241822502524119444",
-  "adm_ours": "353241822502524119445",
+  "adm_champ": "355621041913904267713",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "355621041913904267713",
+  "adm_pin": 25738772,
   "amt": 78512619789713549767179,
   "class": "provisional",
   "hops": [
@@ -4872,8 +4942,10 @@
   "venue": "v3"
  },
  "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|3027986": {
-  "adm_champ": "1032541781542977347",
-  "adm_ours": "1032541781542977347",
+  "adm_champ": "1015708318884579916",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "1015708318884579916",
+  "adm_pin": 25738772,
   "amt_in": "3027986",
   "class": "provisional",
   "fees": [
@@ -5089,8 +5161,10 @@
   "venue": "v3"
  },
  "1|0x28d38df637db75533bd3f71426f3410a82041544|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1300000000000000000000": {
-  "adm_champ": "15147023562292090",
-  "adm_ours": "15147023562292090",
+  "adm_champ": "14857667736523377",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "14857667736523377",
+  "adm_pin": 25738772,
   "amt_in": "1300000000000000000000",
   "class": "provisional",
   "fees": [
@@ -5136,6 +5210,26 @@
    "quoted_out": "239095766",
    "source": "custom/tools/route_quality.py census"
   },
+  "tokens": [
+   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "venue": "v3"
+ },
+ "1|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|23000000000000": {
+  "adm_champ": "370655513",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "371207442",
+  "adm_pin": 25738148,
+  "amt_in": "23000000000000",
+  "class": "win",
+  "fees": [
+   3000,
+   100
+  ],
+  "qid": "q_cb81640a3cc6108886176b6089cbc80c",
+  "quote_pin": "368137397",
   "tokens": [
    "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
@@ -5495,6 +5589,26 @@
   "out": 27523264,
   "qid": "q_0a153a4bb94308e4dbe24cf079a797ec",
   "venue": "route"
+ },
+ "1|0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f|0x68749665ff8d2d112fa859aa293f07a622782f38|4399999999999999824137": {
+  "adm_champ": "994905",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "996613",
+  "adm_pin": 25738148,
+  "amt_in": "4399999999999999824137",
+  "class": "win",
+  "fees": [
+   100,
+   3000
+  ],
+  "qid": "q_d80105e59f39f848fd23f895c9033b03",
+  "quote_pin": "997119",
+  "tokens": [
+   "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x68749665FF8D2d112Fa859AA293F07A622782F38"
+  ],
+  "venue": "v3"
  },
  "1|0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|5000000000000000000000": {
   "adm_champ": "0",
@@ -5900,6 +6014,26 @@
    "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+  ],
+  "venue": "v3"
+ },
+ "1|0x4d1c297d39c5c1277964d0e3f8aa901493664530|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|162266901442192515931": {
+  "adm_champ": "None",
+  "adm_champ_sha": "bd2dbc8bd9e45898d895cacb68f64c28177f8f15",
+  "adm_ours": "2045710",
+  "adm_pin": 25734771,
+  "amt_in": "162266901442192515931",
+  "class": "cover",
+  "fees": [
+   10000,
+   100
+  ],
+  "qid": "q_b351f64d4f76bacfbd46752de526c73e",
+  "quote_pin": "2045087",
+  "tokens": [
+   "0x4d1C297d39C5c1277964D0E3f8Aa901493664530",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
   ],
   "venue": "v3"
  },
@@ -6365,6 +6499,26 @@
   "tokens": [
    "0x514910771AF9Ca656af840dff83E8264EcF986CA",
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "venue": "v3"
+ },
+ "1|0x514910771af9ca656af840dff83e8264ecf986ca|0xdac17f958d2ee523a2206206994597c13d831ec7|4519568386962377461260": {
+  "adm_champ": "39118845363",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "39541217764",
+  "adm_pin": 25738148,
+  "amt_in": "4519568386962377461260",
+  "class": "win",
+  "fees": [
+   3000,
+   500
+  ],
+  "qid": "q_3256c19d7488ee9ed43700bdcbac73e7",
+  "quote_pin": "39342174252",
+  "tokens": [
+   "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
   ],
   "venue": "v3"
  },
@@ -6977,6 +7131,32 @@
   ],
   "out": 1525475508884514037449,
   "qid": "q_c73cf822d0bde850f2e7761d919a6865",
+  "venue": "route"
+ },
+ "1|0x62b9c7356a2dc64a1969e19c23e4f579f9810aa7|0xd533a949740bb3306d119cc777fa900ba034cd52|53094205210710075960022": {
+  "adm_champ": "16409194434095528720",
+  "adm_champ_sha": "1ab5ad587718c63e5e504c982c5b585eb23137eb",
+  "adm_ours": "19953150042165521021541",
+  "adm_pin": 25733250,
+  "amt": 53094205210710075960022,
+  "class": "win",
+  "hops": [
+   {
+    "dx": 53094205210710075960022,
+    "flavor": "stable",
+    "i": 1,
+    "j": 0,
+    "kind": "curve",
+    "out": 21003315833858443180570,
+    "pool": "0x9D0464996170c6B9e75eED71c68B99dDEDf279e8",
+    "tokens": [
+     "0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7",
+     "0xD533a949740bb3306d119CC777fa900bA034cd52"
+    ]
+   }
+  ],
+  "out": 21003315833858443180570,
+  "qid": "q_03e2a06488a566bc5228749d72ca576c",
   "venue": "route"
  },
  "1|0x62d0a8458ed7719fdaf978fe5929c6d342b0bfce|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|12700000000000000000000": {
@@ -7988,8 +8168,10 @@
   "venue": "v3"
  },
  "1|0x6b175474e89094c44da98b954eedeac495271d0f|0xfaba6f8e4a5e8ab82f62fe7c39859fa577269be3|286072628027348428442": {
-  "adm_champ": "824473267141069255483",
-  "adm_ours": "824473267141069255483",
+  "adm_champ": "844799867981646705435",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "844799867981646705435",
+  "adm_pin": 25738772,
   "amt_in": "286072628027348428442",
   "class": "provisional",
   "fees": [
@@ -8798,8 +8980,10 @@
   "venue": "v3"
  },
  "1|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1880462790629062272": {
-  "adm_champ": "2334132170620011130",
-  "adm_ours": "2334132170620011130",
+  "adm_champ": "2333934786914613865",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "2333934786914613865",
+  "adm_pin": 25738772,
   "amt_in": "1880462790629062272",
   "class": "provisional",
   "fees": [
@@ -10436,6 +10620,26 @@
   ],
   "venue": "v3"
  },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|908000000": {
+  "adm_champ": "255545384249907612115",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "256701193046084866204",
+  "adm_pin": 25738148,
+  "amt_in": "908000000",
+  "class": "win",
+  "fees": [
+   100,
+   500
+  ],
+  "qid": "q_47140e4e7567d95922ddcb44b494f6e0",
+  "quote_pin": "257638800810511585506",
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
+  ],
+  "venue": "v3"
+ },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x21cd589a989615a9e901328d3c089bbca16d00b2|19520567": {
   "adm_champ": "893594395653",
   "adm_ours": "893594395653",
@@ -11154,9 +11358,31 @@
   "qid": "q_33a20f27e180c33e73b13aa3b94daaad",
   "venue": "route"
  },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x44108f0223a3c3028f5fe7aec7f9bb2e66bef82f|520672961": {
+  "adm_champ": "None",
+  "adm_champ_sha": "bd2dbc8bd9e45898d895cacb68f64c28177f8f15",
+  "adm_ours": "2132418196403617731337",
+  "adm_pin": 25734771,
+  "amt_in": "520672961",
+  "class": "cover",
+  "fees": [
+   100,
+   10000
+  ],
+  "qid": "q_9f30499cb2158e17bd6e8d32976b92d1",
+  "quote_pin": "2133042962539837506106",
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0x44108f0223A3C3028F5Fe7AEC7f9bb2E66beF82F"
+  ],
+  "venue": "v3"
+ },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x45804880de22913dafe09f4980848ece6ecbaf78|1000000000": {
-  "adm_champ": "231453076749693304",
-  "adm_ours": "231453076749693304",
+  "adm_champ": "226693276533424412",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "226693276533424412",
+  "adm_pin": 25738772,
   "amt_in": "1000000000",
   "class": "provisional",
   "fees": [
@@ -11612,8 +11838,10 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x58d97b57bb95320f9a05dc918aef65434969c2b2|150000000": {
-  "adm_champ": "77246153442442824690",
-  "adm_ours": "77262185543444068198",
+  "adm_champ": "75380721746330618193",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "75380721746330618193",
+  "adm_pin": 25738772,
   "amt_in": "150000000",
   "class": "provisional",
   "fees": [
@@ -12095,6 +12323,26 @@
   ],
   "venue": "v3"
  },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|5570000000": {
+  "adm_champ": "26849113701",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "27000789402",
+  "adm_pin": 25738148,
+  "amt_in": "5570000000",
+  "class": "win",
+  "fees": [
+   500,
+   3000
+  ],
+  "qid": "q_d1eafa19258d385ddfcc715ed1e9ae9f",
+  "quote_pin": "27184716956",
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "venue": "v3"
+ },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|6068425296": {
   "adm_champ": "29797234695",
   "adm_ours": "29857132158",
@@ -12400,6 +12648,26 @@
   ],
   "venue": "v3"
  },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xb58e61c3098d85632df34eecfb899a1ed80921cb|122904803": {
+  "adm_champ": "99268657260905181559",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "99667412230699721853",
+  "adm_pin": 25738148,
+  "amt_in": "122904803",
+  "class": "win",
+  "fees": [
+   100,
+   100
+  ],
+  "qid": "q_3b493442c2db37db8b281574ca0f4df1",
+  "quote_pin": "99694493214913105422",
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "0xB58E61C3098d85632Df34EecfB899A1Ed80921cB"
+  ],
+  "venue": "v3"
+ },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xb58e61c3098d85632df34eecfb899a1ed80921cb|13436889649": {
   "adm_champ": "10118576047193910619948",
   "adm_ours": "10858202590157837654547",
@@ -12485,6 +12753,26 @@
    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
    "0xB98d4C97425d9908E66E53A6fDf673ACcA0BE986"
+  ],
+  "venue": "v3"
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xb9f599ce614feb2e1bbe58f180f370d05b39344e|111708690": {
+  "adm_champ": "6348146007112116275367764034",
+  "adm_champ_sha": "bd2dbc8bd9e45898d895cacb68f64c28177f8f15",
+  "adm_ours": "7872187456099634814972112850",
+  "adm_pin": 25734771,
+  "amt_in": "111708690",
+  "class": "win",
+  "fees": [
+   100,
+   10000
+  ],
+  "qid": "q_4db3b4109f243b0ecb3f0c9e22b43748",
+  "quote_pin": "7967284321852334156863936271",
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xb9f599ce614Feb2e1BBe58F180F370D05b39344E"
   ],
   "venue": "v3"
  },
@@ -12721,8 +13009,10 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1177415711": {
-  "adm_champ": "613916973685945154",
-  "adm_ours": "614025905765248967",
+  "adm_champ": "615134911316669555",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "615134911316669555",
+  "adm_pin": 25738772,
   "amt_in": "1177415711",
   "class": "provisional",
   "fees": [
@@ -13264,8 +13554,10 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|22140567": {
-  "adm_champ": "11544344768968678",
-  "adm_ours": "11546786390733925",
+  "adm_champ": "11567244597327743",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "11567244597327743",
+  "adm_pin": 25738772,
   "amt_in": "22140567",
   "class": "provisional",
   "fees": [
@@ -13863,8 +14155,10 @@
   "venue": "route"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|45269880": {
-  "adm_champ": "23607457966696249",
-  "adm_ours": "23610666188622098",
+  "adm_champ": "23651055346926364",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "23651055346926364",
+  "adm_pin": 25738772,
   "amt": 45269880,
   "class": "provisional",
   "hops": [
@@ -14034,8 +14328,10 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|4999796193": {
-  "adm_champ": "2606931600364050192",
-  "adm_ours": "2607100334642586909",
+  "adm_champ": "2612105507147703540",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "2612105507147703540",
+  "adm_pin": 25738772,
   "amt_in": "4999796193",
   "class": "provisional",
   "fees": [
@@ -14116,8 +14412,10 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|5000871103": {
-  "adm_champ": "2607492062629908228",
-  "adm_ours": "2607660750042985128",
+  "adm_champ": "2612667082329346851",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "2612667082329346851",
+  "adm_pin": 25738772,
   "amt_in": "5000871103",
   "class": "provisional",
   "fees": [
@@ -15930,8 +16228,10 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xdac17f958d2ee523a2206206994597c13d831ec7|4349752505": {
-  "adm_champ": "4352027172",
-  "adm_ours": "4352027172",
+  "adm_champ": "4352627571",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "4352627571",
+  "adm_pin": 25738772,
   "amt_in": "4349752505",
   "class": "provisional",
   "fees": [
@@ -16735,8 +17035,10 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xfaba6f8e4a5e8ab82f62fe7c39859fa577269be3|3751095583": {
-  "adm_champ": "10679060035132355987990",
-  "adm_ours": "10680442635215078346433",
+  "adm_champ": "11052980559159040506459",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "11052980559159040506459",
+  "adm_pin": 25738772,
   "amt_in": "3751095583",
   "class": "provisional",
   "fees": [
@@ -16833,6 +17135,26 @@
   ],
   "venue": "v3"
  },
+ "1|0xa27ec0006e59f245217ff08cd52a7e8b169e62d2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|3671437558608321868347": {
+  "adm_champ": "None",
+  "adm_champ_sha": "1ab5ad587718c63e5e504c982c5b585eb23137eb",
+  "adm_ours": "45796192",
+  "adm_pin": 25733250,
+  "amt_in": "3671437558608321868347",
+  "class": "cover",
+  "fees": [
+   10000,
+   100
+  ],
+  "qid": "q_9a90f73ece8e24764416376e13698537",
+  "quote_pin": "46446373",
+  "tokens": [
+   "0xA27EC0006e59f245217Ff08CD52A7E8b169E62D2",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "venue": "v3"
+ },
  "1|0xa2cd3d43c775978a96bdbf12d733d5a1ed94fb18|0x3cdb41027d61c413e064e84d9c21812b6ef004f1|26000000090316390600000": {
   "adm_champ": "72694123796500",
   "adm_ours": "72694123796500",
@@ -16846,6 +17168,44 @@
    "0x3cdB41027D61C413e064E84D9c21812b6Ef004F1"
   ],
   "venue": "v2"
+ },
+ "1|0xa3931d71877c0e7a3148cb7eb4463524fec27fbd|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|1000000000000000000000": {
+  "adm_champ": "None",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "1643858",
+  "adm_pin": 25738772,
+  "amt": 1000000000000000000000,
+  "class": "cover",
+  "hops": [
+   {
+    "dx": 1000000000000000000000,
+    "flavor": "stable",
+    "i": 0,
+    "j": 1,
+    "kind": "curve",
+    "out": 1089400147,
+    "pool": "0x00836Fe54625BE242BcFA286207795405ca4fD10",
+    "tokens": [
+     "0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD",
+     "0xdac17f958d2ee523a2206206994597c13d831ec7"
+    ]
+   },
+   {
+    "dx": 1056718142,
+    "fees": [
+     500
+    ],
+    "kind": "v3",
+    "out": 1659658,
+    "tokens": [
+     "0xdac17f958d2ee523a2206206994597c13d831ec7",
+     "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+    ]
+   }
+  ],
+  "out": 1659658,
+  "qid": "q_e87a6ecd6e09d7c39abd8dbf0ac94930",
+  "venue": "route"
  },
  "1|0xa3931d71877c0e7a3148cb7eb4463524fec27fbd|0x96f6ef951840721adbf46ac996b59e0235cb985c|497252360119643769649": {
   "adm_champ": "None",
@@ -18867,6 +19227,26 @@
   ],
   "venue": "v2"
  },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f|1000000000000000000": {
+  "adm_champ": "1910615647296157906367",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "1912951279166410901703",
+  "adm_pin": 25738772,
+  "amt_in": "1000000000000000000",
+  "class": "win",
+  "fees": [
+   100,
+   100
+  ],
+  "qid": "q_ffc54776b56a7986981a5c5138abb4da",
+  "quote_pin": "1912512317006032828358",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+  ],
+  "venue": "v3"
+ },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f|11300000000000000000": {
   "adm_champ": "21653123521073482606432",
   "adm_ours": "21653123521073482606432",
@@ -18939,6 +19319,26 @@
   ],
   "venue": "v3"
  },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f|2569000000000000000": {
+  "adm_champ": "4908320999241041579271",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "4914949530617936914726",
+  "adm_pin": 25738772,
+  "amt_in": "2569000000000000000",
+  "class": "win",
+  "fees": [
+   100,
+   100
+  ],
+  "qid": "q_2488e3bfb23db22dd5f45efb48762273",
+  "quote_pin": "4912372580420030202296",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+  ],
+  "venue": "v3"
+ },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f|300000000000000000": {
   "adm_champ": "561200736101894633629",
   "adm_champ_sha": "522456927a0404fca2e42a7c0555ed2ecc34c00c",
@@ -18955,6 +19355,26 @@
   "tokens": [
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
    "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+  ],
+  "venue": "v3"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f|3604987784302127451": {
+  "adm_champ": "6887628180569792434139",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "6896581767276014236745",
+  "adm_pin": 25738772,
+  "amt_in": "3604987784302127451",
+  "class": "win",
+  "fees": [
+   100,
+   100
+  ],
+  "qid": "q_16ad8b40d2fddf31da13be7f9f0358aa",
+  "quote_pin": "6892971334836129565555",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
    "0x6B175474E89094C44Da98b954EedeAC495271d0F"
   ],
   "venue": "v3"
@@ -19506,8 +19926,10 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|461800293753266304": {
-  "adm_champ": "372028577383632227",
-  "adm_ours": "372028577383632227",
+  "adm_champ": "372000276810699803",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "372000276810699803",
+  "adm_pin": 25738772,
   "amt_in": "461800293753266304",
   "class": "provisional",
   "fees": [
@@ -19614,6 +20036,26 @@
   "tokens": [
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
    "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
+  ],
+  "venue": "v3"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x8292bb45bf1ee4d140127049757c2e0ff06317ed|10000000000000000": {
+  "adm_champ": "None",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "19013159317305994301",
+  "adm_pin": 25738148,
+  "amt_in": "10000000000000000",
+  "class": "cover",
+  "fees": [
+   100,
+   100
+  ],
+  "qid": "q_e9a3413985b2cf4ccea252688b6c394f",
+  "quote_pin": "18898288753282592750",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD"
   ],
   "venue": "v3"
  },
@@ -20063,8 +20505,10 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1120494151446222510": {
-  "adm_champ": "2147404865",
-  "adm_ours": "2147404865",
+  "adm_champ": "2142558981",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "2142558981",
+  "adm_pin": 25738772,
   "amt_in": "1120494151446222510",
   "class": "provisional",
   "fees": [
@@ -20555,8 +20999,10 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|161168891268506555936": {
-  "adm_champ": "300561086638",
-  "adm_ours": "300561086638",
+  "adm_champ": "308058587297",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "308058587297",
+  "adm_pin": 25738772,
   "amt_in": "161168891268506555936",
   "class": "provisional",
   "fees": [
@@ -21572,8 +22018,10 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|610639596169976317": {
-  "adm_champ": "1142871731",
-  "adm_ours": "1142486146",
+  "adm_champ": "1167639287",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "1167639287",
+  "adm_pin": 25738772,
   "amt_in": "610639596169976317",
   "class": "provisional",
   "fees": [
@@ -22034,8 +22482,10 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|9477258653547288": {
-  "adm_champ": "18187777",
-  "adm_ours": "18191122",
+  "adm_champ": "18122041",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "18122041",
+  "adm_pin": 25738772,
   "amt": 9477258653547288,
   "class": "provisional",
   "hops": [
@@ -22087,6 +22537,22 @@
    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
   ],
   "venue": "v3"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa2c2c937333165d4c5f2dc5f31a43e1239fecfeb|132000000000000000": {
+  "adm_champ": "41914018457639068190",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "208210817623875467717",
+  "adm_pin": 25738772,
+  "amt_in": "132000000000000000",
+  "class": "win",
+  "qid": "q_444532735a2f7e780f98775561552ed0",
+  "quote_pin": "208134182685895083029",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xA2c2C937333165d4c5f2dC5f31a43E1239FeCfeB"
+  ],
+  "venue": "v2"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa9e8acf069c58aec8825542845fd754e41a9489a|206070522835814072": {
   "adm_champ": "4897328893206719155514",
@@ -22399,6 +22865,24 @@
   ],
   "venue": "v3"
  },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|1000000000000000000": {
+  "adm_champ": "1904512122",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "1914594757",
+  "adm_pin": 25738772,
+  "amt_in": "1000000000000000000",
+  "class": "win",
+  "fees": [
+   100
+  ],
+  "qid": "q_31413a99f7d697809f1217b229ac22b7",
+  "quote_pin": "1914243243",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "venue": "v3"
+ },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|1049263799868386103": {
   "adm_champ": "1962313497",
   "adm_champ_sha": "522456927a0404fca2e42a7c0555ed2ecc34c00c",
@@ -22539,10 +23023,10 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|1645894091451249208": {
-  "adm_champ": "3078112950",
-  "adm_champ_sha": "522456927a0404fca2e42a7c0555ed2ecc34c00c",
-  "adm_ours": "3082618484",
-  "adm_pin": 25728107,
+  "adm_champ": "3134618679",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "3134618679",
+  "adm_pin": 25738772,
   "amt_in": "1645894091451249208",
   "class": "win",
   "fees": [
@@ -22641,6 +23125,26 @@
   ],
   "venue": "v3"
  },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|43083000000000000000": {
+  "adm_champ": "81765978772",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "81955602664",
+  "adm_pin": 25738148,
+  "amt_in": "43083000000000000000",
+  "class": "win",
+  "fees": [
+   500,
+   100
+  ],
+  "qid": "q_d6ccc9d82c3b8bfdd79ed5053dce1c0a",
+  "quote_pin": "81413929189",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "venue": "v3"
+ },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|4900000000000000": {
   "adm_champ": "9157510",
   "adm_ours": "9159596",
@@ -22721,6 +23225,82 @@
   ],
   "qid": "q_54de55fcb3b6bab4f30da5d98ba090ad",
   "quote_pin": "1023488444",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "venue": "v3"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|5357500000000000000": {
+  "adm_champ": "10203279416",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "10255980649",
+  "adm_pin": 25738772,
+  "amt_in": "5357500000000000000",
+  "class": "win",
+  "fees": [
+   100,
+   100
+  ],
+  "qid": "q_2f189bd6bd755d06a29da1b6de15efdc",
+  "quote_pin": "10250737800",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "venue": "v3"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|600000000000000000": {
+  "adm_champ": "1142708756",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "1148840917",
+  "adm_pin": 25738772,
+  "amt_in": "600000000000000000",
+  "class": "win",
+  "fees": [
+   100
+  ],
+  "qid": "q_4bcae047474112ecef5fb19386e2cdfe",
+  "quote_pin": "1148629986",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "venue": "v3"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|6109000000000000000": {
+  "adm_champ": "11634471666",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "11694109195",
+  "adm_pin": 25738772,
+  "amt_in": "6109000000000000000",
+  "class": "win",
+  "fees": [
+   100,
+   100
+  ],
+  "qid": "q_70e81ecf5cee903c8ed46b5fe93ee618",
+  "quote_pin": "11688137850",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "venue": "v3"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|700000000000000000": {
+  "adm_champ": "1333159783",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "1340289884",
+  "adm_pin": 25738772,
+  "amt_in": "700000000000000000",
+  "class": "win",
+  "fees": [
+   100
+  ],
+  "qid": "q_e084eac326aa9f0d0a1cc3e54c0f902c",
+  "quote_pin": "1340043804",
   "tokens": [
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
    "0xdAC17F958D2ee523a2206206994597C13D831ec7"
@@ -22930,8 +23510,10 @@
   "venue": "v2"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|1757971468389066266": {
-  "adm_champ": "56692592748772811",
-  "adm_ours": "56692592748772811",
+  "adm_champ": "51260612070229856",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "51260612070229856",
+  "adm_pin": 25738772,
   "amt": 1757971468389066266,
   "amt_in": 1757971468389066266,
   "chain_id": 1,
@@ -25173,8 +25755,10 @@
   "venue": "v3"
  },
  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|12097705502": {
-  "adm_champ": "12087447115",
-  "adm_ours": "12087447115",
+  "adm_champ": "12087289850",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "12087289850",
+  "adm_pin": 25738772,
   "amt_in": "12097705502",
   "class": "provisional",
   "fees": [
@@ -26431,6 +27015,26 @@
   ],
   "venue": "v3"
  },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1866157907": {
+  "adm_champ": "977259779423011761",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "979729106647086455",
+  "adm_pin": 25738148,
+  "amt_in": "1866157907",
+  "class": "win",
+  "fees": [
+   100,
+   500
+  ],
+  "qid": "q_51b6cb953f87f49bcc29ce30099379ef",
+  "quote_pin": "986138061704707617",
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "venue": "v3"
+ },
  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1877808438": {
   "amt_in": "1877808438",
   "class": "provisional",
@@ -27091,6 +27695,26 @@
   ],
   "venue": "v3"
  },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|4653656635": {
+  "adm_champ": "2436990928359978382",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "2443151223061793062",
+  "adm_pin": 25738148,
+  "amt_in": "4653656635",
+  "class": "win",
+  "fees": [
+   100,
+   500
+  ],
+  "qid": "q_b9cdb281390ad3266ea13fd592d6e46e",
+  "quote_pin": "2459124052510862818",
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "venue": "v3"
+ },
  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|4826941997": {
   "adm_champ": "2566922552534043575",
   "adm_ours": "2577701938663072839",
@@ -27549,8 +28173,10 @@
   "venue": "v3"
  },
  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|92000000": {
-  "adm_champ": "49186730853652878",
-  "adm_ours": "49186730853652878",
+  "adm_champ": "48016768101904676",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "48016768101904676",
+  "adm_pin": 25738772,
   "amt_in": "92000000",
   "class": "provisional",
   "fees": [
@@ -27961,6 +28587,26 @@
   ],
   "venue": "v3"
  },
+ "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0x232ce3bd40fcd6f80f3d55a522d03f25df784ee2|9880560097533668000000": {
+  "adm_champ": "None",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "3855773376230076344814",
+  "adm_pin": 25738148,
+  "amt_in": "9880560097533668000000",
+  "class": "cover",
+  "fees": [
+   3000,
+   10000
+  ],
+  "qid": "q_f9e784d45ae1469de68c3de9bd876a61",
+  "quote_pin": "3855773376230076344814",
+  "tokens": [
+   "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x232CE3bd40fCd6f80f3d55A522d03f25Df784Ee2"
+  ],
+  "venue": "v3"
+ },
  "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0x4c9edd5852cd905f086c759e8383e09bff1e68b3|643187613005112567": {
   "adm_champ": "102307004629957",
   "adm_ours": "643241433098652377",
@@ -28005,8 +28651,10 @@
   "venue": "v3"
  },
  "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0x6b175474e89094c44da98b954eedeac495271d0f|18276215652827044473437": {
-  "adm_champ": "18240176840325776407647",
-  "adm_ours": "18240176840325776407647",
+  "adm_champ": "18239998217315400361405",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "18239998217315400361405",
+  "adm_pin": 25738772,
   "amt_in": "18276215652827044473437",
   "class": "provisional",
   "fees": [
@@ -28056,7 +28704,9 @@
  },
  "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|11563825136065536520302": {
   "adm_champ": "11552261310",
-  "adm_ours": "11541600531",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "11552261310",
+  "adm_pin": 25738772,
   "amt_in": "11563825136065536520302",
   "class": "provisional",
   "fees": [
@@ -28127,8 +28777,10 @@
   "venue": "v3"
  },
  "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1585462402932709763049": {
-  "adm_champ": "844528004102771677",
-  "adm_ours": "844856896221792673",
+  "adm_champ": "826225712992395634",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "826225712992395634",
+  "adm_pin": 25738772,
   "amt_in": "1585462402932709763049",
   "class": "provisional",
   "fees": [
@@ -28376,6 +29028,21 @@
   ],
   "venue": "v2"
  },
+ "1|0xe0f63a424a4439cbe457d80e4f4b51ad25b2c56c|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|500000000000": {
+  "adm_champ": "827071387854621187",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "829132664809902907",
+  "adm_pin": 25738148,
+  "amt_in": "500000000000",
+  "class": "win",
+  "qid": "q_b9e7ef62bef83b09aa773b11b4d7f7af",
+  "quote_pin": "830720480509322793",
+  "tokens": [
+   "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "venue": "v2"
+ },
  "1|0xe2ad0bf751834f2fbdc62a41014f84d67ca1de2a|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|523638400000000000000": {
   "amt": 523638400000000000000,
   "amt_in": 523638400000000000000,
@@ -28553,8 +29220,10 @@
   "venue": "v3"
  },
  "1|0xe556aba6fe6036275ec1f87eda296be72c811bce|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1493224855903127827176": {
-  "adm_champ": "1492791061",
-  "adm_ours": "1492791061",
+  "adm_champ": "1491983900",
+  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
+  "adm_ours": "1491983900",
+  "adm_pin": 25738772,
   "amt": 1493224855903127827176,
   "class": "provisional",
   "hops": [
