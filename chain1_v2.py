@@ -1,19 +1,16 @@
+# chain-1 dynamic tier: v2-pair helpers + candidate sweep
 from chain1_c import _V2_PAIRS, _MAX_QUOTES
 from chain1_lib import _candidates, _qroute
+from chain1_cix_ext import _c1_curve_ix  # relocated leaf; see that module for why
+from chain1_res_ext import _v2_reserves  # relocated leaf; see that module for why
 
-def _v2_reserves(w3, pair, block):
-    from eth_abi import decode as _dec
-    from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    r = w3.eth.call({'to': _ck(pair), 'data': '0x' + _keccak(text='getReserves()')[:4].hex()}, block_identifier=block)
-    res = _dec(['uint112', 'uint112', 'uint32'], r)
-    return (int(res[0]), int(res[1]))
 
 def _v2_quote(w3, pair, amt, in_is_t0, block):
     try:
         res = _v2_reserves(w3, pair, block)
         rin, rout = (res[0], res[1]) if in_is_t0 else (res[1], res[0])
         ai = int(amt) * 997
-        return ai * rout // (rin * 1000 + ai) or None
+        return ((ai * rout) // (rin * 1000 + ai)) or None
     except Exception:
         return None
 
@@ -49,8 +46,9 @@ def _better(best, q):
     """
     return bool(q) and (best is None or q > best[0])
 
+
 def _sweep(w3, tin, tout, amt, block):
-    best, n = (None, 0)
+    best, n = None, 0
     for cand in _candidates(tin, tout):
         if n >= _MAX_QUOTES:
             break
@@ -79,12 +77,16 @@ def _c1_build_ix_v2(tin, recip, tokens, amt):
     from eth_utils import to_checksum_address as _ck
     from common.abi_utils import encode_approve
     from minotaur_subnet.shared.types import Interaction as _IX
-    ROUTER_V2 = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
-    swap_data = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amt), 0, [_ck(t) for t in tokens], _ck(recip), 9999999999]).hex()
-    return [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(ROUTER_V2), int(amt)), chain_id=1), _IX(target=_ck(ROUTER_V2), value='0', call_data=swap_data, chain_id=1)]
+    ROUTER_V2 = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'  # Uniswap V2 Router02 (mainnet)
+    swap_data = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'],
+                                    [int(amt), 0, [_ck(t) for t in tokens], _ck(recip), 9999999999]).hex()
+    return [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(ROUTER_V2), int(amt)), chain_id=1),
+            _IX(target=_ck(ROUTER_V2), value='0', call_data=swap_data, chain_id=1)]
 
 def _c1_recip_v2(p, state):
-    return str(p.get('receiver', '') or getattr(state, 'contract_address', None) or getattr(state, 'owner', None) or '0x0000000000000000000000000000000000000001')
+    # live recipient (mirror of solver._c1_recip): bench supplies its own settlement recipient
+    return str(p.get('receiver', '') or getattr(state, 'contract_address', None)
+               or getattr(state, 'owner', None) or '0x0000000000000000000000000000000000000001')
 
 def _c1_v2_plan(solver, intent, state, tin, amt, spec):
     """Zero-RPC UniV2 ExecutionPlan for a baked {'venue':'univ2','tokens':[...]} spec.
@@ -94,20 +96,9 @@ def _c1_v2_plan(solver, intent, state, tin, amt, spec):
     from minotaur_subnet.shared.types import ExecutionPlan as _EP
     recip = _c1_recip_v2(solver._normalized_swap_params(intent, state), state)
     ix = _c1_build_ix_v2(tin, recip, [str(t).lower() for t in spec['tokens']], amt)
-    return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'chain1-baked', 'chain_id': 1})
+    return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999,
+               nonce=state.nonce, metadata={'solver': 'chain1-baked', 'chain_id': 1})
 
-def _c1_curve_ix(tin, amt, recip, spec):
-    """Build [approve_ix, exchange_ix] for a baked curve spec by REUSING the pure (no-RPC)
-    curve_venue.curve_calldata to rebuild the CurveRouterNG.exchange calldata. Split out of
-    _c1_curve_plan so that method's AST region stays tiny (the crown region floor). tin is
-    approved to the router curve_calldata returns; min_out floored to >=1 inside curve_calldata."""
-    from eth_utils import to_checksum_address as _ck
-    from common.abi_utils import encode_approve
-    from minotaur_subnet.shared.types import Interaction as _IX
-    import curve_venue as _cv
-    rspec = {'route': spec['route'], 'swap': spec['swap']}
-    router, cd = _cv.curve_calldata(1, tin, None, int(amt), 0, recip, 9999999999, rspec)
-    return [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(router), int(amt)), chain_id=1), _IX(target=_ck(router), value='0', call_data=cd, chain_id=1)]
 
 def _c1_curve_plan(solver, intent, state, tin, amt, spec):
     """ZERO-RPC Curve serve for a baked {'venue':'curve','route':[address[11]],'swap':[[..]x5]}
@@ -116,10 +107,13 @@ def _c1_curve_plan(solver, intent, state, tin, amt, spec):
     from minotaur_subnet.shared.types import ExecutionPlan as _EP
     recip = _c1_recip_v2(solver._normalized_swap_params(intent, state), state)
     ix = _c1_curve_ix(tin, amt, recip, spec)
-    return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'chain1-baked', 'chain_id': 1})
+    return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999,
+               nonce=state.nonce, metadata={'solver': 'chain1-baked', 'chain_id': 1})
 
 def _c1_servable(spec):
-
+    # a baked spec is serve-able if it carries an executable route: V3 (tokens+fees), univ2
+    # (tokens+venue tag), or curve (route[11]+swap[5][5]). noroute specs (none of these) stay
+    # clean-skipped. Widens the old tokens+fees guard purely additively.
     def _has_route():
         """True when the spec carries something executable, per venue.
 
@@ -134,6 +128,9 @@ def _c1_servable(spec):
     return _has_route()
 
 def _c1_make_plan(solver, intent, state, tin, amt, spec):
+    # venue dispatch (kept OUT of solver._chain1_build_plan so that method's AST region — a
+    # crown tie-break floor — is untouched): univ2 -> zero-RPC V2 router plan; curve -> zero-RPC
+    # CurveRouterNG plan; else the existing Uni-V3 exactInput builder, unchanged.
     v = spec.get('venue')
     if v == 'univ2':
         return _c1_v2_plan(solver, intent, state, tin, amt, spec)

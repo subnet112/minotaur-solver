@@ -31,7 +31,13 @@ Routing constants live here with the builders that consume them."""
 _ROUTER_V3 = "0xE592427A0AEce92De3Edee1F18E0157C05861564"
 _ROUTER_V2 = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 _USDT = "0xdac17f958d2ee523a2206206994597c13d831ec7"
-from g2_pack_ext import _pack_path
+def _pack_path(tokens, fees) -> bytes:
+    b = b""
+    for i, t in enumerate(tokens):
+        b += bytes.fromhex(str(t)[2:])
+        if i < len(fees):
+            b += int(fees[i]).to_bytes(3, "big")
+    return b
 def _v2_swap_cd(spec, rcpt) -> str:
     from eth_abi import encode as _enc
     from eth_utils import to_checksum_address as _ck
@@ -64,7 +70,15 @@ def _curve_abi(flavor, recv=False):
     else:
         args = [idx, idx, "uint256", "uint256"] + (["address"] if recv else [])
     return (f"{name}({','.join(args)})", args)
-from g2_cargs_ext import _curve_args
+def _curve_args(i, j, dx, recv, rcpt, _ck):
+    """Curve exchange args, lifted verbatim from _curve_swap_cd.
+
+    The "6a" form is the NG-crypto receiver overload and takes a use_eth flag the plain receiver
+    overload does not -- the two arg lists are not interchangeable, so both branches move together.
+    """
+    if recv == "6a":
+        return [i, j, dx, 0, False, _ck(rcpt)]
+    return [i, j, dx, 0] + ([_ck(rcpt)] if recv else [])
 _EXECUTOR = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 def _transfer_leg(token, amt, rcpt, Interaction, cid=1):
     # Plain ERC20 transfer(rcpt, amt) from the executor's balance: 95% of the
@@ -78,27 +92,8 @@ def _transfer_leg(token, amt, rcpt, Interaction, cid=1):
     return Interaction(target=token, value="0", call_data=cd, chain_id=cid)
 _BAL_VAULT = "0xBA12222222228d8Ba445958a75a0704d566BF2C8"
 _RPC_URLS = {}
-def _bal_order_id32(order_id) -> bytes:
-    # The simulator's order-id normalization, byte-exact: hex ids
-    # pad-and-truncate, non-hex ids keccak.
-    from eth_utils import keccak as _keccak
-
-    s = str(order_id).replace("0x", "")
-    try:
-        return bytes.fromhex(s.ljust(64, "0"))[:32]
-    except ValueError:
-        return _keccak(str(order_id).encode())
-def _lift_bal_swap_cd_0(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout):
-    """Lifted from _bal_swap_cd: a return-terminated branch, verbatim."""
-    sel = _keccak(text=(
-        "swap((bytes32,uint8,address,address,uint256,bytes),"
-        "(address,bool,address,bool),uint256,uint256)"))[:4]
-    single = (bytes.fromhex(str(route[1]).replace("0x", "")), 0,
-              _ck(tin), _ck(tout), amount, b"")
-    return sel + _enc(
-        ["(bytes32,uint8,address,address,uint256,bytes)",
-         "(address,bool,address,bool)", "uint256", "uint256"],
-        [single, funds, 0, int(deadline)])
+from g2_orderid_ext import _bal_order_id32
+from g2_bal0_ext import _lift_bal_swap_cd_0
 def _lift_bal_swap_cd_1(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout):
     def _c_lift_bal_swap_cd_1_0(_ck, _keccak, amount, route, tin, tout):
         # Chunked out to lower _lift_bal_swap_cd_1's AST region: a nested def's body forms

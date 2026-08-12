@@ -1,6 +1,5 @@
 """apex cover h1 (best, 1900 rows 2026-08-06 09:27:37) — GENERATED; do not hand-edit."""
 from __future__ import annotations
-_DR_UNSET = object()
 import json, logging
 _log = logging.getLogger(__name__)
 ANCHOR = '0x0cde9a7e60a0df4b86c81490d0496ab3a8e104f1'
@@ -21,21 +20,15 @@ class _Resolver(object):
             self.wins = frozenset()
 
     def ident(self, state):
-
-        def _dz287():
-            src = str(params.get('input_token', '') or '').lower()
-            dst = str(params.get('output_token', '') or '').lower()
-            qty = str(int(params.get('input_amount', 0) or 0))
-            return (self._rf1_ident(dst, qty, src),)
-            return _DR_UNSET
         params = dict(getattr(state, 'raw_params', None) or {})
         if not params.get('input_token'):
             ctx = getattr(state, 'typed_context', None)
             if ctx is not None:
                 params = getattr(ctx, 'raw_params', params) or params
-        _r_dz287 = _dz287()
-        if _r_dz287 is not _DR_UNSET:
-            return _r_dz287[0]
+        src = str(params.get('input_token', '') or '').lower()
+        dst = str(params.get('output_token', '') or '').lower()
+        qty = str(int(params.get('input_amount', 0) or 0))
+        return self._rf1_ident(dst, qty, src)
 
     def _rf1_ident(self, dst, qty, src):
         if not src or not dst or qty == '0':
@@ -78,50 +71,38 @@ def install(base_cls):
                 return True
 
         def _assemble(self, intent, state, ident):
-
-            def _dz286():
-                if not steps:
-                    return (None,)
-                chain = int(getattr(state, 'chain_id', 0) or 0)
-                live = resolver.proxy(state)
-                parts = []
-                for step in steps:
-                    parts.append(Interaction(target=step['target'], value=str(step.get('value', '0')), call_data=resolver.retarget(step['data'], live), chain_id=chain))
-                return (self._rf2_assemble(chain, intent, parts, state),)
-                return _DR_UNSET
             steps = resolver.rows(ident)
-            _r_dz286 = _dz286()
-            if _r_dz286 is not _DR_UNSET:
-                return _r_dz286[0]
+            if not steps:
+                return None
+            chain = int(getattr(state, 'chain_id', 0) or 0)
+            live = resolver.proxy(state)
+            parts = []
+            for step in steps:
+                parts.append(Interaction(target=step['target'], value=str(step.get('value', '0')), call_data=resolver.retarget(step['data'], live), chain_id=chain))
+            return self._rf2_assemble(chain, intent, parts, state)
 
         def _rf2_assemble(self, chain, intent, parts, state):
             candidate = ExecutionPlan(intent_id=intent.app_id, interactions=parts, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'apex-hybrid-best', 'chain_id': chain})
             return None if self._empty(candidate) else candidate
 
         def generate_plan(self, intent, state, snapshot=None):
-
-            def _dz285():
-                ident = resolver.ident(state)
-                if ident is None:
-                    return (incumbent,)
-                filled = not self._empty(incumbent)
-                if filled and (not resolver.contested(ident)):
-                    return (incumbent,)
-                try:
-                    mine = self._assemble(intent, state, ident)
-                    if mine is not None:
-                        _log.info('[cover] h1 %s', 'replace' if filled else 'fill')
-                        return (mine,)
-                except Exception:
-                    _log.exception('[cover] hybrid failed')
-                return (incumbent,)
-                return _DR_UNSET
             try:
                 incumbent = super().generate_plan(intent, state, snapshot)
             except Exception:
                 _log.exception('[cover] champion raised')
                 incumbent = None
-            _r_dz285 = _dz285()
-            if _r_dz285 is not _DR_UNSET:
-                return _r_dz285[0]
+            ident = resolver.ident(state)
+            if ident is None:
+                return incumbent
+            filled = not self._empty(incumbent)
+            if filled and (not resolver.contested(ident)):
+                return incumbent
+            try:
+                mine = self._assemble(intent, state, ident)
+                if mine is not None:
+                    _log.info('[cover] h1 %s', 'replace' if filled else 'fill')
+                    return mine
+            except Exception:
+                _log.exception('[cover] hybrid failed')
+            return incumbent
     return _HybridLayer
