@@ -1,4 +1,3 @@
-# viking dynamic-fallback pair table
 def _p1():
     return {('0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', '0x4200000000000000000000000000000000000006'): [('aerodrome_slipstream', 100)], ('0x0555e30da8f98308edb960aa94c0db47230d2b9c', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'): [('uniswap_v3', 3000)], ('0x0555e30da8f98308edb960aa94c0db47230d2b9c', '0x4200000000000000000000000000000000000006'): [('uniswap_v3', 500)], ('0x4200000000000000000000000000000000000006', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'): [('uniswap_v3', 500)]}
 
@@ -7,5 +6,4 @@ def _p2():
 
 def _p3():
     return {('0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'): [('uniswap_v3', 500), ('aerodrome_slipstream', 100), ('uniswap_v3', 100)], ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe'): [('uniswap_v3', 3000), ('pancake_v3', 2500), ('aerodrome_slipstream', 200)], ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x0dca08cf89ae194bb5feb466dbf94f74c76062ea'): [('uniswap_v3', 3000), ('pancake_v3', 2500), ('aerodrome_slipstream', 200)], ('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0x511ef9ad5e645e533d15df605b4628e3d0d0ff53'): [('uniswap_v3', 3000), ('uniswap_v3', 10000), ('pancake_v3', 2500)]}
-
 DYN_FALLBACKS = {**_p1(), **_p2(), **_p3()}

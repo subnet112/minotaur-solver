@@ -12,6 +12,7 @@ Two router variants are in production deployments today:
 universally — V2 SwapRouter02 still exposes the deadline-included
 exactInput on every chain we deploy to.
 """
+_DR_UNSET = object()
 from eth_abi.abi import encode
 EXACT_INPUT_SINGLE_SELECTOR_V1 = bytes.fromhex('414bf389')
 EXACT_INPUT_SINGLE_SELECTOR_V2 = bytes.fromhex('04e45aaf')
@@ -91,14 +92,20 @@ def encode_swap_path(tokens: list[str], fees: list[int]) -> bytes:
         raise ValueError(f'Need at least 2 tokens for a path, got {len(tokens)}')
 
     def _dr1():
+
+        def _dz401():
+            path = b''
+            for i, token in enumerate(tokens):
+                addr_hex = token[2:] if token.startswith('0x') else token
+                path += bytes.fromhex(addr_hex)
+                if i < len(fees):
+                    path += fees[i].to_bytes(3, byteorder='big')
+            return (path,)
+            return _DR_UNSET
         if len(fees) != len(tokens) - 1:
             raise ValueError(f'Need exactly {len(tokens) - 1} fees for {len(tokens)} tokens, got {len(fees)}')
-        path = b''
-        for i, token in enumerate(tokens):
-            addr_hex = token[2:] if token.startswith('0x') else token
-            path += bytes.fromhex(addr_hex)
-            if i < len(fees):
-                path += fees[i].to_bytes(3, byteorder='big')
-        return path
+        _r_dz401 = _dz401()
+        if _r_dz401 is not _DR_UNSET:
+            return _r_dz401[0]
     path = _dr1()
     return path
