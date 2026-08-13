@@ -106,14 +106,7 @@ def _empty(solver, plan):
     except Exception:
         return plan is None or not getattr(plan, 'interactions', None)
 
-def _blind(plan):
-    """The lineage's own no-route sentinel: structurally non-empty but a
-    self-declared guess that scores 0 when the default pool doesn't exist."""
-    try:
-        md = dict(getattr(plan, 'metadata', {}) or {})
-    except Exception:
-        return False
-    return md.get('solver') in ('best-effort', 'offline-fallback') or md.get('route') == 'last_resort_empty'
+from axm_blind_ext import _blind
 
 def _parse_tokens(state):
     p = dict(getattr(state, 'raw_params', {}) or {})

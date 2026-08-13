@@ -498,10 +498,8 @@
   "venue": "v3"
  },
  "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|241059882763451810208": {
-  "adm_champ": "417434136",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "417434136",
-  "adm_pin": 25738772,
+  "adm_champ": "378365676",
+  "adm_ours": "378611534",
   "amt_in": "241059882763451810208",
   "chain_id": 1,
   "class": "provisional",
@@ -2997,10 +2995,8 @@
   "venue": "v3"
  },
  "0xdC035D45d973E3EC169d2276DDab16f1e407384F|0x02f92800F57BCD74066F5709F1Daa1A4302Df875|522060239755793210496": {
-  "adm_champ": "303868007009479554090",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "303868007009479554090",
-  "adm_pin": 25738772,
+  "adm_champ": "294034321037824218581",
+  "adm_ours": "294034321037824218581",
   "amt_in": "522060239755793210496",
   "chain_id": 1,
   "class": "provisional",
@@ -3692,48 +3688,6 @@
   ],
   "venue": "v3"
  },
- "1|0x04c154b66cb340f3ae24111cc767e0184ed00cc6|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1056765635595649863": {
-  "adm_champ": "90073727798127671",
-  "adm_champ_sha": "bd2dbc8bd9e45898d895cacb68f64c28177f8f15",
-  "adm_ours": "98127356284225717",
-  "adm_pin": 25734771,
-  "amt": 1056765635595649863,
-  "class": "win",
-  "hops": [
-   {
-    "dx": 1056765635595649863,
-    "flavor": "stable",
-    "i": 1,
-    "j": 0,
-    "kind": "curve",
-    "out": 98127356284225717,
-    "pool": "0xC8Eb2Cf2f792F77AF0Cd9e203305a585E588179D",
-    "recv": true,
-    "tokens": [
-     "0x04C154b66CB340F3Ae24111CC767e0184Ed00Cc6",
-     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-    ]
-   }
-  ],
-  "out": 98127356284225717,
-  "qid": "q_b9838f3f320450da574c87e9dcd37ee8",
-  "venue": "route"
- },
- "1|0x06450dee7fd2fb8e39061434babcfc05599a6fb8|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|3123921432000000000000000000": {
-  "adm_champ": "258347251000768",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "6358629215543056",
-  "adm_pin": 25738148,
-  "amt_in": "3123921432000000000000000000",
-  "class": "win",
-  "qid": "q_ae0f43466159cf1dc489a113c61b5922",
-  "quote_pin": "6288654170636978",
-  "tokens": [
-   "0x06450dEe7FD2Fb8E39061434BAbCFC05599a6Fb8",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v2"
- },
  "1|0x06450dee7fd2fb8e39061434babcfc05599a6fb8|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|4910351274739573441274007998": {
   "adm_champ": "10370901508822349",
   "adm_ours": "10370901508822349",
@@ -4262,10 +4216,8 @@
   "venue": "v3"
  },
  "1|0x1abaea1f7c830bd89acc67ec4af516284b1bc33c|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1349525658": {
-  "adm_champ": "1556622009",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "1556622009",
-  "adm_pin": 25738772,
+  "adm_champ": "1558961745",
+  "adm_ours": "1558961745",
   "amt_in": "1349525658",
   "class": "provisional",
   "fees": [
@@ -4309,31 +4261,9 @@
   ],
   "venue": "v3"
  },
- "1|0x1abaea1f7c830bd89acc67ec4af516284b1bc33c|0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab|1500597281": {
-  "adm_champ": "11797492311399109856",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "4971068329250112472172",
-  "adm_pin": 25738148,
-  "amt_in": "1500597281",
-  "class": "win",
-  "fees": [
-   500,
-   3000
-  ],
-  "qid": "q_6ddf36899b8789bd9ff5c03888d3fd2c",
-  "quote_pin": "4909138787194170156946",
-  "tokens": [
-   "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
-   "0xdac17f958d2ee523a2206206994597c13d831ec7",
-   "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
-  ],
-  "venue": "v3"
- },
  "1|0x1cfa5641c01406ab8ac350ded7d735ec41298372|0xf939e0a03fb07f59a73314e73794be0e57ac1b4e|78512619789713549767179": {
-  "adm_champ": "355621041913904267713",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "355621041913904267713",
-  "adm_pin": 25738772,
+  "adm_champ": "353241822502524119444",
+  "adm_ours": "353241822502524119445",
   "amt": 78512619789713549767179,
   "class": "provisional",
   "hops": [
@@ -4942,10 +4872,8 @@
   "venue": "v3"
  },
  "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|3027986": {
-  "adm_champ": "1015708318884579916",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "1015708318884579916",
-  "adm_pin": 25738772,
+  "adm_champ": "1032541781542977347",
+  "adm_ours": "1032541781542977347",
   "amt_in": "3027986",
   "class": "provisional",
   "fees": [
@@ -5161,10 +5089,8 @@
   "venue": "v3"
  },
  "1|0x28d38df637db75533bd3f71426f3410a82041544|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1300000000000000000000": {
-  "adm_champ": "14857667736523377",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "14857667736523377",
-  "adm_pin": 25738772,
+  "adm_champ": "15147023562292090",
+  "adm_ours": "15147023562292090",
   "amt_in": "1300000000000000000000",
   "class": "provisional",
   "fees": [
@@ -5210,26 +5136,6 @@
    "quoted_out": "239095766",
    "source": "custom/tools/route_quality.py census"
   },
-  "tokens": [
-   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
- },
- "1|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|23000000000000": {
-  "adm_champ": "370655513",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "371207442",
-  "adm_pin": 25738148,
-  "amt_in": "23000000000000",
-  "class": "win",
-  "fees": [
-   3000,
-   100
-  ],
-  "qid": "q_cb81640a3cc6108886176b6089cbc80c",
-  "quote_pin": "368137397",
   "tokens": [
    "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
@@ -5589,26 +5495,6 @@
   "out": 27523264,
   "qid": "q_0a153a4bb94308e4dbe24cf079a797ec",
   "venue": "route"
- },
- "1|0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f|0x68749665ff8d2d112fa859aa293f07a622782f38|4399999999999999824137": {
-  "adm_champ": "994905",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "996613",
-  "adm_pin": 25738148,
-  "amt_in": "4399999999999999824137",
-  "class": "win",
-  "fees": [
-   100,
-   3000
-  ],
-  "qid": "q_d80105e59f39f848fd23f895c9033b03",
-  "quote_pin": "997119",
-  "tokens": [
-   "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0x68749665FF8D2d112Fa859AA293F07A622782F38"
-  ],
-  "venue": "v3"
  },
  "1|0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|5000000000000000000000": {
   "adm_champ": "0",
@@ -6014,26 +5900,6 @@
    "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
    "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
-  ],
-  "venue": "v3"
- },
- "1|0x4d1c297d39c5c1277964d0e3f8aa901493664530|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|162266901442192515931": {
-  "adm_champ": "None",
-  "adm_champ_sha": "bd2dbc8bd9e45898d895cacb68f64c28177f8f15",
-  "adm_ours": "2045710",
-  "adm_pin": 25734771,
-  "amt_in": "162266901442192515931",
-  "class": "cover",
-  "fees": [
-   10000,
-   100
-  ],
-  "qid": "q_b351f64d4f76bacfbd46752de526c73e",
-  "quote_pin": "2045087",
-  "tokens": [
-   "0x4d1C297d39C5c1277964D0E3f8Aa901493664530",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
   ],
   "venue": "v3"
  },
@@ -6499,26 +6365,6 @@
   "tokens": [
    "0x514910771AF9Ca656af840dff83E8264EcF986CA",
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
- },
- "1|0x514910771af9ca656af840dff83e8264ecf986ca|0xdac17f958d2ee523a2206206994597c13d831ec7|4519568386962377461260": {
-  "adm_champ": "39118845363",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "39541217764",
-  "adm_pin": 25738148,
-  "amt_in": "4519568386962377461260",
-  "class": "win",
-  "fees": [
-   3000,
-   500
-  ],
-  "qid": "q_3256c19d7488ee9ed43700bdcbac73e7",
-  "quote_pin": "39342174252",
-  "tokens": [
-   "0x514910771AF9Ca656af840dff83E8264EcF986CA",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
   ],
   "venue": "v3"
  },
@@ -7131,32 +6977,6 @@
   ],
   "out": 1525475508884514037449,
   "qid": "q_c73cf822d0bde850f2e7761d919a6865",
-  "venue": "route"
- },
- "1|0x62b9c7356a2dc64a1969e19c23e4f579f9810aa7|0xd533a949740bb3306d119cc777fa900ba034cd52|53094205210710075960022": {
-  "adm_champ": "16409194434095528720",
-  "adm_champ_sha": "1ab5ad587718c63e5e504c982c5b585eb23137eb",
-  "adm_ours": "19953150042165521021541",
-  "adm_pin": 25733250,
-  "amt": 53094205210710075960022,
-  "class": "win",
-  "hops": [
-   {
-    "dx": 53094205210710075960022,
-    "flavor": "stable",
-    "i": 1,
-    "j": 0,
-    "kind": "curve",
-    "out": 21003315833858443180570,
-    "pool": "0x9D0464996170c6B9e75eED71c68B99dDEDf279e8",
-    "tokens": [
-     "0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7",
-     "0xD533a949740bb3306d119CC777fa900bA034cd52"
-    ]
-   }
-  ],
-  "out": 21003315833858443180570,
-  "qid": "q_03e2a06488a566bc5228749d72ca576c",
   "venue": "route"
  },
  "1|0x62d0a8458ed7719fdaf978fe5929c6d342b0bfce|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|12700000000000000000000": {
@@ -8168,10 +7988,8 @@
   "venue": "v3"
  },
  "1|0x6b175474e89094c44da98b954eedeac495271d0f|0xfaba6f8e4a5e8ab82f62fe7c39859fa577269be3|286072628027348428442": {
-  "adm_champ": "844799867981646705435",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "844799867981646705435",
-  "adm_pin": 25738772,
+  "adm_champ": "824473267141069255483",
+  "adm_ours": "824473267141069255483",
   "amt_in": "286072628027348428442",
   "class": "provisional",
   "fees": [
@@ -8980,10 +8798,8 @@
   "venue": "v3"
  },
  "1|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1880462790629062272": {
-  "adm_champ": "2333934786914613865",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "2333934786914613865",
-  "adm_pin": 25738772,
+  "adm_champ": "2334132170620011130",
+  "adm_ours": "2334132170620011130",
   "amt_in": "1880462790629062272",
   "class": "provisional",
   "fees": [
@@ -10620,26 +10436,6 @@
   ],
   "venue": "v3"
  },
- "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|908000000": {
-  "adm_champ": "255545384249907612115",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "256701193046084866204",
-  "adm_pin": 25738148,
-  "amt_in": "908000000",
-  "class": "win",
-  "fees": [
-   100,
-   500
-  ],
-  "qid": "q_47140e4e7567d95922ddcb44b494f6e0",
-  "quote_pin": "257638800810511585506",
-  "tokens": [
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
-  ],
-  "venue": "v3"
- },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x21cd589a989615a9e901328d3c089bbca16d00b2|19520567": {
   "adm_champ": "893594395653",
   "adm_ours": "893594395653",
@@ -11358,31 +11154,9 @@
   "qid": "q_33a20f27e180c33e73b13aa3b94daaad",
   "venue": "route"
  },
- "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x44108f0223a3c3028f5fe7aec7f9bb2e66bef82f|520672961": {
-  "adm_champ": "None",
-  "adm_champ_sha": "bd2dbc8bd9e45898d895cacb68f64c28177f8f15",
-  "adm_ours": "2132418196403617731337",
-  "adm_pin": 25734771,
-  "amt_in": "520672961",
-  "class": "cover",
-  "fees": [
-   100,
-   10000
-  ],
-  "qid": "q_9f30499cb2158e17bd6e8d32976b92d1",
-  "quote_pin": "2133042962539837506106",
-  "tokens": [
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0x44108f0223A3C3028F5Fe7AEC7f9bb2E66beF82F"
-  ],
-  "venue": "v3"
- },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x45804880de22913dafe09f4980848ece6ecbaf78|1000000000": {
-  "adm_champ": "226693276533424412",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "226693276533424412",
-  "adm_pin": 25738772,
+  "adm_champ": "231453076749693304",
+  "adm_ours": "231453076749693304",
   "amt_in": "1000000000",
   "class": "provisional",
   "fees": [
@@ -11838,10 +11612,8 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x58d97b57bb95320f9a05dc918aef65434969c2b2|150000000": {
-  "adm_champ": "75380721746330618193",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "75380721746330618193",
-  "adm_pin": 25738772,
+  "adm_champ": "77246153442442824690",
+  "adm_ours": "77262185543444068198",
   "amt_in": "150000000",
   "class": "provisional",
   "fees": [
@@ -12323,26 +12095,6 @@
   ],
   "venue": "v3"
  },
- "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|5570000000": {
-  "adm_champ": "26849113701",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "27000789402",
-  "adm_pin": 25738148,
-  "amt_in": "5570000000",
-  "class": "win",
-  "fees": [
-   500,
-   3000
-  ],
-  "qid": "q_d1eafa19258d385ddfcc715ed1e9ae9f",
-  "quote_pin": "27184716956",
-  "tokens": [
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
-  ],
-  "venue": "v3"
- },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|6068425296": {
   "adm_champ": "29797234695",
   "adm_ours": "29857132158",
@@ -12648,26 +12400,6 @@
   ],
   "venue": "v3"
  },
- "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xb58e61c3098d85632df34eecfb899a1ed80921cb|122904803": {
-  "adm_champ": "99268657260905181559",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "99667412230699721853",
-  "adm_pin": 25738148,
-  "amt_in": "122904803",
-  "class": "win",
-  "fees": [
-   100,
-   100
-  ],
-  "qid": "q_3b493442c2db37db8b281574ca0f4df1",
-  "quote_pin": "99694493214913105422",
-  "tokens": [
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-   "0xdac17f958d2ee523a2206206994597c13d831ec7",
-   "0xB58E61C3098d85632Df34EecfB899A1Ed80921cB"
-  ],
-  "venue": "v3"
- },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xb58e61c3098d85632df34eecfb899a1ed80921cb|13436889649": {
   "adm_champ": "10118576047193910619948",
   "adm_ours": "10858202590157837654547",
@@ -12753,26 +12485,6 @@
    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
    "0xB98d4C97425d9908E66E53A6fDf673ACcA0BE986"
-  ],
-  "venue": "v3"
- },
- "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xb9f599ce614feb2e1bbe58f180f370d05b39344e|111708690": {
-  "adm_champ": "6348146007112116275367764034",
-  "adm_champ_sha": "bd2dbc8bd9e45898d895cacb68f64c28177f8f15",
-  "adm_ours": "7872187456099634814972112850",
-  "adm_pin": 25734771,
-  "amt_in": "111708690",
-  "class": "win",
-  "fees": [
-   100,
-   10000
-  ],
-  "qid": "q_4db3b4109f243b0ecb3f0c9e22b43748",
-  "quote_pin": "7967284321852334156863936271",
-  "tokens": [
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xb9f599ce614Feb2e1BBe58F180F370D05b39344E"
   ],
   "venue": "v3"
  },
@@ -13009,10 +12721,8 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1177415711": {
-  "adm_champ": "615134911316669555",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "615134911316669555",
-  "adm_pin": 25738772,
+  "adm_champ": "613916973685945154",
+  "adm_ours": "614025905765248967",
   "amt_in": "1177415711",
   "class": "provisional",
   "fees": [
@@ -13554,10 +13264,8 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|22140567": {
-  "adm_champ": "11567244597327743",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "11567244597327743",
-  "adm_pin": 25738772,
+  "adm_champ": "11544344768968678",
+  "adm_ours": "11546786390733925",
   "amt_in": "22140567",
   "class": "provisional",
   "fees": [
@@ -14155,10 +13863,8 @@
   "venue": "route"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|45269880": {
-  "adm_champ": "23651055346926364",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "23651055346926364",
-  "adm_pin": 25738772,
+  "adm_champ": "23607457966696249",
+  "adm_ours": "23610666188622098",
   "amt": 45269880,
   "class": "provisional",
   "hops": [
@@ -14328,10 +14034,8 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|4999796193": {
-  "adm_champ": "2612105507147703540",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "2612105507147703540",
-  "adm_pin": 25738772,
+  "adm_champ": "2606931600364050192",
+  "adm_ours": "2607100334642586909",
   "amt_in": "4999796193",
   "class": "provisional",
   "fees": [
@@ -14412,10 +14116,8 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|5000871103": {
-  "adm_champ": "2612667082329346851",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "2612667082329346851",
-  "adm_pin": 25738772,
+  "adm_champ": "2607492062629908228",
+  "adm_ours": "2607660750042985128",
   "amt_in": "5000871103",
   "class": "provisional",
   "fees": [
@@ -16228,10 +15930,8 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xdac17f958d2ee523a2206206994597c13d831ec7|4349752505": {
-  "adm_champ": "4352627571",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "4352627571",
-  "adm_pin": 25738772,
+  "adm_champ": "4352027172",
+  "adm_ours": "4352027172",
   "amt_in": "4349752505",
   "class": "provisional",
   "fees": [
@@ -17035,10 +16735,8 @@
   "venue": "v3"
  },
  "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xfaba6f8e4a5e8ab82f62fe7c39859fa577269be3|3751095583": {
-  "adm_champ": "11052980559159040506459",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "11052980559159040506459",
-  "adm_pin": 25738772,
+  "adm_champ": "10679060035132355987990",
+  "adm_ours": "10680442635215078346433",
   "amt_in": "3751095583",
   "class": "provisional",
   "fees": [
@@ -17135,26 +16833,6 @@
   ],
   "venue": "v3"
  },
- "1|0xa27ec0006e59f245217ff08cd52a7e8b169e62d2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|3671437558608321868347": {
-  "adm_champ": "None",
-  "adm_champ_sha": "1ab5ad587718c63e5e504c982c5b585eb23137eb",
-  "adm_ours": "45796192",
-  "adm_pin": 25733250,
-  "amt_in": "3671437558608321868347",
-  "class": "cover",
-  "fees": [
-   10000,
-   100
-  ],
-  "qid": "q_9a90f73ece8e24764416376e13698537",
-  "quote_pin": "46446373",
-  "tokens": [
-   "0xA27EC0006e59f245217Ff08CD52A7E8b169E62D2",
-   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  ],
-  "venue": "v3"
- },
  "1|0xa2cd3d43c775978a96bdbf12d733d5a1ed94fb18|0x3cdb41027d61c413e064e84d9c21812b6ef004f1|26000000090316390600000": {
   "adm_champ": "72694123796500",
   "adm_ours": "72694123796500",
@@ -17168,44 +16846,6 @@
    "0x3cdB41027D61C413e064E84D9c21812b6Ef004F1"
   ],
   "venue": "v2"
- },
- "1|0xa3931d71877c0e7a3148cb7eb4463524fec27fbd|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|1000000000000000000000": {
-  "adm_champ": "None",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "1643858",
-  "adm_pin": 25738772,
-  "amt": 1000000000000000000000,
-  "class": "cover",
-  "hops": [
-   {
-    "dx": 1000000000000000000000,
-    "flavor": "stable",
-    "i": 0,
-    "j": 1,
-    "kind": "curve",
-    "out": 1089400147,
-    "pool": "0x00836Fe54625BE242BcFA286207795405ca4fD10",
-    "tokens": [
-     "0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD",
-     "0xdac17f958d2ee523a2206206994597c13d831ec7"
-    ]
-   },
-   {
-    "dx": 1056718142,
-    "fees": [
-     500
-    ],
-    "kind": "v3",
-    "out": 1659658,
-    "tokens": [
-     "0xdac17f958d2ee523a2206206994597c13d831ec7",
-     "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
-    ]
-   }
-  ],
-  "out": 1659658,
-  "qid": "q_e87a6ecd6e09d7c39abd8dbf0ac94930",
-  "venue": "route"
  },
  "1|0xa3931d71877c0e7a3148cb7eb4463524fec27fbd|0x96f6ef951840721adbf46ac996b59e0235cb985c|497252360119643769649": {
   "adm_champ": "None",
@@ -19227,26 +18867,6 @@
   ],
   "venue": "v2"
  },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f|1000000000000000000": {
-  "adm_champ": "1910615647296157906367",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "1912951279166410901703",
-  "adm_pin": 25738772,
-  "amt_in": "1000000000000000000",
-  "class": "win",
-  "fees": [
-   100,
-   100
-  ],
-  "qid": "q_ffc54776b56a7986981a5c5138abb4da",
-  "quote_pin": "1912512317006032828358",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xdac17f958d2ee523a2206206994597c13d831ec7",
-   "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-  ],
-  "venue": "v3"
- },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f|11300000000000000000": {
   "adm_champ": "21653123521073482606432",
   "adm_ours": "21653123521073482606432",
@@ -19319,26 +18939,6 @@
   ],
   "venue": "v3"
  },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f|2569000000000000000": {
-  "adm_champ": "4908320999241041579271",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "4914949530617936914726",
-  "adm_pin": 25738772,
-  "amt_in": "2569000000000000000",
-  "class": "win",
-  "fees": [
-   100,
-   100
-  ],
-  "qid": "q_2488e3bfb23db22dd5f45efb48762273",
-  "quote_pin": "4912372580420030202296",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-  ],
-  "venue": "v3"
- },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f|300000000000000000": {
   "adm_champ": "561200736101894633629",
   "adm_champ_sha": "522456927a0404fca2e42a7c0555ed2ecc34c00c",
@@ -19355,26 +18955,6 @@
   "tokens": [
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
    "0xdac17f958d2ee523a2206206994597c13d831ec7",
-   "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-  ],
-  "venue": "v3"
- },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6b175474e89094c44da98b954eedeac495271d0f|3604987784302127451": {
-  "adm_champ": "6887628180569792434139",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "6896581767276014236745",
-  "adm_pin": 25738772,
-  "amt_in": "3604987784302127451",
-  "class": "win",
-  "fees": [
-   100,
-   100
-  ],
-  "qid": "q_16ad8b40d2fddf31da13be7f9f0358aa",
-  "quote_pin": "6892971334836129565555",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
    "0x6B175474E89094C44Da98b954EedeAC495271d0F"
   ],
   "venue": "v3"
@@ -19926,10 +19506,8 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|461800293753266304": {
-  "adm_champ": "372000276810699803",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "372000276810699803",
-  "adm_pin": 25738772,
+  "adm_champ": "372028577383632227",
+  "adm_ours": "372028577383632227",
   "amt_in": "461800293753266304",
   "class": "provisional",
   "fees": [
@@ -20036,26 +19614,6 @@
   "tokens": [
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
    "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
-  ],
-  "venue": "v3"
- },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x8292bb45bf1ee4d140127049757c2e0ff06317ed|10000000000000000": {
-  "adm_champ": "None",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "19013159317305994301",
-  "adm_pin": 25738148,
-  "amt_in": "10000000000000000",
-  "class": "cover",
-  "fees": [
-   100,
-   100
-  ],
-  "qid": "q_e9a3413985b2cf4ccea252688b6c394f",
-  "quote_pin": "18898288753282592750",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD"
   ],
   "venue": "v3"
  },
@@ -20505,10 +20063,8 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1120494151446222510": {
-  "adm_champ": "2142558981",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "2142558981",
-  "adm_pin": 25738772,
+  "adm_champ": "2147404865",
+  "adm_ours": "2147404865",
   "amt_in": "1120494151446222510",
   "class": "provisional",
   "fees": [
@@ -20999,10 +20555,8 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|161168891268506555936": {
-  "adm_champ": "308058587297",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "308058587297",
-  "adm_pin": 25738772,
+  "adm_champ": "300561086638",
+  "adm_ours": "300561086638",
   "amt_in": "161168891268506555936",
   "class": "provisional",
   "fees": [
@@ -22018,10 +21572,8 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|610639596169976317": {
-  "adm_champ": "1167639287",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "1167639287",
-  "adm_pin": 25738772,
+  "adm_champ": "1142871731",
+  "adm_ours": "1142486146",
   "amt_in": "610639596169976317",
   "class": "provisional",
   "fees": [
@@ -22482,10 +22034,8 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|9477258653547288": {
-  "adm_champ": "18122041",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "18122041",
-  "adm_pin": 25738772,
+  "adm_champ": "18187777",
+  "adm_ours": "18191122",
   "amt": 9477258653547288,
   "class": "provisional",
   "hops": [
@@ -22537,22 +22087,6 @@
    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
   ],
   "venue": "v3"
- },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa2c2c937333165d4c5f2dc5f31a43e1239fecfeb|132000000000000000": {
-  "adm_champ": "41914018457639068190",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "208210817623875467717",
-  "adm_pin": 25738772,
-  "amt_in": "132000000000000000",
-  "class": "win",
-  "qid": "q_444532735a2f7e780f98775561552ed0",
-  "quote_pin": "208134182685895083029",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0xA2c2C937333165d4c5f2dC5f31a43E1239FeCfeB"
-  ],
-  "venue": "v2"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa9e8acf069c58aec8825542845fd754e41a9489a|206070522835814072": {
   "adm_champ": "4897328893206719155514",
@@ -22865,24 +22399,6 @@
   ],
   "venue": "v3"
  },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|1000000000000000000": {
-  "adm_champ": "1904512122",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "1914594757",
-  "adm_pin": 25738772,
-  "amt_in": "1000000000000000000",
-  "class": "win",
-  "fees": [
-   100
-  ],
-  "qid": "q_31413a99f7d697809f1217b229ac22b7",
-  "quote_pin": "1914243243",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-  ],
-  "venue": "v3"
- },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|1049263799868386103": {
   "adm_champ": "1962313497",
   "adm_champ_sha": "522456927a0404fca2e42a7c0555ed2ecc34c00c",
@@ -23023,10 +22539,10 @@
   "venue": "v3"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|1645894091451249208": {
-  "adm_champ": "3134618679",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "3134618679",
-  "adm_pin": 25738772,
+  "adm_champ": "3078112950",
+  "adm_champ_sha": "522456927a0404fca2e42a7c0555ed2ecc34c00c",
+  "adm_ours": "3082618484",
+  "adm_pin": 25728107,
   "amt_in": "1645894091451249208",
   "class": "win",
   "fees": [
@@ -23125,26 +22641,6 @@
   ],
   "venue": "v3"
  },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|43083000000000000000": {
-  "adm_champ": "81765978772",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "81955602664",
-  "adm_pin": 25738148,
-  "amt_in": "43083000000000000000",
-  "class": "win",
-  "fees": [
-   500,
-   100
-  ],
-  "qid": "q_d6ccc9d82c3b8bfdd79ed5053dce1c0a",
-  "quote_pin": "81413929189",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-  ],
-  "venue": "v3"
- },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|4900000000000000": {
   "adm_champ": "9157510",
   "adm_ours": "9159596",
@@ -23225,82 +22721,6 @@
   ],
   "qid": "q_54de55fcb3b6bab4f30da5d98ba090ad",
   "quote_pin": "1023488444",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-  ],
-  "venue": "v3"
- },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|5357500000000000000": {
-  "adm_champ": "10203279416",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "10255980649",
-  "adm_pin": 25738772,
-  "amt_in": "5357500000000000000",
-  "class": "win",
-  "fees": [
-   100,
-   100
-  ],
-  "qid": "q_2f189bd6bd755d06a29da1b6de15efdc",
-  "quote_pin": "10250737800",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-  ],
-  "venue": "v3"
- },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|600000000000000000": {
-  "adm_champ": "1142708756",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "1148840917",
-  "adm_pin": 25738772,
-  "amt_in": "600000000000000000",
-  "class": "win",
-  "fees": [
-   100
-  ],
-  "qid": "q_4bcae047474112ecef5fb19386e2cdfe",
-  "quote_pin": "1148629986",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-  ],
-  "venue": "v3"
- },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|6109000000000000000": {
-  "adm_champ": "11634471666",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "11694109195",
-  "adm_pin": 25738772,
-  "amt_in": "6109000000000000000",
-  "class": "win",
-  "fees": [
-   100,
-   100
-  ],
-  "qid": "q_70e81ecf5cee903c8ed46b5fe93ee618",
-  "quote_pin": "11688137850",
-  "tokens": [
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-  ],
-  "venue": "v3"
- },
- "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|700000000000000000": {
-  "adm_champ": "1333159783",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "1340289884",
-  "adm_pin": 25738772,
-  "amt_in": "700000000000000000",
-  "class": "win",
-  "fees": [
-   100
-  ],
-  "qid": "q_e084eac326aa9f0d0a1cc3e54c0f902c",
-  "quote_pin": "1340043804",
   "tokens": [
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
    "0xdAC17F958D2ee523a2206206994597C13D831ec7"
@@ -23510,10 +22930,8 @@
   "venue": "v2"
  },
  "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xf280b16ef293d8e534e370794ef26bf312694126|1757971468389066266": {
-  "adm_champ": "51260612070229856",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "51260612070229856",
-  "adm_pin": 25738772,
+  "adm_champ": "56692592748772811",
+  "adm_ours": "56692592748772811",
   "amt": 1757971468389066266,
   "amt_in": 1757971468389066266,
   "chain_id": 1,
@@ -25755,10 +25173,8 @@
   "venue": "v3"
  },
  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|12097705502": {
-  "adm_champ": "12087289850",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "12087289850",
-  "adm_pin": 25738772,
+  "adm_champ": "12087447115",
+  "adm_ours": "12087447115",
   "amt_in": "12097705502",
   "class": "provisional",
   "fees": [
@@ -27015,26 +26431,6 @@
   ],
   "venue": "v3"
  },
- "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1866157907": {
-  "adm_champ": "977259779423011761",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "979729106647086455",
-  "adm_pin": 25738148,
-  "amt_in": "1866157907",
-  "class": "win",
-  "fees": [
-   100,
-   500
-  ],
-  "qid": "q_51b6cb953f87f49bcc29ce30099379ef",
-  "quote_pin": "986138061704707617",
-  "tokens": [
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
- },
  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1877808438": {
   "amt_in": "1877808438",
   "class": "provisional",
@@ -27695,26 +27091,6 @@
   ],
   "venue": "v3"
  },
- "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|4653656635": {
-  "adm_champ": "2436990928359978382",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "2443151223061793062",
-  "adm_pin": 25738148,
-  "amt_in": "4653656635",
-  "class": "win",
-  "fees": [
-   100,
-   500
-  ],
-  "qid": "q_b9cdb281390ad3266ea13fd592d6e46e",
-  "quote_pin": "2459124052510862818",
-  "tokens": [
-   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v3"
- },
  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|4826941997": {
   "adm_champ": "2566922552534043575",
   "adm_ours": "2577701938663072839",
@@ -28173,10 +27549,8 @@
   "venue": "v3"
  },
  "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|92000000": {
-  "adm_champ": "48016768101904676",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "48016768101904676",
-  "adm_pin": 25738772,
+  "adm_champ": "49186730853652878",
+  "adm_ours": "49186730853652878",
   "amt_in": "92000000",
   "class": "provisional",
   "fees": [
@@ -28587,26 +27961,6 @@
   ],
   "venue": "v3"
  },
- "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0x232ce3bd40fcd6f80f3d55a522d03f25df784ee2|9880560097533668000000": {
-  "adm_champ": "None",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "3855773376230076344814",
-  "adm_pin": 25738148,
-  "amt_in": "9880560097533668000000",
-  "class": "cover",
-  "fees": [
-   3000,
-   10000
-  ],
-  "qid": "q_f9e784d45ae1469de68c3de9bd876a61",
-  "quote_pin": "3855773376230076344814",
-  "tokens": [
-   "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
-   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-   "0x232CE3bd40fCd6f80f3d55A522d03f25Df784Ee2"
-  ],
-  "venue": "v3"
- },
  "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0x4c9edd5852cd905f086c759e8383e09bff1e68b3|643187613005112567": {
   "adm_champ": "102307004629957",
   "adm_ours": "643241433098652377",
@@ -28651,10 +28005,8 @@
   "venue": "v3"
  },
  "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0x6b175474e89094c44da98b954eedeac495271d0f|18276215652827044473437": {
-  "adm_champ": "18239998217315400361405",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "18239998217315400361405",
-  "adm_pin": 25738772,
+  "adm_champ": "18240176840325776407647",
+  "adm_ours": "18240176840325776407647",
   "amt_in": "18276215652827044473437",
   "class": "provisional",
   "fees": [
@@ -28704,9 +28056,7 @@
  },
  "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|11563825136065536520302": {
   "adm_champ": "11552261310",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "11552261310",
-  "adm_pin": 25738772,
+  "adm_ours": "11541600531",
   "amt_in": "11563825136065536520302",
   "class": "provisional",
   "fees": [
@@ -28777,10 +28127,8 @@
   "venue": "v3"
  },
  "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1585462402932709763049": {
-  "adm_champ": "826225712992395634",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "826225712992395634",
-  "adm_pin": 25738772,
+  "adm_champ": "844528004102771677",
+  "adm_ours": "844856896221792673",
   "amt_in": "1585462402932709763049",
   "class": "provisional",
   "fees": [
@@ -29028,21 +28376,6 @@
   ],
   "venue": "v2"
  },
- "1|0xe0f63a424a4439cbe457d80e4f4b51ad25b2c56c|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|500000000000": {
-  "adm_champ": "827071387854621187",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "829132664809902907",
-  "adm_pin": 25738148,
-  "amt_in": "500000000000",
-  "class": "win",
-  "qid": "q_b9e7ef62bef83b09aa773b11b4d7f7af",
-  "quote_pin": "830720480509322793",
-  "tokens": [
-   "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
-   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-  ],
-  "venue": "v2"
- },
  "1|0xe2ad0bf751834f2fbdc62a41014f84d67ca1de2a|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|523638400000000000000": {
   "amt": 523638400000000000000,
   "amt_in": 523638400000000000000,
@@ -29220,10 +28553,8 @@
   "venue": "v3"
  },
  "1|0xe556aba6fe6036275ec1f87eda296be72c811bce|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1493224855903127827176": {
-  "adm_champ": "1491983900",
-  "adm_champ_sha": "86b26c4f45bf2fc2d5349532768e76576bbf5b5a",
-  "adm_ours": "1491983900",
-  "adm_pin": 25738772,
+  "adm_champ": "1492791061",
+  "adm_ours": "1492791061",
   "amt": 1493224855903127827176,
   "class": "provisional",
   "hops": [
@@ -29701,5 +29032,4666 @@
    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
   ],
   "venue": "v2"
+ },
+ "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c|0x39b8B6385416f4cA36a20319F70D28621895279D|1819433814": {
+  "adm_champ": "None",
+  "adm_ours": "263133276485675048541",
+  "amt_in": "1819433814",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     300,
+     6,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    true
+   ],
+   [
+    [
+     "0x39b8b6385416f4ca36a20319f70d28621895279d",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     995050,
+     19901,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ]
+  ],
+  "probe_out": "263149115822020060635",
+  "qid": "q_71d4133bab1e65d2849e2fb7256a10dd",
+  "settle": "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c",
+  "take": "0x39b8b6385416f4ca36a20319f70d28621895279d",
+  "tokens": [
+   "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
+   "0x39b8B6385416f4cA36a20319F70D28621895279D"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c|0x39b8B6385416f4cA36a20319F70D28621895279D|3094953187": {
+  "adm_champ": "None",
+  "adm_ours": "311385737487234079028",
+  "amt_in": "3094953187",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     300,
+     6,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    true
+   ],
+   [
+    [
+     "0x39b8b6385416f4ca36a20319f70d28621895279d",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     995050,
+     19901,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ]
+  ],
+  "probe_out": "311398780464821760847",
+  "qid": "q_0e7ab57831083282a17608fdb9f8c9d7",
+  "settle": "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c",
+  "take": "0x39b8b6385416f4ca36a20319f70d28621895279d",
+  "tokens": [
+   "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
+   "0x39b8B6385416f4cA36a20319F70D28621895279D"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c|0x39b8B6385416f4cA36a20319F70D28621895279D|9088965373": {
+  "adm_champ": "None",
+  "adm_ours": "376298243760259720005",
+  "amt_in": "9088965373",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     300,
+     6,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    true
+   ],
+   [
+    [
+     "0x39b8b6385416f4ca36a20319f70d28621895279d",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     995050,
+     19901,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ]
+  ],
+  "probe_out": "376304703012628040548",
+  "qid": "q_6d0d7dd913bd2bc0ab655ed4e9743853",
+  "settle": "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c",
+  "take": "0x39b8b6385416f4ca36a20319f70d28621895279d",
+  "tokens": [
+   "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
+   "0x39b8B6385416f4cA36a20319F70D28621895279D"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|66297251000000000000": {
+  "amt_in": "66297251000000000000",
+  "quote_head": "257708035",
+  "quote_pin": "256910951",
+  "tokens": [
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "venue": "v2"
+ },
+ "0x643C4E15d7d62Ad0aBeC4a9BD4b001aA3Ef52d66|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|2236412613850000000000": {
+  "adm_champ": "None",
+  "adm_ours": "338499491",
+  "amt_in": "2236412613850000000000",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0x643c4e15d7d62ad0abec4a9bd4b001aa3ef52d66",
+     10000,
+     200,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ],
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     0,
+     1,
+     "0xf4a95a19f6b5c0892710397d1fab8d7bbb3ac888"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "339747584",
+  "qid": "q_2354be5e6bfd490775ff72fa5d47a074",
+  "settle": "0x643c4e15d7d62ad0abec4a9bd4b001aa3ef52d66",
+  "take": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "tokens": [
+   "0x643C4E15d7d62Ad0aBeC4a9BD4b001aA3Ef52d66",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "0x8881562783028F5c1BCB985d2283D5E170D88888|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|2500000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "998421",
+  "amt_in": "2500000000000000000000",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0x8881562783028f5c1bcb985d2283d5e170d88888",
+     930000,
+     9300,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ],
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     0,
+     1,
+     "0xd121f1700bb9f93b6e5912f9d3d00c91d76e2888"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "1001917",
+  "qid": "q_898c606a84f685f38bc99a404636c19f",
+  "settle": "0x8881562783028f5c1bcb985d2283d5e170d88888",
+  "take": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "tokens": [
+   "0x8881562783028F5c1BCB985d2283D5E170D88888",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "0x8881562783028F5c1BCB985d2283D5E170D88888|0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|633009412547291824665": {
+  "adm_champ": "None",
+  "adm_ours": "465455431653242",
+  "amt_in": "633009412547291824665",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0x8881562783028f5c1bcb985d2283d5e170d88888",
+     930000,
+     9300,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ]
+  ],
+  "probe_out": "465455431653242",
+  "qid": "q_d08ba9e6759307827433e178d0a791d9",
+  "settle": "0x8881562783028f5c1bcb985d2283d5e170d88888",
+  "take": "0x0000000000000000000000000000000000000000",
+  "tokens": [
+   "0x8881562783028F5c1BCB985d2283D5E170D88888",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": true
+ },
+ "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|0xF3e4872e6a4cF365888D93b6146a2bAA7348F1A4|500000000": {
+  "adm_champ": "None",
+  "adm_ours": "8344055776184641109",
+  "amt_in": "500000000",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "0xf3e4872e6a4cf365888d93b6146a2baa7348f1a4",
+     10000,
+     200,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "8344055776184641109",
+  "qid": "q_f1b9ba9ae2e3ad5f5d72ed524a214789",
+  "settle": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "take": "0xf3e4872e6a4cf365888d93b6146a2baa7348f1a4",
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xF3e4872e6a4cF365888D93b6146a2bAA7348F1A4"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "0xB58E61C3098d85632Df34EecfB899A1Ed80921cB|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|20000000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "19984964",
+  "amt_in": "20000000000000000000000",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "0xb58e61c3098d85632df34eecfb899a1ed80921cb",
+     880000,
+     17600,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ]
+  ],
+  "probe_out": "19984964",
+  "qid": "q_6392c0aed40071dc889f911bef47b0b9",
+  "settle": "0xb58e61c3098d85632df34eecfb899a1ed80921cb",
+  "take": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "tokens": [
+   "0xB58E61C3098d85632Df34EecfB899A1Ed80921cB",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|0x2A79324c19Ef2B89Ea98b23BC669B7E7c9f8A517|47288030000000000": {
+  "adm_champ": "None",
+  "adm_ours": "30066462991",
+  "amt_in": "47288030000000000",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0x2a79324c19ef2b89ea98b23bc669b7e7c9f8a517",
+     980000,
+     9800,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "30066462991",
+  "qid": "q_720154e515213c6d3f534b58ffb2426e",
+  "settle": "0x0000000000000000000000000000000000000000",
+  "take": "0x2a79324c19ef2b89ea98b23bc669b7e7c9f8a517",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x2A79324c19Ef2B89Ea98b23BC669B7E7c9f8A517"
+  ],
+  "unwrap_weth": true,
+  "wrap_out": false
+ },
+ "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94|122198821957293334": {
+  "adm_champ": "None",
+  "adm_ours": "1449270601664073601067",
+  "amt_in": "122198821957293334",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94",
+     10001,
+     200,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "1451217062046626723401",
+  "qid": "q_dc7629fb621f59fe8e69cc56b46108d9",
+  "settle": "0x0000000000000000000000000000000000000000",
+  "take": "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94"
+  ],
+  "unwrap_weth": true,
+  "wrap_out": false
+ },
+ "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94|35197145201674532": {
+  "adm_champ": "None",
+  "adm_ours": "417555443897222196361",
+  "amt_in": "35197145201674532",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94",
+     10001,
+     200,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "418116327074349970744",
+  "qid": "q_29091c3964aa17aaaa4e2dbaa8ba420a",
+  "settle": "0x0000000000000000000000000000000000000000",
+  "take": "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94"
+  ],
+  "unwrap_weth": true,
+  "wrap_out": false
+ },
+ "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2|0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94|66124871368015272": {
+  "adm_champ": "None",
+  "adm_ours": "784381566177606492686",
+  "amt_in": "66124871368015272",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94",
+     10001,
+     200,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "785435136518696316917",
+  "qid": "q_204ba8a2fb8d58a2a0a9b63cc5ef408b",
+  "settle": "0x0000000000000000000000000000000000000000",
+  "take": "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94",
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94"
+  ],
+  "unwrap_weth": true,
+  "wrap_out": false
+ },
+ "0xF442fF10b8deF89514560A66C0AD28777094636a|0xdAC17F958D2ee523a2206206994597C13D831ec7|25000000000": {
+  "adm_champ": "None",
+  "adm_ours": "35674866",
+  "amt_in": "25000000000",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xf442ff10b8def89514560a66c0ad28777094636a",
+     902000,
+     15,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ],
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xdac17f958d2ee523a2206206994597c13d831ec7",
+     0,
+     1,
+     "0xbe2754cf26f7512771df678530fb5f98cf4ba58b"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "35811139",
+  "qid": "q_965702a9d6158e55b423dd9822394f3b",
+  "settle": "0xf442ff10b8def89514560a66c0ad28777094636a",
+  "take": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+  "tokens": [
+   "0xF442fF10b8deF89514560A66C0AD28777094636a",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "0xF442fF10b8deF89514560A66C0AD28777094636a|0xdAC17F958D2ee523a2206206994597C13D831ec7|50804476927": {
+  "adm_champ": "None",
+  "adm_ours": "71805938",
+  "amt_in": "50804476927",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xf442ff10b8def89514560a66c0ad28777094636a",
+     902000,
+     15,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ],
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xdac17f958d2ee523a2206206994597c13d831ec7",
+     10,
+     1,
+     "0xa025db17955f89669fad1b26a839f98209502888"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "72080563",
+  "qid": "q_24d2d320391c5bc38d03d0a8a2d1fc63",
+  "settle": "0xf442ff10b8def89514560a66c0ad28777094636a",
+  "take": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+  "tokens": [
+   "0xF442fF10b8deF89514560A66C0AD28777094636a",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "0xFe0c30065B384F05761f15d0CC899D4F9F9Cc0eB|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|120534559231195712437": {
+  "adm_champ": "None",
+  "adm_ours": "45739496",
+  "amt_in": "120534559231195712437",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xfe0c30065b384f05761f15d0cc899d4f9f9cc0eb",
+     10000,
+     100,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ],
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     0,
+     1,
+     "0xd121f1700bb9f93b6e5912f9d3d00c91d76e2888"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "46070995",
+  "qid": "q_2858af7fce20b75ba7c167cb8916b99c",
+  "settle": "0xfe0c30065b384f05761f15d0cc899d4f9f9cc0eb",
+  "take": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "tokens": [
+   "0xFe0c30065B384F05761f15d0CC899D4F9F9Cc0eB",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "0xFe0c30065B384F05761f15d0CC899D4F9F9Cc0eB|0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48|601485317403277731005": {
+  "adm_champ": "None",
+  "adm_ours": "228175061",
+  "amt_in": "601485317403277731005",
+  "chain_id": 1,
+  "kind": "v4",
+  "pools": [
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xfe0c30065b384f05761f15d0cc899d4f9f9cc0eb",
+     10000,
+     100,
+     "0x0000000000000000000000000000000000000000"
+    ],
+    false
+   ],
+   [
+    [
+     "0x0000000000000000000000000000000000000000",
+     "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     0,
+     1,
+     "0xd121f1700bb9f93b6e5912f9d3d00c91d76e2888"
+    ],
+    true
+   ]
+  ],
+  "probe_out": "229854291",
+  "qid": "q_542692460302c7fbc36e58ea72d474e8",
+  "settle": "0xfe0c30065b384f05761f15d0cc899d4f9f9cc0eb",
+  "take": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "tokens": [
+   "0xFe0c30065B384F05761f15d0CC899D4F9F9Cc0eB",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "unwrap_weth": false,
+  "wrap_out": false
+ },
+ "1|0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b|0xf05e58fcea29ab4da01a495140b349f8410ba904|220979151883862744074": {
+  "adm_champ": "None",
+  "adm_ours": "279814916355370025597",
+  "amt": 220979151883862744074,
+  "class": "cover",
+  "hops": [
+   {
+    "dx": 220979151883862744074,
+    "flavor": "stable",
+    "i": 0,
+    "j": 1,
+    "kind": "curve",
+    "out": 294542017216178974313,
+    "pool": "0xF9078Fb962A7D13F55d40d49C8AA6472aBD1A5a6",
+    "tokens": [
+     "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B",
+     "0xf05e58fCeA29ab4dA01A495140B349F8410Ba904"
+    ]
+   }
+  ],
+  "out": 294542017216178974313,
+  "qid": "q_db79219520d8d06e08530e6eea633c8a",
+  "venue": "route"
+ },
+ "1|0x5732046a883704404f284ce41ffadd5b007fd668|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|46184166898020000000000": {
+  "amt": 46184166898020000000000,
+  "venue": "v2",
+  "amt_in": 46184166898020000000000,
+  "out": 286120814,
+  "chain_id": 1,
+  "tokens": [
+   "0x5732046A883704404F284Ce41FfADd5b007FD668",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0x5732046a883704404f284ce41ffadd5b007fd668|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|55210859853180000000000": {
+  "amt": 55210859853180000000000,
+  "venue": "v2",
+  "amt_in": 55210859853180000000000,
+  "out": 341779215,
+  "chain_id": 1,
+  "tokens": [
+   "0x5732046A883704404F284Ce41FfADd5b007FD668",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x6b175474e89094c44da98b954eedeac495271d0f|17326125737": {
+  "amt": 17326125737,
+  "venue": "route",
+  "out": 17314072476003792830902,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7",
+    "i": 2,
+    "j": 0,
+    "flavor": "stable",
+    "dx": 17326125737,
+    "out": 17314072476003792830902,
+    "tokens": [
+     "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+     "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+    ]
+   }
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|10926014000": {
+  "amt": 10926014000,
+  "venue": "v3",
+  "amt_in": 10926014000,
+  "out": 5682757866254169519,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100,
+   100
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x68749665ff8d2d112fa859aa293f07a622782f38|2006193587": {
+  "amt": 2006193587,
+  "venue": "v3",
+  "amt_in": 2006193587,
+  "out": 462031,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0x68749665FF8D2d112Fa859AA293F07A622782F38"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|310438500000000000": {
+  "amt": 310438500000000000,
+  "venue": "route",
+  "out": 310411673391840511,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0x828b154032950C8ff7CF8085D841723Db2696056",
+    "i": 0,
+    "j": 1,
+    "flavor": "stable",
+    "dx": 310438500000000000,
+    "out": 310411673391840511,
+    "tokens": [
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+     "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84"
+    ]
+   }
+  ]
+ },
+ "1|0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|35288343612724522767842": {
+  "amt": 35288343612724522767842,
+  "venue": "v3",
+  "amt_in": 35288343612724522767842,
+  "out": 35246122043,
+  "chain_id": 1,
+  "tokens": [
+   "0x73A15FeD60Bf67631dC6cd7Bc5B6e8da8190aCF5",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0xb8b295df2cd735b15be5eb419517aa626fc43cd5|0x514910771af9ca656af840dff83e8264ecf986ca|67676330139481836433": {
+  "amt": 67676330139481836433,
+  "venue": "route",
+  "out": 67634189681350773931,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0x1c899dED01954d0959E034b62a728e7fEbE593b0",
+    "i": 0,
+    "j": 1,
+    "flavor": "stable",
+    "dx": 67676330139481836433,
+    "out": 67634189681350773931,
+    "tokens": [
+     "0xb8b295df2cd735b15BE5Eb419517Aa626fc43cD5",
+     "0x514910771AF9Ca656af840dff83E8264EcF986CA"
+    ]
+   }
+  ]
+ },
+ "1|0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|7912148544010387001461": {
+  "amt": 7912148544010387001461,
+  "venue": "route",
+  "out": 6508848798636125409,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0xB576491F1E6e5E62f1d8F26062Ee822B40B0E0d4",
+    "i": 1,
+    "j": 0,
+    "flavor": "crypto",
+    "dx": 7912148544010387001461,
+    "out": 6508848798636125409,
+    "tokens": [
+     "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B",
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ]
+   }
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|511055692500000000": {
+  "amt": 511055692500000000,
+  "venue": "route",
+  "out": 511006903074808176,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0x828b154032950C8ff7CF8085D841723Db2696056",
+    "i": 0,
+    "j": 1,
+    "flavor": "stable",
+    "dx": 511055692500000000,
+    "out": 511006903074808176,
+    "tokens": [
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+     "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84"
+    ]
+   }
+  ]
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|14717702555018273": {
+  "amt": 14717702555018273,
+  "venue": "route",
+  "out": 14706983230581201,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0x828b154032950C8ff7CF8085D841723Db2696056",
+    "i": 1,
+    "j": 0,
+    "flavor": "stable",
+    "dx": 14717702555018273,
+    "out": 14706983230581201,
+    "tokens": [
+     "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ]
+   }
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94|31882553342943264": {
+  "amt": 31882553342943264,
+  "venue": "v3",
+  "amt_in": 31882553342943264,
+  "out": 371502213052321536011,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xcccCCCcCCC33D538DBC2EE4fEab0a7A1FF4e8A94"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|64824400000000008": {
+  "amt": 64824400000000008,
+  "venue": "v3",
+  "amt_in": 64824400000000008,
+  "out": 124490934,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xdac17f958d2ee523a2206206994597c13d831ec7|389896": {
+  "amt": 389896,
+  "venue": "v3",
+  "amt_in": 389896,
+  "out": 253247576,
+  "chain_id": 1,
+  "tokens": [
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   100,
+   100
+  ]
+ },
+ "1|0x2e5ef97c96d6a44ccb8db9c30f2f5dcec04bb6f9|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|2841117729458633216000": {
+  "amt": 2841117729458633216000,
+  "venue": "v2",
+  "amt_in": 2841117729458633216000,
+  "out": 90059775166608841,
+  "chain_id": 1,
+  "tokens": [
+   "0x2e5ef97C96D6a44CcB8Db9C30f2F5DCec04BB6f9",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|200000000": {
+  "amt": 200000000,
+  "venue": "v3",
+  "amt_in": 200000000,
+  "out": 104567783193666582,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0x3b484b82567a09e2588a13d54d032153f0c0aee0|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|45295152709064336000000000000": {
+  "amt": 45295152709064336000000000000,
+  "venue": "v3",
+  "amt_in": 45295152709064336000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x3b484b82567a09e2588A13D54D032153f0c0aEe0",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   10000
+  ]
+ },
+ "1|0x57b946008913b82e4df85f501cbaed910e58d26c|0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f|18580000000000000000000": {
+  "amt": 18580000000000000000000,
+  "venue": "v2",
+  "amt_in": 18580000000000000000000,
+  "out": 65715887363234709873,
+  "chain_id": 1,
+  "tokens": [
+   "0x57B946008913B82E4dF85f501cbAeD910e58D26C",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0x0f2d719407fdbeff09d87557abb7232601fd9f29|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1760006551304975573657": {
+  "amt": 1760006551304975573657,
+  "venue": "v2",
+  "amt_in": 1760006551304975573657,
+  "out": 182334089,
+  "chain_id": 1,
+  "tokens": [
+   "0x0f2D719407FdBeFF09D87557AbB7232601FD9F29",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0x090185f2135308bad17527004364ebcc2d37e5f6|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|274636772652938199910180": {
+  "amt": 274636772652938199910180,
+  "venue": "v2",
+  "amt_in": 274636772652938199910180,
+  "out": 11522462017185134,
+  "chain_id": 1,
+  "tokens": [
+   "0x090185f2135308BaD17527004364eBcC2D37e5F6",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0x365accfca291e7d3914637abf1f7635db165bb09|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|24206260804381065007": {
+  "amt": 24206260804381065007,
+  "venue": "route",
+  "out": 163335754001015118,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0xC15F285679a1Ef2d25F53D4CbD0265E1D02F2A92",
+    "i": 1,
+    "j": 0,
+    "flavor": "crypto",
+    "dx": 24206260804381065007,
+    "out": 163335754001015118,
+    "tokens": [
+     "0x365AccFCa291e7D3914637ABf1F7635dB165Bb09",
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ]
+   }
+  ]
+ },
+ "1|0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee|0xfae103dc9cf190ed75350761e95403b7b8afa6c0|27638891631763984": {
+  "amt": 27638891631763984,
+  "venue": "route",
+  "out": 28352943757043381,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0x278cfB6f06B1EFc09d34fC7127d6060C61d629Db",
+    "i": 0,
+    "j": 1,
+    "flavor": "stable",
+    "dx": 27638891631763984,
+    "out": 28352943757043381,
+    "tokens": [
+     "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee",
+     "0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0"
+    ]
+   }
+  ]
+ },
+ "1|0xfa2b947eec368f42195f24f36d2af29f7c24cec2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|4717397689819335937500": {
+  "amt": 4717397689819335937500,
+  "venue": "route",
+  "out": 4702457303,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0x72310DAAed61321b02B08A547150c07522c6a976",
+    "i": 1,
+    "j": 0,
+    "flavor": "stable",
+    "dx": 4717397689819335937500,
+    "out": 4702457303,
+    "tokens": [
+     "0xFa2B947eEc368f42195f24F36d2aF29f7c24CeC2",
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ]
+   }
+  ]
+ },
+ "1|0xe343167631d89b6ffc58b88d6b7fb0228795491d|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|25496770382": {
+  "amt": 25496770382,
+  "venue": "route",
+  "out": 25493332511,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0xc061caa073f3d95F80f8e5428d32D2d76F5e1622",
+    "i": 0,
+    "j": 1,
+    "flavor": "stable",
+    "dx": 25496770382,
+    "out": 25493332511,
+    "tokens": [
+     "0xe343167631d89B6Ffc58B88d6b7fB0228795491D",
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ]
+   }
+  ]
+ },
+ "1|0xfa2b947eec368f42195f24f36d2af29f7c24cec2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|36875203562601148000000": {
+  "amt": 36875203562601148000000,
+  "venue": "route",
+  "out": 36752440151,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0x72310DAAed61321b02B08A547150c07522c6a976",
+    "i": 1,
+    "j": 0,
+    "flavor": "stable",
+    "dx": 36875203562601148000000,
+    "out": 36752440151,
+    "tokens": [
+     "0xFa2B947eEc368f42195f24F36d2aF29f7c24CeC2",
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ]
+   }
+  ]
+ },
+ "1|0xf939e0a03fb07f59a73314e73794be0e57ac1b4e|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|360113974388127279200": {
+  "amt": 360113974388127279200,
+  "venue": "route",
+  "out": 187420663989114648,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0x4eBdF703948ddCEA3B11f675B4D1Fba9d2414A14",
+    "i": 0,
+    "j": 1,
+    "flavor": "crypto",
+    "dx": 360113974388127279200,
+    "out": 187420663989114648,
+    "tokens": [
+     "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    ]
+   }
+  ]
+ },
+ "1|0x4c9edd5852cd905f086c759e8383e09bff1e68b3|0x853d955acef822db058eb8505911ed77f175b99e|2020753058456078637265168": {
+  "amt": 2020753058456078637265168,
+  "venue": "route",
+  "out": 2034602791474950761542958,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0x5dc1BF6f1e983C0b21EfB003c105133736fA0743",
+    "i": 1,
+    "j": 0,
+    "flavor": "stable",
+    "dx": 2020753058456078637265168,
+    "out": 2034602791474950761542958,
+    "tokens": [
+     "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+     "0x853d955aCEf822Db058eb8505911ED77F175b99e"
+    ]
+   }
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xe343167631d89b6ffc58b88d6b7fb0228795491d|1599999210100": {
+  "amt": 1599999210100,
+  "venue": "route",
+  "out": 1599837385458,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0xc061caa073f3d95F80f8e5428d32D2d76F5e1622",
+    "i": 1,
+    "j": 0,
+    "flavor": "stable",
+    "dx": 1599999210100,
+    "out": 1599837385458,
+    "tokens": [
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+     "0xe343167631d89B6Ffc58B88d6b7fB0228795491D"
+    ]
+   }
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xe343167631d89b6ffc58b88d6b7fb0228795491d|200000000000": {
+  "amt": 200000000000,
+  "venue": "route",
+  "out": 199985884521,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0xc061caa073f3d95F80f8e5428d32D2d76F5e1622",
+    "i": 1,
+    "j": 0,
+    "flavor": "stable",
+    "dx": 200000000000,
+    "out": 199985884521,
+    "tokens": [
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+     "0xe343167631d89B6Ffc58B88d6b7fB0228795491D"
+    ]
+   }
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xe343167631d89b6ffc58b88d6b7fb0228795491d|123266215833": {
+  "amt": 123266215833,
+  "venue": "route",
+  "out": 123257722711,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0xc061caa073f3d95F80f8e5428d32D2d76F5e1622",
+    "i": 1,
+    "j": 0,
+    "flavor": "stable",
+    "dx": 123266215833,
+    "out": 123257722711,
+    "tokens": [
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+     "0xe343167631d89B6Ffc58B88d6b7fB0228795491D"
+    ]
+   }
+  ]
+ },
+ "1|0xe0f63a424a4439cbe457d80e4f4b51ad25b2c56c|0xdac17f958d2ee523a2206206994597c13d831ec7|1513976710472": {
+  "amt": 1513976710472,
+  "venue": "v2",
+  "amt_in": 1513976710472,
+  "out": 4791258570,
+  "chain_id": 1,
+  "tokens": [
+   "0xE0f63A424a4439cBE457D80E4f4b51aD25b2c56C",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ]
+ },
+ "1|0x68749665ff8d2d112fa859aa293f07a622782f38|0xd533a949740bb3306d119cc777fa900ba034cd52|3000": {
+  "amt": 3000,
+  "venue": "v3",
+  "amt_in": 3000,
+  "out": 48508950932785079624,
+  "chain_id": 1,
+  "tokens": [
+   "0x68749665FF8D2d112Fa859AA293F07A622782F38",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xD533a949740bb3306d119CC777fa900bA034cd52"
+  ],
+  "fees": [
+   3000,
+   3000
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xd8e8438cf7beed13cfabc82f300fb6573962c9e3|654856880": {
+  "amt": 654856880,
+  "venue": "v2",
+  "amt_in": 654856880,
+  "out": 1667667229761041908093,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xD8E8438CF7bEEd13cFABC82F300Fb6573962c9e3"
+  ]
+ },
+ "1|0xaaee1a9723aadb7afa2810263653a34ba2c21c7a|0xdac17f958d2ee523a2206206994597c13d831ec7|16122047700000000000000000000": {
+  "amt": 16122047700000000000000000000,
+  "venue": "v2",
+  "amt_in": 16122047700000000000000000000,
+  "out": 1604093593,
+  "chain_id": 1,
+  "tokens": [
+   "0xaaeE1A9723aaDB7afA2810263653A34bA2C21C7a",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x698b1d54e936b9f772b8f58447194bbc82ec1933|4000000000000000": {
+  "amt": 4000000000000000,
+  "venue": "v2",
+  "amt_in": 4000000000000000,
+  "out": 13828234576621373,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x698b1d54E936b9F772b8F58447194bBc82EC1933"
+  ]
+ },
+ "1|0x31c8eacbffdd875c74b94b077895bd78cf1e64a3|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1740321802890000000000": {
+  "amt": 1740321802890000000000,
+  "venue": "v2",
+  "amt_in": 1740321802890000000000,
+  "out": 441829503,
+  "chain_id": 1,
+  "tokens": [
+   "0x31c8EAcBFFdD875c74b94b077895Bd78CF1E64A3",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xf17e65822b568b3903685a7c9f496cf7656cc6c2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|6237573742520000000000": {
+  "amt": 6237573742520000000000,
+  "venue": "v2",
+  "amt_in": 6237573742520000000000,
+  "out": 235980396,
+  "chain_id": 1,
+  "tokens": [
+   "0xF17e65822b568B3903685a7c9F496CF7656Cc6C2",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "router": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+ },
+ "1|0x77fba179c79de5b7653f68b5039af940ada60ce0|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|3864167775540000000000": {
+  "amt": 3864167775540000000000,
+  "venue": "v3",
+  "amt_in": 3864167775540000000000,
+  "out": 724580834,
+  "chain_id": 1,
+  "tokens": [
+   "0x77FbA179C79De5B7653F68b5039Af940AdA60ce0",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   10000,
+   500
+  ]
+ },
+ "1|0x0001a500a6b18995b03f44bb040a5ffc28e45cb0|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|48000000000000000000000": {
+  "amt": 48000000000000000000000,
+  "venue": "v2",
+  "amt_in": 48000000000000000000000,
+  "out": 1886291,
+  "chain_id": 1,
+  "tokens": [
+   "0x0001A500A6B18995B03f44bb040A5fFc28E45CB0",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+  ]
+ },
+ "1|0x31c8eacbffdd875c74b94b077895bd78cf1e64a3|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|2047011356320000000000": {
+  "amt": 2047011356320000000000,
+  "venue": "v2",
+  "amt_in": 2047011356320000000000,
+  "out": 519651198,
+  "chain_id": 1,
+  "tokens": [
+   "0x31c8EAcBFFdD875c74b94b077895Bd78CF1E64A3",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|7523500500302994980564": {
+  "amt": 7523500500302994980564,
+  "venue": "v3",
+  "amt_in": 7523500500302994980564,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
+  ],
+  "fees": [
+   3000,
+   100
+  ]
+ },
+ "1|0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|8000000000000000000000": {
+  "amt": 8000000000000000000000,
+  "venue": "v3",
+  "amt_in": 8000000000000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   3000,
+   500
+  ]
+ },
+ "1|0xde4ee8057785a7e8e800db58f9784845a5c2cbd6|0xdac17f958d2ee523a2206206994597c13d831ec7|34801125000000000000": {
+  "amt": 34801125000000000000,
+  "venue": "v2",
+  "amt_in": 34801125000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xde4EE8057785A7e8e800Db58F9784845A5C2Cbd6",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x6112c3509a8a787df576028450febb3786a2274d|880000000000000": {
+  "amt": 880000000000000,
+  "venue": "v3",
+  "amt_in": 880000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x6112C3509A8a787df576028450FebB3786A2274d"
+  ],
+  "fees": [
+   10000
+  ]
+ },
+ "1|0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|0x514910771af9ca656af840dff83e8264ecf986ca|200000000000000000000": {
+  "amt": 200000000000000000000,
+  "venue": "v3",
+  "amt_in": 200000000000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x514910771AF9Ca656af840dff83E8264EcF986CA"
+  ],
+  "fees": [
+   500,
+   500
+  ]
+ },
+ "1|0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|15070766602545939825165": {
+  "amt": 15070766602545939825165,
+  "venue": "v3",
+  "amt_in": 15070766602545939825165,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   3000,
+   500
+  ]
+ },
+ "1|0xfe0c30065b384f05761f15d0cc899d4f9f9cc0eb|0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9|13954133351990701403": {
+  "amt": 13954133351990701403,
+  "venue": "v3",
+  "amt_in": 13954133351990701403,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xFe0c30065B384F05761f15d0CC899D4F9F9Cc0eB",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
+  ],
+  "fees": [
+   3000,
+   500
+  ]
+ },
+ "1|0xda5e1988097297dcdc1f90d4dfe7909e847cbef6|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|7415184978000000000000": {
+  "amt": 7415184978000000000000,
+  "venue": "v3",
+  "amt_in": 7415184978000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xdA5e1988097297dCdc1f90D4dFE7909e847CBeF6",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   10000,
+   500
+  ]
+ },
+ "1|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|11793568985": {
+  "amt": 11793568985,
+  "venue": "v3",
+  "amt_in": 11793568985,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   10000,
+   100
+  ]
+ },
+ "1|0x40e3d1a4b2c47d9aa61261f5606136ef73e28042|0xdac17f958d2ee523a2206206994597c13d831ec7|2947630158709391980331": {
+  "amt": 2947630158709391980331,
+  "venue": "v2",
+  "amt_in": 2947630158709391980331,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x40e3d1A4B2C47d9AA61261F5606136ef73E28042",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|454056226124062470": {
+  "amt": 454056226124062470,
+  "venue": "v3",
+  "amt_in": 454056226124062470,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0xff20817765cb7f73d4bde2e66e067e58d11095c2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|15602708982952918544211": {
+  "amt": 15602708982952918544211,
+  "venue": "v3",
+  "amt_in": 15602708982952918544211,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xfF20817765cB7f73d4bde2e66e067E58D11095C2",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   10000,
+   500
+  ]
+ },
+ "1|0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|66297251000000000000": {
+  "amt": 66297251000000000000,
+  "venue": "v3",
+  "amt_in": 66297251000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   500,
+   100
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|533733665360443200": {
+  "amt": 533733665360443200,
+  "venue": "v3",
+  "amt_in": 533733665360443200,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|410741587270438783": {
+  "amt": 410741587270438783,
+  "venue": "v3",
+  "amt_in": 410741587270438783,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0x58d97b57bb95320f9a05dc918aef65434969c2b2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|2390785337150034046924": {
+  "amt": 2390785337150034046924,
+  "venue": "v3",
+  "amt_in": 2390785337150034046924,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x58D97B57BB95320F9a05dC918Aef65434969c2B2",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   10000,
+   500
+  ]
+ },
+ "1|0x40e3d1a4b2c47d9aa61261f5606136ef73e28042|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|3715715484462599869928": {
+  "amt": 3715715484462599869928,
+  "venue": "v2",
+  "amt_in": 3715715484462599869928,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x40e3d1A4B2C47d9AA61261F5606136ef73E28042",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xca14007eff0db1f8135f4c25b34de49ab0d42766|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|543028214074667287259": {
+  "amt": 543028214074667287259,
+  "venue": "v2",
+  "amt_in": 543028214074667287259,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xCa14007Eff0dB1f8135f4C25B34De49AB0d42766",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|1671235038382454850": {
+  "amt": 1671235038382454850,
+  "venue": "v3",
+  "amt_in": 1671235038382454850,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0xaea46a60368a7bd060eec7df8cba43b7ef41ad85|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|400000000000000000000": {
+  "amt": 400000000000000000000,
+  "venue": "v3",
+  "amt_in": 400000000000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|48550026856977052": {
+  "amt": 48550026856977052,
+  "venue": "v3",
+  "amt_in": 48550026856977052,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   100,
+   3000
+  ]
+ },
+ "1|0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|130961674431077697400": {
+  "amt": 130961674431077697400,
+  "venue": "v3",
+  "amt_in": 130961674431077697400,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   500,
+   100
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|198530146955578564": {
+  "amt": 198530146955578564,
+  "venue": "v3",
+  "amt_in": 198530146955578564,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   100,
+   3000
+  ]
+ },
+ "1|0x514910771af9ca656af840dff83e8264ecf986ca|0xdac17f958d2ee523a2206206994597c13d831ec7|248788016000000000000": {
+  "amt": 248788016000000000000,
+  "venue": "v3",
+  "amt_in": 248788016000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   500,
+   500
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|38927894926786178": {
+  "amt": 38927894926786178,
+  "venue": "v3",
+  "amt_in": 38927894926786178,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   100,
+   3000
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|643324101875654800": {
+  "amt": 643324101875654800,
+  "venue": "v3",
+  "amt_in": 643324101875654800,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0x1f9840a85d5af5bf1d1762f925bdaddc4201f984|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|6832262477944816251": {
+  "amt": 6832262477944816251,
+  "venue": "v3",
+  "amt_in": 6832262477944816251,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   500
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|40242567733449240": {
+  "amt": 40242567733449240,
+  "venue": "v3",
+  "amt_in": 40242567733449240,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   100,
+   3000
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|88843672994822568": {
+  "amt": 88843672994822568,
+  "venue": "v3",
+  "amt_in": 88843672994822568,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   100,
+   3000
+  ]
+ },
+ "1|0x40e3d1a4b2c47d9aa61261f5606136ef73e28042|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|2831982370035890400000": {
+  "amt": 2831982370035890400000,
+  "venue": "v2",
+  "amt_in": 2831982370035890400000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x40e3d1A4B2C47d9AA61261F5606136ef73E28042",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|1509671769184971350": {
+  "amt": 1509671769184971350,
+  "venue": "v3",
+  "amt_in": 1509671769184971350,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0x9be89d2a4cd102d8fecc6bf9da793be995c22541|0xdac17f958d2ee523a2206206994597c13d831ec7|200000": {
+  "amt": 200000,
+  "venue": "v3",
+  "amt_in": 200000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541",
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   100,
+   100,
+   500
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x62b9c7356a2dc64a1969e19c23e4f579f9810aa7|20000000000": {
+  "amt": 20000000000,
+  "venue": "v3",
+  "amt_in": 20000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xD533a949740bb3306d119CC777fa900bA034cd52",
+   "0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7"
+  ],
+  "fees": [
+   10000,
+   3000
+  ]
+ },
+ "1|0x5086bf358635b81d8c47c66d1c8b9e567db70c72|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|2740661471498603419793": {
+  "amt": 2740661471498603419793,
+  "venue": "route",
+  "out": 2998739313,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0xf74c91b36C26543A0Aa820bEf407A577e5498BF0",
+    "i": 0,
+    "j": 1,
+    "flavor": "stable",
+    "dx": 2740661471498603419793,
+    "out": 2998739313,
+    "tokens": [
+     "0x5086bf358635B81D8C47C66d1C8b9E567Db70c72",
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ]
+   }
+  ]
+ },
+ "1|0x5086bf358635b81d8c47c66d1c8b9e567db70c72|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|3953984467793513019": {
+  "amt": 3953984467793513019,
+  "venue": "route",
+  "out": 4327444,
+  "chain_id": 1,
+  "hops": [
+   {
+    "kind": "curve",
+    "pool": "0xf74c91b36C26543A0Aa820bEf407A577e5498BF0",
+    "i": 0,
+    "j": 1,
+    "flavor": "stable",
+    "dx": 3953984467793513019,
+    "out": 4327444,
+    "tokens": [
+     "0x5086bf358635B81D8C47C66d1C8b9E567Db70c72",
+     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    ]
+   }
+  ]
+ },
+ "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0x6c3ea9036406852006290770bedfcaba0e23a0e8|15043822505215452651860": {
+  "amt": 15043822505215452651860,
+  "venue": "v3",
+  "amt_in": 15043822505215452651860,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+   "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8"
+  ],
+  "fees": [
+   3000,
+   100,
+   3000
+  ]
+ },
+ "1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5|9228515625000000000000": {
+  "amt": 9228515625000000000000,
+  "venue": "v3",
+  "amt_in": 9228515625000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x64aa3364F17a4D01c6f1751Fd97C2BD3D7e7f1D5"
+  ],
+  "fees": [
+   3000,
+   500,
+   3000
+  ]
+ },
+ "1|0x0391d2021f89dc339f60fff84546ea23e337750f|0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce|85272478000000000000": {
+  "amt": 85272478000000000000,
+  "venue": "v2",
+  "amt_in": 85272478000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x0391D2021f89DC339F60Fff84546EA23E337750f",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE"
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xdc035d45d973e3ec169d2276ddab16f1e407384f|120000000000": {
+  "amt": 120000000000,
+  "venue": "v3",
+  "amt_in": 120000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+   "0xdC035D45d973E3EC169d2276DDab16f1e407384F"
+  ],
+  "fees": [
+   3000,
+   3000,
+   3000
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x2d1f7226bd1f780af6b9a49dcc0ae00e8df4bdee|223799303": {
+  "amt": 223799303,
+  "venue": "v3",
+  "amt_in": 223799303,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0x2D1F7226Bd1F780AF6B9A49DCC0aE00E8Df4bDEE"
+  ],
+  "fees": [
+   100,
+   10000
+  ]
+ },
+ "1|0x8e870d67f660d95d5be530380d0ec0bd388289e1|0x56072c95faa701256059aa122697b133aded9279|156535705041323643535": {
+  "amt": 156535705041323643535,
+  "venue": "v3",
+  "amt_in": 156535705041323643535,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x8E870D67F660D95d5be530380D0eC0bd388289E1",
+   "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x56072C95FAA701256059aa122697B133aDEd9279"
+  ],
+  "fees": [
+   500,
+   500,
+   3000
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf|30000000000": {
+  "amt": 30000000000,
+  "venue": "v3",
+  "amt_in": 30000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+   "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+  ],
+  "fees": [
+   3000,
+   100
+  ]
+ },
+ "1|0x6b175474e89094c44da98b954eedeac495271d0f|0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce|23586074848822885603365": {
+  "amt": 23586074848822885603365,
+  "venue": "v3",
+  "amt_in": 23586074848822885603365,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE"
+  ],
+  "fees": [
+   500,
+   500,
+   3000
+  ]
+ },
+ "1|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|6432532954": {
+  "amt": 6432532954,
+  "venue": "v3",
+  "amt_in": 6432532954,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|333000000": {
+  "amt": 333000000,
+  "venue": "v3",
+  "amt_in": 333000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|8103091782": {
+  "amt": 8103091782,
+  "venue": "v3",
+  "amt_in": 8103091782,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab|4000000000000000000": {
+  "amt": 4000000000000000000,
+  "venue": "v3",
+  "amt_in": 4000000000000000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
+  ],
+  "fees": [
+   10000
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x9d39a5de30e57443bff2a8307a4256c8797a3497|64161126832": {
+  "amt": 64161126832,
+  "venue": "v2",
+  "amt_in": 64161126832,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497"
+  ]
+ },
+ "1|0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9|0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf|30213456355397444224": {
+  "amt": 30213456355397444224,
+  "venue": "v3",
+  "amt_in": 30213456355397444224,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+  ],
+  "fees": [
+   3000,
+   100,
+   3000
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|32361713": {
+  "amt": 32361713,
+  "venue": "v3",
+  "amt_in": 32361713,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100
+  ]
+ },
+ "1|0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|7104175444": {
+  "amt": 7104175444,
+  "venue": "v3",
+  "amt_in": 7104175444,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0x77E06c9eCCf2E797fd462A92B6D7642EF85b0A44",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|801000000": {
+  "amt": 801000000,
+  "venue": "v3",
+  "amt_in": 801000000,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  ],
+  "fees": [
+   100,
+   100
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xb9f599ce614feb2e1bbe58f180f370d05b39344e|111708690": {
+  "amt": 111708690,
+  "venue": "v3",
+  "amt_in": 111708690,
+  "out": 8169937640794093901648561277,
+  "chain_id": 1,
+  "tokens": [
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xb9f599ce614Feb2e1BBe58F180F370D05b39344E"
+  ],
+  "fees": [
+   100,
+   10000
+  ]
+ },
+ "1|0x2b591e99afe9f32eaa6214f7b7629768c40eeb39|0x6b175474e89094c44da98b954eedeac495271d0f|10000000000000": {
+  "amt": 10000000000000,
+  "venue": "v2",
+  "amt_in": 10000000000000,
+  "out": 161684979541704025475,
+  "chain_id": 1,
+  "tokens": [
+   "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+  ]
+ },
+ "1|0x5a98fcbea516cf06857215779fd812ca3bef1b32|0xfe0c30065b384f05761f15d0cc899d4f9f9cc0eb|1515129290931735248019": {
+  "amt": 1515129290931735248019,
+  "venue": "v3",
+  "amt_in": 1515129290931735248019,
+  "out": 1143428778015193462326,
+  "chain_id": 1,
+  "tokens": [
+   "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xFe0c30065B384F05761f15d0CC899D4F9F9Cc0eB"
+  ],
+  "fees": [
+   3000,
+   3000
+  ]
+ },
+ "1|0x8292bb45bf1ee4d140127049757c2e0ff06317ed|0xdac17f958d2ee523a2206206994597c13d831ec7|126983011085661169429414": {
+  "amt": 126983011085661169429414,
+  "venue": "v3",
+  "amt_in": 126983011085661169429414,
+  "out": 127069266431,
+  "chain_id": 1,
+  "tokens": [
+   "0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+   "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  ],
+  "fees": [
+   100,
+   100
+  ]
+ },
+ "1|0xfe0c30065b384f05761f15d0cc899d4f9f9cc0eb|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|601485317403277731005": {
+  "amt": 601485317403277731005,
+  "venue": "v3",
+  "amt_in": 601485317403277731005,
+  "out": 0,
+  "chain_id": 1,
+  "tokens": [
+   "0xFe0c30065B384F05761f15d0CC899D4F9F9Cc0eB",
+   "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+   "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  ],
+  "fees": [
+   3000,
+   100
+  ]
+ },
+ "1|0xcacd6fd266af91b8aed52accc382b4e165586e29|0xdac17f958d2ee523a2206206994597c13d831ec7|2200000000000000000000": {
+  "amt": 2200000000000000000000,
+  "chain_id": 1,
+  "venue": "route",
+  "out": 0,
+  "hops": [
+   {
+    "kind": "curve",
+    "flavor": "stable",
+    "pool": "0xdBb1d219d84eaCEFb850ee04caCf2f1830934580",
+    "i": 0,
+    "j": 1,
+    "dx": 2200000000000000000000,
+    "tokens": [
+     "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
+     "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3"
+    ]
+   },
+   {
+    "kind": "curve",
+    "flavor": "stable",
+    "pool": "0x5B03CcCAb7BA3010fA5CAd23746cbf0794938e96",
+    "i": 1,
+    "j": 0,
+    "dx": 162446893543149699717,
+    "recv": true,
+    "tokens": [
+     "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+     "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+    ]
+   }
+  ]
+ },
+ "8453|0xc694a91e6b071bf030a18bd3053a7fe09b6dae69|0x4200000000000000000000000000000000000006|65871765700339439115": {
+  "amt": 65871765700339439115,
+  "venue": "v3",
+  "amt_in": 65871765700339439115,
+  "out": 0,
+  "chain_id": 8453,
+  "tokens": [
+   "0xc694a91e6b071bf030a18bd3053a7fe09b6dae69",
+   "0x4200000000000000000000000000000000000006"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "8453|0x9eadbe35f3ee3bf3e28180070c429298a1b02f93|0x4200000000000000000000000000000000000006|284868342000000000000": {
+  "amt": 284868342000000000000,
+  "venue": "v3",
+  "amt_in": 284868342000000000000,
+  "out": 0,
+  "chain_id": 8453,
+  "tokens": [
+   "0x9eadbe35f3ee3bf3e28180070c429298a1b02f93",
+   "0x4200000000000000000000000000000000000006"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0x0c03ce270b4826ec62e7dd007f0b716068639f7b|50000000": {
+  "amt": 50000000,
+  "venue": "v3",
+  "amt_in": 50000000,
+  "out": 0,
+  "chain_id": 8453,
+  "tokens": [
+   "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+   "0x0c03ce270b4826ec62e7dd007f0b716068639f7b"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "8453|0x833589fcd6edb6e08f4c7c32d4f71b54bda02913|0xb33ff54b9f7242ef1593d2c9bcd8f9df46c77935|3886309": {
+  "amt": 3886309,
+  "venue": "v3",
+  "amt_in": 3886309,
+  "out": 0,
+  "chain_id": 8453,
+  "tokens": [
+   "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+   "0xb33ff54b9f7242ef1593d2c9bcd8f9df46c77935"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "8453|0x4200000000000000000000000000000000000006|0x236aa50979d5f3de3bd1eeb40e81137f22ab794b|11400000000000000": {
+  "amt": 11400000000000000,
+  "venue": "v3",
+  "amt_in": 11400000000000000,
+  "out": 0,
+  "chain_id": 8453,
+  "tokens": [
+   "0x4200000000000000000000000000000000000006",
+   "0x236aa50979d5f3de3bd1eeb40e81137f22ab794b"
+  ],
+  "fees": [
+   3000
+  ]
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|2159685826": {
+  "adm_champ": "None",
+  "adm_ours": "2040620685157347858",
+  "amt_in": "2159685826",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "2040620685157347858",
+  "qid": "q_49130c7d589986199f00f69ed7f8601c",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc50673edb3a7b94e8cad8a7d4e0cd68864e33edf|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|5000000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "16702554983355609",
+  "amt_in": "5000000000000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xc50673edb3a7b94e8cad8a7d4e0cd68864e33edf",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "16702554983355609",
+  "qid": "q_9c2a244e7e351669b4057f893311ffe3",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x68749665ff8d2d112fa859aa293f07a622782f38|0xdac17f958d2ee523a2206206994597c13d831ec7|25000000": {
+  "adm_champ": "None",
+  "adm_ours": "108847907940",
+  "amt_in": "25000000",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0x68749665ff8d2d112fa859aa293f07a622782f38",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "108847907940",
+  "qid": "q_61eaefa121d98f6d681fefcffb2c0eb3",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|236721610000000000": {
+  "adm_champ": "None",
+  "adm_ours": "2023837459",
+  "amt_in": "236721610000000000",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "2023837459",
+  "qid": "q_b5fe4b9cc84c233b47b0efd664e477d5",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x1776e1f26f98b1a5df9cd347953a26dd3cb46671|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|33450176380000000000": {
+  "adm_champ": "None",
+  "adm_ours": "273474452",
+  "amt_in": "33450176380000000000",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x1776e1f26f98b1a5df9cd347953a26dd3cb46671",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "273474452",
+  "qid": "q_794f96d0cfff65ad3b39726d9ae8dbb2",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xf939e0a03fb07f59a73314e73794be0e57ac1b4e|0xdac17f958d2ee523a2206206994597c13d831ec7|14934026101546087874560": {
+  "adm_champ": "None",
+  "adm_ours": "183984675",
+  "amt_in": "14934026101546087874560",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "183984675",
+  "qid": "q_fa6ae27ddb4e4103476f061008eeb39b",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|437706830": {
+  "adm_champ": "None",
+  "adm_ours": "81209338783744251604",
+  "amt_in": "437706830",
+  "fees": [
+   500,
+   500
+  ],
+  "tokens": [
+   "0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "81209338783744251604",
+  "qid": "q_d4ab47c81d339c300d8c91f9d433b604",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8b1484d57abbe239bb280661377363b03c89caea|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|322000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "2210481872",
+  "amt_in": "322000000000000000000",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0x8b1484d57abbe239bb280661377363b03c89caea",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "2210481872",
+  "qid": "q_3be2c2860ad270b4ab386da3e838a496",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x8292bb45bf1ee4d140127049757c2e0ff06317ed|10000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "7124382663934688",
+  "amt_in": "10000000000000000",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0x8292bb45bf1ee4d140127049757c2e0ff06317ed"
+  ],
+  "chain_id": 1,
+  "probe_out": "7124382663934688",
+  "qid": "q_e9a3413985b2cf4ccea252688b6c394f",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|236722150000000000": {
+  "adm_champ": "None",
+  "adm_ours": "2023837459",
+  "amt_in": "236722150000000000",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "2023837459",
+  "qid": "q_9deccebd466342b49bbcb1f906411e6d",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|947061140000000000": {
+  "adm_champ": "None",
+  "adm_ours": "2023837459",
+  "amt_in": "947061140000000000",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "2023837459",
+  "qid": "q_eb6af82805a95775267697169b170b97",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x808507121b80c02388fad14726482e061b8da827|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|931177260940000000000": {
+  "adm_champ": "None",
+  "adm_ours": "1631815208",
+  "amt_in": "931177260940000000000",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x808507121b80c02388fad14726482e061b8da827",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1631815208",
+  "qid": "q_7efdcebd0d746323a27e40fb10784896",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x44b28991b167582f18ba0259e0173176ca125505|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|224354025331849620": {
+  "adm_champ": "None",
+  "adm_ours": "82319862915168803",
+  "amt_in": "224354025331849620",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x44b28991b167582f18ba0259e0173176ca125505",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "82319862915168803",
+  "qid": "q_e7b1ab4bff1e54d2f55c0dc42bb96520",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xcf4d29f14cc585ddd1167f956092852af844e040|120339190000000000": {
+  "adm_champ": "None",
+  "adm_ours": "258161203544049038",
+  "amt_in": "120339190000000000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xcf4d29f14cc585ddd1167f956092852af844e040"
+  ],
+  "chain_id": 1,
+  "probe_out": "258161203544049038",
+  "qid": "q_8f88cf337eab8a1906826a7aaef19a4d",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|11006994743690549": {
+  "adm_champ": "None",
+  "adm_ours": "27470158",
+  "amt_in": "11006994743690549",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "27470158",
+  "qid": "q_f9300ffe4ac516d17c322a14862d6954",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|162266901442192515931": {
+  "adm_champ": "None",
+  "adm_ours": "543571",
+  "amt_in": "162266901442192515931",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "543571",
+  "qid": "q_6993f45ad1fb3cdb89ee49a7a55f5100",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xdac17f958d2ee523a2206206994597c13d831ec7|539780872577250198366": {
+  "adm_champ": "None",
+  "adm_ours": "303833515",
+  "amt_in": "539780872577250198366",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xd533a949740bb3306d119cc777fa900ba034cd52",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "303833515",
+  "qid": "q_a4a65c5b3466dbbdf6211ecf7798d9d7",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|506000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "407581000935045253944",
+  "amt_in": "506000000000000000000",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+  ],
+  "chain_id": 1,
+  "probe_out": "407581000935045253944",
+  "qid": "q_0ea34e5c4759407959ac9cb3e8787c4d",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd8a271974e8edae9d7b58e3370dc1669427503f4|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|13449556322555982797872": {
+  "adm_champ": "None",
+  "adm_ours": "2839483",
+  "amt_in": "13449556322555982797872",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xd8a271974e8edae9d7b58e3370dc1669427503f4",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "2839483",
+  "qid": "q_69db2e5b799e1b4a461253b6c9a64576",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xec53bf9167f50cdeb3ae105f56099aaab9061f83|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|50000000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "3397023718",
+  "amt_in": "50000000000000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xec53bf9167f50cdeb3ae105f56099aaab9061f83",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "3397023718",
+  "qid": "q_1f45eddaeea1545c4c2303397e7c3ba8",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xa3931d71877c0e7a3148cb7eb4463524fec27fbd|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|1000000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "844",
+  "amt_in": "1000000000000000000000",
+  "fees": [
+   500,
+   500
+  ],
+  "tokens": [
+   "0xa3931d71877c0e7a3148cb7eb4463524fec27fbd",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+  ],
+  "chain_id": 1,
+  "probe_out": "844",
+  "qid": "q_e87a6ecd6e09d7c39abd8dbf0ac94930",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x58d97b57bb95320f9a05dc918aef65434969c2b2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|759099039925408004743": {
+  "adm_champ": "None",
+  "adm_ours": "4564038390",
+  "amt_in": "759099039925408004743",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x58d97b57bb95320f9a05dc918aef65434969c2b2",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "4564038390",
+  "qid": "q_bb1d991fd345ceee2776abf651aa8114",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x73e0c0d45e048d25fc26fa3159b0aa04bfa4db98|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|30474054": {
+  "adm_champ": "None",
+  "adm_ours": "30473434",
+  "amt_in": "30474054",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0x73e0c0d45e048d25fc26fa3159b0aa04bfa4db98",
+   "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+  ],
+  "chain_id": 1,
+  "probe_out": "30473434",
+  "qid": "q_2dd9df97684355e088c5aab9479f41eb",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x4cce605ed955295432958d8951d0b176c10720d5|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|73457034": {
+  "adm_champ": "None",
+  "adm_ours": "48409665",
+  "amt_in": "73457034",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x4cce605ed955295432958d8951d0b176c10720d5",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "48409665",
+  "qid": "q_29805cbe27f8ebab96115a179258f989",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x01791f726b4103694969820be083196cc7c045ff|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|2833833583041340743567": {
+  "adm_champ": "None",
+  "adm_ours": "1",
+  "amt_in": "2833833583041340743567",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x01791f726b4103694969820be083196cc7c045ff",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1",
+  "qid": "q_42fd6d4de7b4b15c4cb1763faa0523d6",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|14634480267960490090331": {
+  "adm_champ": "None",
+  "adm_ours": "38415172669",
+  "amt_in": "14634480267960490090331",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xd533a949740bb3306d119cc777fa900ba034cd52",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "38415172669",
+  "qid": "q_e2bf7981d3d9523d16b4cb223d29874c",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x41545f8b9472d758bb669ed8eaeeecd7a9c4ec29|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|28423008045780000000000": {
+  "adm_champ": "None",
+  "adm_ours": "358759748",
+  "amt_in": "28423008045780000000000",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x41545f8b9472d758bb669ed8eaeeecd7a9c4ec29",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "358759748",
+  "qid": "q_17a9ac756e1c75bac12f6d98e21513d3",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5|0x35d8949372d46b7a3d5a56006ae77b215fc69bc0|312735082778253260000000": {
+  "adm_champ": "None",
+  "adm_ours": "322889688139453375018692",
+  "amt_in": "312735082778253260000000",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5",
+   "0x35d8949372d46b7a3d5a56006ae77b215fc69bc0"
+  ],
+  "chain_id": 1,
+  "probe_out": "322889688139453375018692",
+  "qid": "q_5c4c6e97f854bd06f2750d0a5b01f937",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "27470158",
+  "amt_in": "1000000000000000000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "27470158",
+  "qid": "q_f3282215c58b29d51d60abc1925c6526",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x856c4efb76c1d1ae02e20ceb03a2a6a08b0b8dc3|0x8207c1ffc5b6804f6024322ccf34f29c3541ae26|562500000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "14487038715966296665",
+  "amt_in": "562500000000000000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0x856c4efb76c1d1ae02e20ceb03a2a6a08b0b8dc3",
+   "0x8207c1ffc5b6804f6024322ccf34f29c3541ae26"
+  ],
+  "chain_id": 1,
+  "probe_out": "14487038715966296665",
+  "qid": "q_857dcebf900cf15264cfd12d3e072c12",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5|0xdac17f958d2ee523a2206206994597c13d831ec7|4950983156279244165": {
+  "adm_champ": "None",
+  "adm_ours": "4949030",
+  "amt_in": "4950983156279244165",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "4949030",
+  "qid": "q_821f7574a6cd2d2892ec4cad1cb0afb9",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x808507121b80c02388fad14726482e061b8da827|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1250000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "1631815208",
+  "amt_in": "1250000000000000000000",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x808507121b80c02388fad14726482e061b8da827",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1631815208",
+  "qid": "q_20831b8c9fe74062aff8e15344486678",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f|23000000000": {
+  "adm_champ": "None",
+  "adm_ours": "20537194605308288650762",
+  "amt_in": "23000000000",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f"
+  ],
+  "chain_id": 1,
+  "probe_out": "20537194605308288650762",
+  "qid": "q_4a48a1c2cb1c94ff81f58efaea60074e",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xb1f1ee126e9c96231cc3d3fad7c08b4cf873b1f1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|30013704001785733654": {
+  "adm_champ": "None",
+  "adm_ours": "1112767787",
+  "amt_in": "30013704001785733654",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0xb1f1ee126e9c96231cc3d3fad7c08b4cf873b1f1",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1112767787",
+  "qid": "q_3145d45bfdbb2e4a92df033cdac40d57",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x046eee2cc3188071c02bfc1745a6b17c656e3f3d|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|25741947597677482686290": {
+  "adm_champ": "None",
+  "adm_ours": "1915516120",
+  "amt_in": "25741947597677482686290",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0x046eee2cc3188071c02bfc1745a6b17c656e3f3d",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1915516120",
+  "qid": "q_1f21a6e8d8f4409fe26287ea22bbc3e0",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x01791f726b4103694969820be083196cc7c045ff|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|20833602348602866085328": {
+  "adm_champ": "None",
+  "adm_ours": "836997621816949465",
+  "amt_in": "20833602348602866085328",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x01791f726b4103694969820be083196cc7c045ff",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "836997621816949465",
+  "qid": "q_63c967c6536117846347274cc11cdda0",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|100568277252822943": {
+  "adm_champ": "None",
+  "adm_ours": "337962273130865052334",
+  "amt_in": "100568277252822943",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "337962273130865052334",
+  "qid": "q_4931001b74f0247cf769beba16bc58b8",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xe343167631d89b6ffc58b88d6b7fb0228795491d|1000000000": {
+  "adm_champ": "None",
+  "adm_ours": "998870369",
+  "amt_in": "1000000000",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xe343167631d89b6ffc58b88d6b7fb0228795491d"
+  ],
+  "chain_id": 1,
+  "probe_out": "998870369",
+  "qid": "q_248713a43a04e5b3ccdd25077195d7b0",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x992651bfeb9a0dcc4457610e284ba66d86489d4d|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|3216441790000000000": {
+  "adm_champ": "None",
+  "adm_ours": "116594",
+  "amt_in": "3216441790000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x992651bfeb9a0dcc4457610e284ba66d86489d4d",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "116594",
+  "qid": "q_f6cf02554a86468ec1464b76cf5589f7",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x01791f726b4103694969820be083196cc7c045ff|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|9721288885050000000000": {
+  "adm_champ": "None",
+  "adm_ours": "1",
+  "amt_in": "9721288885050000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x01791f726b4103694969820be083196cc7c045ff",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1",
+  "qid": "q_f474096ee654542f678fe328751168e4",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x808507121b80c02388fad14726482e061b8da827|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|11465838704489828220": {
+  "adm_champ": "None",
+  "adm_ours": "8019212120816222",
+  "amt_in": "11465838704489828220",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0x808507121b80c02388fad14726482e061b8da827",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "8019212120816222",
+  "qid": "q_a3f17535cfca51e6b51c9530e46a6bb1",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x046eee2cc3188071c02bfc1745a6b17c656e3f3d|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|15000000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "590956304339161138",
+  "amt_in": "15000000000000000000000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0x046eee2cc3188071c02bfc1745a6b17c656e3f3d",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "590956304339161138",
+  "qid": "q_a290a823a0b9b89f1d06367131a9aca4",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x4647e1fe715c9e23959022c2416c71867f5a6e80|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|456000000": {
+  "adm_champ": "None",
+  "adm_ours": "670709438201",
+  "amt_in": "456000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x4647e1fe715c9e23959022c2416c71867f5a6e80",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "670709438201",
+  "qid": "q_6d5ac96ead06b8a4d6f31c48b66de71c",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|5000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "337962273130865052334",
+  "amt_in": "5000000000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "337962273130865052334",
+  "qid": "q_63a8e1d6f044c6d880776aaffbde3384",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8e729198d1c59b82bd6bba579310c40d740a11c2|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|150162497217003723601318": {
+  "adm_champ": "None",
+  "adm_ours": "131821403628432405",
+  "amt_in": "150162497217003723601318",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0x8e729198d1c59b82bd6bba579310c40d740a11c2",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "131821403628432405",
+  "qid": "q_1e52b835b8e39c56cc13e0704519b0b3",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|25452207515838574038": {
+  "adm_champ": "None",
+  "adm_ours": "35246081270",
+  "amt_in": "25452207515838574038",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "35246081270",
+  "qid": "q_71a89a2548022fbc4cd6ac759907d759",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|297575874247931169018": {
+  "adm_champ": "None",
+  "adm_ours": "543571",
+  "amt_in": "297575874247931169018",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "543571",
+  "qid": "q_ca14c3aa91ee12cd99a0648ec854bb0c",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xdac17f958d2ee523a2206206994597c13d831ec7|679547226726382321666": {
+  "adm_champ": "None",
+  "adm_ours": "303833515",
+  "amt_in": "679547226726382321666",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xd533a949740bb3306d119cc777fa900ba034cd52",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "303833515",
+  "qid": "q_f148d51e00196d0fcc78da14b77a43ab",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xdac17f958d2ee523a2206206994597c13d831ec7|877765906498948788775": {
+  "adm_champ": "None",
+  "adm_ours": "303833515",
+  "amt_in": "877765906498948788775",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xd533a949740bb3306d119cc777fa900ba034cd52",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "303833515",
+  "qid": "q_16deabd5555fb4319f9ed8c7091ce7cd",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x01791f726b4103694969820be083196cc7c045ff|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|313786270999422631936": {
+  "adm_champ": "None",
+  "adm_ours": "1",
+  "amt_in": "313786270999422631936",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x01791f726b4103694969820be083196cc7c045ff",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1",
+  "qid": "q_9e62c89b429a07322d24955a9aeb2ed5",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc139190f447e929f090edeb554d95abb8b18ac1c|0xdac17f958d2ee523a2206206994597c13d831ec7|24001000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "5",
+  "amt_in": "24001000000000000000000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xc139190f447e929f090edeb554d95abb8b18ac1c",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "5",
+  "qid": "q_aec5b2ee1748fdd593037de0ce70109b",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|206100000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "38415172669",
+  "amt_in": "206100000000000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xd533a949740bb3306d119cc777fa900ba034cd52",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "38415172669",
+  "qid": "q_e692c6db006c9cbac7ee9714a2604a19",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc9eef266834730340a55b6cc24621b31baf55581|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|6390387480000000000": {
+  "adm_champ": "None",
+  "adm_ours": "139270408",
+  "amt_in": "6390387480000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xc9eef266834730340a55b6cc24621b31baf55581",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "139270408",
+  "qid": "q_dc2f44756d430e767d5ae5aea27d2adf",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8292bb45bf1ee4d140127049757c2e0ff06317ed|0xdac17f958d2ee523a2206206994597c13d831ec7|1610616641116251729182": {
+  "adm_champ": "None",
+  "adm_ours": "127084991465",
+  "amt_in": "1610616641116251729182",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "127084991465",
+  "qid": "q_e389d6663c03e05bc51c6695fe8f301f",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|2943920908160000000000": {
+  "adm_champ": "None",
+  "adm_ours": "38415172669",
+  "amt_in": "2943920908160000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xd533a949740bb3306d119cc777fa900ba034cd52",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "38415172669",
+  "qid": "q_713b1cfe39021dd3ca4d74d84bc9a8c4",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|197045530929349129": {
+  "adm_champ": "None",
+  "adm_ours": "196944170414780898",
+  "amt_in": "197045530929349129",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "196944170414780898",
+  "qid": "q_8ba2d74f0a9a0811fe6035c6f90c0f7a",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8292bb45bf1ee4d140127049757c2e0ff06317ed|0xdac17f958d2ee523a2206206994597c13d831ec7|78314227605605680117": {
+  "adm_champ": "None",
+  "adm_ours": "127084991465",
+  "amt_in": "78314227605605680117",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "127084991465",
+  "qid": "q_1e708652773c365d3c85ee566014280f",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc9eef266834730340a55b6cc24621b31baf55581|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|14576382647735586200": {
+  "adm_champ": "None",
+  "adm_ours": "139270408",
+  "amt_in": "14576382647735586200",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xc9eef266834730340a55b6cc24621b31baf55581",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "139270408",
+  "qid": "q_e81f6ee2c2f7c42281eb96f6061f01f9",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|11650000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "21874258732",
+  "amt_in": "11650000000000000000",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "21874258732",
+  "qid": "q_4e53bc1051a965ec743fd4c997051989",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|722045129814741872": {
+  "adm_champ": "None",
+  "adm_ours": "7947597468",
+  "amt_in": "722045129814741872",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "7947597468",
+  "qid": "q_06c342d930471676f0575a0ede37973f",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xdac17f958d2ee523a2206206994597c13d831ec7|1400000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "7947597468",
+  "amt_in": "1400000000000000000",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "7947597468",
+  "qid": "q_1c191acd983c513a8577380be1b04622",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xf939e0a03fb07f59a73314e73794be0e57ac1b4e|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|2000000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "183842317",
+  "amt_in": "2000000000000000000000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "183842317",
+  "qid": "q_55eb384e0056cccacb613aa4dc20b8fe",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x96f6ef951840721adbf46ac996b59e0235cb985c|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|95585000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "383968603",
+  "amt_in": "95585000000000000000000",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0x96f6ef951840721adbf46ac996b59e0235cb985c",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "383968603",
+  "qid": "q_854543db838a63d5b1626f21ad89e7f8",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|10467000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "21874258732",
+  "amt_in": "10467000000000000000",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "21874258732",
+  "qid": "q_b36540bfd7025498b668c801fccaa899",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1320473619467933057024": {
+  "adm_champ": "None",
+  "adm_ours": "543571",
+  "amt_in": "1320473619467933057024",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "543571",
+  "qid": "q_3a10764ea8d32e43a493a711d4fa3b93",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1315872887349740306432": {
+  "adm_champ": "None",
+  "adm_ours": "543571",
+  "amt_in": "1315872887349740306432",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "543571",
+  "qid": "q_c086a80549453022b703eb471cbdb5ba",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1320239985873755045888": {
+  "adm_champ": "None",
+  "adm_ours": "543571",
+  "amt_in": "1320239985873755045888",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "543571",
+  "qid": "q_e418d4f258b0bcbbb6ecbafb154d7710",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1319848969022316740608": {
+  "adm_champ": "None",
+  "adm_ours": "543571",
+  "amt_in": "1319848969022316740608",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "543571",
+  "qid": "q_0ae61c0c17433da5cc89eca5d79850d0",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1316058702506665705472": {
+  "adm_champ": "None",
+  "adm_ours": "543571",
+  "amt_in": "1316058702506665705472",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "543571",
+  "qid": "q_d962c97a21605bd924714dabeefc5050",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xfcc5c47be19d06bf83eb04298b026f81069ff65b|0xd533a949740bb3306d119cc777fa900ba034cd52|12201576975438693240702": {
+  "adm_champ": "None",
+  "adm_ours": "1500441129054629215",
+  "amt_in": "12201576975438693240702",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xfcc5c47be19d06bf83eb04298b026f81069ff65b",
+   "0xd533a949740bb3306d119cc777fa900ba034cd52"
+  ],
+  "chain_id": 1,
+  "probe_out": "1500441129054629215",
+  "qid": "q_1a8ebb9b846b598a25087f6f4dc907eb",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1325146610184169193472": {
+  "adm_champ": "None",
+  "adm_ours": "543571",
+  "amt_in": "1325146610184169193472",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "543571",
+  "qid": "q_42835d259c10a88ff18c0acd82783fb3",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1326364186331853357056": {
+  "adm_champ": "None",
+  "adm_ours": "543571",
+  "amt_in": "1326364186331853357056",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "543571",
+  "qid": "q_d3818ceb6e5e86f0624566aea1f07e5d",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1328484211874237251584": {
+  "adm_champ": "None",
+  "adm_ours": "543571",
+  "amt_in": "1328484211874237251584",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0x10dea67478c5f8c5e2d90e5e9b26dbe60c54d800",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "543571",
+  "qid": "q_c1cd9ed63d67af7dcbedc5ed475f255b",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xec53bf9167f50cdeb3ae105f56099aaab9061f83|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|31190771280151973000000": {
+  "adm_champ": "None",
+  "adm_ours": "3397023718",
+  "amt_in": "31190771280151973000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xec53bf9167f50cdeb3ae105f56099aaab9061f83",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "3397023718",
+  "qid": "q_e5b3ea67ce2571a617ce433b0b4fa972",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1070446826784978133": {
+  "adm_champ": "None",
+  "adm_ours": "1176332819877494725",
+  "amt_in": "1070446826784978133",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "1176332819877494725",
+  "qid": "q_57f0148a0c33ea4751da218ee0e67f73",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|501620589132088539": {
+  "adm_champ": "None",
+  "adm_ours": "11740218719161338",
+  "amt_in": "501620589132088539",
+  "fees": [
+   3000,
+   500
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+  ],
+  "chain_id": 1,
+  "probe_out": "11740218719161338",
+  "qid": "q_0a338c87dba8978263eea2ee5b85cc5d",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|477121010000000000": {
+  "adm_champ": "None",
+  "adm_ours": "2023837459",
+  "amt_in": "477121010000000000",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "2023837459",
+  "qid": "q_c4cc2fb919e3e4208847256b4de6b97a",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1928140288776694": {
+  "adm_champ": "None",
+  "adm_ours": "337962273130865052334",
+  "amt_in": "1928140288776694",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "337962273130865052334",
+  "qid": "q_c2a08e5f15a4c57bfd17e84027b395a6",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c|0xdac17f958d2ee523a2206206994597c13d831ec7|100000000000": {
+  "adm_champ": "None",
+  "adm_ours": "99885736764",
+  "amt_in": "100000000000",
+  "fees": [
+   500,
+   100
+  ],
+  "tokens": [
+   "0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "99885736764",
+  "qid": "q_2f5258412307659aa589357f04c4172e",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x68749665ff8d2d112fa859aa293f07a622782f38|0x45804880de22913dafe09f4980848ece6ecbaf78|100895": {
+  "adm_champ": "None",
+  "adm_ours": "100548462679607395",
+  "amt_in": "100895",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0x68749665ff8d2d112fa859aa293f07a622782f38",
+   "0x45804880de22913dafe09f4980848ece6ecbaf78"
+  ],
+  "chain_id": 1,
+  "probe_out": "100548462679607395",
+  "qid": "q_6a3416e04dd9a83544825267c045bee6",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x90a2a4c76b5d8c0bc892a69ea28aa775a8f2dd48|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|51000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "20682224",
+  "amt_in": "51000000000000000000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0x90a2a4c76b5d8c0bc892a69ea28aa775a8f2dd48",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "20682224",
+  "qid": "q_a87c016cfad58111fd542f13ff66676c",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|10000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "11740218719161338",
+  "amt_in": "10000000000000000000",
+  "fees": [
+   3000,
+   500
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+  ],
+  "chain_id": 1,
+  "probe_out": "11740218719161338",
+  "qid": "q_33698e8b0e10fac8cac15b9d12450827",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1484525949779040087934": {
+  "adm_champ": "None",
+  "adm_ours": "337962273130865052334",
+  "amt_in": "1484525949779040087934",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "337962273130865052334",
+  "qid": "q_c5d791e82f605fa846dd4b82ed74f041",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xb812837b81a3a6b81d7cd74cfb19a7f2784555e5|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1863204415197455441": {
+  "adm_champ": "None",
+  "adm_ours": "1529074",
+  "amt_in": "1863204415197455441",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xb812837b81a3a6b81d7cd74cfb19a7f2784555e5",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1529074",
+  "qid": "q_430985789107a48b4b11e6cdc55c6661",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x2d1f7226bd1f780af6b9a49dcc0ae00e8df4bdee|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|93542940000000000": {
+  "adm_champ": "None",
+  "adm_ours": "20628767",
+  "amt_in": "93542940000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x2d1f7226bd1f780af6b9a49dcc0ae00e8df4bdee",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "20628767",
+  "qid": "q_f08a77405676659e8a3a994dcd20e189",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x01791f726b4103694969820be083196cc7c045ff|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|7493704510870000000000": {
+  "adm_champ": "None",
+  "adm_ours": "1",
+  "amt_in": "7493704510870000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x01791f726b4103694969820be083196cc7c045ff",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1",
+  "qid": "q_e4cf5dad0c12e3180734fa2c134a266a",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x23b608675a2b2fb1890d3abbd85c5775c51691d5|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|7025064120781238": {
+  "adm_champ": "None",
+  "adm_ours": "30412338",
+  "amt_in": "7025064120781238",
+  "fees": [
+   500,
+   100
+  ],
+  "tokens": [
+   "0x23b608675a2b2fb1890d3abbd85c5775c51691d5",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "30412338",
+  "qid": "q_e4c30fa34961e441e1cf5803ceee4848",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|2187000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "337962273130865052334",
+  "amt_in": "2187000000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "337962273130865052334",
+  "qid": "q_20a09e68f864bca04ed6e33a9e4f634d",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|20590841955748148318": {
+  "adm_champ": "None",
+  "adm_ours": "35246081270",
+  "amt_in": "20590841955748148318",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "35246081270",
+  "qid": "q_1e4ca4579b40047f52bb75a1bd76d4f0",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x68749665ff8d2d112fa859aa293f07a622782f38|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|461000": {
+  "adm_champ": "None",
+  "adm_ours": "1067646570768068217",
+  "amt_in": "461000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0x68749665ff8d2d112fa859aa293f07a622782f38",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "1067646570768068217",
+  "qid": "q_21bb00d5da35fae75ebf587885db2f52",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|401700317178": {
+  "adm_champ": "None",
+  "adm_ours": "81209338783744251604",
+  "amt_in": "401700317178",
+  "fees": [
+   500,
+   500
+  ],
+  "tokens": [
+   "0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "81209338783744251604",
+  "qid": "q_ae06f7ab3c1a8b5746399abacdb6eaba",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1302309768217713867755": {
+  "adm_champ": "None",
+  "adm_ours": "337962273130865052334",
+  "amt_in": "1302309768217713867755",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "337962273130865052334",
+  "qid": "q_40fdb330acf5cec0ccc4090d585bf35b",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x5a98fcbea516cf06857215779fd812ca3bef1b32|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|5000000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "1099919141",
+  "amt_in": "5000000000000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x5a98fcbea516cf06857215779fd812ca3bef1b32",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1099919141",
+  "qid": "q_7cb1b61d42083a9bf77e70daa29f6676",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|479952860000000000": {
+  "adm_champ": "None",
+  "adm_ours": "2023837459",
+  "amt_in": "479952860000000000",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "2023837459",
+  "qid": "q_236cd01f8b4f784515513283161268cb",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|7859525620080877735027": {
+  "adm_champ": "None",
+  "adm_ours": "1091093848010515256",
+  "amt_in": "7859525620080877735027",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xd533a949740bb3306d119cc777fa900ba034cd52",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "1091093848010515256",
+  "qid": "q_72003cffc23471f15cf8dca8acb8628f",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|961381120000000000": {
+  "adm_champ": "None",
+  "adm_ours": "2023837459",
+  "amt_in": "961381120000000000",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "2023837459",
+  "qid": "q_d905c90769dc26bf1ef21ab1df0338a2",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x68749665ff8d2d112fa859aa293f07a622782f38|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|14253": {
+  "adm_champ": "None",
+  "adm_ours": "1067646570768068217",
+  "amt_in": "14253",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0x68749665ff8d2d112fa859aa293f07a622782f38",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "1067646570768068217",
+  "qid": "q_c4a2d483d325d7d0e8d9a89ea67d06b2",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|40538142936624780085": {
+  "adm_champ": "None",
+  "adm_ours": "38415172669",
+  "amt_in": "40538142936624780085",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xd533a949740bb3306d119cc777fa900ba034cd52",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "38415172669",
+  "qid": "q_cd5337a70aa728e606d0c36e218dc5f8",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1300978814905809904": {
+  "adm_champ": "None",
+  "adm_ours": "337962273130865052334",
+  "amt_in": "1300978814905809904",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "337962273130865052334",
+  "qid": "q_939c23fe464e3411f5c8f4c64f6500be",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc4441c2be5d8fa8126822b9929ca0b81ea0de38e|0x06b964d96f5dcf7eae9d7c559b09edce244d4b8e|126798971441064334137104": {
+  "adm_champ": "None",
+  "adm_ours": "779862859977986352929",
+  "amt_in": "126798971441064334137104",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xc4441c2be5d8fa8126822b9929ca0b81ea0de38e",
+   "0x06b964d96f5dcf7eae9d7c559b09edce244d4b8e"
+  ],
+  "chain_id": 1,
+  "probe_out": "779862859977986352929",
+  "qid": "q_8cf2e75747400954465949e8135a064d",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|3999999999999999997": {
+  "adm_champ": "None",
+  "adm_ours": "337962273130865052334",
+  "amt_in": "3999999999999999997",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "337962273130865052334",
+  "qid": "q_87d0a626a14d7c08999f60d3725e933e",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xec53bf9167f50cdeb3ae105f56099aaab9061f83|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1006673897494136997227": {
+  "adm_champ": "None",
+  "adm_ours": "3397023718",
+  "amt_in": "1006673897494136997227",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xec53bf9167f50cdeb3ae105f56099aaab9061f83",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "3397023718",
+  "qid": "q_5af512b1d54f47cef48e000f5533f9e2",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x5a98fcbea516cf06857215779fd812ca3bef1b32|250000000": {
+  "adm_champ": "None",
+  "adm_ours": "851935542035423404188",
+  "amt_in": "250000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x5a98fcbea516cf06857215779fd812ca3bef1b32"
+  ],
+  "chain_id": 1,
+  "probe_out": "851935542035423404188",
+  "qid": "q_10782f55b55b3762c399c643cd0f50d3",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1400000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "337962273130865052334",
+  "amt_in": "1400000000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "337962273130865052334",
+  "qid": "q_f05ab06d23962eb165824a5ce30cf57f",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc496aa020be20abbb22081833ef08af7bfed7f17|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|200000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "84666217083205856",
+  "amt_in": "200000000000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xc496aa020be20abbb22081833ef08af7bfed7f17",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "84666217083205856",
+  "qid": "q_8b80b205a81b070dd252b32bb911eec1",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|32983967938353549153": {
+  "adm_champ": "None",
+  "adm_ours": "38415172669",
+  "amt_in": "32983967938353549153",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xd533a949740bb3306d119cc777fa900ba034cd52",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "38415172669",
+  "qid": "q_1fe91a21d351e52575a24fbb1c7cdbfb",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8be3460a480c80728a8c4d7a5d5303c85ba7b3b9|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|6432560000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "51938124",
+  "amt_in": "6432560000000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x8be3460a480c80728a8c4d7a5d5303c85ba7b3b9",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "51938124",
+  "qid": "q_ba17d87676f27013e57c674bc720d089",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0|972209677105542026": {
+  "adm_champ": "None",
+  "adm_ours": "11740218719161338",
+  "amt_in": "972209677105542026",
+  "fees": [
+   3000,
+   500
+  ],
+  "tokens": [
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+  ],
+  "chain_id": 1,
+  "probe_out": "11740218719161338",
+  "qid": "q_52ed5cb3c767bcd2848a0e056e9ed7ec",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x6b175474e89094c44da98b954eedeac495271d0f|0xfaba6f8e4a5e8ab82f62fe7c39859fa577269be3|1028555572095263917568": {
+  "adm_champ": "None",
+  "adm_ours": "3125460451026908510563",
+  "amt_in": "1028555572095263917568",
+  "fees": [
+   500,
+   3000
+  ],
+  "tokens": [
+   "0x6b175474e89094c44da98b954eedeac495271d0f",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xfaba6f8e4a5e8ab82f62fe7c39859fa577269be3"
+  ],
+  "chain_id": 1,
+  "probe_out": "3125460451026908510563",
+  "qid": "q_77183c670d356a7420ebf42edf6314ac",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xe1753f2e00940cc31213dd92013cf019dfe4ca1d|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|17300223402124348493798": {
+  "adm_champ": "None",
+  "adm_ours": "10863",
+  "amt_in": "17300223402124348493798",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0xe1753f2e00940cc31213dd92013cf019dfe4ca1d",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "10863",
+  "qid": "q_392334a4d7e66a3484d3624fd8f4715a",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x3231cb76718cdef2155fc47b5286d82e6eda273f|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|50000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "57307468",
+  "amt_in": "50000000000000000000",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0x3231cb76718cdef2155fc47b5286d82e6eda273f",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "57307468",
+  "qid": "q_327fedb7ceabfcb345ae03df8e806e93",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|204080597502696697246": {
+  "adm_champ": "None",
+  "adm_ours": "108508239837984233",
+  "amt_in": "204080597502696697246",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0x73a15fed60bf67631dc6cd7bc5b6e8da8190acf5",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "108508239837984233",
+  "qid": "q_bf51b29e86a5f41416ce74f1915f9965",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc18360217d8f7ab5e7c516566761ea12ce7f9d72|0xdac17f958d2ee523a2206206994597c13d831ec7|492362536000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "1740112133",
+  "amt_in": "492362536000000000000",
+  "fees": [
+   3000,
+   100
+  ],
+  "tokens": [
+   "0xc18360217d8f7ab5e7c516566761ea12ce7f9d72",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "1740112133",
+  "qid": "q_7d04b2e3d0683ec7247c3cee39fb9b72",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|502071018556374863": {
+  "adm_champ": "None",
+  "adm_ours": "942337439",
+  "amt_in": "502071018556374863",
+  "fees": [
+   500,
+   100
+  ],
+  "tokens": [
+   "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "942337439",
+  "qid": "q_ecae27ceeccc3234a6ceba6aadba883f",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94|213058498": {
+  "adm_champ": "None",
+  "adm_ours": "1953865528717205249279",
+  "amt_in": "213058498",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94"
+  ],
+  "chain_id": 1,
+  "probe_out": "1953865528717205249279",
+  "qid": "q_37ec111380d8fbc9a1e90731d0c47dad",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94|312710038": {
+  "adm_champ": "None",
+  "adm_ours": "1953865528717205249279",
+  "amt_in": "312710038",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94"
+  ],
+  "chain_id": 1,
+  "probe_out": "1953865528717205249279",
+  "qid": "q_08bf2ec27454e52ba79aff2a15f79f21",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94|327700514": {
+  "adm_champ": "None",
+  "adm_ours": "1953865528717205249279",
+  "amt_in": "327700514",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94"
+  ],
+  "chain_id": 1,
+  "probe_out": "1953865528717205249279",
+  "qid": "q_8dc1a6559f33334b33525509bf80db0a",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xb812837b81a3a6b81d7cd74cfb19a7f2784555e5|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|239000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "1529074",
+  "amt_in": "239000000000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xb812837b81a3a6b81d7cd74cfb19a7f2784555e5",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1529074",
+  "qid": "q_cf015cdc12dea12f3db68223351120a1",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xb812837b81a3a6b81d7cd74cfb19a7f2784555e5|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|284837151418425768909": {
+  "adm_champ": "None",
+  "adm_ours": "1529074",
+  "amt_in": "284837151418425768909",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xb812837b81a3a6b81d7cd74cfb19a7f2784555e5",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1529074",
+  "qid": "q_729dfc66aae5086e56b46e82398b9959",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|133200118692541219": {
+  "adm_champ": "None",
+  "adm_ours": "196944170414780898",
+  "amt_in": "133200118692541219",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "196944170414780898",
+  "qid": "q_194ca163844f1da2627d0fb19b23adbf",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x86ed939b500e121c0c5f493f399084db596dad20|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|3595026490000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "11808627130903744",
+  "amt_in": "3595026490000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x86ed939b500e121c0c5f493f399084db596dad20",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "11808627130903744",
+  "qid": "q_0d44b207f5b8577f542f55beaa289ea6",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94|367289": {
+  "adm_champ": "None",
+  "adm_ours": "1967832416777029720258",
+  "amt_in": "367289",
+  "fees": [
+   500,
+   3000
+  ],
+  "tokens": [
+   "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94"
+  ],
+  "chain_id": 1,
+  "probe_out": "1967832416777029720258",
+  "qid": "q_fbc7aa57a74d0b34f9fbec945975a2cd",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94|478896": {
+  "adm_champ": "None",
+  "adm_ours": "1967832416777029720258",
+  "amt_in": "478896",
+  "fees": [
+   500,
+   3000
+  ],
+  "tokens": [
+   "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94"
+  ],
+  "chain_id": 1,
+  "probe_out": "1967832416777029720258",
+  "qid": "q_2c55a5470596e8d83f309113035762c4",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94|410291": {
+  "adm_champ": "None",
+  "adm_ours": "1967832416777029720258",
+  "amt_in": "410291",
+  "fees": [
+   500,
+   3000
+  ],
+  "tokens": [
+   "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94"
+  ],
+  "chain_id": 1,
+  "probe_out": "1967832416777029720258",
+  "qid": "q_6d1c41f0b83f4a25624d44cd41cd7124",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94|478641": {
+  "adm_champ": "None",
+  "adm_ours": "1967832416777029720258",
+  "amt_in": "478641",
+  "fees": [
+   500,
+   3000
+  ],
+  "tokens": [
+   "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xcccccccccc33d538dbc2ee4feab0a7a1ff4e8a94"
+  ],
+  "chain_id": 1,
+  "probe_out": "1967832416777029720258",
+  "qid": "q_e3631b8ba5efc1cb04473bc2f68a95c7",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|5000000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "248221895506149860",
+  "amt_in": "5000000000000000000000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "248221895506149860",
+  "qid": "q_8c47bebe989050afcb8cf568b71c514e",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x57e114b691db790c35207b2e685d4a43181e6061|0xdac17f958d2ee523a2206206994597c13d831ec7|58876811458333333333333": {
+  "adm_champ": "None",
+  "adm_ours": "5015708908",
+  "amt_in": "58876811458333333333333",
+  "fees": [
+   3000,
+   500
+  ],
+  "tokens": [
+   "0x57e114b691db790c35207b2e685d4a43181e6061",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "5015708908",
+  "qid": "q_57cd50575313523fb3f152fd2bf253e3",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xdac17f958d2ee523a2206206994597c13d831ec7|0x8292bb45bf1ee4d140127049757c2e0ff06317ed|639425015": {
+  "adm_champ": "None",
+  "adm_ours": "638634110668523678681",
+  "amt_in": "639425015",
+  "fees": [
+   100,
+   100
+  ],
+  "tokens": [
+   "0xdac17f958d2ee523a2206206994597c13d831ec7",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x8292bb45bf1ee4d140127049757c2e0ff06317ed"
+  ],
+  "chain_id": 1,
+  "probe_out": "638634110668523678681",
+  "qid": "q_61fef1f93171e61c091c808d6e6518ba",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x1abaea1f7c830bd89acc67ec4af516284b1bc33c|6839809151": {
+  "adm_champ": "None",
+  "adm_ours": "5931177918",
+  "amt_in": "6839809151",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c"
+  ],
+  "chain_id": 1,
+  "probe_out": "5931177918",
+  "qid": "q_130711f649f6dd897d59174fd61facab",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xdc035d45d973e3ec169d2276ddab16f1e407384f|4993955609": {
+  "adm_champ": "None",
+  "adm_ours": "4695241804260789009560",
+  "amt_in": "4993955609",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdc035d45d973e3ec169d2276ddab16f1e407384f"
+  ],
+  "chain_id": 1,
+  "probe_out": "4695241804260789009560",
+  "qid": "q_0459f0b3e40a11f5310a40134e254a9f",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x5eed99d066a8caf10f3e4327c1b3d8b673485eed|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|34177291640434616800933": {
+  "adm_champ": "None",
+  "adm_ours": "1919494001745858786",
+  "amt_in": "34177291640434616800933",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0x5eed99d066a8caf10f3e4327c1b3d8b673485eed",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "1919494001745858786",
+  "qid": "q_5272159e6a91121cf19ab580be4b7a39",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x5eed99d066a8caf10f3e4327c1b3d8b673485eed|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|17659310000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "1919494001745858786",
+  "amt_in": "17659310000000000000000",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0x5eed99d066a8caf10f3e4327c1b3d8b673485eed",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "1919494001745858786",
+  "qid": "q_494503105a3924557622f63b34aa8f56",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|0xae7ab96520de3a18e5e111b5eaab095312d7fe84|299457999312692642674": {
+  "adm_champ": "None",
+  "adm_ours": "155338272026722191484",
+  "amt_in": "299457999312692642674",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+   "0xae7ab96520de3a18e5e111b5eaab095312d7fe84"
+  ],
+  "chain_id": 1,
+  "probe_out": "155338272026722191484",
+  "qid": "q_6408af537e01b0cd9cb2a6a9ce546686",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xca468554e5c0423ee858fe3942c9568c51fcaa79|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|2385512400662034569": {
+  "adm_champ": "None",
+  "adm_ours": "71142019",
+  "amt_in": "2385512400662034569",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xca468554e5c0423ee858fe3942c9568c51fcaa79",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "71142019",
+  "qid": "q_b821d64c2618b5f8f52a68c8b8bb2a75",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xd533a949740bb3306d119cc777fa900ba034cd52|0xdac17f958d2ee523a2206206994597c13d831ec7|1646000000000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "303833515",
+  "amt_in": "1646000000000000000000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xd533a949740bb3306d119cc777fa900ba034cd52",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "303833515",
+  "qid": "q_6c1e07446cf47df23f8393a0787d9638",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8390a1da07e376ef7add4be859ba74fb83aa02d5|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|39000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "1038243849299421",
+  "amt_in": "39000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x8390a1da07e376ef7add4be859ba74fb83aa02d5",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "1038243849299421",
+  "qid": "q_fa6abbe4663a04c31c8c90fef0d78c68",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0xdc035d45d973e3ec169d2276ddab16f1e407384f|104555671929": {
+  "adm_champ": "None",
+  "adm_ours": "4695241804260789009560",
+  "amt_in": "104555671929",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdc035d45d973e3ec169d2276ddab16f1e407384f"
+  ],
+  "chain_id": 1,
+  "probe_out": "4695241804260789009560",
+  "qid": "q_ff9d657fbac47c375967b9bab56e6786",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c|0xdac17f958d2ee523a2206206994597c13d831ec7|161132297": {
+  "adm_champ": "None",
+  "adm_ours": "99885736764",
+  "amt_in": "161132297",
+  "fees": [
+   500,
+   100
+  ],
+  "tokens": [
+   "0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "chain_id": 1,
+  "probe_out": "99885736764",
+  "qid": "q_3432a06bc6760e7f088344d2289dc9f6",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x056fd409e1d7a124bd7017459dfea2f387b6d5cd|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|326000": {
+  "adm_champ": "None",
+  "adm_ours": "63759541720682001",
+  "amt_in": "326000",
+  "fees": [
+   3000
+  ],
+  "tokens": [
+   "0x056fd409e1d7a124bd7017459dfea2f387b6d5cd",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "63759541720682001",
+  "qid": "q_5b80e54da2decb2e3150e5d990428a32",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x1abaea1f7c830bd89acc67ec4af516284b1bc33c|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|1477594170": {
+  "adm_champ": "None",
+  "adm_ours": "654876041058831",
+  "amt_in": "1477594170",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "654876041058831",
+  "qid": "q_374a6ab78c021e54140d26c079259b3c",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x626e8036deb333b408be468f951bdb42433cbf18|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|294896179000000000000": {
+  "adm_champ": "None",
+  "adm_ours": "7874069295809990",
+  "amt_in": "294896179000000000000",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0x626e8036deb333b408be468f951bdb42433cbf18",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "7874069295809990",
+  "qid": "q_a81b35c31800cd74cddc9922d07f4c67",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x8292bb45bf1ee4d140127049757c2e0ff06317ed|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|1197801598978572386": {
+  "adm_champ": "None",
+  "adm_ours": "1197876",
+  "amt_in": "1197801598978572386",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "1197876",
+  "qid": "q_df622337979c89a249492fe0b863388a",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x8be3460a480c80728a8c4d7a5d5303c85ba7b3b9|25786717610": {
+  "adm_champ": "None",
+  "adm_ours": "6969264840807879899113",
+  "amt_in": "25786717610",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x8be3460a480c80728a8c4d7a5d5303c85ba7b3b9"
+  ],
+  "chain_id": 1,
+  "probe_out": "6969264840807879899113",
+  "qid": "q_5c708270e1c87b60fcb2ec5d9af24f0a",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x1abaea1f7c830bd89acc67ec4af516284b1bc33c|0x5f7827fdeb7c20b443265fc2f40845b715385ff2|6999970144": {
+  "adm_champ": "None",
+  "adm_ours": "6998975292194449227785",
+  "amt_in": "6999970144",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c",
+   "0x5f7827fdeb7c20b443265fc2f40845b715385ff2"
+  ],
+  "chain_id": 1,
+  "probe_out": "6998975292194449227785",
+  "qid": "q_f05a96ca4ac9e35a03a6ac72f5829b21",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x8143182a775c54578c8b7b3ef77982498866945d|999653432": {
+  "adm_champ": "None",
+  "adm_ours": "754218943488",
+  "amt_in": "999653432",
+  "fees": [
+   10000
+  ],
+  "tokens": [
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+   "0x8143182a775c54578c8b7b3ef77982498866945d"
+  ],
+  "chain_id": 1,
+  "probe_out": "754218943488",
+  "qid": "q_70939968c37f95878cac1778a1ce168d",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|135471589913688700": {
+  "adm_champ": "None",
+  "adm_ours": "196944170414780898",
+  "amt_in": "135471589913688700",
+  "fees": [
+   500
+  ],
+  "tokens": [
+   "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8",
+   "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  ],
+  "chain_id": 1,
+  "probe_out": "196944170414780898",
+  "qid": "q_82839d6466b7d7b0cc641f75d09fb6ed",
+  "_src": "blind-nv3-hunt"
+ },
+ "1|0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|187521229394713642345473": {
+  "adm_champ": "None",
+  "adm_ours": "116818236033",
+  "amt_in": "187521229394713642345473",
+  "fees": [
+   100
+  ],
+  "tokens": [
+   "0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f",
+   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ],
+  "chain_id": 1,
+  "probe_out": "116818236033",
+  "qid": "q_b83fc7ff37b786752b1207282950f512",
+  "_src": "blind-nv3-hunt"
  }
 }

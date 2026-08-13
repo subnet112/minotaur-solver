@@ -44,6 +44,19 @@ def _v3_swap_cd(spec, rcpt) -> str:
     from eth_abi import encode as _enc
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
 
+    # SwapRouter02 (Base 8453) does NOT carry the deadline-included exactInput:
+    # eth_call probe 2026-08-12 — deadline-form reverts bare (unknown selector),
+    # 02-form (bytes,address,uint256,uint256) proceeds to STF. Mainnet E592
+    # keeps the SwapRouter01 deadline form. Route hops carry no chain_id and
+    # stay chain-1, so they keep the proven deadline form.
+    if int(spec.get("chain_id") or 1) == 8453:
+        sel = _keccak(text="exactInput((bytes,address,uint256,uint256))")[:4]
+        args = _enc(
+            ["(bytes,address,uint256,uint256)"],
+            [(_pack_path(spec["tokens"], spec.get("fees") or []), _ck(rcpt),
+              int(spec["amt_in"]), 0)],
+        )
+        return "0x" + (sel + args).hex()
     sel = _keccak(text="exactInput((bytes,address,uint256,uint256,uint256))")[:4]
     args = _enc(
         ["(bytes,address,uint256,uint256,uint256)"],

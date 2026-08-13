@@ -62,8 +62,7 @@ def _plan_calls(ixs, tout, app):
 def _fund_ovr(tin, slot, amt):
     return {tin: {'stateDiff': {_bkey(_EXEC, slot): _w(amt * 100)}}, _EXEC: {'balance': _w(10 ** 18)}}
 
-def _rd(c):
-    return int(c.get('returnData') or '0x0', 16)
+from axm_rd_r1 import _rd
 
 def _delta(cs):
     """delivered = (app after-before) + (exec after-before), floored at 0."""
