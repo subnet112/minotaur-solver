@@ -181,12 +181,6 @@ def _legs(row, chain, Interaction):
             return None
         built.append(Interaction(target=target, value=str(leg.get('value', '0')), call_data=data, chain_id=chain))
     return built
-_AGG_MAX_AGE_S = 86400.0
-_EVIDENCE_MARGIN_BPS = 200
-_EVIDENCE_DUEL_BPS = 30
-_EVIDENCE_FLOOR_BPS = 60
-_EVIDENCE_DRIFT_BPS_PER_H = 50
-_EVIDENCE_MAX_BPS = 600
 
 def _evidence_margin_bps(row) -> int:
     """Required edge, in bps, for evidence of this row's age.
@@ -211,6 +205,11 @@ def _evidence_margin_bps(row) -> int:
     a flat ZERO), so duel-proven rows are precisely the scarce, trustworthy ones.
     They earn the noise floor; everything else keeps the age curve.
     """
+    _EVIDENCE_MARGIN_BPS = 200
+    _EVIDENCE_DUEL_BPS = 30
+    _EVIDENCE_FLOOR_BPS = 60
+    _EVIDENCE_DRIFT_BPS_PER_H = 50
+    _EVIDENCE_MAX_BPS = 600
     if str((row or {}).get('src') or '') == 'duel':
         return _EVIDENCE_DUEL_BPS
     try:
@@ -230,6 +229,7 @@ def _expired_agg(row) -> bool:
     venue route (minOut 0, deadline 2100) cannot, so age is irrelevant there and this
     returns False for it at any age.
     """
+    _AGG_MAX_AGE_S = 86400.0
     try:
         legs = _served(row)
         if not any((str(leg.get('target', '')).lower() in _AGG_ROUTERS for leg in legs if isinstance(leg, dict))):
