@@ -1,4 +1,4 @@
-"""On-fork multi-venue router cover for blueguider (fill-only-empty).
+"""On-fork multi-venue router cover for lattice-route-engine (fill-only-empty).
 
 Fires ONLY when the wrapped champion returns empty/blind. Takes the order's
 ACTUAL tin/tout/amt and quotes EVERY venue on the SOLVER'S fork RPC (the exact

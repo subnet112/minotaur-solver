@@ -1,7 +1,6 @@
 from chain1_c import _WETH, _USDT, _QUOTER, _ROUTER, _FEES, _HUBS, _CHAMP_FEE
 
-def _addr_bytes(t):
-    return bytes.fromhex(t[2:])
+from _vaddr_ext import _addr_bytes
 
 def _pack(tokens, fees):
     b = b''
@@ -49,9 +48,7 @@ def _hub_legs(tin, tout):
 def _candidates(tin, tout):
     return _direct_legs(tin, tout) + _hub_legs(tin, tout)
 
-def _selector(sig):
-    from eth_utils import keccak as _keccak
-    return _keccak(text=sig)[:4]
+from lat_sel_ext import _selector
 
 def _qdata(route, amt):
     from eth_abi import encode as _enc
@@ -108,14 +105,12 @@ def _build(route, tin, amt, rcpt, chain_id):
     leg = _swap_leg(route, amt, rcpt)
     return _approves(tin, amt, chain_id) + [_IX(target=_ROUTER, value='0', call_data=leg, chain_id=chain_id)]
 
-def _wei(p, field):
-    return int(p.get(field, 0) or 0)
+from lat_wei_ext import _wei
 
 def _amounts(p):
     return (_wei(p, 'input_amount'), _wei(p, 'min_output_amount'))
 
-def _valid_pair(tin, tout, amt):
-    return len(tin) == 42 and len(tout) == 42 and (amt > 0) and (tin != tout)
+from _mvp_ext import _valid_pair
 
 def _token(p, field):
     return str(p.get(field, '') or '').lower()

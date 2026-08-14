@@ -27,7 +27,6 @@ try:
         _MinoHP._mino_chainid_memo = True
 except Exception:
     pass
-_UNUSED_DOC = '\n\nFires ONLY when the normalized input_amount is 0 and the raw params carry a\npositive aliased amount. See scripts/amtalias_edge.py for evidence.\n'
 
 def _raw_params(state):
     typed = getattr(state, 'typed_context', None)

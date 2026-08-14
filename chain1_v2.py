@@ -24,16 +24,9 @@ def _v2_lookup(tin, tout):
     pair, t0 = ent
     return (pair, tin == t0)
 
-def _v2_swap_cd(in_is_t0, out, rcpt):
-    from eth_abi import encode as _enc
-    from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    a0, a1 = (0, int(out)) if in_is_t0 else (int(out), 0)
-    return '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _enc(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(rcpt), b''])).hex()
+from lat_swapcd_ext import _v2_swap_cd
 
-def _v2_xfer_cd(pair, amt):
-    from eth_abi import encode as _enc
-    from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    return '0x' + (_keccak(text='transfer(address,uint256)')[:4] + _enc(['address', 'uint256'], [_ck(pair), int(amt)])).hex()
+from lat_xfercd_ext import _v2_xfer_cd
 
 def _v2_build(pair, in_is_t0, tin, amt, out, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX

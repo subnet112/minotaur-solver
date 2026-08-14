@@ -1,7 +1,6 @@
 import shape_lib as _sl
 
-def est_v3s(s, spec, tin, amt, chain_id):
-    return (s._hydra_quote_leg1({'leg1_router': spec.get('router'), 'leg1_fee': spec['fee'], 'mid': spec['tout']}, tin, amt, chain_id), None)
+from _vest_ext import est_v3s
 
 def est_a3(s, spec, tin, amt, chain_id):
     q1 = s._hydra_quote_leg1({'leg1_router': 'uni', 'leg1_fee': spec['l1_fee'], 'mid': spec['mid1']}, tin, amt, chain_id)

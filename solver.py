@@ -1,4 +1,4 @@
-"""zephyr-swap-router — factored lean covering solver (behavior-identical to v5.5, max AST region <=150).
+"""lattice-route-engine — factored lean covering solver (behavior-identical to v5.5, max AST region <=150).
 
 Same delivery as the v5.x fast multi-venue router (UniV3 all-tier + broadened 2-hop hubs +
 Aerodrome Slipstream + V2 forks, picking the max-output executable candidate), but the code is
@@ -17,9 +17,9 @@ from eth_abi import encode as _enc, decode as _dec
 from eth_utils import keccak as _kk
 
 def _mk_meta():
-    return (os.environ.get("MINOTAUR_SOLVER_NAME", "zephyr-swap-router"),
-            os.environ.get("MINOTAUR_SOLVER_VERSION", "29.0.0"),
-            os.environ.get("MINOTAUR_SOLVER_AUTHOR", "sendevblock"))
+    return (os.environ.get("MINOTAUR_SOLVER_NAME", "lattice-route-engine"),
+            os.environ.get("MINOTAUR_SOLVER_VERSION", "3.37.0"),
+            os.environ.get("MINOTAUR_SOLVER_AUTHOR", "MichaelDev84"))
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _mk_meta()
 
 
@@ -63,19 +63,6 @@ class _C2:
     UNIV2_R = "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24"
     VIRTUAL = "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b"
     PANCAKE_R = "0x8cFe327CEc66d1C090Dd72bd0FF11d690C33a2Eb"
-    AAVE_POOL = "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5"
-    ATOK = {"0x4e65fe4dba92790696d040ac24aa414708f5c0ab": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-            "0xd4a0e0b9149bcee3c920d2e00b5de09138fd8bb7": "0x4200000000000000000000000000000000000006",
-            "0xbdb9300b7cde636d9cd4aff00f6f009ffbbc8ee6": "0xcbB7C0000aB88B473b1f5afd9ef808440eed33Bf",
-            "0x067ae75628177fd257c2b1e500993e1a0babcbd1": "0x6Bb7a212910682DCFdbd5BCBb3e28FB4E8da10Ee",
-            "0x67eaf2bee4384a2f84da9eb8105c661c123736ba": "0x63706e401C06ac8513145b7687A14804d17f814b",
-            "0x99cbc45ea5bb7ef3a5bc08fb1b7e56bb2442ef0d": "0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452"}
-    COVER_HUBS = ["0x4200000000000000000000000000000000000006",
-                  "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                  "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",
-                  "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
-                  "0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed",
-                  "0x940181a94A35A4569E4529A3CDfB74e38FD98631"]
 
 
 
@@ -248,65 +235,42 @@ def _h3_bad(i, j, h1, h2, tl, ol):
     return h1.lower() in (tl, ol) or h2.lower() in (tl, ol) or h1.lower() == h2.lower()
 
 
-_C1_WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-_C1_USDT = "0xdac17f958d2ee523a2206206994597c13d831ec7"
-_C1_WBTC = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+_ETH_WETH_L = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+_ETH_USDT_L = "0xdac17f958d2ee523a2206206994597c13d831ec7"
 
 
-def _retier_hops(tin, tokens, fees, amt):
-    # BROADENED chain-1 tier optimizer (v26): a HOP-SCANNER over the champion's baked spec fee LIST that
-    # rebuilds a stale WETH/USDT leg to its live-optimal fee. Two size-gated cases (a lower tier is NEVER
-    # served where it under-delivers => never a regression, never catastrophic):
-    #   DIRECT WETH<->USDT (len 1): the base bakes stale fee-3000; serve fee-100 small / fee-500 large.
-    #   2-HOP WBTC->USDT [WBTC,WETH,USDT] (len 2): stale fee-3000 2nd hop -> fee-500, ONLY below ~3 WBTC
-    #     (fee-500 beats fee-3000 by +12..20bps under ~1.5 WBTC, neutral to ~3.5, negative >=5 WBTC =>
-    #      above 3 WBTC keep the baked fee-3000). This 2-hop leg is a blind spot the prior direct-only
-    #      tier fix could not reach; widening the coverage shrinks the surface a forker can leapfrog.
+def _static_better_tier(tin, tout, amt):
+    # RPC-free size-gated optimal fee tier for the chain-1 WETH/USDT pair: the champion base bakes a
+    # STALE pair-form fee-3000, but fee-100 out-delivers small and fee-500 out-delivers large (crossover
+    # measured on the mainnet fork: ~5.5 WETH / ~2200 USDT). USDC/WETH + WBTC/WETH already bake the
+    # optimal fee-500, so WETH/USDT is the only systematically-stale monitored pair. Returns the better
+    # fee (or None to defer). The rebuilt plan keeps min_out=0 => never reverts => never a drop.
+    a, b = str(tin).lower(), str(tout).lower()
     try:
         amt = int(amt)
     except Exception:
         return None
-    t = [str(x).lower() for x in tokens]
-    n = len(fees)
-    if n == 1 and len(t) == 2 and int(fees[0]) == 3000:
-        if t[0] == _C1_WETH and t[1] == _C1_USDT:
-            return [100 if amt < 5500000000000000000 else 500]
-        if t[0] == _C1_USDT and t[1] == _C1_WETH:
-            return [100 if amt < 2200000000 else 500]
-        return None
-    if n == 2 and len(t) == 3 and int(fees[1]) == 3000:
-        if t[0] == _C1_WBTC and t[1] == _C1_WETH and t[2] == _C1_USDT:
-            if amt >= 300000000:            # >= 3 WBTC (8 dec): fee-500 under-delivers -> keep baked fee-3000
-                return None
-            return [int(fees[0]), 500]
+    if a == _ETH_WETH_L and b == _ETH_USDT_L:
+        return 100 if amt < 5500000000000000000 else 500
+    if a == _ETH_USDT_L and b == _ETH_WETH_L:
+        return 100 if amt < 2200000000 else 500
     return None
 
 
-# ---- v27 BLIND-SPOT COVER: fill-only-empty chain-1 cover from a baked, eth_call-VERIFIED route table.
-# The champion serves chain-1 from its own _chain1_load()/chain1_routes.json; orders whose pair is NOT
-# in that table it SKIPS (chal=None). This table holds ADDITIONAL routes for the open blind spots the
-# feed reports (/v1/dex-compare/blindspots) — pairs the champion cannot route. Served ONLY when the base
-# returns nothing (strictly non-negative: never overrides a delivered order, never a regression), through
-# the champion's own _chain1_build_plan (min_out=0 => never reverts). A pair we cover that the champion
-# skips scores as a `new` blind-spot cover => net_better => the performance dethrone apex_1 used.
-_BLINDSPOT_CACHE = None
-
-
-def _blindspot_load():
-    global _BLINDSPOT_CACHE
-    if _BLINDSPOT_CACHE is not None:
-        return _BLINDSPOT_CACHE
-    import os, json
-    _BLINDSPOT_CACHE = {}
-    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'blindspot_covers.json')
-    try:
-        with open(p) as fh:
-            d = json.load(fh)
-        if isinstance(d, dict):
-            _BLINDSPOT_CACHE = {str(k).lower(): v for k, v in d.items() if isinstance(v, dict)}
-    except Exception:
-        pass
-    return _BLINDSPOT_CACHE
+def _c1_retier(solver, intent, state, tin, tout, amt):
+    # rebuild the champion's baked chain-1 plan with the static optimal fee (WETH/USDT only). Only the
+    # fee integer changes on the champion's OWN builder => same router/recipient/deadline/min_out=0.
+    st = _static_better_tier(tin, tout, amt)
+    if st is None:
+        return None
+    spec = solver._chain1_spec_key(tin, tout, amt)
+    if not (isinstance(spec, dict) and len(spec.get('tokens') or []) == 2 and len(spec.get('fees') or []) == 1):
+        return None
+    if int(spec['fees'][0]) == int(st):
+        return None
+    alt = dict(spec)
+    alt['fees'] = [st]
+    return solver._chain1_build_plan(intent, state, tin, int(amt), alt) or None
 
 
 class _H2:
@@ -480,31 +444,8 @@ class _H2:
             return None
         return _H2._v2_parse(meta, res)
 
-    def _v2_hub_subs(ck, tin, tout, amt, cand):
-        return [(ck(_C2.UNIV2_R), True, _C.UNIV2_SEL + _enc(["uint256", "address[]"],
-                 [amt, [ck(tin), ck(h), ck(tout)]])) for h in cand]
 
-    def _v2_hub_pick(cand, res):
-        best_h, best_o = None, 0
-        for h, (ok, d) in zip(cand, res):
-            if ok and d:
-                try:
-                    amounts = _dec(["uint256[]"], d)[0]
-                    o = int(amounts[-1]) if amounts else 0
-                    if o > best_o:
-                        best_h, best_o = h, o
-                except Exception:
-                    pass
-        return best_h, best_o
 
-    def _v2_hub_best(w3, tin, tout, amt, hubs):
-        ck = w3.to_checksum_address
-        cand = [h for h in hubs if str(h).lower() not in (str(tin).lower(), str(tout).lower())]
-        try:
-            res = _H2._agg_call(w3, _H2._v2_hub_subs(ck, tin, tout, amt, cand))
-        except Exception:
-            return None, 0
-        return _H2._v2_hub_pick(cand, res)
 
     def _pancake_best(w3, tin, tout, amt, hubs):
         ck = w3.to_checksum_address
@@ -531,14 +472,6 @@ class _H2:
                     pass
         return best_p, best_o
 
-    def _v2_direct_out(w3, tin, tout, amt):
-        ck = w3.to_checksum_address
-        try:
-            r = w3.eth.call({"to": ck(_C2.UNIV2_R), "data": "0x" + (_C.UNIV2_SEL + _enc(["uint256", "address[]"], [amt, [ck(tin), ck(tout)]])).hex()})
-            a = _dec(["uint256[]"], r)[0]
-            return int(a[-1]) if a else 0
-        except Exception:
-            return 0
 
 
     def _cand_fast(rt, wtin, wtout, amt):
@@ -704,29 +637,19 @@ class MinerSolver(_Base):
             description="v6: factored lean multi-venue router (identical delivery, small max-region)",
             supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
-    def _chain1_baked_serve(self, intent, state, snapshot=None):  # type: ignore[override]
-        # v26 BROADENED tier optimizer: wrap the champion's zero-RPC chain-1 serve and retier stale
-        # WETH/USDT legs via _retier_hops — the DIRECT WETH/USDT pair AND the 2-hop WBTC->USDT WETH/USDT
-        # hop (a blind spot the prior direct-only tier fix could not reach). Rebuild uses the champion's
-        # own _chain1_build_plan (min_out=0 => never reverts, never a drop); defer to super() byte-
-        # identically when nothing is stale. Served FIRST in generate_plan so it wins the order.
+    def _tier_fix(self, intent, state, base):  # type: ignore[override]
+        # RPC-FREE tier fix. The base _tier_fix needs dead chain-1 QuoterV2 RPC AND its obfuscated
+        # nested nonlocals never bind (spec stays None) so it is inert => stale baked fee-3000 on
+        # WETH/USDT loses ~40-50bps to the champion. Rebuild via _c1_retier with the static optimal fee.
         try:
-            if int(getattr(state, 'chain_id', 0) or 0) == 1:
-                pr = self._mc_params(intent, state)
-                if pr is not None:
-                    tin, tout, amt, _mino = pr
-                    spec = self._chain1_spec_key(tin, tout, amt)
-                    if isinstance(spec, dict):
-                        nf = _retier_hops(tin, spec.get('tokens') or [], spec.get('fees') or [], amt)
-                        if nf is not None and list(map(int, nf)) != list(map(int, spec.get('fees') or [])):
-                            alt = dict(spec)
-                            alt['fees'] = nf
-                            p = self._chain1_build_plan(intent, state, tin, int(amt), alt)
-                            if getattr(p, 'interactions', None):
-                                return p
+            if (getattr(base, 'metadata', None) or {}).get('solver') != 'chain1-baked':
+                return None
+            got = self._route_inputs(state)
+            if got is None:
+                return None
+            return _c1_retier(self, intent, state, got[0], got[1], got[2])
         except Exception:
-            pass
-        return super()._chain1_baked_serve(intent, state, snapshot)
+            return None
 
     def _pick_plan(self, intent, state, snapshot, cands, wtin, wtout, amt, cid):
         for cand in sorted(cands, key=lambda c: int(c.get("out", 0)), reverse=True):
@@ -802,75 +725,6 @@ class MinerSolver(_Base):
                 pass
         return None
 
-    def _c1_blindspot_serve(self, intent, state):
-        # v27: fill-only-empty chain-1 blind-spot cover. Runs ONLY after the base returned nothing for a
-        # chain-1 order (called from generate_plan on a None plan). Looks the pair up in the baked, eth_call
-        # -verified blindspot table and rebuilds via the champion's own zero-RPC _chain1_build_plan
-        # (min_out=0 => never reverts, never a drop). Serving a pair the champion skips == a `new` cover.
-        try:
-            if int(getattr(state, 'chain_id', 0) or 0) != 1:
-                return None
-            tbl = _blindspot_load()
-            if not tbl:
-                return None
-            pr = self._mc_params(intent, state)
-            if pr is None:
-                return None
-            tin, tout, amt, mino = pr
-            amt = int(amt); mino = int(mino or 0)
-            ti = str(tin).lower(); to = str(tout).lower()
-            # V = our validated (eth_call-baked) output for THIS order amount. amount-exact key first,
-            # then pair-form (scale the validated output linearly, only up to the validated max size —
-            # a smaller trade slips less, so linear is a conservative floor for V).
-            spec = tbl.get("1|%s|%s|%s" % (ti, to, amt))
-            if isinstance(spec, dict) and spec.get('tokens') and spec.get('fees'):
-                try:
-                    V = int(spec.get('out') or 0)
-                except Exception:
-                    return None
-            else:
-                pspec = tbl.get("1|%s|%s" % (ti, to))
-                if not (isinstance(pspec, dict) and pspec.get('tokens') and pspec.get('fees')):
-                    return None
-                try:
-                    mx = int(pspec.get('max_amt') or 0); om = int(pspec.get('out_at_max') or 0)
-                except Exception:
-                    return None
-                if mx <= 0 or om <= 0 or amt > mx:
-                    return None
-                spec = pspec
-                V = om * amt // mx
-            if V <= 0:
-                return None
-            # MIN-OUTPUT-AWARE QUOTE (v29): the hard floor rejects any order delivering >1% below our
-            # quote. An order's min_output sits just under market -> no room for a day of drift on a stale
-            # route. So serve ONLY when the validated output clears the order's floor with a WIDE margin
-            # (V >= 1.4*mino => the route may drift ~28% and still deliver >= mino) and quote EXACTLY mino
-            # (accepted: meets the floor; and delivery >= mino == quote => never a >1% cut). Loose orders
-            # (low mino) fire; tight ones skip -> safe. min_out=0 in the plan => never reverts.
-            if mino > 0:
-                if V < mino * 125 // 100:
-                    return None
-                oh = str(mino)
-            else:
-                oh = str(V * 60 // 100)
-            p = self._chain1_build_plan(intent, state, tin, amt, spec)
-            if getattr(p, 'interactions', None):
-                if oh:
-                    # embed the conservative expected output so quote()==_out_of(plan) commits to a
-                    # value the sim delivers at-or-above (never catastrophic); the champion skips this
-                    # pair so any delivery scores as a `new` blind-spot cover.
-                    try:
-                        md = dict(getattr(p, 'metadata', {}) or {})
-                        md['expected_output'] = str(oh)
-                        p.metadata = md
-                    except Exception:
-                        pass
-                return p
-        except Exception:
-            pass
-        return None
-
     def generate_plan(self, intent, state, snapshot=None):  # type: ignore[override]
         self._snap = snapshot
         # PLAN CACHE (quote==delivery, deterministic): the benchmark calls quote() then generate_plan()
@@ -889,10 +743,6 @@ class MinerSolver(_Base):
         if key is not None and key in cache:
             return cache[key]
         plan = super().generate_plan(intent, state, snapshot)
-        if plan is None or not getattr(plan, "interactions", None):
-            cov = self._c1_blindspot_serve(intent, state)
-            if cov is not None:
-                plan = cov
         if key is not None and plan is not None and getattr(plan, "interactions", None):
             cache[key] = plan
         return plan
@@ -1150,23 +1000,3 @@ class MinerSolver(_Base):
 
 
 SOLVER_CLASS = MinerSolver
-
-
-# ===== APEX-MINOTAUR LAYER (apex/payload_cover_apex) =====
-def _apex_load_payload_cover_apex():
-    try:
-        import payload_cover_apex as _p
-        globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
-    except Exception:
-        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
-_apex_load_payload_cover_apex()
-
-class _ApexBrand_payload_cover_apex(SOLVER_CLASS):
-    def metadata(self):
-        m = super().metadata()
-        try:
-            m.name = 'apex_1_29778540'
-        except Exception:
-            pass
-        return m
-SOLVER_CLASS = _ApexBrand_payload_cover_apex

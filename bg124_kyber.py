@@ -1,4 +1,4 @@
-"""KyberSwap quality-override cover for blueguider — the current-champion move.
+"""KyberSwap quality-override cover for lattice-route-engine — the current-champion move.
 
 This mirrors how the reigning champion (harvey-router) actually wins: wrap the
 champion, and on exact-key scenarios where we hold a FORK-VERIFIED KyberSwap

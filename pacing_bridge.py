@@ -11,7 +11,6 @@ _DR_UNSET = object()
 def install(base_cls):
 
     class _PacingBridge(base_cls):
-        _pacing_bridge_on = True
 
         @staticmethod
         def _pb_nonempty(plan) -> bool:
