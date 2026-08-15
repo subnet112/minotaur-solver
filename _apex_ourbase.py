@@ -1,4 +1,4 @@
-"""lattice-route-engine — lean delegate over the reigning champion.
+"""axiom-dex-solver — lean delegate over the reigning champion.
 
 Chassis doctrine (2026-07-18 rebuild, from studying 21 adoptions):
 - The champion's engine runs VERBATIM on every order: identical plans,
@@ -245,5 +245,5 @@ class Bg124Solver(_Base):
         base = super().metadata()
         if SolverMetadata is None:
             return base
-        return SolverMetadata(name='lattice-route-engine', version=f'{_BASE_VERSION}+bg.3.L1', author='MichaelDev84', description='champion verbatim + zero-RPC fill-only-empty covers (census + harvested exact-key rows)', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name='axiom-dex-solver', version=f'{_BASE_VERSION}+bg.3.L1', author='TensorVadana', description='champion verbatim + zero-RPC fill-only-empty covers (census + harvested exact-key rows)', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 SOLVER_CLASS = Bg124Solver

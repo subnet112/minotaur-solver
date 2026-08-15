@@ -22,9 +22,9 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 def _dr23():
     logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'axiom-dex-solver')
     SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'TensorVadana')
     _BASE = 8453
     _WETH = '0x4200000000000000000000000000000000000006'
     _MAVERICK_ROUTER = '0x5eDEd0d7E76C563FF081Ca01D9d12D6B404Df527'

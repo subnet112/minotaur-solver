@@ -205,28 +205,22 @@ def _evidence_margin_bps(row) -> int:
     a flat ZERO), so duel-proven rows are precisely the scarce, trustworthy ones.
     They earn the noise floor; everything else keeps the age curve.
     """
-
-    def _dz84():
-        _EVIDENCE_MAX_BPS = 600
-        if str((row or {}).get('src') or '') == 'duel':
-            return (_EVIDENCE_DUEL_BPS,)
-        try:
-            minted = _minted(row)
-        except Exception:
-            minted = 0
-        if minted <= 0:
-            return (_EVIDENCE_MARGIN_BPS,)
-        age_h = max(0.0, (time.time() - minted) / 3600.0)
-        need = _EVIDENCE_FLOOR_BPS + int(age_h * _EVIDENCE_DRIFT_BPS_PER_H)
-        return (max(_EVIDENCE_FLOOR_BPS, min(_EVIDENCE_MAX_BPS, need)),)
-        return _DR_UNSET
     _EVIDENCE_MARGIN_BPS = 200
     _EVIDENCE_DUEL_BPS = 30
     _EVIDENCE_FLOOR_BPS = 60
     _EVIDENCE_DRIFT_BPS_PER_H = 50
-    _r_dz84 = _dz84()
-    if _r_dz84 is not _DR_UNSET:
-        return _r_dz84[0]
+    _EVIDENCE_MAX_BPS = 600
+    if str((row or {}).get('src') or '') == 'duel':
+        return _EVIDENCE_DUEL_BPS
+    try:
+        minted = _minted(row)
+    except Exception:
+        minted = 0
+    if minted <= 0:
+        return _EVIDENCE_MARGIN_BPS
+    age_h = max(0.0, (time.time() - minted) / 3600.0)
+    need = _EVIDENCE_FLOOR_BPS + int(age_h * _EVIDENCE_DRIFT_BPS_PER_H)
+    return max(_EVIDENCE_FLOOR_BPS, min(_EVIDENCE_MAX_BPS, need))
 
 def _expired_agg(row) -> bool:
     """Is this row served by aggregator calldata old enough to have drifted?

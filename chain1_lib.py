@@ -1,4 +1,5 @@
 from chain1_c import _WETH, _USDT, _QUOTER, _ROUTER, _FEES, _HUBS, _CHAMP_FEE
+
 from _vaddr_ext import _addr_bytes
 
 def _pack(tokens, fees):
@@ -46,7 +47,8 @@ def _hub_legs(tin, tout):
 
 def _candidates(tin, tout):
     return _direct_legs(tin, tout) + _hub_legs(tin, tout)
-from lat_sel_ext import _selector
+
+from axm_sel_ext import _selector
 
 def _qdata(route, amt):
     from eth_abi import encode as _enc
@@ -54,9 +56,7 @@ def _qdata(route, amt):
     sel = _selector('quoteExactInput(bytes,uint256)')
     return '0x' + (sel + _enc(['bytes', 'uint256'], [_pack(tokens, fees), int(amt)])).hex()
 
-def _quoted_amount(blob):
-    from eth_abi import decode as _dec
-    return _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], blob)[0] or None
+from axm_qa_ext import _quoted_amount
 
 def _qroute(w3, route, amt, block):
     try:
@@ -102,14 +102,16 @@ def _build(route, tin, amt, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX
     leg = _swap_leg(route, amt, rcpt)
     return _approves(tin, amt, chain_id) + [_IX(target=_ROUTER, value='0', call_data=leg, chain_id=chain_id)]
-from lat_wei_ext import _wei
+
+from axm_wei_ext import _wei
 
 def _amounts(p):
     return (_wei(p, 'input_amount'), _wei(p, 'min_output_amount'))
-from _mvp_ext import _valid_pair
 
-def _token(p, field):
-    return str(p.get(field, '') or '').lower()
+def _valid_pair(tin, tout, amt):
+    return len(tin) == 42 and len(tout) == 42 and (amt > 0) and (tin != tout)
+
+from axm_tok_ext import _token
 
 def _params(s, intent, state):
     p = s._normalized_swap_params(intent, state)

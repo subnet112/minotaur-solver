@@ -1,12 +1,7 @@
 from chain1_c import _V2_PAIRS, _MAX_QUOTES
 from chain1_lib import _candidates, _qroute
 
-def _v2_reserves(w3, pair, block):
-    from eth_abi import decode as _dec
-    from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    r = w3.eth.call({'to': _ck(pair), 'data': '0x' + _keccak(text='getReserves()')[:4].hex()}, block_identifier=block)
-    res = _dec(['uint112', 'uint112', 'uint32'], r)
-    return (int(res[0]), int(res[1]))
+from axm_vres_ext import _v2_reserves
 
 def _v2_quote(w3, pair, amt, in_is_t0, block):
     try:
@@ -23,8 +18,14 @@ def _v2_lookup(tin, tout):
         return None
     pair, t0 = ent
     return (pair, tin == t0)
-from lat_swapcd_ext import _v2_swap_cd
-from lat_xfercd_ext import _v2_xfer_cd
+
+def _v2_swap_cd(in_is_t0, out, rcpt):
+    from eth_abi import encode as _enc
+    from eth_utils import keccak as _keccak, to_checksum_address as _ck
+    a0, a1 = (0, int(out)) if in_is_t0 else (int(out), 0)
+    return '0x' + (_keccak(text='swap(uint256,uint256,address,bytes)')[:4] + _enc(['uint256', 'uint256', 'address', 'bytes'], [a0, a1, _ck(rcpt), b''])).hex()
+
+from axm_xfer_ext import _v2_xfer_cd
 
 def _v2_build(pair, in_is_t0, tin, amt, out, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX

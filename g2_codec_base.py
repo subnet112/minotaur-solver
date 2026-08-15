@@ -5,12 +5,8 @@ too, so this module never imports back from g2_codec and no cycle is possible.
 Semantics unchanged -- same objects, same names, same order.
 """
 from __future__ import annotations
-
-def _dz61():
-    _DR_UNSET = object()
-    __all__ = ['_BAL_VAULT', '_EXECUTOR', '_ROUTER_V2', '_ROUTER_V3', '_RPC_URLS', '_USDT', '_V4_ADDRESS_THIS', '_V4_CONTRACT_BALANCE', '_V4_UR', '_bal_order_id32', '_curve_abi', '_curve_args', '_lift_bal_swap_cd_0', '_lift_bal_swap_cd_1', '_pack_path', '_transfer_leg', '_v2_swap_cd', 'annotations']
-    return (_DR_UNSET, __all__)
-_DR_UNSET, __all__ = _dz61()
+_DR_UNSET = object()
+__all__ = ['_BAL_VAULT', '_EXECUTOR', '_ROUTER_V2', '_ROUTER_V3', '_RPC_URLS', '_USDT', '_V4_ADDRESS_THIS', '_V4_CONTRACT_BALANCE', '_V4_UR', '_bal_order_id32', '_curve_abi', '_curve_args', '_lift_bal_swap_cd_0', '_lift_bal_swap_cd_1', '_pack_path', '_transfer_leg', '_v2_swap_cd', 'annotations']
 'g2 codec + leg builders — split from g2_fill (region hygiene: each\nmodule top is its own region; the serve/table/guard logic stays in g2_fill).\nRouting constants live here with the builders that consume them.'
 _ROUTER_V3 = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 _ROUTER_V2 = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
