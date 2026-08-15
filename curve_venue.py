@@ -40,7 +40,8 @@ def _call(w3, to, data):
     except Exception:
         return None
 
-from axm_caddr_ext import _addr
+def _addr(r):
+    return '0x' + r[-20:].hex() if r is not None and len(r) >= 32 else None
 
 def _find_pool(w3, reg, a, b, k):
     r = _call(w3, reg, _sel('find_pool_for_coins(address,address,uint256)') + _E(['address', 'address', 'uint256'], [_C(a), _C(b), k]))

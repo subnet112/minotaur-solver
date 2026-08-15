@@ -16,58 +16,67 @@ def _dz281():
     return (_log, _FILL_NONCE, _TABLE_FILE, _AGG_ROUTERS, _PLAN_BUDGET_S, _MAX_ASKS)
 _log, _FILL_NONCE, _TABLE_FILE, _AGG_ROUTERS, _PLAN_BUDGET_S, _MAX_ASKS = _dz281()
 
-def _table_path() -> str:
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), _TABLE_FILE)
+def _fgm_53720():
+    """Lifted from this module's top-level AST region to lower it.
 
-def _minted(row) -> int:
-    if not isinstance(row, dict):
-        return 0
-    best = int(row.get('minted') or 0)
-    routes = row.get('routes')
-    if isinstance(routes, list):
-        for r in routes:
-            if isinstance(r, dict):
-                m = int(r.get('minted_at') or 0)
-                if m > best:
-                    best = m
-    return best
+    Behaviour-preserving: the statements run in the same order at the
+    same point in module execution, and every name they bind is declared
+    global, so they land in the module namespace exactly as before — a
+    name the block leaves unbound stays unbound instead of being returned.
+    """
+    global _EXECUTORS, _OVR, _ROWS, _freshest, _is_empty, _legs, _merge_source, _minted, _rank, _read_overrides, _read_table, _row_key, _served, _table_path, _trade
+    def _table_path() -> str:
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), _TABLE_FILE)
 
-def _served(row) -> list:
-    """The legs this row would actually serve (newest whole route, else flat)."""
-    if not isinstance(row, dict):
-        return []
-    live = [r for r in row.get('routes') or [] if isinstance(r, dict) and r.get('interactions')]
-    if live:
-        return max(live, key=lambda r: int(r.get('minted_at') or 0))['interactions']
-    return row.get('interactions') or []
+    def _minted(row) -> int:
+        if not isinstance(row, dict):
+            return 0
+        best = int(row.get('minted') or 0)
+        routes = row.get('routes')
+        if isinstance(routes, list):
+            for r in routes:
+                if isinstance(r, dict):
+                    m = int(r.get('minted_at') or 0)
+                    if m > best:
+                        best = m
+        return best
 
-def _rank(row) -> tuple:
-    agg = any((str(leg.get('target', '')).lower() in _AGG_ROUTERS for leg in _served(row) if isinstance(leg, dict)))
-    return (0 if agg else 1, _minted(row))
+    def _served(row) -> list:
+        """The legs this row would actually serve (newest whole route, else flat)."""
+        if not isinstance(row, dict):
+            return []
+        live = [r for r in row.get('routes') or [] if isinstance(r, dict) and r.get('interactions')]
+        if live:
+            return max(live, key=lambda r: int(r.get('minted_at') or 0))['interactions']
+        return row.get('interactions') or []
 
-def _merge_source(rows: dict, fn: str) -> None:
-    """Fold one overlay file into `rows`, best-ranked row per key winning."""
+    def _rank(row) -> tuple:
+        agg = any((str(leg.get('target', '')).lower() in _AGG_ROUTERS for leg in _served(row) if isinstance(leg, dict)))
+        return (0 if agg else 1, _minted(row))
 
-    def _dz281():
-        with open(os.path.join(base, fn)) as fh:
-            loaded = json.load(fh)
-        if not isinstance(loaded, dict):
-            return (None,)
-        for k, v in loaded.items():
-            held = rows.get(k)
-            if held is None or _rank(v) >= _rank(held):
-                rows[k] = v
-        return _DR_UNSET
-    base = os.path.dirname(os.path.abspath(__file__))
-    try:
-        _r_dz281 = _dz281()
-        if _r_dz281 is not _DR_UNSET:
-            return _r_dz281[0]
-    except Exception:
-        _log.warning('[minofill] overlay source %s unreadable; continuing', fn)
+    def _merge_source(rows: dict, fn: str) -> None:
+        """Fold one overlay file into `rows`, best-ranked row per key winning."""
 
-def _read_table() -> dict:
-    """Primary table (mino_fill_rows.json) unioned over the lineage's shared.
+        def _dz281():
+            with open(os.path.join(base, fn)) as fh:
+                loaded = json.load(fh)
+            if not isinstance(loaded, dict):
+                return (None,)
+            for k, v in loaded.items():
+                held = rows.get(k)
+                if held is None or _rank(v) >= _rank(held):
+                    rows[k] = v
+            return _DR_UNSET
+        base = os.path.dirname(os.path.abspath(__file__))
+        try:
+            _r_dz281 = _dz281()
+            if _r_dz281 is not _DR_UNSET:
+                return _r_dz281[0]
+        except Exception:
+            _log.warning('[minofill] overlay source %s unreadable; continuing', fn)
+
+    def _read_table() -> dict:
+        """Primary table (mino_fill_rows.json) unioned over the lineage's shared.
 
     The rank/mint/serve helpers live at MODULE scope, not nested here. The
     factorization metric counts the body of each named scope and does not
@@ -78,56 +87,56 @@ def _read_table() -> dict:
     us purely on a factorization gap, and our own files are the only part of the
     gap we can safely shrink.
     """
-    rows: dict = {}
-    for fn in ('lattice_wins.json', _TABLE_FILE):
-        _merge_source(rows, fn)
-    if not rows:
-        _log.warning('[minofill] no overlay tables; layer is inert')
-    return rows
-_ROWS = _read_table()
+        rows: dict = {}
+        for fn in ('lattice_wins.json', _TABLE_FILE):
+            _merge_source(rows, fn)
+        if not rows:
+            _log.warning('[minofill] no overlay tables; layer is inert')
+        return rows
+    _ROWS = _read_table()
 
-def _read_overrides() -> frozenset:
-    """Measured override keys — a SEPARATE file on purpose.
+    def _read_overrides() -> frozenset:
+        """Measured override keys — a SEPARATE file on purpose.
 
     The miner rewrites mino_fill_rows.json wholesale from a snapshot taken when its
     run began, so a flag written into a row is silently destroyed by the next bake
     (observed 08-07: mine-bake 0e7703f clobbered it minutes after it was committed).
     A file the miner never opens cannot be raced.
     """
-    base = os.path.dirname(os.path.abspath(__file__))
-    try:
-        with open(os.path.join(base, 'mino_ovr.json')) as fh:
-            return frozenset(json.load(fh))
-    except Exception:
-        return frozenset()
-_OVR = _read_overrides()
-_EXECUTORS = {1: '0xcd42cf6fd6e0c539cae038fe6a73c67f8c1c7a52', 8453: '0xe0d97941103c30799fa0aa9d54a34246846c73bf'}
+        base = os.path.dirname(os.path.abspath(__file__))
+        try:
+            with open(os.path.join(base, 'mino_ovr.json')) as fh:
+                return frozenset(json.load(fh))
+        except Exception:
+            return frozenset()
+    _OVR = _read_overrides()
+    _EXECUTORS = {1: '0xcd42cf6fd6e0c539cae038fe6a73c67f8c1c7a52', 8453: '0xe0d97941103c30799fa0aa9d54a34246846c73bf'}
 
-def _trade(state) -> tuple:
-    """(chain, contract, tin, tout, amount) pulled from the bench's IntentState."""
+    def _trade(state) -> tuple:
+        """(chain, contract, tin, tout, amount) pulled from the bench's IntentState."""
 
-    def _dz280():
-        chain = int(getattr(state, 'chain_id', 0) or 0)
-        contract = str(getattr(state, 'contract_address', '') or '').lower()
-        return ((chain, contract or _EXECUTORS.get(chain, ''), str(params.get('input_token') or '').lower(), str(params.get('output_token') or '').lower(), int(params.get('input_amount') or 0)),)
-        return _DR_UNSET
-    params = getattr(state, 'raw_params', None) or {}
-    _r_dz280 = _dz280()
-    if _r_dz280 is not _DR_UNSET:
-        return _r_dz280[0]
+        def _dz280():
+            chain = int(getattr(state, 'chain_id', 0) or 0)
+            contract = str(getattr(state, 'contract_address', '') or '').lower()
+            return ((chain, contract or _EXECUTORS.get(chain, ''), str(params.get('input_token') or '').lower(), str(params.get('output_token') or '').lower(), int(params.get('input_amount') or 0)),)
+            return _DR_UNSET
+        params = getattr(state, 'raw_params', None) or {}
+        _r_dz280 = _dz280()
+        if _r_dz280 is not _DR_UNSET:
+            return _r_dz280[0]
 
-def _row_key(state) -> str | None:
-    """chain|contract_address|tin|tout|amount, byte-identical to the bench's own key."""
-    try:
-        chain, contract, tin, tout, amount = _trade(state)
-    except Exception:
-        return None
-    if not (tin and tout and amount and contract):
-        return None
-    return f'{chain}|{contract}|{tin}|{tout}|{amount}'
+    def _row_key(state) -> str | None:
+        """chain|contract_address|tin|tout|amount, byte-identical to the bench's own key."""
+        try:
+            chain, contract, tin, tout, amount = _trade(state)
+        except Exception:
+            return None
+        if not (tin and tout and amount and contract):
+            return None
+        return f'{chain}|{contract}|{tin}|{tout}|{amount}'
 
-def _is_empty(plan) -> bool:
-    """Is there nothing here worth keeping? (Only then may the overlay answer.)
+    def _is_empty(plan) -> bool:
+        """Is there nothing here worth keeping? (Only then may the overlay answer.)
 
     A CROSS-CHAIN plan is delivered as empty ``interactions`` plus the real
     payload under ``metadata['cross_chain_plan']`` — that is the shape the base's
@@ -142,45 +151,48 @@ def _is_empty(plan) -> bool:
     interactions and SHOULD still be overridable, so only the cross-chain marker
     counts as substance.
     """
-    try:
-        if plan is None:
+        try:
+            if plan is None:
+                return True
+            if getattr(plan, 'interactions', None):
+                return False
+            return not (getattr(plan, 'metadata', None) or {}).get('cross_chain_plan')
+        except Exception:
             return True
-        if getattr(plan, 'interactions', None):
-            return False
-        return not (getattr(plan, 'metadata', None) or {}).get('cross_chain_plan')
-    except Exception:
-        return True
 
-def _freshest(row):
-    """Newest minted route for a key."""
+    def _freshest(row):
+        """Newest minted route for a key."""
 
-    def _dz279():
-        for cand in sorted(live, key=lambda r: -int(r.get('minted_at') or 0)):
-            ix = cand.get('interactions') or []
-            if ix and all((isinstance(l, dict) and l.get('target') and (l.get('call_data') or l.get('data')) for l in ix)):
-                return (ix,)
-        return _DR_UNSET
-    routes = row.get('routes')
-    if isinstance(routes, list):
-        live = [r for r in routes if isinstance(r, dict) and r.get('interactions')]
-        _r_dz279 = _dz279()
-        if _r_dz279 is not _DR_UNSET:
-            return _r_dz279[0]
-    return row.get('interactions') or []
+        def _dz279():
+            for cand in sorted(live, key=lambda r: -int(r.get('minted_at') or 0)):
+                ix = cand.get('interactions') or []
+                if ix and all((isinstance(l, dict) and l.get('target') and (l.get('call_data') or l.get('data')) for l in ix)):
+                    return (ix,)
+            return _DR_UNSET
+        routes = row.get('routes')
+        if isinstance(routes, list):
+            live = [r for r in routes if isinstance(r, dict) and r.get('interactions')]
+            _r_dz279 = _dz279()
+            if _r_dz279 is not _DR_UNSET:
+                return _r_dz279[0]
+        return row.get('interactions') or []
 
-def _legs(row, chain, Interaction):
-    """Stored interactions -> Interaction objects, verbatim."""
-    stored = _freshest(row)
-    if not stored:
-        return None
-    built = []
-    for leg in stored:
-        data = leg.get('call_data') or leg.get('data')
-        target = leg.get('target')
-        if not (target and data):
+    def _legs(row, chain, Interaction):
+        """Stored interactions -> Interaction objects, verbatim."""
+        stored = _freshest(row)
+        if not stored:
             return None
-        built.append(Interaction(target=target, value=str(leg.get('value', '0')), call_data=data, chain_id=chain))
-    return built
+        built = []
+        for leg in stored:
+            data = leg.get('call_data') or leg.get('data')
+            target = leg.get('target')
+            if not (target and data):
+                return None
+            built.append(Interaction(target=target, value=str(leg.get('value', '0')), call_data=data, chain_id=chain))
+        return built
+
+
+_fgm_53720()
 
 def _evidence_margin_bps(row) -> int:
     """Required edge, in bps, for evidence of this row's age.

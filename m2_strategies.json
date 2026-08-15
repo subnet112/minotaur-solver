@@ -1,0 +1,31 @@
+{
+ "cells_scanned": null,
+ "direction": {
+  "champion_factor_target": null,
+  "champion_max_region_nodes": null,
+  "crosschain_cases": null,
+  "crosschain_champion": "",
+  "crosschain_delivered": null,
+  "demand_cells_scanned": null,
+  "demand_zero_output_cells": null,
+  "winning_axes_recent10": {}
+ },
+ "holes": [],
+ "scenarios": 15,
+ "scenarios_changed": false,
+ "split_edges": [
+  {
+   "amt": "1000000000000000000000",
+   "bps": 533.0,
+   "chain": 8453,
+   "in": "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+   "king_how": "aerodrome_v2 stable=True",
+   "king_out": "945802542",
+   "out": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+   "scenario": "DAI_to_USDC",
+   "split": "70% v3_100 + 30% aerodrome_v2 stable=True",
+   "split_out": "996213999"
+  }
+ ],
+ "venue_hints": []
+}
