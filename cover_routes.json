@@ -1,0 +1,70 @@
+{
+"1|0x01791f726b4103694969820be083196cc7c045ff|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+"spec": {
+"venue": "univ3",
+"kind": "path",
+"tokens": [
+"0x01791F726B4103694969820be083196cC7c045fF",
+"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+],
+"fees": [
+10000,
+100
+]
+},
+"blind": true,
+"sym": "YB->USDC",
+"chain": 1
+},
+"1|0xf939e0a03fb07f59a73314e73794be0e57ac1b4e|0xdac17f958d2ee523a2206206994597c13d831ec7": {
+"spec": {
+"venue": "univ3",
+"kind": "path",
+"tokens": [
+"0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+"0xdAC17F958D2ee523a2206206994597C13D831ec7"
+],
+"fees": [
+500,
+100
+]
+},
+"blind": true,
+"sym": "crvUSD->USDT",
+"chain": 1
+},
+"1|0x808507121b80c02388fad14726482e061b8da827|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+"spec": {
+"venue": "univ3",
+"kind": "path",
+"tokens": [
+"0x808507121B80c02388fAd14726482e061B8da827",
+"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+],
+"fees": [
+3000,
+100
+]
+},
+"blind": true,
+"sym": "PENDLE->USDC",
+"chain": 1
+},
+"1|0x57b946008913b82e4df85f501cbaed910e58d26c|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+"spec": {
+"venue": "univ2",
+"router": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+"path": [
+"0x57B946008913B82E4dF85f501cbAeD910e58D26C",
+"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+]
+},
+"blind": true,
+"sym": "POND->USDC",
+"chain": 1
+}
+}
