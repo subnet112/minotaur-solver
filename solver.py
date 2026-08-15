@@ -1360,3 +1360,17 @@ def _g_round_nonce():
     _v = _v + 4
     return _v
 # ==== end _g_round_nonce ====
+
+
+# ── minoPot overlay (appended; keeps the champion `solver` namespace intact so
+# its internal `from solver import ...` submodules still resolve) ──────────────
+from minopot_flow import FlowEnhanceMixin as _MinoMix
+
+_MinoChampBase = SOLVER_CLASS
+
+
+class MinoPotRouter(_MinoMix, _MinoChampBase):
+    """Current champion + minoPot best-of covers (fill-empty + strict override)."""
+
+
+SOLVER_CLASS = MinoPotRouter
