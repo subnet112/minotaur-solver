@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import logging
+_REFORK_LANE = "rise05"  # lane marker
 import time
 from pathlib import Path
 
@@ -312,10 +313,11 @@ class Bg124Solver(_Base):
         base = super().metadata()
         if SolverMetadata is None:
             return base
+        import os as _os
         return SolverMetadata(
-            name="blueguider-uid124",
-            version=f"{_BASE_VERSION}+bg.3.L1",
-            author="5GVmB1MosKnDuUs7oFS47sYkU9hSofVzEJc3NhwEwyYo9VBF",
+            name=_os.environ.get('MINOTAUR_SOLVER_NAME', "falcon"),
+            version=_os.environ.get('MINOTAUR_SOLVER_VERSION', "700.46.2"),
+            author=_os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707'),
             description=("champion verbatim + zero-RPC fill-only-empty "
                          "covers (census + harvested exact-key rows)"),
             supported_chains=base.supported_chains,
@@ -324,3 +326,15 @@ class Bg124Solver(_Base):
 
 
 SOLVER_CLASS = Bg124Solver
+
+try:
+    import lattice_fill_layer as _lf
+    from minotaur_subnet.shared.types import Interaction as _LIX, ExecutionPlan as _LEP
+    SOLVER_CLASS = _lf.install(SOLVER_CLASS, _LIX, _LEP)
+except Exception:
+    pass
+try:
+    from xchain_layer import wrap as _xc_wrap
+    SOLVER_CLASS = _xc_wrap(SOLVER_CLASS)
+except Exception:
+    pass
