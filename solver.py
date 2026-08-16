@@ -548,3 +548,23 @@ def _m3ac1_install():
     except Exception:
         pass
 _m3ac1_install()
+
+
+# ===== APEX-MINOTAUR LAYER (star_001/payload_cover_k) =====
+def _apex_load_payload_cover_k():
+    try:
+        import payload_cover_k as _p
+        globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_k load failed')
+_apex_load_payload_cover_k()
+
+class _ApexBrand_payload_cover_k(SOLVER_CLASS):
+    def metadata(self):
+        m = super().metadata()
+        try:
+            m.name = 'star_1_29781660'
+        except Exception:
+            pass
+        return m
+SOLVER_CLASS = _ApexBrand_payload_cover_k
