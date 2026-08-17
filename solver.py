@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import logging
+_REFORK_LANE = "rise06"  # lane marker
 import time
 from pathlib import Path
 
@@ -312,10 +313,11 @@ class Bg124Solver(_Base):
         base = super().metadata()
         if SolverMetadata is None:
             return base
+        import os as _os
         return SolverMetadata(
-            name="blueguider-uid124",
-            version=f"{_BASE_VERSION}+bg.3.L1",
-            author="5GVmB1MosKnDuUs7oFS47sYkU9hSofVzEJc3NhwEwyYo9VBF",
+            name=_os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine"),
+            version=_os.environ.get('MINOTAUR_SOLVER_VERSION', "3.47.0"),
+            author=_os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'),
             description=("champion verbatim + zero-RPC fill-only-empty "
                          "covers (census + harvested exact-key rows)"),
             supported_chains=base.supported_chains,
@@ -334,13 +336,6 @@ def _apex_load_payload_cover_apex():
     except Exception:
         import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
 _apex_load_payload_cover_apex()
-
-class _ApexBrand_payload_cover_apex(SOLVER_CLASS):
-    def metadata(self):
-        m = super().metadata()
-        try:
-            m.name = 'apex_1_29783238'
-        except Exception:
-            pass
-        return m
-SOLVER_CLASS = _ApexBrand_payload_cover_apex
+# _ApexBrand_payload_cover_apex tail removed: it hard-set metadata().name to the foreign
+# brand 'apex_1_29783238'. Effective SOLVER_CLASS = _HybridLayer (apex covers kept), whose
+# metadata() chains to the env-driven Bg124Solver.metadata() so build_lane rewrites per lane.
