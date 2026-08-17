@@ -107,7 +107,7 @@ from lat_wei_ext import _wei
 def _amounts(p):
     return (_wei(p, 'input_amount'), _wei(p, 'min_output_amount'))
 from _mvp_ext import _valid_pair
-from bg124_minota_ext import _amounts  # relocated leaf; see that module
+from bg124_minota_ext import _amounts
 from _mvp_ext import _valid_pair
 
 def _token(p, field):
