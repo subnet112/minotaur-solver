@@ -1303,6 +1303,7 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
             def _dr159():
 
                 def _dz213():
+                    nonlocal extra_best, extra_route, extra_tag
                     for (tgt, cd, kind, tag, route), (ok, ret) in zip(mjobs, mc(mjobs)):
                         if not ok or not ret:
                             continue
@@ -1637,6 +1638,7 @@ class _MinerSolverDR56(_MinerSolverDR11):
             def _dr136():
 
                 def _dz212():
+                    nonlocal ck
                     ck = (int(getattr(state, 'chain_id', 0) or 0), str(p.get('input_token', '') or '').lower(), str(p.get('output_token', '') or '').lower(), str(p.get('input_amount', '') or ''), str(p.get('min_output_amount', '') or ''), str(recip or '').lower())
                 nonlocal ck
                 p = self._normalized_swap_params(intent, state)
@@ -3631,6 +3633,7 @@ class _MinerSolverDR176(_MinerSolverDR123):
             return None
 
     def _generate_plan_impl(self, intent, state, snapshot=None):
+        plan = None
 
         def _dr377():
             try:
@@ -3675,6 +3678,7 @@ class _MinerSolverDR176(_MinerSolverDR123):
                 def _dr22():
 
                     def _dz181():
+                        nonlocal plan
                         if enhanced is not None:
                             plan = enhanced
                         else:
@@ -3724,6 +3728,7 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 def _dr38():
 
                                     def _dz153():
+                                        nonlocal _empty
                                         _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                                         _w3 = self._get_web3(_cid)
                                         if _w3 is not None and _t0 and _t1 and (_cid == _BASE):
@@ -4067,10 +4072,8 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 mids.append(t)
 
                         def _dr324():
-                            nonlocal token
 
                             def _dr109():
-                                nonlocal token
                                 _KG = {_WETH, _USDC, _DAI, _CBBTC, _AERO}
                                 if tin_l in _KG and tout_l in _KG:
                                     for token in (_WETH, _USDC, _DAI, _CBBTC, _AERO):
@@ -4080,8 +4083,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 def _dr222():
 
                                     def _dz152():
-                                        nonlocal token
-                                        nonlocal token
                                         if {tin_l, tout_l} == {_WETH, _USDC}:
                                             for token in (_CBBTC, _DAI, _USDBC):
                                                 add(token)

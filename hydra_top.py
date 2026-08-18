@@ -754,6 +754,7 @@ class MinerSolver(_ChampBase):
                             def _dr31():
 
                                 def _dz122():
+                                    nonlocal q, spec
                                     spec = qcand['spec']
                                     if spec.get('size_pct'):
                                         try:

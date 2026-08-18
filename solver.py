@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import json
 import logging
-_REFORK_LANE = "rise06"  # lane marker
 import time
 from pathlib import Path
 
@@ -313,13 +312,17 @@ class Bg124Solver(_Base):
         base = super().metadata()
         if SolverMetadata is None:
             return base
-        import os as _os
+        # Submission identity. `name` is what the validator shows as
+        # solver_name/display_name; coinage is first-to-coin and hotkey-keyed,
+        # so reusing the incumbent's "blueguider-uid124" from OUR hotkey would
+        # have displayed as "blueguider-uid124-copycat". `author` was likewise
+        # the incumbent's SS58, which is simply not who submits this.
         return SolverMetadata(
-            name=_os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine"),
-            version=_os.environ.get('MINOTAUR_SOLVER_VERSION', "3.47.0"),
-            author=_os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'),
-            description=("champion verbatim + zero-RPC fill-only-empty "
-                         "covers (census + harvested exact-key rows)"),
+            name="mealt",
+            version=f"{_BASE_VERSION}+m3.1",
+            author="5FqfEPFi937maZ9JvxVKF3GZTqPtwihayWsMzgwZeJahYuwA",
+            description=("output covers plus code-quality and budget work on "
+                         "the champion base"),
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types,
         )
@@ -328,14 +331,31 @@ class Bg124Solver(_Base):
 SOLVER_CLASS = Bg124Solver
 
 
-# ===== APEX-MINOTAUR LAYER (apex/payload_cover_apex) =====
+# ===== APEX COVER LAYER (payload_cover_apex) =====
+# Ported from the round-29783238 champion, which added this layer and won with
+# it. Without it we ship the PREVIOUS champion's cover set and are missing the
+# 1900 exact-key rows the current incumbent serves: on every ident where the
+# base plan is empty and the table has a row, the champion delivers and we
+# return nothing. That is a dropped order, which is a hard veto — it outranks
+# every win and every budget number, so it has to be closed first.
+#
+# The layer is additive by construction. _HybridLayer.generate_plan returns the
+# incumbent plan untouched unless the base came back empty (fill) or the ident
+# is in the contested-wins set (replace), and it falls back to the incumbent on
+# any exception. Porting it therefore cannot make us worse than the champion on
+# any order; it can only restore ones we would otherwise drop.
+#
+# The champion's `_ApexBrand_payload_cover_apex` rebrand wrapper is deliberately
+# NOT ported. It overwrites metadata().name with the champion's own coinage, and
+# our submission identity has to stay "mealt" on this hotkey. _HybridLayer
+# subclasses Bg124Solver, so metadata() is inherited unchanged.
 def _apex_load_payload_cover_apex():
     try:
         import payload_cover_apex as _p
         globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
     except Exception:
-        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
+        import logging as _l
+        _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
+
+
 _apex_load_payload_cover_apex()
-# _ApexBrand_payload_cover_apex tail removed: it hard-set metadata().name to the foreign
-# brand 'apex_1_29783238'. Effective SOLVER_CLASS = _HybridLayer (apex covers kept), whose
-# metadata() chains to the env-driven Bg124Solver.metadata() so build_lane rewrites per lane.

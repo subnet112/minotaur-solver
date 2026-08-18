@@ -25,6 +25,8 @@ from __future__ import annotations
 import logging
 
 import bg124_onfork_abi as A
+from bg124_onfork_leaf import (_beats, _best, _corroborated, _curve_row, _num,
+                               _recipient)
 
 logger = logging.getLogger(__name__)
 
@@ -108,15 +110,6 @@ def _curve_census():
     return c
 
 
-def _curve_row(pools, pool, tin, tout):
-    row = pools.get(pool) or {}
-    coins = row.get("coins") or []
-    if tin in coins and tout in coins:
-        return (pool, row.get("kind", "stable"),
-                coins.index(tin), coins.index(tout))
-    return None
-
-
 def _curve_pools(tin, tout):
     """Census pools holding BOTH tokens -> [(pool, kind, i, j)]."""
     c = _curve_census()
@@ -179,31 +172,6 @@ def _quote_all(w3, cands):
             for k, (ok, d) in enumerate(res)]
 
 
-def _best(cands, outs):
-    best_i, best_out = -1, 0
-    for k, got in enumerate(outs):
-        if got > best_out:
-            best_out, best_i = got, k
-    return (cands[best_i][0], best_out) if best_i >= 0 else (None, 0)
-
-
-def _corroborated(outs, best_out):
-    """At least one OTHER venue must independently quote the same order within
-    2x. hydra took the crown on 1 better / 0 WORSE while we lost with 10 better
-    / 3 worse — a single bad order erases any number of wins, so safety beats
-    win count. A lone quote from one thin pool is the signature of both failure
-    modes we hit: the 0.00002x catastrophic regression and the two routes that
-    quoted positive then delivered nothing."""
-    return sum(1 for o in outs if o > 0 and o * 2 >= best_out) >= 2
-
-
-def _num(p, key):
-    try:
-        return int(p.get(key, 0) or 0)
-    except (TypeError, ValueError):
-        return -1
-
-
 def _valid(tin, tout, amt, min_out, chain):
     return (amt > 0 and min_out >= 0 and tin.startswith("0x")
             and tout.startswith("0x") and str(chain) in A.T.get("quoter", {}))
@@ -221,36 +189,11 @@ def _parse(state):
     return p, tin, tout, amt, min_out, chain
 
 
-def _recipient(state, p):
-    return str(getattr(state, "contract_address", "") or p.get("receiver", "")
-               or getattr(state, "owner", "")
-               or "0x0000000000000000000000000000000000000001")
-
-
 def _plan(intent, state, ix, chain):
     ExecutionPlan, _ = _types()
     return ExecutionPlan(intent_id=intent.app_id, interactions=ix,
                          deadline=9999999999, nonce=state.nonce,
                          metadata={"solver": "bg124-onfork", "chain_id": chain})
-
-
-# Must beat the champion's own number by this margin to be worth the override.
-# Calibrated on the real scorecard: our 10 wins beat by 11-66 bps, and the
-# catastrophic regression was 0.00002x, so any sane margin rejects the disaster.
-# Set to the validator's OWN tie band (~10 bps): the reigning champion won the
-# crown on a +11 bps override, which a 15 bps floor would have refused. Anything
-# above the tie band registers as a `win`; below it scores `matched`.
-_WIN_BPS = 10
-
-
-def _beats(out, bar):
-    """Serve ours ONLY if it beats the champion's declared expected_output by a
-    margin. bar == 0 means the champion's plan was empty (pure upside — anything
-    positive wins). This is the whole anti-regression rule: run both routers,
-    keep the better one, and NEVER overwrite a champion plan that is ahead."""
-    if bar <= 0:
-        return out > 0
-    return out * 10000 > bar * (10000 + _WIN_BPS)
 
 
 def _route(solver, state, bar=0):
