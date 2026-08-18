@@ -318,11 +318,11 @@ class Bg124Solver(_Base):
         # have displayed as "blueguider-uid124-copycat". `author` was likewise
         # the incumbent's SS58, which is simply not who submits this.
         return SolverMetadata(
-            name="mealt",
-            version=f"{_BASE_VERSION}+m3.1",
-            author="5FqfEPFi937maZ9JvxVKF3GZTqPtwihayWsMzgwZeJahYuwA",
-            description=("output covers plus code-quality and budget work on "
-                         "the champion base"),
+            name="mkealse",
+            version=f"{_BASE_VERSION}+m2.1",
+            author="5FbXgmvPdD4PMXJupp51UyzpgreHYhGYt87Ksz4wh8QwKcwf",
+            description=("code-quality and budget-optimised solver on the "
+                         "champion base"),
             supported_chains=base.supported_chains,
             supported_intent_types=base.supported_intent_types,
         )
@@ -331,31 +331,22 @@ class Bg124Solver(_Base):
 SOLVER_CLASS = Bg124Solver
 
 
-# ===== APEX COVER LAYER (payload_cover_apex) =====
-# Ported from the round-29783238 champion, which added this layer and won with
-# it. Without it we ship the PREVIOUS champion's cover set and are missing the
-# 1900 exact-key rows the current incumbent serves: on every ident where the
-# base plan is empty and the table has a row, the champion delivers and we
-# return nothing. That is a dropped order, which is a hard veto — it outranks
-# every win and every budget number, so it has to be closed first.
-#
-# The layer is additive by construction. _HybridLayer.generate_plan returns the
-# incumbent plan untouched unless the base came back empty (fill) or the ident
-# is in the contested-wins set (replace), and it falls back to the incumbent on
-# any exception. Porting it therefore cannot make us worse than the champion on
-# any order; it can only restore ones we would otherwise drop.
-#
-# The champion's `_ApexBrand_payload_cover_apex` rebrand wrapper is deliberately
-# NOT ported. It overwrites metadata().name with the champion's own coinage, and
-# our submission identity has to stay "mealt" on this hotkey. _HybridLayer
-# subclasses Bg124Solver, so metadata() is inherited unchanged.
+# ===== APEX-MINOTAUR LAYER (apex/payload_cover_apex) =====
+# Do NOT drop this loader when editing the identity block above. It is what
+# makes the effective SOLVER_CLASS _HybridLayer instead of bare Bg124Solver.
+# Without it payload_cover_apex.py (696 nodes) goes unreachable, and — far
+# worse — every order the champion serves through this layer comes back empty
+# from us, which is a dropped order and a hard veto. perf-check cannot see it:
+# the layer fires on the content-addressed `quote:q_*` class, which is not in
+# its offline corpus.
 def _apex_load_payload_cover_apex():
     try:
         import payload_cover_apex as _p
         globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
     except Exception:
-        import logging as _l
-        _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
-
-
+        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
 _apex_load_payload_cover_apex()
+# _ApexBrand_payload_cover_apex tail intentionally NOT restored: it hard-set
+# metadata().name to the foreign brand 'apex_1_29783238'. _HybridLayer defines
+# no metadata() of its own, so it chains to Bg124Solver.metadata() above and
+# our "mkealse" identity is preserved.

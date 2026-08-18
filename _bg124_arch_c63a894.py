@@ -81,8 +81,16 @@ class MinerSolver(_Base):
             return None
         return (tin, tout, amt, chain, app)
 
-    def _our_route(self, intent, state):
-        """Our best route: (plan, exact_quoted_out) or (None, 0)."""
+    def _rb1_our_route_safe(self, intent, state):
+        """Our best route: (plan, exact_quoted_out) or (None, 0).
+
+        `_rb1_`-prefixed on purpose: the apex layer stacked above this one
+        (_bg124_arch_9645f01) derives from this class and defines its own
+        `_our_route(self, pool_states, token_in, token_out, amount_in,
+        chain_id)`. A bare `_our_route` here loses every `self.` dispatch to
+        that 5-arg override and raises TypeError out of `_cover_or`. Keep the
+        name unique to whichever layer owns it.
+        """
         try:
             return self._rb1_our_route(intent, state)
         except Exception:
@@ -176,7 +184,7 @@ class MinerSolver(_Base):
         sees pairs that one also failed, so it can never displace a route that
         would otherwise have served.
         """
-        our_plan, _ = self._our_route(intent, state)
+        our_plan, _ = self._rb1_our_route_safe(intent, state)
         if our_plan is not None:
             return our_plan
         return self._ext_cover(intent, state) or base

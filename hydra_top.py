@@ -765,7 +765,6 @@ class MinerSolver(_ChampBase):
                                                 logger.info('[hydra] dynamic push size %s (leg1 %s)', spec['swap_amount'], q)
                                         except Exception:
                                             logger.exception('[hydra] leg1 quote failed; frozen size')
-                                nonlocal q, spec
                                 builder = _build_maverick_push_ix if qcand['venue'] == 'maverick_push' else _build_v2_push_ix
                                 _dz122()
                                 return builder

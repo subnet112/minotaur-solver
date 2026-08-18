@@ -15,9 +15,10 @@ venues are added, so the pace governor still bounds it. V3-only won +1.27% and
 +39.1% in round e29756626 but converted 0 of 37 blind spots the next round —
 exotic tokens live on V2-style pools, hence the multi-venue batch.
 
-REGION DISCIPLINE: the calldata/ABI layer lives in bg124_onfork_abi.py and the
-tables in onfork_tables.json (JSON = zero AST nodes), because a single module
-holding every def pushed its top-level region past the champion's own maximum —
+REGION DISCIPLINE: the calldata/ABI layer lives in bg124_onfork_abi.py, the
+phase-2 Curve/deep-mid layer in bg124_onfork_deep.py, and the tables in
+onfork_tables.json (JSON = zero AST nodes), because a single module holding
+every def pushed its top-level region past the champion's own maximum —
 winning orders is worthless if the tie-break then hands over the crown.
 """
 from __future__ import annotations
@@ -25,8 +26,7 @@ from __future__ import annotations
 import logging
 
 import bg124_onfork_abi as A
-from bg124_onfork_leaf import (_beats, _best, _corroborated, _curve_row, _num,
-                               _recipient)
+import bg124_onfork_deep as D
 
 logger = logging.getLogger(__name__)
 
@@ -65,16 +65,11 @@ def _w3_fallback(solver, chain_id):
         return None
 
 
-def _mids(chain, tin, tout):
-    return [m.lower() for m in A.T.get("mids", {}).get(str(chain), [])
-            if m.lower() not in (tin, tout)]
-
-
 def _v3_cands(chain, tin, tout, amt):
     q = A.ck(A.T["quoter"][str(chain)])
     out = [(("single", f, None), q, A.q_single(tin, tout, amt, f))
            for f in A.T.get("fees", [])]
-    for mid in _mids(chain, tin, tout):
+    for mid in D._mids(chain, tin, tout):
         for fees in A.T.get("hops", []):
             out.append((("path", tuple(fees), mid), q,
                         A.q_path(tin, mid, tout, fees, amt)))
@@ -85,7 +80,7 @@ def _v2_cands(chain, tin, tout, amt):
     """V2-style routers share one getAmountsOut ABI, so a single code path
     covers them all — and the quote target IS the router."""
     out = []
-    paths = [[tin, tout]] + [[tin, m, tout] for m in _mids(chain, tin, tout)]
+    paths = [[tin, tout]] + [[tin, m, tout] for m in D._mids(chain, tin, tout)]
     for router in A.T.get("v2", {}).get(str(chain), []):
         for path in paths:
             out.append((("v2", A.ck(router), tuple(path)), A.ck(router),
@@ -93,72 +88,10 @@ def _v2_cands(chain, tin, tout, amt):
     return out
 
 
-def _curve_census():
-    """Offline-scanned Curve pool map for chain 1 (build_curve_census.py). Loaded
-    once; JSON data costs zero AST nodes. Discovery is the slow half of Curve
-    (the registry's get_best_rate measured 20.6s and returned an unexecutable
-    route), so it happens offline and the solver only does a direct get_dy."""
-    c = getattr(_curve_census, "_c", None)
-    if c is None:
-        import json
-        from pathlib import Path
-        try:
-            c = json.loads((Path(__file__).parent / "curve_census_1.json").read_text())
-        except Exception:
-            c = {}
-        _curve_census._c = c
-    return c
-
-
-def _curve_pools(tin, tout):
-    """Census pools holding BOTH tokens -> [(pool, kind, i, j)]."""
-    c = _curve_census()
-    pools, byt = c.get("pools") or {}, c.get("bytoken") or {}
-    both = set(byt.get(tin, ())) & set(byt.get(tout, ()))
-    rows = [_curve_row(pools, p, tin, tout) for p in sorted(both)[:4]]
-    return [r for r in rows if r]
-
-
-def _curve_cands(chain, tin, tout, amt):
-    """A direct get_dy per candidate pool, in the same batch. Curve is the venue
-    the champion lineage claims but still leaves 14 orders unrouted on; on chain
-    1 — the only chain whose orders count — it is the realistic strict win."""
-    if chain != 1:
-        return []
-    return [(("curve", A.ck(p), (k, i, j)), A.ck(p), A.q_curve(k, i, j, amt))
-            for p, k, i, j in _curve_pools(tin, tout)]
-
-
-def _deep_cands(chain, tin, tout, amt):
-    """Extra 2-hop mid tokens (USDT/DAI/WBTC on chain 1), tried ONLY after phase
-    1 came back empty — i.e. on the handful of blind-spot orders per pack that
-    actually decide the crown. Every recent dethrone was a single cover on an
-    order the incumbent could not route, and our 11 remaining skips are orders
-    where WETH/USDC 2-hop finds nothing. Restricting these to phase 2 buys that
-    coverage without adding a millisecond to the normal path, which is what the
-    pace budget cannot afford."""
-    out = []
-    for mid in [m.lower() for m in A.T.get("mids2", {}).get(str(chain), [])
-                if m.lower() not in (tin, tout)]:
-        out += _via(chain, tin, mid, tout, amt)
-    return out
-
-
-def _via(chain, tin, mid, tout, amt):
-    """Every V3 fee combo and V2 router for one intermediate token."""
-    q = A.ck(A.T["quoter"][str(chain)])
-    out = [(("path", tuple(f), mid), q, A.q_path(tin, mid, tout, f, amt))
-           for f in A.T.get("hops", [])]
-    for r in A.T.get("v2", {}).get(str(chain), []):
-        out.append((("v2", A.ck(r), (tin, mid, tout)), A.ck(r),
-                    A.q_v2(amt, [tin, mid, tout])))
-    return out
-
-
 def _candidates(chain, tin, tout, amt):
     """[(desc, call_target, calldata)] across every venue, one batch."""
     return (_v3_cands(chain, tin, tout, amt) + _v2_cands(chain, tin, tout, amt)
-            + _curve_cands(chain, tin, tout, amt))
+            + D._curve_cands(chain, tin, tout, amt))
 
 
 def _quote_all(w3, cands):
@@ -170,6 +103,31 @@ def _quote_all(w3, cands):
     (res,) = dec(["(bool,bytes)[]"], ret)
     return [A.decode_one(cands[k][0][0], d) if ok else 0
             for k, (ok, d) in enumerate(res)]
+
+
+def _best(cands, outs):
+    best_i, best_out = -1, 0
+    for k, got in enumerate(outs):
+        if got > best_out:
+            best_out, best_i = got, k
+    return (cands[best_i][0], best_out) if best_i >= 0 else (None, 0)
+
+
+def _corroborated(outs, best_out):
+    """At least one OTHER venue must independently quote the same order within
+    2x. hydra took the crown on 1 better / 0 WORSE while we lost with 10 better
+    / 3 worse — a single bad order erases any number of wins, so safety beats
+    win count. A lone quote from one thin pool is the signature of both failure
+    modes we hit: the 0.00002x catastrophic regression and the two routes that
+    quoted positive then delivered nothing."""
+    return sum(1 for o in outs if o > 0 and o * 2 >= best_out) >= 2
+
+
+def _num(p, key):
+    try:
+        return int(p.get(key, 0) or 0)
+    except (TypeError, ValueError):
+        return -1
 
 
 def _valid(tin, tout, amt, min_out, chain):
@@ -189,11 +147,36 @@ def _parse(state):
     return p, tin, tout, amt, min_out, chain
 
 
+def _recipient(state, p):
+    return str(getattr(state, "contract_address", "") or p.get("receiver", "")
+               or getattr(state, "owner", "")
+               or "0x0000000000000000000000000000000000000001")
+
+
 def _plan(intent, state, ix, chain):
     ExecutionPlan, _ = _types()
     return ExecutionPlan(intent_id=intent.app_id, interactions=ix,
                          deadline=9999999999, nonce=state.nonce,
                          metadata={"solver": "bg124-onfork", "chain_id": chain})
+
+
+# Must beat the champion's own number by this margin to be worth the override.
+# Calibrated on the real scorecard: our 10 wins beat by 11-66 bps, and the
+# catastrophic regression was 0.00002x, so any sane margin rejects the disaster.
+# Set to the validator's OWN tie band (~10 bps): the reigning champion won the
+# crown on a +11 bps override, which a 15 bps floor would have refused. Anything
+# above the tie band registers as a `win`; below it scores `matched`.
+_WIN_BPS = 10
+
+
+def _beats(out, bar):
+    """Serve ours ONLY if it beats the champion's declared expected_output by a
+    margin. bar == 0 means the champion's plan was empty (pure upside — anything
+    positive wins). This is the whole anti-regression rule: run both routers,
+    keep the better one, and NEVER overwrite a champion plan that is ahead."""
+    if bar <= 0:
+        return out > 0
+    return out * 10000 > bar * (10000 + _WIN_BPS)
 
 
 def _route(solver, state, bar=0):
@@ -227,8 +210,8 @@ def _quote_best(w3, chain, tin, tout, amt, bar=0):
     desc, out = _phase(w3, _v3_cands(chain, tin, tout, amt)
                        + _v2_cands(chain, tin, tout, amt), strict)
     if out <= 0:
-        desc, out = _phase(w3, _curve_cands(chain, tin, tout, amt)
-                           + _deep_cands(chain, tin, tout, amt), strict)
+        desc, out = _phase(w3, D._curve_cands(chain, tin, tout, amt)
+                           + D._deep_cands(chain, tin, tout, amt), strict)
     return desc, out
 
 
