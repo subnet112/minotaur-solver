@@ -8,6 +8,5 @@ cannot change resolution of any name it uses.
 """
 from lat_wei_ext import _wei
 
-
 def _amounts(p):
     return (_wei(p, 'input_amount'), _wei(p, 'min_output_amount'))
