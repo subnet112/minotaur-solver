@@ -22,23 +22,19 @@ still resolves.
 """
 from __future__ import annotations
 
-
 def _curve_row(pools, pool, tin, tout):
     row = pools.get(pool) or {}
-    coins = row.get("coins") or []
+    coins = row.get('coins') or []
     if tin in coins and tout in coins:
-        return (pool, row.get("kind", "stable"),
-                coins.index(tin), coins.index(tout))
+        return (pool, row.get('kind', 'stable'), coins.index(tin), coins.index(tout))
     return None
 
-
 def _best(cands, outs):
-    best_i, best_out = -1, 0
+    best_i, best_out = (-1, 0)
     for k, got in enumerate(outs):
         if got > best_out:
-            best_out, best_i = got, k
+            best_out, best_i = (got, k)
     return (cands[best_i][0], best_out) if best_i >= 0 else (None, 0)
-
 
 def _corroborated(outs, best_out):
     """At least one OTHER venue must independently quote the same order within
@@ -47,8 +43,7 @@ def _corroborated(outs, best_out):
     win count. A lone quote from one thin pool is the signature of both failure
     modes we hit: the 0.00002x catastrophic regression and the two routes that
     quoted positive then delivered nothing."""
-    return sum(1 for o in outs if o > 0 and o * 2 >= best_out) >= 2
-
+    return sum((1 for o in outs if o > 0 and o * 2 >= best_out)) >= 2
 
 def _num(p, key):
     try:
@@ -56,21 +51,9 @@ def _num(p, key):
     except (TypeError, ValueError):
         return -1
 
-
 def _recipient(state, p):
-    return str(getattr(state, "contract_address", "") or p.get("receiver", "")
-               or getattr(state, "owner", "")
-               or "0x0000000000000000000000000000000000000001")
-
-
-# Must beat the champion's own number by this margin to be worth the override.
-# Calibrated on the real scorecard: our 10 wins beat by 11-66 bps, and the
-# catastrophic regression was 0.00002x, so any sane margin rejects the disaster.
-# Set to the validator's OWN tie band (~10 bps): the reigning champion won the
-# crown on a +11 bps override, which a 15 bps floor would have refused. Anything
-# above the tie band registers as a `win`; below it scores `matched`.
+    return str(getattr(state, 'contract_address', '') or p.get('receiver', '') or getattr(state, 'owner', '') or '0x0000000000000000000000000000000000000001')
 _WIN_BPS = 10
-
 
 def _beats(out, bar):
     """Serve ours ONLY if it beats the champion's declared expected_output by a
