@@ -350,3 +350,23 @@ _apex_load_payload_cover_apex()
 # metadata().name to the foreign brand 'apex_1_29783238'. _HybridLayer defines
 # no metadata() of its own, so it chains to Bg124Solver.metadata() above and
 # our "mkealse" identity is preserved.
+
+
+# ===== APEX-MINOTAUR LAYER (star_001/payload_cover_k) =====
+def _apex_load_payload_cover_k():
+    try:
+        import payload_cover_k as _p
+        globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_k load failed')
+_apex_load_payload_cover_k()
+
+class _ApexBrand_payload_cover_k(SOLVER_CLASS):
+    def metadata(self):
+        m = super().metadata()
+        try:
+            m.name = 'star_1_29784159'
+        except Exception:
+            pass
+        return m
+SOLVER_CLASS = _ApexBrand_payload_cover_k
