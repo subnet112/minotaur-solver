@@ -1,2 +1,0 @@
-# Miner solver dependencies.
-web3>=6.15.0
