@@ -3746,10 +3746,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 def _dr38():
 
                                     def _dz153():
-                                        # nonlocal is load-bearing: without it the `_empty = True`
-                                        # below stays local to _dz153, which is called for effect
-                                        # only, so a getPool() miss (route points at a pool that
-                                        # does not exist) never reaches the fallback at `if _empty`.
                                         nonlocal _empty
                                         _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                                         _w3 = self._get_web3(_cid)
