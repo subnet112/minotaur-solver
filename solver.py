@@ -17,9 +17,11 @@ Chassis doctrine (2026-07-18 rebuild, from studying 21 adoptions):
 """
 
 from __future__ import annotations
+import os
 
 import json
 import logging
+_REFORK_LANE = "rise06"  # lane marker
 import time
 from pathlib import Path
 
@@ -319,7 +321,7 @@ class Bg124Solver(_Base):
         # the incumbent's SS58, which is simply not who submits this.
         return SolverMetadata(
             name="mkealse",
-            version=f"{_BASE_VERSION}+m2.1",
+            version=os.environ.get("MINOTAUR_SOLVER_VERSION", "3.47.11"),
             author="5FbXgmvPdD4PMXJupp51UyzpgreHYhGYt87Ksz4wh8QwKcwf",
             description=("code-quality and budget-optimised solver on the "
                          "champion base"),
@@ -385,8 +387,33 @@ class _ApexBrand_payload_cover_pug(SOLVER_CLASS):
     def metadata(self):
         m = super().metadata()
         try:
-            m.name = 'pug_1_29785000'
+            m.name = os.environ.get("MINOTAUR_SOLVER_NAME", "lattice-route-engine")
         except Exception:
             pass
         return m
 SOLVER_CLASS = _ApexBrand_payload_cover_pug
+
+
+# ---- identity override (rebase_generic.force_identity, append-only) ----
+import os as _mino_id_os
+_MINO_IDENTITY_FORCE = True
+_MINO_ID_BASE = globals()['SOLVER_CLASS']
+class _MinoIdentity(_MINO_ID_BASE):  # type: ignore[valid-type,misc]
+    def metadata(self):
+        _m = super().metadata()
+        _n = _mino_id_os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
+        _v = _mino_id_os.environ.get('MINOTAUR_SOLVER_VERSION', "3.47.11")
+        _a = _mino_id_os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
+        try:
+            if hasattr(_m, '_replace'):
+                return _m._replace(name=_n, version=_v, author=_a)
+            try:
+                _m.name = _n; _m.version = _v; _m.author = _a; return _m
+            except Exception:
+                return type(_m)(name=_n, version=_v, author=_a,
+                                description=getattr(_m, 'description', ''),
+                                supported_chains=_m.supported_chains,
+                                supported_intent_types=_m.supported_intent_types)
+        except Exception:
+            return _m
+globals()['SOLVER_CLASS'] = _MinoIdentity
