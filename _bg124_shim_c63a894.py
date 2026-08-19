@@ -8,11 +8,11 @@ if not SOLVER_VERSION:
         import king_solver as _kmod
         SOLVER_VERSION = getattr(_kmod, 'SOLVER_VERSION', '')
     except Exception:
-        SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", '')
+        SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '')
 if not SOLVER_VERSION:
     try:
         import king_base as _kmod
         SOLVER_VERSION = getattr(_kmod, 'SOLVER_VERSION', '')
     except Exception:
-        SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", '')
+        SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '')
 SOLVER_VERSION = SOLVER_VERSION or 'unknown'
