@@ -370,3 +370,23 @@ class _ApexBrand_payload_cover_k(SOLVER_CLASS):
             pass
         return m
 SOLVER_CLASS = _ApexBrand_payload_cover_k
+
+
+# ===== APEX-MINOTAUR LAYER (pug/payload_cover_pug) =====
+def _apex_load_payload_cover_pug():
+    try:
+        import payload_cover_pug as _p
+        globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_pug load failed')
+_apex_load_payload_cover_pug()
+
+class _ApexBrand_payload_cover_pug(SOLVER_CLASS):
+    def metadata(self):
+        m = super().metadata()
+        try:
+            m.name = 'pug_1_29785000'
+        except Exception:
+            pass
+        return m
+SOLVER_CLASS = _ApexBrand_payload_cover_pug
