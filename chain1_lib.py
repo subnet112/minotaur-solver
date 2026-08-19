@@ -102,10 +102,9 @@ def _build(route, tin, amt, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX
     leg = _swap_leg(route, amt, rcpt)
     return _approves(tin, amt, chain_id) + [_IX(target=_ROUTER, value='0', call_data=leg, chain_id=chain_id)]
-from bg124_minota_ext import _amounts  # relocated leaf; see that module
+from bg124_minota_ext import _amounts
 from _mvp_ext import _valid_pair
-from bg124_minota_ext_v2 import _token  # relocated leaf; see that module
-
+from bg124_minota_ext_v2 import _token
 
 def _params(s, intent, state):
     p = s._normalized_swap_params(intent, state)
