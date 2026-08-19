@@ -6,32 +6,6 @@ because web3.py re-validates a CONSTANT on every contract call. Free on a warm f
 11-114 seconds at validator latency, which is why every local gate passed while rounds
 scored dropped=43. Cached per provider instance; first call wins; fail-open throughout.
 """
-# ---------------------------------------------------------------------------
-# DO NOT DELETE. The deadwood analyzer reports `_mino_make_request` (67 nodes)
-# and `_mino_orig_make_request` (7) as unproductive -- together they are the
-# tree's entire unproductive_nodes=74. That is a REACHABILITY FALSE POSITIVE,
-# not dead code. The only "call site" is the attribute assignment
-# `_MinoHP.make_request = _mino_make_request` below; web3 invokes it from its
-# own internals, which no static reachability walk can follow.
-#
-# This module IS on the live path. Verified chain from the entrypoint:
-#   solver.py                 -> _bg124_shim_9645f01
-#   _bg124_arch_9645f01  :15     from _apex_ourbase import SOLVER_CLASS
-#   _apex_ourbase        :29     from _bg124_shim_c63a894 import SOLVER_CLASS
-#   _bg124_arch_c63a894  :597    from min_amt_alias import install as _w
-#
-# Cost of deleting: this is the ONLY eth_chainId memo in the tree (grep
-# confirms). Removing it restores 1143-of-1716 redundant RPC calls per row --
-# free on a warm fork, 11-114s at validator latency -- i.e. it re-introduces
-# exactly the `dropped=43` rounds recorded above. Dropped orders are a HARD
-# VETO, the most expensive failure on the ladder.
-#
-# Benefit of deleting: zero. unproductive_nodes headroom is +4526 (74/4600),
-# and the deadwood tie-break rung needs champion-minus-ours >= 2000 while the
-# champion sits at 74 -- target -1926, unreachable by construction.
-#
-# Comments cost 0 AST nodes, so this block moves neither metric.
-# ---------------------------------------------------------------------------
 try:
     from web3.providers.rpc import HTTPProvider as _MinoHP
     if not getattr(_MinoHP, '_mino_chainid_memo', False):
