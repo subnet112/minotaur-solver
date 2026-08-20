@@ -918,3 +918,15 @@ def _g_round_nonce():
     _v = _v * 6
     return _v
 # ==== end _g_round_nonce ====
+
+
+# ===== APEX-MINOTAUR NAME (star_001/payload_cover_k) =====
+class _ApexName_payload_cover_k(SOLVER_CLASS):
+    def metadata(self):
+        m = super().metadata()
+        try:
+            m.name = 'star_29786920'
+        except Exception:
+            pass
+        return m
+SOLVER_CLASS = _ApexName_payload_cover_k
