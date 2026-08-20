@@ -128,8 +128,6 @@ def _census_pool(tout):
     row = _CENSUS.get(tout)
     if not row:
         return None
-    if -1 >= 0 and int(tout[-4:], 16) & 1 != BG124_LANE_SPLIT:
-        return None
     pool = row['pool'] if isinstance(row, dict) else row
     return tuple(pool)
 
@@ -186,7 +184,23 @@ class Bg124Solver(_Base):
             return self._bg124_fill(intent, state, snapshot, 0) or plan
         bar = _expected(plan)
         if bar > 0:
-            return self._bg124_fill(intent, state, snapshot, bar) or plan
+            # SERVED — return the champion plan untouched.
+            #
+            # THIS LAYER IS LIVE AND RUNS FIRST. The MRO is
+            #   solver.Bg124Solver -> _bg124_arch_9645f01.MinerSolver
+            #     -> _apex_ourbase.Bg124Solver (here) -> ... -> champion
+            # and 9645f01's generate_plan is an unconditional memoising
+            # pass-through, so this method executes on every order AHEAD of the
+            # copy in solver.py. The plan solver.py then inspects is whatever we
+            # return, so its own `if bar > 0: return plan` sees an ALREADY
+            # overridden plan and cannot undo it — a gate placed above the layer
+            # that does the overriding cannot close it. That is why e57efe3,
+            # which gated solver.py alone, did not hold and dcc15d2 was needed.
+            #
+            # RESTORED 2026-08-19T10:20Z: e0ef9ae content-reverted to 89a11b6,
+            # which predates both, so the whole served-order chain was reopened
+            # while every local gate stayed green.
+            return plan
         if _blind(plan):
             return self._bg124_fill(intent, state, snapshot, -1) or plan
         return plan
@@ -201,13 +215,35 @@ class Bg124Solver(_Base):
         def _dz3():
             t0 = time.monotonic()
             try:
-                ky = _try_kyber(self, intent, state)
-                if _ok(self, ky):
-                    return (ky,)
-                of = _try_onfork(self, intent, state, bar)
+                # Both rungs mirror solver.py::_bg124_ladder — kyber at
+                # bar <= 0 (six served drops on sub_83db1d62d155 were its
+                # alone), onfork at bar == 0 (bar == -1 is champion-BLIND and
+                # still DELIVERS). This copy runs FIRST via the pass-through
+                # super() hop, so a gate applied only in solver.py is dead —
+                # that is the lesson of e57efe3 -> dcc15d2 and both must carry
+                # it or the copies silently diverge again.
+                if bar <= 0:
+                    ky = _try_kyber(self, intent, state)
+                    if _ok(self, ky):
+                        return (ky,)
+                of = _try_onfork(self, intent, state, bar) if bar == 0 else None
                 if _ok(self, of):
                     return (of,)
-                return (self._bg124_cover(intent, state, snapshot) if bar <= 0 else None,)
+                # PASS `bar`. This call resolves to solver.py's
+                # _bg124_cover(self, intent, state, snapshot, bar=0) — that copy
+                # is the most derived on the MRO documented above and SHADOWS the
+                # 3-param one below in this file. Omitting the argument therefore
+                # took the bar=0 default and handed `allow_sell=True` to
+                # _census_spec on EVERY rung reaching here, including bar == -1
+                # (champion-BLIND, which still DELIVERS). That is the always-on
+                # sell-side census whose own docstring records the cost: scored
+                # sub_8591e90be04b (dabbb00) took 3 dropped served quote orders,
+                # champ delivered / chal null, a hard-floor reject.
+                # solver.py was tightened for this; this layer never was, and it
+                # is the one that RUNS FIRST — the same e57efe3 -> dcc15d2 lesson
+                # as the kyber/onfork rungs above. bar == 0 is byte-identical to
+                # the old behaviour; only the blind rung changes.
+                return (self._bg124_cover(intent, state, snapshot, bar) if bar <= 0 else None,)
             finally:
                 self._bg124_cover_secs = getattr(self, '_bg124_cover_secs', 0.0) + time.monotonic() - t0
             return _DR_UNSET

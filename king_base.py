@@ -61,9 +61,9 @@ def _dr142():
     def _dr31():
 
         def _dz248():
-            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
+            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
             SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
-            SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "MichaelDev84")
+            SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
             _FAST_DIRECT_INPUTS = frozenset({_USDBC})
             _HOLE_SPEND_CAPS = {'0x0963a1abaf36ca88c21032b82e479353126a1c4b': 1000000}
             _UR_CONTRACT_BALANCE = 1 << 255
@@ -1295,6 +1295,7 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
             return _dr380
 
     def _swq_mav(self, mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, mc, _extras, extra_best, extra_tag, extra_route):
+        from eth_abi import decode as _dec
         if mav_pools:
             token_a_in = tin.lower() == lo.lower()
             tick = 2147483647 if token_a_in else -2147483648
@@ -1304,6 +1305,8 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
 
                 def _dz213():
                     nonlocal extra_best, extra_route, extra_tag
+                    _dyn = getattr(self, '_dyn_order_budget', None)
+                    _rankable = _dyn is None or _dyn >= _SWEEP_VERIFY_MIN_S
                     for (tgt, cd, kind, tag, route), (ok, ret) in zip(mjobs, mc(mjobs)):
                         if not ok or not ret:
                             continue
@@ -1312,7 +1315,7 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
                         except Exception:
                             continue
                         _extras.append((out, tag, route))
-                        if out > extra_best:
+                        if _rankable and out > extra_best:
                             extra_best, extra_tag, extra_route = (out, tag, route)
                 nonlocal extra_best, extra_route, extra_tag
                 try:
@@ -1631,25 +1634,7 @@ class _MinerSolverDR56(_MinerSolverDR11):
         repeat is ZERO-regression and frees budget to reach the tail. The key
         includes recipient (the swap calldata embeds it — a wrong recipient
         would send output past the app's _gained() → 0), so only a truly
-        identical order reuses; everything else recomputes.
-
-        The memo above was DEAD until this fix: `_dz212` rebound `ck` without a
-        `nonlocal`, so the key never escaped it, `ck` stayed None, the lookup
-        always missed and the store was skipped by `if ck is not None`. Every
-        duplicate re-ran full discovery — i.e. the tail-drop this docstring
-        describes was never actually prevented. The champion still carries it.
-
-        The key also gains four fields the original omitted, each of which
-        provably reaches the shipped plan, so a hit now equals a recompute:
-          app_id / nonce          stamped onto ExecutionPlan as intent_id and
-                                  nonce; without them a hit returns a plan
-                                  attributed to the FIRST order of the pair.
-          platform_fee_*          _fee_params() merges these from raw_params
-                                  into _effective_swap_amount(), which sets
-                                  amount_in — so they change the CALLDATA.
-        Widening cannot cost a hit on the live corpus (all rows share one
-        app_id), and the whole block stays inside `except: ck = None`, so any
-        failure degrades to exactly today's behaviour: no caching."""
+        identical order reuses; everything else recomputes."""
         ck = None
         try:
 
@@ -1657,11 +1642,10 @@ class _MinerSolverDR56(_MinerSolverDR11):
 
                 def _dz212():
                     nonlocal ck
-                    ck = (int(getattr(state, 'chain_id', 0) or 0), str(p.get('input_token', '') or '').lower(), str(p.get('output_token', '') or '').lower(), str(p.get('input_amount', '') or ''), str(p.get('min_output_amount', '') or ''), str(recip or '').lower(), str(getattr(intent, 'app_id', '') or ''), int(getattr(state, 'nonce', 0) or 0), str(fee.get('platform_fee_wei', '') or ''), str(fee.get('platform_fee_token', '') or '').lower())
+                    ck = (int(getattr(state, 'chain_id', 0) or 0), str(p.get('input_token', '') or '').lower(), str(p.get('output_token', '') or '').lower(), str(p.get('input_amount', '') or ''), str(p.get('min_output_amount', '') or ''), str(recip or '').lower())
                 nonlocal ck
                 p = self._normalized_swap_params(intent, state)
                 recip = state.contract_address or p.get('receiver') or getattr(state, 'owner', '')
-                fee = self._fee_params(state, p)
                 _dz212()
             _dr136()
             hit = self.__dict__.setdefault('_plan_cache', {}).get(ck)
@@ -3652,6 +3636,7 @@ class _MinerSolverDR176(_MinerSolverDR123):
             return None
 
     def _generate_plan_impl(self, intent, state, snapshot=None):
+        plan = None
 
         def _dr377():
             try:
@@ -3746,10 +3731,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 def _dr38():
 
                                     def _dz153():
-                                        # nonlocal is load-bearing: without it the `_empty = True`
-                                        # below stays local to _dz153, which is called for effect
-                                        # only, so a getPool() miss (route points at a pool that
-                                        # does not exist) never reaches the fallback at `if _empty`.
                                         nonlocal _empty
                                         _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                                         _w3 = self._get_web3(_cid)

@@ -26,6 +26,8 @@ def _router_for(spec, venue):
     return (_ROUTERS.get(cid) or {}).get(venue)
 
 def _v3_swap_cd(spec, rcpt) -> str:
+    from eth_abi import encode as _enc
+    from eth_utils import keccak as _keccak, to_checksum_address as _ck
 
     def _dz72():
         nonlocal args, sel

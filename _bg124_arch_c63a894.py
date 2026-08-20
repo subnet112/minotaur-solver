@@ -27,7 +27,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 import cover_ext as _ext
 import router_cover as _rc
 WIN_MARGIN_BPS = 30
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "MichaelDev84")
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
 
 def _safe_pair(tin, tout):
     return (tin or '').lower() in SAFE_TOKENS and (tout or '').lower() in SAFE_TOKENS
@@ -81,15 +81,15 @@ class MinerSolver(_Base):
             return None
         return (tin, tout, amt, chain, app)
 
-    def _rb1_our_route_safe(self, intent, state):
+    def _rb1_cover_route(self, intent, state):
         """Our best route: (plan, exact_quoted_out) or (None, 0).
 
-        `_rb1_`-prefixed on purpose: the apex layer stacked above this one
-        (_bg124_arch_9645f01) derives from this class and defines its own
-        `_our_route(self, pool_states, token_in, token_out, amount_in,
-        chain_id)`. A bare `_our_route` here loses every `self.` dispatch to
-        that 5-arg override and raises TypeError out of `_cover_or`. Keep the
-        name unique to whichever layer owns it.
+        NOT named `_our_route`: `MinerSolver` in _bg124_arch_9645f01 defines an
+        unrelated `_our_route(pool_states, token_in, token_out, amount_in,
+        chain_id)` that wins the MRO, so the old name resolved there and raised
+        TypeError out of `_cover_or` — past this try/except, which sits inside
+        the shadowed function and never ran. That killed the `_ext_cover`
+        fallback on every empty-base row.
         """
         try:
             return self._rb1_our_route(intent, state)
@@ -184,7 +184,7 @@ class MinerSolver(_Base):
         sees pairs that one also failed, so it can never displace a route that
         would otherwise have served.
         """
-        our_plan, _ = self._rb1_our_route_safe(intent, state)
+        our_plan, _ = self._rb1_cover_route(intent, state)
         if our_plan is not None:
             return our_plan
         return self._ext_cover(intent, state) or base
@@ -404,9 +404,9 @@ def _g_install():
 
         def metadata(self):
             base = super().metadata()
-            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
+            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
             ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
-            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', "MichaelDev84")
+            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
             return _GSolverMetadata(name=name, version=ver, author=auth, description='champion coverage + cross-chain bridging', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
     SOLVER_CLASS = _GarnetXChain
 _g_install()

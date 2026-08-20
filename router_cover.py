@@ -7,7 +7,7 @@ re-exported here so its `_rc.<name>` access keeps working unchanged.
 from __future__ import annotations
 _DR_UNSET = object()
 import time
-from venues import DEADLINE, BUDGET_S, _SEARCH_DEADLINE, FEES, CHAINS, AERO_ROUTER, AERO_FACTORY, S_APPROVE, S_V2_SWAP, S_AERO_SWAP, S_CURVE_EXCH_RECV, S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02, eth_call, _approve, _v3_path_bytes, _aero_candidates, q_v3_single, q_v3_path, q_v2, q_aero, q_curve
+from venues import DEADLINE, BUDGET_S, _SEARCH_DEADLINE, FEES, CHAINS, AERO_ROUTER, AERO_FACTORY, S_APPROVE, S_V2_SWAP, S_AERO_SWAP, S_CURVE_EXCH_RECV, S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02, eth_call, _approve, _v3_path_bytes, _aero_candidates, q_v3_single, q_v3_path, q_v2, q_aero, q_curve, _legs_curve
 from eth_abi import encode as _enc
 
 def _scan_v3(rpc, cfg, tin, tout, amt, take, expired):

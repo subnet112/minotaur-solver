@@ -303,6 +303,8 @@ class JamesSolver(_JamesSolverDR17):
         except (TypeError, ValueError):
             return None
 
+        _sup = super()
+
         def _fw2():
 
             def _dr6():
@@ -389,7 +391,7 @@ class JamesSolver(_JamesSolverDR17):
             _dr5 = _dr4()
             if _dr5 is not _DR_UNSET:
                 return (_dr5,)
-            return (super().generate_plan(intent, state, snapshot),)
+            return (_sup.generate_plan(intent, state, snapshot),)
         _fwr2 = _fw2()
         if _fwr2 is not None:
             return _fwr2[0]

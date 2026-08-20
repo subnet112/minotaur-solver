@@ -37,6 +37,7 @@ def gate_est(s, spec, plan, tin, tout, amt, key, chain_id):
     return _gate_margin(s, spec, plan, tin, tout, amt, key, chain_id)
 
 def _build_legacy(spec, tin, tout, amt, mid_q, est, rcpt, chain_id):
+    import hydra_top as _ht
 
     def _dz404():
         import hydra_top as _ht

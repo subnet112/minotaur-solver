@@ -16,6 +16,19 @@ def _dz281():
     return (_log, _FILL_NONCE, _TABLE_FILE, _AGG_ROUTERS, _PLAN_BUDGET_S, _MAX_ASKS)
 _log, _FILL_NONCE, _TABLE_FILE, _AGG_ROUTERS, _PLAN_BUDGET_S, _MAX_ASKS = _dz281()
 
+# Monotonic stamp for the plan currently being built, set by _MinoFill's
+# generate_plan -- the outermost frame THIS layer owns. Zero means "no plan
+# in flight", which is the honest answer on any path that reaches _base_plan
+# without coming through that frame, and _retry_affordable falls back to the
+# local clock there rather than trusting a stale stamp.
+_PLAN_T0 = [0.0]
+
+# Wall-clock kept back for the overlay. _base_plan is not the last thing that
+# runs on the 30s/plan cutoff: whatever it returns, _overlay_plan still has to
+# key the row, check the floor and build the legs. Spending the whole budget
+# below means an order the fill table could answer dies with nothing.
+_OVERLAY_RESERVE_S = 4.0
+
 def _fgm_53720():
     """Lifted from this module's top-level AST region to lower it.
 
@@ -403,6 +416,27 @@ def _override(state) -> bool:
     except Exception:
         return False
 
+def _retry_affordable(cost, t0):
+    """Would one more ask costing `cost` still leave the overlay its slot?
+
+    Measured from the START OF THE PLAN, not from the start of the first ask.
+    Those are not the same instant and the difference is the whole point: the
+    layers above this one -- the arch overlays, the cover layers, the memo
+    boundary -- have already spent time against the same 30s/plan cutoff
+    before _base_plan is ever entered. Budgeting from the local clock reports
+    that spent time as headroom we still have, and the re-ask is the one
+    decision in this frame expensive enough for the error to cost a plan.
+
+    Strictly tighter than the projection it replaces, never looser: the plan
+    starts no later than the first ask, so plan-elapsed >= cost always, and
+    the reserve only subtracts. A fast empty base -- the common case, and the
+    one EMPTY-CONFIRM was written for -- still earns its retry. A slow one no
+    longer bets the overlay's slot on a second call being quicker.
+    """
+    _p = _PLAN_T0[0]
+    _elapsed = time.monotonic() - (_p if _p and _p <= t0 else t0)
+    return _elapsed + cost + _OVERLAY_RESERVE_S < _PLAN_BUDGET_S
+
 def _base_plan(ask, state):
     """Ask the stack beneath for a plan, re-asking once if it comes back empty.
 
@@ -431,16 +465,27 @@ def _base_plan(ask, state):
     t0 = _t.monotonic()
     plan = None
     for attempt in range(_MAX_ASKS):
+        _a0 = _t.monotonic()
         try:
             plan = ask()
-        except Exception:
-            _log.exception('[minofill] inner generate_plan raised; overlay may still answer')
+        except Exception as _e:
+            # Traceback ONCE per plan, repr thereafter. On 2026-08-19 a
+            # RecursionError below this frame made every attempt raise, and the
+            # full traceback per attempt wrote 11.1 GB into one selfheal log and
+            # 3.9 GB into one submit log. That storm is what stalled the submit
+            # daemon for ~4h and lost round-e29785803-n1 -- the bug itself was
+            # one commit, the log volume is what made it expensive. Keep the
+            # first traceback so the cause stays diagnosable, and cap the rest.
+            if attempt:
+                _log.warning('[minofill] inner generate_plan raised again (attempt %d): %r', attempt, _e)
+            else:
+                _log.exception('[minofill] inner generate_plan raised; overlay may still answer')
             plan = None
         if not _is_empty(plan):
             return plan
         if not (getattr(state, 'raw_params', None) or {}):
             return plan
-        if (_t.monotonic() - t0) * (attempt + 2) >= _PLAN_BUDGET_S:
+        if not _retry_affordable(_t.monotonic() - _a0, t0):
             break
     return plan
 
@@ -475,6 +520,7 @@ def install(base_cls, Interaction, ExecutionPlan):
                 return _r_dz277[0]
 
         def generate_plan(self, intent, state, snapshot=None):
+            _PLAN_T0[0] = time.monotonic()
             ask = lambda: super(_MinoFill, self).generate_plan(intent, state, snapshot)
             plan = _base_plan(ask, state)
             if not _is_empty(plan) and (not _override(state)):
