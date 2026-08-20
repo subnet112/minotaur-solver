@@ -61,9 +61,9 @@ def _dr142():
     def _dr31():
 
         def _dz248():
-            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
+            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
             SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
-            SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "MichaelDev84")
+            SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
             _FAST_DIRECT_INPUTS = frozenset({_USDBC})
             _HOLE_SPEND_CAPS = {'0x0963a1abaf36ca88c21032b82e479353126a1c4b': 1000000}
             _UR_CONTRACT_BALANCE = 1 << 255
@@ -3746,10 +3746,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 def _dr38():
 
                                     def _dz153():
-                                        # nonlocal is load-bearing: without it the `_empty = True`
-                                        # below stays local to _dz153, which is called for effect
-                                        # only, so a getPool() miss (route points at a pool that
-                                        # does not exist) never reaches the fallback at `if _empty`.
                                         nonlocal _empty
                                         _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                                         _w3 = self._get_web3(_cid)
