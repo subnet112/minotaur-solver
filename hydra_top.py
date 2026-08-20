@@ -35,13 +35,13 @@ def _dr71():
     from champ_top import SOLVER_CLASS as _ChampBase
     from minotaur_subnet.sdk.intent_solver import SolverMetadata
     logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
     SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
     return dict(locals())
 globals().update(_dr71())
 
 def _dr20():
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "MichaelDev84")
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
     _USDC = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
     _USDBC = '0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca'
     _WETH = '0x4200000000000000000000000000000000000006'
