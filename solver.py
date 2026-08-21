@@ -17,9 +17,11 @@ Chassis doctrine (2026-07-18 rebuild, from studying 21 adoptions):
 """
 
 from __future__ import annotations
+import os
 
 import json
 import logging
+_REFORK_LANE = "rise05"  # lane marker
 import time
 from pathlib import Path
 
@@ -492,8 +494,8 @@ class Bg124Solver(_Base):
         # have displayed as "blueguider-uid124-copycat". `author` was likewise
         # the incumbent's SS58, which is simply not who submits this.
         return SolverMetadata(
-            name="b1",
-            version=f"{_BASE_VERSION}+b1.1",
+            name=os.environ.get("MINOTAUR_SOLVER_NAME", "falcon"),
+            version=os.environ.get("MINOTAUR_SOLVER_VERSION", "700.55.6"),
             author="5FEdE17RLgyhnxBHAkiFFWGRMn64emopQ1YcGrmzmbxxi62c",
             description=("census sell-side covers + full-depth Curve pool "
                          "selection over the champion base"),

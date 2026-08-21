@@ -2,29 +2,10 @@ _DR_UNSET = object()
 from chain1_lib import _qroute, _build, _params, _champ_route
 from chain1_v2 import _v2_build, _sweep, _v2_best
 from bg124_kira_ext import _beats_champ
+from bg124_kira_ext_v2 import _meets_min_out  # relocated leaf; see that module
+from kira_rr_g1 import _decide  # relocated leaf; see that module
 
-def _meets_min_out(q, mo):
-    """Whether quote `q` clears the order's declared minimum output.
 
-    `mo > 0` is what separates "no minimum declared" from a floor: _amounts coerces a missing
-    or null min_output_amount to 0, and 0 has to mean unset. The clause is redundant as pure
-    arithmetic -- a quote is never negative, so `q < 0` could not fire anyway -- but writing
-    the intent down is the point. Read without it, the test looks like it enforces a
-    zero floor, and the next edit to _amounts (a sentinel, a signed value) would silently
-    turn every unset order into a rejection with nothing here to contradict it.
-    """
-    return not (mo > 0 and q < mo)
-
-def _decide(w3, tin, tout, amt, mo, block, base_empty):
-    best = _v2_best(w3, tin, tout, amt, block, _sweep(w3, tin, tout, amt, block))
-    if best is None:
-        return None
-    q_mine, route = best
-    if not _meets_min_out(q_mine, mo):
-        return None
-    if not base_empty and (not _beats_champ(w3, tin, tout, amt, block, q_mine, route)):
-        return None
-    return route
 
 def _mk_plan(route, tin, amt, rcpt, intent, state):
     from minotaur_subnet.shared.types import ExecutionPlan as _EP
