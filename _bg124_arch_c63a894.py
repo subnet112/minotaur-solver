@@ -27,7 +27,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 import cover_ext as _ext
 import router_cover as _rc
 WIN_MARGIN_BPS = 30
-SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707")
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
 
 def _safe_pair(tin, tout):
     return (tin or '').lower() in SAFE_TOKENS and (tout or '').lower() in SAFE_TOKENS
@@ -404,9 +404,9 @@ def _g_install():
 
         def metadata(self):
             base = super().metadata()
-            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
+            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', 'falcon')
             ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
-            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707")
+            auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
             return _GSolverMetadata(name=name, version=ver, author=auth, description='champion coverage + cross-chain bridging', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
     SOLVER_CLASS = _GarnetXChain
 _g_install()
