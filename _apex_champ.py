@@ -302,7 +302,6 @@ class JamesSolver(_JamesSolverDR17):
             amt, min_out = _dr15()
         except (TypeError, ValueError):
             return None
-
         _sup = super()
 
         def _fw2():
