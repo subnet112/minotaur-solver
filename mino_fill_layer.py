@@ -15,18 +15,7 @@ def _dz281():
     _MAX_ASKS = 2
     return (_log, _FILL_NONCE, _TABLE_FILE, _AGG_ROUTERS, _PLAN_BUDGET_S, _MAX_ASKS)
 _log, _FILL_NONCE, _TABLE_FILE, _AGG_ROUTERS, _PLAN_BUDGET_S, _MAX_ASKS = _dz281()
-
-# Monotonic stamp for the plan currently being built, set by _MinoFill's
-# generate_plan -- the outermost frame THIS layer owns. Zero means "no plan
-# in flight", which is the honest answer on any path that reaches _base_plan
-# without coming through that frame, and _retry_affordable falls back to the
-# local clock there rather than trusting a stale stamp.
 _PLAN_T0 = [0.0]
-
-# Wall-clock kept back for the overlay. _base_plan is not the last thing that
-# runs on the 30s/plan cutoff: whatever it returns, _overlay_plan still has to
-# key the row, check the floor and build the legs. Spending the whole budget
-# below means an order the fill table could answer dies with nothing.
 _OVERLAY_RESERVE_S = 4.0
 
 def _fgm_53720():
@@ -461,32 +450,32 @@ def _base_plan(ask, state):
     champion runs no retry, so rescuing our own plan still scores
     blind_spot_cover when they are empty — and saves a drop when they are not.
     """
+
+    def _dz76():
+        nonlocal plan
+        for attempt in range(_MAX_ASKS):
+            _a0 = _t.monotonic()
+            try:
+                plan = ask()
+            except Exception as _e:
+                if attempt:
+                    _log.warning('[minofill] inner generate_plan raised again (attempt %d): %r', attempt, _e)
+                else:
+                    _log.exception('[minofill] inner generate_plan raised; overlay may still answer')
+                plan = None
+            if not _is_empty(plan):
+                return (plan,)
+            if not (getattr(state, 'raw_params', None) or {}):
+                return (plan,)
+            if not _retry_affordable(_t.monotonic() - _a0, t0):
+                break
+        return _DR_UNSET
     import time as _t
     t0 = _t.monotonic()
     plan = None
-    for attempt in range(_MAX_ASKS):
-        _a0 = _t.monotonic()
-        try:
-            plan = ask()
-        except Exception as _e:
-            # Traceback ONCE per plan, repr thereafter. On 2026-08-19 a
-            # RecursionError below this frame made every attempt raise, and the
-            # full traceback per attempt wrote 11.1 GB into one selfheal log and
-            # 3.9 GB into one submit log. That storm is what stalled the submit
-            # daemon for ~4h and lost round-e29785803-n1 -- the bug itself was
-            # one commit, the log volume is what made it expensive. Keep the
-            # first traceback so the cause stays diagnosable, and cap the rest.
-            if attempt:
-                _log.warning('[minofill] inner generate_plan raised again (attempt %d): %r', attempt, _e)
-            else:
-                _log.exception('[minofill] inner generate_plan raised; overlay may still answer')
-            plan = None
-        if not _is_empty(plan):
-            return plan
-        if not (getattr(state, 'raw_params', None) or {}):
-            return plan
-        if not _retry_affordable(_t.monotonic() - _a0, t0):
-            break
+    _r_dz76 = _dz76()
+    if _r_dz76 is not _DR_UNSET:
+        return _r_dz76[0]
     return plan
 
 def install(base_cls, Interaction, ExecutionPlan):
