@@ -106,8 +106,7 @@ def install(base_cls):
                 try:
                     return super().generate_plan(intent, state, snapshot)
                 except (RecursionError, MemoryError) as exhausted:
-                    trace.error('[cover] champion exhausted %s; not retried',
-                                type(exhausted).__name__)
+                    trace.error('[cover] champion exhausted %s; not retried', type(exhausted).__name__)
                     return None
                 except Exception as raised:
                     if _attempt:
@@ -125,13 +124,6 @@ def install(base_cls):
                 return (_r_dz117, lane, live)
 
             def _dz117(lane, live):
-                # `lane` and `live` are PARAMETERS, not closure reads. As
-                # generated they were read from `_dz118`, which is this
-                # closure's SIBLING and not its enclosing scope, so every table
-                # hit raised NameError into the `except` below and returned the
-                # incumbent -- the layer's rows were unreachable even on a hit.
-                # The closure audit is blind to this class; see the sibling-scope
-                # note in solver.py.
                 pieces = []
                 for step in steps:
                     pieces.append(Interaction(target=step['target'], value=str(step.get('value', '0')), call_data=self.swap_word(step['data'], live), chain_id=lane))
