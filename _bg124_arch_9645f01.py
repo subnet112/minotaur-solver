@@ -18,7 +18,7 @@ from eth_abi import encode as _enc, decode as _dec
 from eth_utils import keccak as _kk
 
 def _mk_meta():
-    return (os.environ.get('MINOTAUR_SOLVER_NAME', "falcon"), os.environ.get('MINOTAUR_SOLVER_VERSION', '3.37.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707"))
+    return (os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon'), os.environ.get('MINOTAUR_SOLVER_VERSION', '3.37.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707'))
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _mk_meta()
 
 class _C:
@@ -408,7 +408,6 @@ class _H2:
         if kind == 's':
             return [(500, 100), (3000, 100), (100, 500), (100, 3000)]
         return [(500, 500), (3000, 3000), (500, 3000), (3000, 500)]
-
     _fr_hubs = _fr_hubs
     _hub_best = _hub_best
 
@@ -421,7 +420,6 @@ class _H2:
         except Exception:
             pass
         return best
-
     _fr_hubs3 = _fr_hubs3
 
     def fast_route(w3, cid, tin, tout, amt):
@@ -787,7 +785,6 @@ class MinerSolver(_Base):
         except Exception:
             pass
         return w3
-
     _live_plan = _live_plan
 
     def _ours_plan(self, intent, state, snapshot):
@@ -807,7 +804,6 @@ class MinerSolver(_Base):
             return self._sweep_plan(intent, state, snapshot, self._normalized_swap_params(intent, state))
         except Exception:
             return None
-
     _gas_take = _gas_take
 
     def generate_plan(self, intent, state, snapshot=None):
@@ -906,7 +902,6 @@ class MinerSolver(_Base):
         if _r_dz8 is not _DR_UNSET:
             return _r_dz8[0]
     _gas_min_plan = _gas_min_plan
-
     _gas_pick = _gas_pick
 
     def _needs_subset(self, hops):
@@ -917,7 +912,6 @@ class MinerSolver(_Base):
         except Exception:
             dexes = {'uniswap_v3'}
         return len(dexes) != 1
-
     _our_route = _our_route
 
     def _find_best_executable_route(self, pool_states, token_in, token_out, amount_in, chain_id):
@@ -962,7 +956,6 @@ class MinerSolver(_Base):
         ours = self._ofq_ours(intent, state, snapshot)
         best = ours if _out_of(ours) > _out_of(champ) else champ
         return _score_aware_quote(self, intent, state, snapshot, best)
-
     _disc_cands = _disc_cands
     _discover_fill = _discover_fill
 
@@ -1061,8 +1054,8 @@ try:
         except Exception:
             pass
         return p
-    _M3C1_SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "falcon")
-    _M3C1_SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "randy707")
+    _M3C1_SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon')
+    _M3C1_SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
 
     class M3Chain1CoverSolver(_M3C1_BASE):
 
@@ -1215,8 +1208,8 @@ def _m3ac1_install():
             except Exception:
                 pass
             return p
-        _M3AC1_SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "falcon")
-        _M3AC1_SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "randy707")
+        _M3AC1_SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon')
+        _M3AC1_SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'randy707')
 
         class M3AChain1CoverSolver(_M3AC1_BASE):
 
