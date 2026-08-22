@@ -2,10 +2,8 @@ _DR_UNSET = object()
 from chain1_lib import _qroute, _build, _params, _champ_route
 from chain1_v2 import _v2_build, _sweep, _v2_best
 from bg124_kira_ext import _beats_champ
-from bg124_kira_ext_v2 import _meets_min_out  # relocated leaf; see that module
-from kira_rr_g1 import _decide  # relocated leaf; see that module
-
-
+from bg124_kira_ext_v2 import _meets_min_out
+from kira_rr_g1 import _decide
 
 def _mk_plan(route, tin, amt, rcpt, intent, state):
     from minotaur_subnet.shared.types import ExecutionPlan as _EP
