@@ -10,7 +10,6 @@ from chain1_v2 import _sweep, _v2_best
 from bg124_kira_ext import _beats_champ
 from bg124_kira_ext_v2 import _meets_min_out
 
-
 def _decide(w3, tin, tout, amt, mo, block, base_empty):
     best = _v2_best(w3, tin, tout, amt, block, _sweep(w3, tin, tout, amt, block))
     if best is None:
