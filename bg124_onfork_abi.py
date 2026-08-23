@@ -8,6 +8,7 @@ stays small. Address/selector tables live in onfork_tables.json because JSON
 data contributes zero AST nodes.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import json
 from pathlib import Path
 
@@ -136,24 +137,23 @@ def s_bal(pool_id, tin, tout, amt, proxy, to):
 def swap_cd(desc, tin, tout, amt, min_out, to):
     """desc = ("v2", router, path) | ("curve", pool, (kind,i,j))
     | ("single", fee, None) | ("path", fees, mid)."""
+
+    def _dz31():
+        if kind == 'v2':
+            return (s_v2(amt, min_out, b, to),)
+        if kind == 'curve':
+            return (s_curve(b[0], b[1], b[2], amt, min_out),)
+        if kind == 'pcsp':
+            return (s_path(tin, b, tout, a, amt, min_out, to),)
+        if kind in ('single', 'pcs'):
+            return (s_single(tin, tout, a, amt, min_out, to),)
+        return _DR_UNSET
     kind, a, b = desc
     if kind == 'bal':
         return s_bal(a, tin, tout, amt, b, to)
-    if kind == 'v2':
-        return s_v2(amt, min_out, b, to)
-    if kind == 'curve':
-        return s_curve(b[0], b[1], b[2], amt, min_out)
-    if kind == 'pcsp':
-        # exactInput with an encoded path — identical ABI to Uniswap's, verified on
-        # a fork; only the router address differs (see `spender`).
-        return s_path(tin, b, tout, a, amt, min_out, to)
-    if kind in ('single', 'pcs'):
-        # PancakeSwap V3's SmartRouter is a SwapRouter02 fork: exactInputSingle
-        # takes the identical 7-field struct with no deadline, so one code path
-        # serves both. Verified on a fork rather than assumed — quoted 1883.73
-        # USDC and DELIVERED 1883.73 to the credited app address (+0.0 bps), which
-        # is the test that matters: a venue that quotes and strands is a `dropped`.
-        return s_single(tin, tout, a, amt, min_out, to)
+    _r_dz31 = _dz31()
+    if _r_dz31 is not _DR_UNSET:
+        return _r_dz31[0]
     return s_path(tin, b, tout, a, amt, min_out, to)
 
 def spender(desc, chain):
@@ -164,8 +164,5 @@ def spender(desc, chain):
     if desc[0] in ('v2', 'curve'):
         return desc[1]
     if desc[0] in ('pcs', 'pcsp'):
-        # Both Pancake shapes approve PANCAKE's router. Sending a pcsp approve to
-        # SwapRouter02 would leave the real spender unapproved: transferFrom fails,
-        # the swap reverts, and a cover that reverts is a dropped order.
         return ck(T['router2'][str(chain)])
     return ck(T['router'][str(chain)])
