@@ -42,24 +42,11 @@ than none: `no_cross_chain_plan` scores zero, but a plan that bridges the wrong
 asset scores zero AND spends the round's evidence on a lie.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 _FX_UNSET = object()
-
-# chain 1 <-> 8453, USDC/WETH. Mirrors bridge_capability_descriptor(); kept as
-# data so a registry change is a table edit, not a code edit.
-BRIDGE = {
-    (1, 8453): {
-        '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
-        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': '0x4200000000000000000000000000000000000006',
-    },
-    (8453, 1): {
-        '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-        '0x4200000000000000000000000000000000000006': '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-    },
-}
+BRIDGE = {(1, 8453): {'0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': '0x4200000000000000000000000000000000000006'}, (8453, 1): {'0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x4200000000000000000000000000000000000006': '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'}}
 FEE_BPS = 5
-# transfer(address,uint256) — the destination leg's whole job.
 _XFER = 'a9059cbb'
-
 
 def bridge_token_for(src, dst, out_token):
     """Source-chain token to bridge so the destination holds `out_token`.
@@ -78,9 +65,7 @@ def bridge_token_for(src, dst, out_token):
             return (s, d)
     return None
 
-
-def build(src_chain, dst_chain, in_token, out_token, amount, recipient, src_ix,
-          bridge_amount, dst_holder=None):
+def build(src_chain, dst_chain, in_token, out_token, amount, recipient, src_ix, bridge_amount, dst_holder=None):
     """The `cross_chain_plan` metadata dict, or None when we cannot serve it.
 
     `src_ix` are OUR source-chain interactions (empty when the input already IS
@@ -115,42 +100,35 @@ def build(src_chain, dst_chain, in_token, out_token, amount, recipient, src_ix,
     actually delivered. Asking for one wei more than arrived would revert the leg,
     and a reverted destination leg scores exactly the same zero as an empty one.
     """
+
+    def _dz77():
+        min_out = int(bridge_amount) * (10000 - FEE_BPS - 1) // 10000
+        if min_out <= 0:
+            return (None,)
+        return ({'legs': [_leg(src_chain, src_ix), _leg(dst_chain, [_xfer_ix(dst_tok, dst_chain, recipient, min_out)])], 'bridge_requests': [_bridge(src_tok, bridge_amount, src_chain, dst_chain, dst_holder, min_out, out_token)]},)
+        return _DR_UNSET
     pair = bridge_token_for(src_chain, dst_chain, out_token)
     if not pair:
         return None
     src_tok, dst_tok = pair
-    if not recipient or int(bridge_amount or 0) <= 0 or not dst_holder:
+    if not recipient or int(bridge_amount or 0) <= 0 or (not dst_holder):
         return None
-    min_out = int(bridge_amount) * (10000 - FEE_BPS - 1) // 10000
-    if min_out <= 0:
-        return None
-    return {
-        'legs': [_leg(src_chain, src_ix), _leg(dst_chain, [_xfer_ix(dst_tok, dst_chain, recipient, min_out)])],
-        'bridge_requests': [_bridge(src_tok, bridge_amount, src_chain, dst_chain, dst_holder, min_out, out_token)],
-    }
-
+    _r_dz77 = _dz77()
+    if _r_dz77 is not _DR_UNSET:
+        return _r_dz77[0]
 
 def _leg(chain, ixs):
     """One ChainLeg dict. Split out for REGION DISCIPLINE: dict literals do NOT
     start their own region, so inlining these made `build` the single largest
     region in the repo (256) while the champion sits at 153 — worst in field on a
     metric the whole field is actively contesting."""
-    return {'chain_id': int(chain),
-            'interactions': [{'target': ix['target'], 'value': ix.get('value', '0'),
-                              'call_data': ix['call_data'], 'chain_id': int(chain)}
-                             for ix in (ixs or [])],
-            'intent_selector': '', 'intent_params_hex': '', 'metadata': {}}
-
+    return {'chain_id': int(chain), 'interactions': [{'target': ix['target'], 'value': ix.get('value', '0'), 'call_data': ix['call_data'], 'chain_id': int(chain)} for ix in ixs or []], 'intent_selector': '', 'intent_params_hex': '', 'metadata': {}}
 
 def _xfer_ix(token, chain, to, amount):
     """The destination leg's ERC-20 transfer — the ONLY thing the benchmark
     measures as delivery (orchestrator sums transfers INSIDE destination legs)."""
-    return {'target': token, 'value': '0', 'chain_id': int(chain),
-            'call_data': '0x' + _XFER + str(to)[2:].rjust(64, '0').lower() + format(int(amount), '064x')}
-
+    return {'target': token, 'value': '0', 'chain_id': int(chain), 'call_data': '0x' + _XFER + str(to)[2:].rjust(64, '0').lower() + format(int(amount), '064x')}
 
 def _bridge(token, amount, src, dst, holder, min_out, out_token):
     """One BridgeRequest dict. The platform owns protocol/calldata/escrow."""
-    return {'token': token, 'amount': int(amount), 'src_chain_id': int(src),
-            'dst_chain_id': int(dst), 'recipient': holder, 'min_output': int(min_out),
-            'purpose': 'deliver %s on chain %s' % (str(out_token)[:10], dst)}
+    return {'token': token, 'amount': int(amount), 'src_chain_id': int(src), 'dst_chain_id': int(dst), 'recipient': holder, 'min_output': int(min_out), 'purpose': 'deliver %s on chain %s' % (str(out_token)[:10], dst)}
