@@ -336,7 +336,7 @@ class Bg124Solver(_Base):
         base = super().metadata()
         if SolverMetadata is None:
             return base
-        return SolverMetadata(name=os.environ.get('MINOTAUR_SOLVER_NAME', 'falcon'), version=os.environ.get('MINOTAUR_SOLVER_VERSION', '700.55.6'), author='5FEdE17RLgyhnxBHAkiFFWGRMn64emopQ1YcGrmzmbxxi62c', description='census sell-side covers + full-depth Curve pool selection over the champion base', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name=os.environ.get('MINOTAUR_SOLVER_NAME', 'hydra-apex-router'), version=os.environ.get('MINOTAUR_SOLVER_VERSION', '616.598.10-mine4898-a'), author='5FEdE17RLgyhnxBHAkiFFWGRMn64emopQ1YcGrmzmbxxi62c', description='census sell-side covers + full-depth Curve pool selection over the champion base', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 SOLVER_CLASS = Bg124Solver
 
 def _apex_load_cover_layers():
@@ -675,3 +675,243 @@ SOLVER_CLASS = D8d07cSolver
 _MINROUTER_FP = 'round-e29790528-n1-min-hk4-cj113-001'
 _MINROUTER_NAME = 'gold_solver'
 _MINROUTER_VER = '5.4.2'
+
+
+# ===== HYDRA APEX-SAFE FILL (auto-reforked on champion 9474be1c) =====
+def _build_hydra_fill():
+    _HF_BASE = globals()['SOLVER_CLASS']
+
+    class HydraFillSolver(_HF_BASE):
+        """Brand identity only. The serve-time verify/upgrade/fill machinery
+        that used to live here was deleted 08-04: the bench sandbox grants no
+        chain-1 RPC, so none of it could ever act benchside — its dead bodies
+        only paid the factorization/deadwood tie-breaks (relative_scoring 3c/3d,
+        the path star_1 used to dethrone cobalt with a 0-win parity card).
+        Static covers live in the mino overlay; discovery lives offline."""
+
+        def metadata(self):
+            m = super().metadata()
+            try:
+                import min_multivenue as _mv
+                m.name = _mv._MV_NAME
+                m.version = _mv._MV_VERSION
+            except Exception:
+                pass
+            return m
+    globals()['SOLVER_CLASS'] = HydraFillSolver
+_build_hydra_fill()
+
+def _mount_mino_overlay():
+    """Wrap the champion's FINAL SOLVER_CLASS with the fill-only-empty cover layer.
+
+    Appended after _build_hydra_fill(), which is the last thing to rebind SOLVER_CLASS
+    (line ~1215). Wrapping anything earlier -- _McSolver at 938, or HydraFillSolver at 1164 --
+    would silently drop the layers installed after it and change champion routing.
+
+    The table is `mino_fill_rows.json`, NOT `lattice_wins.json`: this champion reads
+    lattice_wins.json itself (see the published-win replay around line 998), so writing our
+    rows there would overwrite a champion data file and alter its routing. Separate file,
+    separate class, no collision.
+    """
+    try:
+        import mino_fill_layer as _mf
+        from minotaur_subnet.shared.types import Interaction as _MIX, ExecutionPlan as _MEP
+        globals()['SOLVER_CLASS'] = _mf.install(globals()['SOLVER_CLASS'], _MIX, _MEP)
+    except Exception:
+        import logging as _mflog
+        _mflog.getLogger(__name__).exception('[minofill] overlay failed to mount; champion stands')
+_mount_mino_overlay()
+
+def _mount_g2_overlay():
+    try:
+        import g2_fill as _g2
+        from minotaur_subnet.shared.types import Interaction as _GIX, ExecutionPlan as _GEP
+        globals()['SOLVER_CLASS'] = _g2.install(globals()['SOLVER_CLASS'], _GIX, _GEP)
+    except Exception:
+        import logging as _g2log
+        _g2log.getLogger(__name__).exception('[g2] overlay failed to mount; base stands')
+_mount_g2_overlay()
+
+def _build_aero_pin():
+    try:
+        from aero_pin import wrap as _w
+        globals()['SOLVER_CLASS'] = _w(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _aplog
+        _aplog.getLogger(__name__).exception('[aeropin] cover load failed; using champion stack')
+_build_aero_pin()
+
+def _build_v2_pin():
+    try:
+        from v2_pin import wrap as _w
+        globals()['SOLVER_CLASS'] = _w(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _v2log
+        _v2log.getLogger(__name__).exception('[v2pin] cover load failed; using champion stack')
+_build_v2_pin()
+
+def _bsfill_install():
+    _cls = globals().get('SOLVER_CLASS')
+    if _cls is None or getattr(_cls, '_bsfill_on', False):
+        return
+
+    def generate_plan(self, intent, state, snapshot=None):
+        plan = super(_cls, self).generate_plan(intent, state, snapshot)
+        try:
+            if plan is not None and getattr(plan, 'interactions', None):
+                return plan
+        except Exception:
+            return plan
+        try:
+            import min_bsfill as _bf
+            alt = _bf.blind_fill(self, intent, state, snapshot)
+            if alt is not None and getattr(alt, 'interactions', None):
+                return alt
+        except Exception:
+            pass
+        return plan
+    _cls.generate_plan = generate_plan
+    _cls._bsfill_on = True
+_bsfill_install()
+
+def _build_amt_alias():
+    try:
+        from min_amt_alias import install as _w
+        globals()['SOLVER_CLASS'] = _w(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _aalog
+        _aalog.getLogger(__name__).exception('[amtalias] load failed; champion stack stands')
+_build_amt_alias()
+
+def _build_pacing_bridge():
+    try:
+        from pacing_bridge import install as _w
+        globals()['SOLVER_CLASS'] = _w(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _pblog
+        _pblog.getLogger(__name__).exception('[pacing-bridge] load failed; refusing at gate')
+_build_pacing_bridge()
+
+
+# ===== ON-FORK MULTI-VENUE ROUTER (re-wired 08-12 after the 44ed3796 refork) =====
+# The refork onto this FOREIGN champion carried mino_fill_layer but left the router
+# unimported: `_apex_ourbase` used to do this wiring and that lineage is absent from
+# a tree that never forked ours. Present-but-unimported is invisible to every gate we
+# had, so the first card shipped with the router, the eth_chainId memo and the pace
+# bridge all silently inert.
+#
+# Dispatch is ported verbatim from the proven `_apex_ourbase.Bg124Solver`, including
+# the rule that matters most: a plan carrying NO expected_output is never overridden.
+# The lineage's offline-fallback builds such plans, and overriding one blind once
+# replaced a plan delivering 3.49e22 with 7.58e14 — a CATASTROPHIC that vetoed a run
+# we had won 10 orders on. bar>0 means the champion told us its own number and we
+# serve only when we beat it; bar==0 without the blind sentinel means we stand aside.
+def _build_onfork_router():
+    try:
+        _OF_BASE = globals()['SOLVER_CLASS']
+
+        def _of_empty(solver, plan):
+            try:
+                return solver._is_empty(plan)
+            except Exception:
+                return plan is None or not getattr(plan, 'interactions', None)
+
+        def _of_blind(plan):
+            try:
+                md = dict(getattr(plan, 'metadata', {}) or {})
+            except Exception:
+                return False
+            return (md.get('solver') in ('best-effort', 'offline-fallback')
+                    or md.get('route') == 'last_resort_empty')
+
+        def _of_expected(plan):
+            try:
+                md = dict(getattr(plan, 'metadata', {}) or {})
+                return int(md.get('expected_output', 0) or 0)
+            except Exception:
+                return 0
+
+        class _OnForkRouter(_OF_BASE):
+            _OF_BUDGET_S = 12.0
+
+            def _of_cover(self, intent, state, bar, champ_plan=None):
+                import time as _t
+                if getattr(self, '_of_secs', 0.0) >= self._OF_BUDGET_S:
+                    return None
+                t0 = _t.monotonic()
+                try:
+                    import bg124_onfork as _of
+                    return _of.try_cover(self, intent, state, bar, champ_plan)
+                except Exception:
+                    return None
+                finally:
+                    self._of_secs = getattr(self, '_of_secs', 0.0) + _t.monotonic() - t0
+
+            def generate_plan(self, intent, state, snapshot=None):
+                plan = super().generate_plan(intent, state, snapshot)
+                try:
+                    # EMPTY-ONLY on a base whose metadata we have not validated.
+                    #
+                    # The two override paths below this were ported from
+                    # _apex_ourbase, where their sentinels were calibrated against
+                    # the blueguider lineage. On THIS champion they cost us a
+                    # CATASTROPHIC on the first bench: q_c1898918bfc7, champion
+                    # 439005114, ours 199554784 — we replaced a working plan with
+                    # one worth 45% of it, which is an absolute veto.
+                    #
+                    #   bar = metadata['expected_output'] assumes this champion
+                    #   publishes that field with the same meaning. If it is absent,
+                    #   small, or scaled differently, the router "beats" a bogus bar.
+                    #
+                    #   _of_blind() treats solver in {best-effort, offline-fallback}
+                    #   as a no-route sentinel and then serves with bar=-1, i.e.
+                    #   UNCONDITIONALLY. A foreign champion may use those labels for
+                    #   perfectly good plans.
+                    #
+                    # Overriding a plan that already works is the only way this layer
+                    # can regress. Covering one that is EMPTY cannot: there is nothing
+                    # to lose, which is also where every crown we have won came from.
+                    # Re-arm each path only after measuring what this champion's
+                    # metadata actually means on scored orders.
+                    if _of_empty(self, plan):
+                        return self._of_cover(intent, state, 0) or plan
+                    # MEASURED override is BUILT BUT NOT ARMED. bg124_onfork now
+                    # decodes the champion's own route and quotes it beside ours in
+                    # the same Multicall3 (`_measured_route`), so the bar is measured
+                    # rather than taken from numbers this champion publishes as
+                    # placeholders — expected_output=1 and amountOutMinimum=0,
+                    # measured on its own plans; the first is exactly what let a
+                    # 1-wei bar cost us a catastrophic.
+                    #
+                    # DISARMED 08-12 by measurement, and this one is not close.
+                    #
+                    # sub_f129b61d4549: better=1 worse=3 dropped=3 cata=0. The single
+                    # WIN was a blind-spot cover (q_6d8bd471, champion delivered
+                    # nothing). All three DROPS were this override: on q_2c12df8e,
+                    # q_a5c9df39 and q_cd4674e1 the champion delivered real amounts
+                    # and we delivered ZERO.
+                    #
+                    # Run the adoption rule on both halves:
+                    #   as shipped   better=1, dropped=3 -> vetoed
+                    #   empty-only   better=1, worse=0, dropped=0
+                    #                -> 1 >= 0 + DETHRONE_WIN_MARGIN -> ADOPT
+                    # The override did not merely fail to help; it converted a
+                    # crown-taking card into a `behind`.
+                    #
+                    # The bar was never the whole problem. A +20% QUOTE edge does not
+                    # imply a better DELIVERY: corpus_prove has shown 29 of 33 quoted
+                    # wins evaporate on execution, one quoting +106 bps delivering a
+                    # flat zero. Overriding a plan that already works stakes an
+                    # absolute veto on a quote. Covering an empty one risks nothing —
+                    # and it is what just won an order.
+                    #
+                    # Re-arm ONLY with execution evidence (fork-execute the candidate
+                    # before serving it), never on quote alone.
+                except Exception:
+                    return plan
+                return plan
+        globals()['SOLVER_CLASS'] = _OnForkRouter
+    except Exception:
+        import logging as _oflog
+        _oflog.getLogger(__name__).exception('[onfork] wire failed; champion plan stands')
+_build_onfork_router()

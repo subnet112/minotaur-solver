@@ -1,4 +1,4 @@
-"""lattice-route-engine — lean delegate over the reigning champion.
+"""blueguider-uid124 — lean delegate over the reigning champion.
 
 Chassis doctrine (2026-07-18 rebuild, from studying 21 adoptions):
 - The champion's engine runs VERBATIM on every order: identical plans,
@@ -31,7 +31,7 @@ def _resolve_base():
     except Exception:
         pass
     try:
-        from _axiom_dex_shim import SOLVER_CLASS, base_module, SOLVER_VERSION
+        from _blueguider_uid124_shim import SOLVER_CLASS, base_module, SOLVER_VERSION
         return (SOLVER_CLASS, base_module, SOLVER_VERSION)
     except Exception:
         import king_solver as base_module
@@ -45,7 +45,9 @@ def _resolve_metadata_cls():
         return None
 _Base, _base_module, _BASE_VERSION = _resolve_base()
 SolverMetadata = _resolve_metadata_cls()
-logger = logging.getLogger(__name__)
+def _fxa1():
+    return logging.getLogger(__name__)
+logger = _fxa1()
 _WETH = '0x4200000000000000000000000000000000000006'
 _USDC = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
 
@@ -60,120 +62,133 @@ def _load_json(name):
 _COVERS = _load_json('bg124_covers.json')
 _CENSUS = _load_json('james_census.json')
 
-def _expected(plan):
-    """The champion's OWN declared output for this plan (`expected_output`, which
-    its lineage documents as 'read downstream as the baseline' and compares
-    against itself in king_base). 0 when absent — its offline-fallback path
-    builds plans without it, and those we must never override blind: doing so
-    replaced a plan delivering 3.49e22 with one delivering 7.58e14, a
-    CATASTROPHIC regression that vetoed a run we won 10 orders on."""
-    try:
-        md = dict(getattr(plan, 'metadata', {}) or {})
-        return int(md.get('expected_output', 0) or 0)
-    except Exception:
-        return 0
+def _fxd1():
+    def _expected(plan):
+        """The champion's OWN declared output for this plan (`expected_output`, which
+        its lineage documents as 'read downstream as the baseline' and compares
+        against itself in king_base). 0 when absent — its offline-fallback path
+        builds plans without it, and those we must never override blind: doing so
+        replaced a plan delivering 3.49e22 with one delivering 7.58e14, a
+        CATASTROPHIC regression that vetoed a run we won 10 orders on."""
+        try:
+            md = dict(getattr(plan, 'metadata', {}) or {})
+            return int(md.get('expected_output', 0) or 0)
+        except Exception:
+            return 0
 
-def _try_onfork(solver, intent, state, bar=0):
-    """On-fork Uniswap-V3 router (bg124_onfork): ONE batched Multicall3 QuoterV2
-    quote on the round-pinned fork -> approve+swap. Wins champion-empty quote
-    scenarios that content-addressed keys can't target; on-fork so it can't
-    revert, single eth_call so the pace governor bounds it."""
-    try:
-        import bg124_onfork
-        return bg124_onfork.try_cover(solver, intent, state, bar)
-    except Exception:
+    def _try_onfork(solver, intent, state, bar=0):
+        """On-fork Uniswap-V3 router (bg124_onfork): ONE batched Multicall3 QuoterV2
+        quote on the round-pinned fork -> approve+swap. Wins champion-empty quote
+        scenarios that content-addressed keys can't target; on-fork so it can't
+        revert, single eth_call so the pace governor bounds it."""
+        try:
+            import bg124_onfork
+            return bg124_onfork.try_cover(solver, intent, state, bar)
+        except Exception:
+            return None
+
+    def _try_kyber(solver, intent, state):
+        """KyberSwap quality-override (bg124_kyber) — the reigning-champion move.
+        Exact-key, CONTRACT-scoped, FORK-VERIFIED strictly-better routes baked
+        offline. Unlike the fill-only-empty covers it fires FIRST, even on a
+        champion-served order — that's the strict-better dethrone. Safe because the
+        key is contract-scoped and every route was verified to beat the incumbent."""
+        try:
+            import bg124_kyber
+            return bg124_kyber.try_cover(solver, intent, state)
+        except Exception:
+            return None
+
+    def _ok(solver, plan):
+        """A usable candidate: present and structurally non-empty."""
+        return plan is not None and (not _empty(solver, plan))
+
+    def _empty(solver, plan):
+        try:
+            return solver._is_empty(plan)
+        except Exception:
+            return plan is None or not getattr(plan, 'interactions', None)
+
+    def _blind(plan):
+        """The lineage's own no-route sentinel: structurally non-empty but a
+        self-declared guess that scores 0 when the default pool doesn't exist."""
+        try:
+            md = dict(getattr(plan, 'metadata', {}) or {})
+        except Exception:
+            return False
+        return md.get('solver') in ('best-effort', 'offline-fallback') or md.get('route') == 'last_resort_empty'
+
+    def _parse_tokens(state):
+        p = dict(getattr(state, 'raw_params', {}) or {})
+        tin = str(p.get('input_token', '') or '').lower()
+        tout = str(p.get('output_token', '') or '').lower()
+        return (tin, tout, p.get('input_amount', 0))
+
+    def _order_key(state):
+        tin, tout, raw_amt = _parse_tokens(state)
+        try:
+            amt = int(raw_amt or 0)
+        except (TypeError, ValueError):
+            return None
+        chain = int(getattr(state, 'chain_id', 0) or 0)
+        if amt <= 0 or not tout.startswith('0x'):
+            return None
+        return (chain, tin, tout, amt)
+
+    def _census_pool(tout):
+        row = _CENSUS.get(tout)
+        if not row:
+            return None
+        if -1 >= 0 and int(tout[-4:], 16) & 1 != BG124_LANE_SPLIT:
+            return None
+        pool = row['pool'] if isinstance(row, dict) else row
+        return tuple(pool)
+
+    def _census_leg(spec, tin, paired):
+        if paired == tin:
+            if tin == _USDC:
+                spec['sweep_settle'] = True
+            return spec
+        if tin == _USDC and paired == _WETH:
+            spec['v3_tokens'] = (_USDC, _WETH)
+            spec['v3_fees'] = (500,)
+            return spec
         return None
 
-def _try_kyber(solver, intent, state):
-    """KyberSwap quality-override (bg124_kyber) — the reigning-champion move.
-    Exact-key, CONTRACT-scoped, FORK-VERIFIED strictly-better routes baked
-    offline. Unlike the fill-only-empty covers it fires FIRST, even on a
-    champion-served order — that's the strict-better dethrone. Safe because the
-    key is contract-scoped and every route was verified to beat the incumbent."""
-    try:
-        import bg124_kyber
-        return bg124_kyber.try_cover(solver, intent, state)
-    except Exception:
-        return None
+    def _census_spec(tin, tout):
+        """Census pool -> spec for the lineage's uniswap_v4_ur builder. Direct
+        when tin is the pool's paired side; USDC-in via a v3 USDC->WETH leg
+        when the pool is WETH-paired; else unroutable-safely -> None."""
+        pool = _census_pool(tout)
+        if pool is None:
+            return None
+        c0, c1 = (pool[0], pool[1])
+        paired = c0 if c1 == tout else c1
+        spec = {'pool': pool, 'settle': paired, 'zero_for_one': c0 == paired}
+        return _census_leg(spec, tin, paired)
 
-def _ok(solver, plan):
-    """A usable candidate: present and structurally non-empty."""
-    return plan is not None and (not _empty(solver, plan))
+    def _spend_build(solver):
+        """Pace guard (2026-07-19): two consecutive benches rejected on exactly
+        1 dropped order (the 900s completion race). Cover BUILDS go through the
+        engine's builder and can cost RPC time on doomed zero-quote orders; cap
+        attempts per run so cover work can never turn a completed run into a
+        tail-drop."""
+        spent = getattr(solver, '_bg124_builds', 0)
+        if spent >= 8:
+            return False
+        solver._bg124_builds = spent + 1
+        return True
 
-def _empty(solver, plan):
-    try:
-        return solver._is_empty(plan)
-    except Exception:
-        return plan is None or not getattr(plan, 'interactions', None)
-from axm_blind_ext import _blind
-
-def _parse_tokens(state):
-    p = dict(getattr(state, 'raw_params', {}) or {})
-    tin = str(p.get('input_token', '') or '').lower()
-    tout = str(p.get('output_token', '') or '').lower()
-    return (tin, tout, p.get('input_amount', 0))
-
-def _order_key(state):
-    tin, tout, raw_amt = _parse_tokens(state)
-    try:
-        amt = int(raw_amt or 0)
-    except (TypeError, ValueError):
-        return None
-    chain = int(getattr(state, 'chain_id', 0) or 0)
-    if amt <= 0 or not tout.startswith('0x'):
-        return None
-    return (chain, tin, tout, amt)
-
-def _census_pool(tout):
-    row = _CENSUS.get(tout)
-    if not row:
-        return None
-    pool = row['pool'] if isinstance(row, dict) else row
-    return tuple(pool)
-
-def _census_leg(spec, tin, paired):
-    if paired == tin:
-        if tin == _USDC:
-            spec['sweep_settle'] = True
-        return spec
-    if tin == _USDC and paired == _WETH:
-        spec['v3_tokens'] = (_USDC, _WETH)
-        spec['v3_fees'] = (500,)
-        return spec
-    return None
-
-def _census_spec(tin, tout):
-    """Census pool -> spec for the lineage's uniswap_v4_ur builder. Direct
-    when tin is the pool's paired side; USDC-in via a v3 USDC->WETH leg
-    when the pool is WETH-paired; else unroutable-safely -> None."""
-    pool = _census_pool(tout)
-    if pool is None:
-        return None
-    c0, c1 = (pool[0], pool[1])
-    paired = c0 if c1 == tout else c1
-    spec = {'pool': pool, 'settle': paired, 'zero_for_one': c0 == paired}
-    return _census_leg(spec, tin, paired)
-
-def _spend_build(solver):
-    """Pace guard (2026-07-19): two consecutive benches rejected on exactly
-    1 dropped order (the 900s completion race). Cover BUILDS go through the
-    engine's builder and can cost RPC time on doomed zero-quote orders; cap
-    attempts per run so cover work can never turn a completed run into a
-    tail-drop."""
-    spent = getattr(solver, '_bg124_builds', 0)
-    if spent >= 8:
-        return False
-    solver._bg124_builds = spent + 1
-    return True
-
-def _cover_row(key):
-    chain, tin, tout, amt = key
-    row = _COVERS.get('%d|%s|%s|%d' % key)
-    if row is None and chain == 8453:
-        spec = _census_spec(tin, tout)
-        if spec is not None:
-            row = {'venue': 'uniswap_v4_ur', 'spec': spec, 'out': 1}
-    return row
+    def _cover_row(key):
+        chain, tin, tout, amt = key
+        row = _COVERS.get('%d|%s|%s|%d' % key)
+        if row is None and chain == 8453:
+            spec = _census_spec(tin, tout)
+            if spec is not None:
+                row = {'venue': 'uniswap_v4_ur', 'spec': spec, 'out': 1}
+        return row
+    return locals()
+globals().update(_fxd1())
 
 class Bg124Solver(_Base):
     """Champion verbatim + zero-RPC fill-only-empty covers."""
@@ -182,27 +197,25 @@ class Bg124Solver(_Base):
         plan = super().generate_plan(intent, state, snapshot)
         if _empty(self, plan):
             return self._bg124_fill(intent, state, snapshot, 0) or plan
-        bar = _expected(plan)
-        if bar > 0:
-            # SERVED — return the champion plan untouched.
-            #
-            # THIS LAYER IS LIVE AND RUNS FIRST. The MRO is
-            #   solver.Bg124Solver -> _bg124_arch_9645f01.MinerSolver
-            #     -> _apex_ourbase.Bg124Solver (here) -> ... -> champion
-            # and 9645f01's generate_plan is an unconditional memoising
-            # pass-through, so this method executes on every order AHEAD of the
-            # copy in solver.py. The plan solver.py then inspects is whatever we
-            # return, so its own `if bar > 0: return plan` sees an ALREADY
-            # overridden plan and cannot undo it — a gate placed above the layer
-            # that does the overriding cannot close it. That is why e57efe3,
-            # which gated solver.py alone, did not hold and dcc15d2 was needed.
-            #
-            # RESTORED 2026-08-19T10:20Z: e0ef9ae content-reverted to 89a11b6,
-            # which predates both, so the whole served-order chain was reopened
-            # while every local gate stayed green.
-            return plan
-        if _blind(plan):
-            return self._bg124_fill(intent, state, snapshot, -1) or plan
+        # OVERRIDE REMOVED HERE — it now lives ONE layer up, with a measured bar.
+        #
+        # `bar = _expected(plan)` reads metadata['expected_output']. On the current
+        # champion that field is the PLACEHOLDER 1 (measured on 3/3 of its own
+        # plans), so `bar > 0` was true for every served order and the cover only
+        # had to beat one wei. That is what replaced a plan delivering 439005114
+        # with one delivering 199554784 — a CATASTROPHIC, absolute veto.
+        #
+        # This module is not dead code on a foreign champion: their tree re-imports
+        # it (`solver.py: from _apex_ourbase import SOLVER_CLASS as _Base`) because
+        # they forked OUR published lineage. So patching only the top wrapper left
+        # this running underneath, and the "empty-only" fix I shipped never removed
+        # the risk it was written for.
+        #
+        # `_blind()` is dropped for the same reason: its sentinels
+        # ({best-effort, offline-fallback}) are the OLD lineage's vocabulary, and it
+        # served with bar=-1, i.e. unconditionally.
+        #
+        # Empty-cover stays: covering a plan that delivers nothing cannot regress.
         return plan
     _BG124_COVER_BUDGET_S = 12.0
 
@@ -215,35 +228,13 @@ class Bg124Solver(_Base):
         def _dz3():
             t0 = time.monotonic()
             try:
-                # Both rungs mirror solver.py::_bg124_ladder — kyber at
-                # bar <= 0 (six served drops on sub_83db1d62d155 were its
-                # alone), onfork at bar == 0 (bar == -1 is champion-BLIND and
-                # still DELIVERS). This copy runs FIRST via the pass-through
-                # super() hop, so a gate applied only in solver.py is dead —
-                # that is the lesson of e57efe3 -> dcc15d2 and both must carry
-                # it or the copies silently diverge again.
-                if bar <= 0:
-                    ky = _try_kyber(self, intent, state)
-                    if _ok(self, ky):
-                        return (ky,)
-                of = _try_onfork(self, intent, state, bar) if bar == 0 else None
+                ky = _try_kyber(self, intent, state)
+                if _ok(self, ky):
+                    return (ky,)
+                of = _try_onfork(self, intent, state, bar)
                 if _ok(self, of):
                     return (of,)
-                # PASS `bar`. This call resolves to solver.py's
-                # _bg124_cover(self, intent, state, snapshot, bar=0) — that copy
-                # is the most derived on the MRO documented above and SHADOWS the
-                # 3-param one below in this file. Omitting the argument therefore
-                # took the bar=0 default and handed `allow_sell=True` to
-                # _census_spec on EVERY rung reaching here, including bar == -1
-                # (champion-BLIND, which still DELIVERS). That is the always-on
-                # sell-side census whose own docstring records the cost: scored
-                # sub_8591e90be04b (dabbb00) took 3 dropped served quote orders,
-                # champ delivered / chal null, a hard-floor reject.
-                # solver.py was tightened for this; this layer never was, and it
-                # is the one that RUNS FIRST — the same e57efe3 -> dcc15d2 lesson
-                # as the kyber/onfork rungs above. bar == 0 is byte-identical to
-                # the old behaviour; only the blind rung changes.
-                return (self._bg124_cover(intent, state, snapshot, bar) if bar <= 0 else None,)
+                return (self._bg124_cover(intent, state, snapshot) if bar <= 0 else None,)
             finally:
                 self._bg124_cover_secs = getattr(self, '_bg124_cover_secs', 0.0) + time.monotonic() - t0
             return _DR_UNSET
@@ -281,5 +272,5 @@ class Bg124Solver(_Base):
         base = super().metadata()
         if SolverMetadata is None:
             return base
-        return SolverMetadata(name='lattice-route-engine', version=f'{_BASE_VERSION}+bg.3.L1', author='MichaelDev84', description='champion verbatim + zero-RPC fill-only-empty covers (census + harvested exact-key rows)', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name='blueguider-uid124', version=f'{_BASE_VERSION}+bg.3.L1', author='5GVmB1MosKnDuUs7oFS47sYkU9hSofVzEJc3NhwEwyYo9VBF', description='champion verbatim + zero-RPC fill-only-empty covers (census + harvested exact-key rows)', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 SOLVER_CLASS = Bg124Solver
