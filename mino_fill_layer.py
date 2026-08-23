@@ -20,8 +20,6 @@ _log, _FILL_NONCE, _TABLE_FILE, _AGG_ROUTERS, _PLAN_BUDGET_S, _MAX_ASKS = _dz281
 def _table_path() -> str:
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), _TABLE_FILE)
 
-
-
 def _rank(row) -> tuple:
     agg = any((str(leg.get('target', '')).lower() in _AGG_ROUTERS for leg in _served(row) if isinstance(leg, dict)))
     return (0 if agg else 1, _minted(row))
@@ -66,11 +64,10 @@ def _read_table() -> dict:
         _log.warning('[minofill] no overlay tables; layer is inert')
     return rows
 _ROWS = _read_table()
-
 try:
     import mino_xchain as _xc
-except Exception:      # refork dropped it -> degrade to pre-cross-chain behaviour
-    _xc = None         # rather than killing the whole overlay on an import error
+except Exception:
+    _xc = None
 _OVR = _read_overrides()
 _EXECUTORS = {1: '0xcd42cf6fd6e0c539cae038fe6a73c67f8c1c7a52', 8453: '0xe0d97941103c30799fa0aa9d54a34246846c73bf'}
 
@@ -96,7 +93,6 @@ def _row_key(state) -> str | None:
     if not (tin and tout and amount and contract):
         return None
     return f'{chain}|{contract}|{tin}|{tout}|{amount}'
-
 
 def _freshest(row):
     """Newest minted route for a key."""
@@ -169,7 +165,6 @@ def _evidence_margin_bps(row) -> int:
     age_h = max(0.0, (time.time() - minted) / 3600.0)
     need = _EVIDENCE_FLOOR_BPS + int(age_h * _EVIDENCE_DRIFT_BPS_PER_H)
     return max(_EVIDENCE_FLOOR_BPS, min(_EVIDENCE_MAX_BPS, need))
-
 _EVIDENCE_MAX_AGE_S = 6 * 3600.0
 
 def _stale_vs_champion(row) -> bool:
@@ -209,7 +204,7 @@ def _stale_vs_champion(row) -> bool:
         return True
     if minted <= 0:
         return True
-    return (time.time() - minted) > _EVIDENCE_MAX_AGE_S
+    return time.time() - minted > _EVIDENCE_MAX_AGE_S
 
 def _expired_agg(row) -> bool:
     """Is this row served by aggregator calldata old enough to have drifted?
@@ -226,8 +221,6 @@ def _expired_agg(row) -> bool:
         return minted <= 0 or time.time() - minted > _AGG_MAX_AGE_S
     except Exception:
         return False
-
-
 
 def _pays_executor(row, chain) -> bool:
     """Does this plan actually DELIVER to the address the scorer credits?
@@ -326,17 +319,23 @@ def _override(state) -> bool:
       * base ANSWERS (this override path) -> serving a reverting route converts a
         `matched` into a `dropped`, the absolute veto. Strictly worse. So refuse.
     """
+
+    def _dz75():
+        if _expired_agg(row):
+            return (False,)
+        if _stale_vs_champion(row):
+            return (False,)
+        if key in _OVR:
+            return (True,)
+        out, tgt = (int(row.get('out') or 0), int(row.get('tgt') or 0))
+        return (tgt > 0 and out * 10000 >= tgt * (10000 + _evidence_margin_bps(row)),)
+        return _DR_UNSET
     try:
         key = _row_key(state)
         row = _ROWS.get(key) or {}
-        if _expired_agg(row):
-            return False
-        if _stale_vs_champion(row):
-            return False
-        if key in _OVR:
-            return True
-        out, tgt = (int(row.get('out') or 0), int(row.get('tgt') or 0))
-        return tgt > 0 and out * 10000 >= tgt * (10000 + _evidence_margin_bps(row))
+        _r_dz75 = _dz75()
+        if _r_dz75 is not _DR_UNSET:
+            return _r_dz75[0]
     except Exception:
         return False
 
@@ -389,20 +388,24 @@ def _xc_parts(state):
     is actively contesting this metric. Parsing is also the half most likely to
     raise on a malformed order, so isolating it keeps the fail-closed path obvious.
     """
+
+    def _dz74():
+        if not dst or dst == src:
+            return (None,)
+        rcpt = str(params.get('receiver') or '')
+        if not rcpt:
+            return (None,)
+        return ((src, dst, str(params.get('input_token') or '').lower(), str(params.get('output_token') or ''), int(params.get('input_amount') or 0), rcpt),)
+        return _DR_UNSET
     try:
         params = getattr(state, 'raw_params', None) or {}
         src = int(getattr(state, 'chain_id', 0) or 0)
         dst = int(params.get('dest_chain_id') or 0)
-        if not dst or dst == src:
-            return None
-        rcpt = str(params.get('receiver') or '')
-        if not rcpt:
-            return None
-        return (src, dst, str(params.get('input_token') or '').lower(),
-                str(params.get('output_token') or ''), int(params.get('input_amount') or 0), rcpt)
+        _r_dz74 = _dz74()
+        if _r_dz74 is not _DR_UNSET:
+            return _r_dz74[0]
     except Exception:
         return None
-
 
 def _xchain_meta(state):
     """``cross_chain_plan`` metadata for a bridgeable order, else None.
@@ -417,20 +420,25 @@ def _xchain_meta(state):
     CHAIN, and a transfer to the SOURCE chain's app reaches an account with no code
     there -- that is what earned `wrong_recipient`.
     """
+
+    def _dz73():
+        src, dst, tin, tout, amt, rcpt = parts
+        pair = _xc.bridge_token_for(src, dst, tout)
+        if not pair or pair[0] != tin:
+            return (None,)
+        holder = _EXECUTORS.get(dst)
+        if not holder:
+            return (None,)
+        return (_xc.build(src, dst, tin, tout, amt, rcpt, [], amt, dst_holder=holder),)
+        return _DR_UNSET
     if _xc is None:
         return None
     parts = _xc_parts(state)
     if not parts:
         return None
-    src, dst, tin, tout, amt, rcpt = parts
-    pair = _xc.bridge_token_for(src, dst, tout)
-    if not pair or pair[0] != tin:
-        return None
-    holder = _EXECUTORS.get(dst)
-    if not holder:
-        return None
-    return _xc.build(src, dst, tin, tout, amt, rcpt, [], amt, dst_holder=holder)
-
+    _r_dz73 = _dz73()
+    if _r_dz73 is not _DR_UNSET:
+        return _r_dz73[0]
 
 def install(base_cls, Interaction, ExecutionPlan):
     """Wrap `base_cls` so an EMPTY plan is filled from the overlay; else pass through."""
@@ -463,24 +471,34 @@ def install(base_cls, Interaction, ExecutionPlan):
                 return _r_dz277[0]
 
         def generate_plan(self, intent, state, snapshot=None):
+
+            def _dz72():
+                _r_dz71 = _dz71()
+                if _r_dz71 is not _DR_UNSET:
+                    return (_r_dz71[0],)
+                if not _is_empty(plan) and (not _override(state)):
+                    return (plan,)
+                try:
+                    filled = self._overlay_plan(intent, state)
+                except Exception:
+                    _log.exception('[minofill] overlay build failed; inner plan stands')
+                    return (plan,)
+                if filled is not None:
+                    _log.info('[minofill] overlay filled an empty plan (empty-only)')
+                    return (filled,)
+                return (plan,)
+                return _DR_UNSET
+
+            def _dz71():
+                if not (getattr(plan, 'metadata', None) or {}).get('cross_chain_plan'):
+                    _xm = _xchain_meta(state)
+                    if _xm is not None:
+                        _log.info('[minoxc] serving a bridgeable row the base left undeclared')
+                        return (ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=[], deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'mino-xchain', 'chain_id': int(getattr(state, 'chain_id', 0) or 0), 'cross_chain_plan': _xm}),)
+                return _DR_UNSET
             ask = lambda: super(_MinoFill, self).generate_plan(intent, state, snapshot)
             plan = _base_plan(ask, state)
-            # CROSS-CHAIN, additive only. Never overwrite a plan that already
-            # declares cross-chain -- the base's own bridge path outranks ours.
-            if not (getattr(plan, 'metadata', None) or {}).get('cross_chain_plan'):
-                _xm = _xchain_meta(state)
-                if _xm is not None:
-                    _log.info('[minoxc] serving a bridgeable row the base left undeclared')
-                    return ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=[], deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'mino-xchain', 'chain_id': int(getattr(state, 'chain_id', 0) or 0), 'cross_chain_plan': _xm})
-            if not _is_empty(plan) and (not _override(state)):
-                return plan
-            try:
-                filled = self._overlay_plan(intent, state)
-            except Exception:
-                _log.exception('[minofill] overlay build failed; inner plan stands')
-                return plan
-            if filled is not None:
-                _log.info('[minofill] overlay filled an empty plan (empty-only)')
-                return filled
-            return plan
+            _r_dz72 = _dz72()
+            if _r_dz72 is not _DR_UNSET:
+                return _r_dz72[0]
     return _MinoFill
