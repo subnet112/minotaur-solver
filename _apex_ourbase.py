@@ -45,6 +45,7 @@ def _resolve_metadata_cls():
         return None
 _Base, _base_module, _BASE_VERSION = _resolve_base()
 SolverMetadata = _resolve_metadata_cls()
+
 def _fxa1():
     return logging.getLogger(__name__)
 logger = _fxa1()
@@ -63,6 +64,7 @@ _COVERS = _load_json('bg124_covers.json')
 _CENSUS = _load_json('james_census.json')
 
 def _fxd1():
+
     def _expected(plan):
         """The champion's OWN declared output for this plan (`expected_output`, which
         its lineage documents as 'read downstream as the baseline' and compares
@@ -197,25 +199,6 @@ class Bg124Solver(_Base):
         plan = super().generate_plan(intent, state, snapshot)
         if _empty(self, plan):
             return self._bg124_fill(intent, state, snapshot, 0) or plan
-        # OVERRIDE REMOVED HERE — it now lives ONE layer up, with a measured bar.
-        #
-        # `bar = _expected(plan)` reads metadata['expected_output']. On the current
-        # champion that field is the PLACEHOLDER 1 (measured on 3/3 of its own
-        # plans), so `bar > 0` was true for every served order and the cover only
-        # had to beat one wei. That is what replaced a plan delivering 439005114
-        # with one delivering 199554784 — a CATASTROPHIC, absolute veto.
-        #
-        # This module is not dead code on a foreign champion: their tree re-imports
-        # it (`solver.py: from _apex_ourbase import SOLVER_CLASS as _Base`) because
-        # they forked OUR published lineage. So patching only the top wrapper left
-        # this running underneath, and the "empty-only" fix I shipped never removed
-        # the risk it was written for.
-        #
-        # `_blind()` is dropped for the same reason: its sentinels
-        # ({best-effort, offline-fallback}) are the OLD lineage's vocabulary, and it
-        # served with bar=-1, i.e. unconditionally.
-        #
-        # Empty-cover stays: covering a plan that delivers nothing cannot regress.
         return plan
     _BG124_COVER_BUDGET_S = 12.0
 

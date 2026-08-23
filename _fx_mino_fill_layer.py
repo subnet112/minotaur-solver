@@ -12,7 +12,6 @@ import logging
 import os
 import time
 
-
 def _minted(row) -> int:
     if not isinstance(row, dict):
         return 0
