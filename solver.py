@@ -583,3 +583,23 @@ SOLVER_CLASS = Dd2232Solver
 _MINROUTER_FP = 'round-e29791932-n1-min-hk4-cj113-001'
 _MINROUTER_NAME = 'gold_solver'
 _MINROUTER_VER = '5.4.2'
+
+
+# ===== APEX-MINOTAUR LAYER (apex/payload_cover_apex) =====
+def _apex_load_payload_cover_apex():
+    try:
+        import payload_cover_apex as _p
+        globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
+    except Exception:
+        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
+_apex_load_payload_cover_apex()
+
+class _ApexBrand_payload_cover_apex(SOLVER_CLASS):
+    def metadata(self):
+        m = super().metadata()
+        try:
+            m.name = 'apex_29792241'
+        except Exception:
+            pass
+        return m
+SOLVER_CLASS = _ApexBrand_payload_cover_apex
