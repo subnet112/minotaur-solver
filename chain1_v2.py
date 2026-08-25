@@ -25,7 +25,7 @@ def _v2_lookup(tin, tout):
     return (pair, tin == t0)
 from lat_swapcd_ext import _v2_swap_cd
 from lat_xfercd_ext import _v2_xfer_cd
-from kira_rr_g9 import _c1_build_ix_v2  # relocated leaf; see that module
+from kira_rr_g9 import _c1_build_ix_v2
 
 def _v2_build(pair, in_is_t0, tin, amt, out, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX
@@ -59,7 +59,6 @@ def _v2_best(w3, tin, tout, amt, block, best):
         if _better(best, q2):
             best = (q2, ('v2', v2[0], v2[1], q2))
     return best
-
 
 def _c1_recip_v2(p, state):
     return str(p.get('receiver', '') or getattr(state, 'contract_address', None) or getattr(state, 'owner', None) or '0x0000000000000000000000000000000000000001')
