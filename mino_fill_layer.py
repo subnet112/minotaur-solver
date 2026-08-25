@@ -1,11 +1,5 @@
-"""lattice fill layer — EMPTY-ONLY overlay above the reigning solver stack."""
 from __future__ import annotations
-_DR_UNSET = object()
-import json
-import logging
-import os
-import time
-from _fx_mino_fill_layer import _clears_floor, _floor, _is_empty, _minted, _read_overrides, _served
+from mino_fill_layer_base import *  # noqa: F401,F403 -- dependency-closed lower layer
 
 def _dz281():
     _log = logging.getLogger(__name__)
