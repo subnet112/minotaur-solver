@@ -9,7 +9,6 @@ cannot change resolution of any name it uses.
 from chain1_lib import _build
 from chain1_v2 import _v2_build
 
-
 def _mk_plan(route, tin, amt, rcpt, intent, state):
     from minotaur_subnet.shared.types import ExecutionPlan as _EP
     if isinstance(route, tuple) and route and (route[0] == 'v2'):
