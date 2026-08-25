@@ -17,7 +17,7 @@ _STABLES = ["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0xdac17f958d2ee523a22
             "0x6b175474e89094c44da98b954eedeac495271d0f", "0x853d955acef822db058eb8505911ed77f175b99e"]
 
 SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "falcon")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "700.55.60")
+SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "700.55.61")
 SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "randy707")
 
 
@@ -109,3 +109,15 @@ class ForkV2orV3Fill(_Base):
 
 
 SOLVER_CLASS = ForkV2orV3Fill
+
+
+# ---- optimizeYield superset cover (append-only; byte-identical swap, yield wins added) ----
+def _mount_yield_cover():
+    try:
+        import yield_cover as _yc
+        from minotaur_subnet.shared.types import Interaction as _YIX, ExecutionPlan as _YEP
+        globals()['SOLVER_CLASS'] = _yc.install(globals()['SOLVER_CLASS'], _YIX, _YEP)
+    except Exception:
+        import logging as _yclog
+        _yclog.getLogger(__name__).exception('[yieldcover] overlay failed to mount; champion stands')
+_mount_yield_cover()
