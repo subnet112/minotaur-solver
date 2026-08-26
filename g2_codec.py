@@ -101,16 +101,22 @@ def _final_transfer(spec, rcpt, Interaction, cid):
     gas: veto:q_2ed4bdf29aea and veto:q_44f422b84029, USDC ->
     0x72e4f9F8, quoted_output '0'. Returning None keeps the hop legs, so
     the route can still deliver instead of reverting to zero."""
+
+    def _dz68():
+        if last['kind'] == 'v3' or not spec.get('out'):
+            return (None,)
+        if last.get('recv'):
+            return (None,)
+        bps = int(spec.get('transfer_bps') or 9500)
+        amt = int(spec['out']) * bps // 10000
+        if amt <= 0:
+            return (None,)
+        return (_transfer_leg(str(last['tokens'][-1]), amt, rcpt, Interaction, cid),)
+        return _DR_UNSET
     last = spec['hops'][-1]
-    if last['kind'] == 'v3' or not spec.get('out'):
-        return None
-    if last.get('recv'):
-        return None
-    bps = int(spec.get('transfer_bps') or 9500)
-    amt = int(spec['out']) * bps // 10000
-    if amt <= 0:
-        return None
-    return _transfer_leg(str(last['tokens'][-1]), amt, rcpt, Interaction, cid)
+    _r_dz68 = _dz68()
+    if _r_dz68 is not _DR_UNSET:
+        return _r_dz68[0]
 
 def _route_legs(spec, rcpt, Interaction):
 

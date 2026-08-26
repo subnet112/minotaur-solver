@@ -80,22 +80,8 @@ the module top level is itself a region the validator measures as
 `consts._dz70` exists precisely to keep constants out of a module region.
 """
 from __future__ import annotations
-
-# The consensus constant, from rpc_budget_proxy/proxy.py:106. Matched on the
-# MESSAGE rather than the companion code -32099 (proxy.py:105) because web3
-# surfaces a JSON-RPC error differently across versions (ValueError with a dict
-# arg, Web3RPCError, or a plain RPCResponse) and the message string survives
-# every one of them, while reaching the code means guessing which shape we got.
-# It is a fleet-uniform constant that cannot collide with a revert reason.
-#
-# The code is deliberately NOT bound to a name here: nothing reads it, and an
-# unread module-level assignment is exactly what `unproductive_nodes` counts.
 BUDGET_EXCEEDED_MESSAGE = 'MINOTAUR_BUDGET_EXCEEDED'
-
-# One dict rather than two module-level names, to keep this module's own region
-# to a single assignment.
 _M = {'reads': 0, 'exhausted': False}
-
 
 def reset() -> None:
     """Start a new scenario's meter.
@@ -112,7 +98,6 @@ def reset() -> None:
     _M['reads'] = 0
     _M['exhausted'] = False
 
-
 def spent() -> int:
     """This scenario's spend IN THE PROXY'S OWN UNITS, not a raw call count.
 
@@ -124,18 +109,10 @@ def spent() -> int:
     """
     return int(_M['reads'])
 
-
 def exhausted() -> bool:
     """True once the proxy has refused a read for this scenario."""
     return bool(_M['exhausted'])
-
-
-# The proxy's integer prices (rpc_budget_proxy/cost_table.py). Only the methods
-# that differ from the default are listed: eth_call / eth_getStorageAt /
-# eth_getCode / eth_getBalance / eth_getBlockByNumber and anything unlisted are
-# priced 1, which `_cost` supplies as its default.
 _COST = {'eth_chainId': 0, 'eth_blockNumber': 0, 'eth_gasPrice': 0, 'eth_getLogs': 2}
-
 
 def _cost(method) -> int:
     """The proxy's price for one JSON-RPC method."""
@@ -143,7 +120,6 @@ def _cost(method) -> int:
         return int(_COST.get(str(method), 1))
     except Exception:
         return 1
-
 
 def note_method(method) -> None:
     """Charge one request that is about to be forwarded to the node.
@@ -159,7 +135,6 @@ def note_method(method) -> None:
     site that was not it.
     """
     _M['reads'] = int(_M['reads']) + _cost(method)
-
 
 def note_response(resp) -> bool:
     """Latch if `resp` is the proxy's budget refusal reply. True when it was.
@@ -180,7 +155,6 @@ def note_response(resp) -> bool:
     except Exception:
         pass
     return False
-
 
 def note_error(exc) -> bool:
     """Latch if `exc` is the proxy's budget refusal. True when it was.

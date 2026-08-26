@@ -78,16 +78,7 @@ def _effective_timeout(timeout, dl, now):
     validator measures as `max_region_nodes` -- three extra top-level statements
     made this file the largest region in the tree and moved the metric 142 -> 143.
     """
-    # Granularity the effective timeout is rounded DOWN to. The value is baked
-    # into the provider at construction and is part of the `_w3` cache key, so a
-    # freely varying timeout would build a NEW HTTPProvider on every call -- an
-    # unbounded cache and a lost connection pool. Quantising keeps the live set
-    # at ~16 clients for the 0.25..4.0s range every caller in this tree uses.
     step = 0.25
-    # Floor for a clamped call. Rounding a nearly-expired window straight down to
-    # 0 would refuse work a warm RPC still answers in single-digit ms, so the
-    # last sliver of a window buys one short attempt rather than none. This is
-    # the ONLY overrun eth_call can now produce and it is bounded by this value.
     min_call_s = 0.25
     if dl:
         left = dl - now
@@ -96,7 +87,6 @@ def _effective_timeout(timeout, dl, now):
         if left < timeout:
             timeout = left
     return max(min_call_s, int(timeout / step) * step)
-
 
 def eth_call(rpc_url, to, data_hex, timeout=1.5):
     """eth_call via web3; returns raw bytes or None (revert / empty / hiccup / out of

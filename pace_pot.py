@@ -56,27 +56,8 @@ minifying moves it by exactly zero. The same reasoning put `read_meter` and
 `empty_rescue` in their own files.
 """
 from __future__ import annotations
-
-# The harness's REAL per-GENERATE_PLAN wall when the deterministic read budget is
-# in force, from `harness/solver_read_proxy.generate_plan_recv_timeout`:
-#
-#     backstop = float(os.environ.get("GENERATE_PLAN_BACKSTOP_SECONDS", "300"))
-#     return max(default, backstop)
-#
-# reached from `orchestrator.py:679` on every GENERATE_PLAN. Its own docstring
-# states why: "When the deterministic budget is the cutoff the wall-clock is NO
-# LONGER the cutoff -- it would re-introduce the very cross-host non-determinism
-# the budget removes. So loosen it to a mere runaway backstop."
 _BACKSTOP_S = 300.0
-
-# The proxy data-plane URL the solver is handed, from
-# `solver_read_proxy.proxy_rpc_url`:  f"{cfg.url}/rpc/{session_id}/{chain_name}".
-# `runtime_solver.py:278` folds those straight into the init config's `rpc_urls`,
-# so the solver's OWN `_rpc_urls` carry the signature and nothing else has to be
-# guessed. Matched on the two-segment tail rather than the bare marker so an
-# ordinary provider that merely serves under a `/rpc/` path cannot look like one.
 _PROXY_MARK = '/rpc/'
-
 
 def _proxied(rpc_urls) -> bool:
     """True when the reads this run issues are routed through the read proxy.
@@ -101,35 +82,8 @@ def _proxied(rpc_urls) -> bool:
     except (TypeError, ValueError, AttributeError):
         pass
     return False
-
-
-# What ONE plan may hold of the pot that is still LEFT. The ceiling's second job
-# -- the one the loosened wall does not retire -- is stopping heavy orders from
-# draining the run before the tail is reached, which is the OTHER drop shape (a
-# contiguous zero-filled tail, and the one this lineage has also paid for).
-#
-# Taken against the REMAINING pot rather than the whole one, so the bound tapers
-# by construction: order after order the widest permitted window is
-# 0.05r, 0.05(0.95r), 0.05(0.95^2 r) ... and the pot left after n such orders is
-# 0.95^n of what it started at. It converges to zero and never reaches it, so no
-# sequence of heavy orders can drain the run -- which is the property the flat
-# 20.0 provided by being small, and the property any widening has to keep.
-#
-# A twentieth rather than a tenth because the drop verdict measures how rare a
-# heavy order is: sub_3f2e0ea8a834 served 85 of 122 rows and dropped 7, and
-# `bin/perf-check` puts 9 of 271 scenarios over 2.7s. At that density the taper
-# has room -- 7 orders drawing their full window spend 30% of the pot and leave
-# 570s for the other 115. At a tenth the same seven would spend half of it, and
-# a corpus with 20 heavy rows would arrive at its tail with nothing. This is the
-# number to raise if a later verdict shows the widened window still binding.
 _POT_SHARE = 0.05
-
-# How far under the harness's wall to stay. The wall covers the whole command --
-# search, the cover ladder's own run-wide pot, plan encode and the IPC round
-# trip -- and only the SEARCH is governed here, so a third of it is the search's
-# share on the same reasoning `_PLAN_CUTOFF_S * 2.0 / 3.0` used against 30.0.
 _WALL_MARGIN = 3.0
-
 
 def ceiling(rpc_urls, wall_s: float, remaining_time: float, floor_s: float) -> float:
     """The widest window one plan may hold: from the pot and the REAL wall.
@@ -168,7 +122,6 @@ def ceiling(rpc_urls, wall_s: float, remaining_time: float, floor_s: float) -> f
     except (TypeError, ValueError, ZeroDivisionError):
         return float(floor_s or 0.0)
 
-
 def allowance(worked: float, done: int, remaining_orders: int, remaining_time: float, rpc_urls, wall_s: float, floor_s: float) -> float:
     """Seconds this order may spend: the larger of its share and its surplus, capped.
 
@@ -187,7 +140,6 @@ def allowance(worked: float, done: int, remaining_orders: int, remaining_time: f
     share = float(remaining_time) / max(1, int(remaining_orders))
     allow = surplus(worked, done, remaining_orders, remaining_time)
     return max(4.0, min(max(share, allow), ceiling(rpc_urls, wall_s, remaining_time, floor_s)))
-
 
 def surplus(worked: float, done: int, remaining_orders: int, remaining_time: float) -> float:
     """Seconds available to THIS order beyond the mean reserved for the others.
@@ -245,7 +197,6 @@ def surplus(worked: float, done: int, remaining_orders: int, remaining_time: flo
         return float(remaining_time) - _others(remaining_orders, remaining_time, mean) * mean
     except (TypeError, ValueError, ZeroDivisionError):
         return 0.0
-
 
 def _others(remaining_orders, remaining_time: float, mean: float) -> float:
     """How many FURTHER orders this process can still be asked to serve.

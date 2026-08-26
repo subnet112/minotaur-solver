@@ -166,7 +166,6 @@ def _lat_is_cross_chain(plan) -> bool:
     except Exception:
         return False
 
-
 def _is_empty(plan) -> bool:
     """True when `plan` is nothing the validator would score.
 

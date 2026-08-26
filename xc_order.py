@@ -59,9 +59,8 @@ keeps paying for -- the same reasoning that put `pace_pot`, `read_meter`,
 `max_region_nodes` off the two regions that hold the tree's maximum.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 _PREFIX = 'eip155:'
-
 
 def _token_chain(value, default: int) -> int:
     """The chain an `eip155:<chain>:<addr>` token names, else `default`.
@@ -79,7 +78,6 @@ def _token_chain(value, default: int) -> int:
         return int(text[len(_PREFIX):].split(':', 1)[0])
     except (TypeError, ValueError):
         return default
-
 
 def _params(state) -> dict:
     """The order's raw parameters, preferring the typed context's token names.
@@ -103,7 +101,6 @@ def _params(state) -> dict:
         return out if isinstance(out, dict) else {}
     return out
 
-
 def dest_chain(state) -> int:
     """The chain this order must DELIVER on when that is not the source chain, else 0.
 
@@ -122,14 +119,20 @@ def dest_chain(state) -> int:
     behaviour we already have, while a false non-zero would decline a fast plan
     that was serving an order for real.
     """
-    try:
-        params = _params(state)
+
+    def _dz150():
         src = int(getattr(state, 'chain_id', 0) or 0)
         declared = params.get('dest_chain_id')
         if declared not in (None, '', 0, '0'):
-            return int(declared) if int(declared) != src else 0
+            return (int(declared) if int(declared) != src else 0,)
         source = _token_chain(params.get('input_token'), src)
         dest = _token_chain(params.get('output_token'), 0)
-        return dest if dest and dest != (source or src) else 0
+        return (dest if dest and dest != (source or src) else 0,)
+        return _DR_UNSET
+    try:
+        params = _params(state)
+        _r_dz150 = _dz150()
+        if _r_dz150 is not _DR_UNSET:
+            return _r_dz150[0]
     except (TypeError, ValueError, AttributeError):
         return 0

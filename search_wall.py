@@ -112,30 +112,9 @@ Fail-open in both directions on purpose: an unreadable or missing `consts`
 means no wall, never a refusal.
 """
 from __future__ import annotations
-
 import time
-
-# JSON-RPC refusal handed back in place of a forwarded read. Shaped as a
-# provider-level error rather than an empty result so it cannot be mistaken for
-# "this pool has no liquidity" -- the misreading that `read_meter` exists to
-# stop. web3 raises on an error member, and every direct call site in this tree
-# catches that and returns None, which is what `venues.eth_call` already
-# returns once the same deadline has passed.
-#
-# -32001 rather than the proxy's -32099: this is OUR wall, not
-# MINOTAUR_BUDGET_EXCEEDED, and `read_meter.note_error` keys the sticky budget
-# latch off the proxy's exact consensus message. A collision here would latch
-# the budget off a local clock and suppress reads the proxy would have answered
-# for the rest of the scenario.
-_REFUSAL = {
-    'jsonrpc': '2.0',
-    'id': None,
-    'error': {'code': -32001, 'message': 'minotaur: plan search deadline exceeded'},
-}
-
-# Methods the wall applies to. See BLAST RADIUS above.
+_REFUSAL = {'jsonrpc': '2.0', 'id': None, 'error': {'code': -32001, 'message': 'minotaur: plan search deadline exceeded'}}
 _WALLED = ('eth_call',)
-
 
 def expired(method) -> bool:
     """True when `method` is walled and the armed plan window has already passed.
@@ -150,10 +129,9 @@ def expired(method) -> bool:
     try:
         from consts import _SEARCH_DEADLINE
         dl = _SEARCH_DEADLINE[0]
-        return bool(dl) and (dl - time.monotonic()) <= 0.0
+        return bool(dl) and dl - time.monotonic() <= 0.0
     except Exception:
         return False
-
 
 def refusal():
     """A fresh copy of the JSON-RPC refusal, so no caller can mutate the template."""

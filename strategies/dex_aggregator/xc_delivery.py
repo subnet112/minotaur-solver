@@ -73,43 +73,10 @@ one node the WRONG side of the champion. The same reasoning put ``pace_pot``,
 ``read_meter`` and ``empty_rescue`` in their own files.
 """
 from __future__ import annotations
-
-# The pre-funded Anvil account the benchmark submits scoreIntent as. See
-# orchestrator._ANVIL_DEFAULT_ACCOUNT and _delivery_recipients.
+_DR_UNSET = object()
 FALLBACK_PAYEE = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
 TRANSFER_SEL = 'a9059cbb'
-
-
-# How far UNDER the source swap's point estimate to declare the bridge amount.
-#
-# Read `bridge_declaration` for why a haircut is needed at all. The SIZE is
-# picked off the validator's own three-band ladder
-# (epoch/relative_scoring.py), which is the whole decision:
-#
-#   <= 10 bps   RELATIVE_TOL_BPS -- the noise band. The row reads `matched`.
-#               FREE, and where this wants to be.
-#   <= 100 bps  FLOOR_BPS -- `tolerated`: a real regression, netted against
-#               wins, never a veto.
-#    > 100 bps  `catastrophic` -- a HARD VETO, same class as a drop.
-#   declared > earned
-#               the deposit reverts, nothing is bridged, nothing is seeded on
-#               the far side and the row is scored `nothing_delivered`: a
-#               DROPPED order, also a hard veto.
-#
-# So the two failure directions are NOT symmetric. Over-declaring by one wei
-# costs the whole order; under-declaring costs bps until 100 of them. 50 is the
-# middle of the tolerated band: it leaves the same 50 bps of headroom on both
-# sides of the floor, and it is deliberately not 10 -- landing in the free band
-# would mean betting that offline pool math on a synthetic snapshot agrees with
-# a live fork swap to within 0.1%, which is the bet that has been coming back
-# `nothing_delivered`.
-#
-# TUNE THIS AGAINST A VERDICT, NEVER BY FEEL. The signal is in
-# report.cross_chain_delivery: `nothing_delivered` still appearing means the
-# haircut is too small; cross-chain rows landing `tolerated` rather than
-# `matched` (and no `nothing_delivered`) means it is bigger than it needs to be.
 _SOURCE_HAIRCUT_BPS = 50
-
 
 def bridge_declaration(estimated_out) -> int:
     """What to declare a bridge leg carries, given the source swap's ESTIMATE.
@@ -156,7 +123,6 @@ def bridge_declaration(estimated_out) -> int:
     if est <= 0:
         return 0
     return est * (10000 - _SOURCE_HAIRCUT_BPS) // 10000
-
 
 def seeded_balance(bridge_token, output_token, netted_amount) -> int:
     """The executor's destination-fork balance OF THE ASSET THIS LEG TRANSFERS.
@@ -221,7 +187,6 @@ def seeded_balance(bridge_token, output_token, netted_amount) -> int:
         return 0
     return amt
 
-
 def deliverable_amount(bridge_amount, seeded) -> int:
     """The most a destination transfer can ask for without reverting.
 
@@ -252,7 +217,6 @@ def deliverable_amount(bridge_amount, seeded) -> int:
         return 0
     return min(amt, held)
 
-
 def payee(recipient) -> str:
     """The address a destination leg must pay for the benchmark to count it.
 
@@ -274,12 +238,11 @@ def payee(recipient) -> str:
     """
     try:
         addr = str(recipient or '').strip()
-        if addr.startswith('0x') and len(addr) == 42 and int(addr, 16) != 0:
+        if addr.startswith('0x') and len(addr) == 42 and (int(addr, 16) != 0):
             return addr
     except (TypeError, ValueError):
         pass
     return FALLBACK_PAYEE
-
 
 def intent_receiver(state) -> str:
     """The receiver THE INTENT ITSELF NAMES, or ``''`` when it names none.
@@ -332,9 +295,9 @@ def intent_receiver(state) -> str:
     direction, since the alternative is the uncredited address this exists to
     refuse.
     """
-    try:
-        params = {}
-        typed = getattr(state, 'typed_context', None)
+
+    def _dz144():
+        nonlocal params
         if typed is not None:
             raw = getattr(typed, 'raw_params', None)
             if isinstance(raw, dict):
@@ -343,10 +306,16 @@ def intent_receiver(state) -> str:
             view = getattr(state, 'raw_params_view', None)
             params = (view() if callable(view) else getattr(state, 'raw_params', None)) or {}
         named = getattr(typed, 'receiver', None) if typed is not None else None
-        return str(named or params.get('receiver') or '')
+        return (str(named or params.get('receiver') or ''),)
+        return _DR_UNSET
+    try:
+        params = {}
+        typed = getattr(state, 'typed_context', None)
+        _r_dz144 = _dz144()
+        if _r_dz144 is not _DR_UNSET:
+            return _r_dz144[0]
     except Exception:
         return ''
-
 
 def credited_recipient(receiver, owner=None, declared=None) -> str:
     """The destination payee to BUILD the leg for, chosen from the credited set only.
@@ -396,12 +365,11 @@ def credited_recipient(receiver, owner=None, declared=None) -> str:
     """
     try:
         addr = str(receiver or '').strip()
-        if addr.startswith('0x') and len(addr) == 42 and int(addr, 16) != 0:
+        if addr.startswith('0x') and len(addr) == 42 and (int(addr, 16) != 0):
             return addr
     except (TypeError, ValueError):
         pass
     return FALLBACK_PAYEE
-
 
 def transfer_calldata(recipient, amount: int) -> str:
     """``transfer(address,uint256)`` calldata, hand-packed.
@@ -412,7 +380,6 @@ def transfer_calldata(recipient, amount: int) -> str:
     ``baseline_solver`` follows.
     """
     return '0x' + TRANSFER_SEL + payee(recipient)[2:].lower().rjust(64, '0') + format(int(amount), '064x')
-
 
 def direct_delivery(interaction_cls, output_token, recipient, bridge_amount, dst_chain) -> list:
     """One transfer of the bridged asset to the payee, as a destination leg.

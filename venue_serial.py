@@ -15,35 +15,47 @@ was scaffolding for that same node budget and is gone with it, since a fresh
 module has the room to say `return` directly.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 from venues import FEES, q_v3_single, q_v3_path, q_v2, q_aero, q_curve, _aero_candidates
-
 HUB_FEES = (500, 3000)
 
 def _scan_v3(rpc, cfg, tin, tout, amt, take, expired):
     """Direct uniV3 across fee tiers, then 2-hop via each hub."""
+
+    def _dz149():
+        for hub in cfg['hubs']:
+            if hub.lower() in (tin, tout):
+                continue
+            for f1 in HUB_FEES:
+                for f2 in HUB_FEES:
+                    if expired():
+                        return (None,)
+                    take(q_v3_path(rpc, cfg, [tin, hub, tout], [f1, f2], amt), {'kind': 'v3_path', 'tokens': [tin, hub, tout], 'fees': [f1, f2]})
+        return _DR_UNSET
     for fee in FEES:
         if expired():
             return
         take(q_v3_single(rpc, cfg, tin, tout, amt, fee), {'kind': 'v3_single', 'fee': fee})
-    for hub in cfg['hubs']:
-        if hub.lower() in (tin, tout):
-            continue
-        for f1 in HUB_FEES:
-            for f2 in HUB_FEES:
-                if expired():
-                    return
-                take(q_v3_path(rpc, cfg, [tin, hub, tout], [f1, f2], amt), {'kind': 'v3_path', 'tokens': [tin, hub, tout], 'fees': [f1, f2]})
+    _r_dz149 = _dz149()
+    if _r_dz149 is not _DR_UNSET:
+        return _r_dz149[0]
 
 def _scan_v2(rpc, cfg, tin, tout, amt, take, expired):
     """uniV2-style routers: direct, then via each hub."""
-    for router in cfg['v2routers']:
+
+    def _dz148():
         if expired():
-            return
+            return (None,)
         take(q_v2(rpc, router, [tin, tout], amt), {'kind': 'v2', 'router': router, 'path': [tin, tout]})
         for hub in cfg['hubs']:
             if hub.lower() in (tin, tout) or expired():
                 continue
             take(q_v2(rpc, router, [tin, hub, tout], amt), {'kind': 'v2', 'router': router, 'path': [tin, hub, tout]})
+        return _DR_UNSET
+    for router in cfg['v2routers']:
+        _r_dz148 = _dz148()
+        if _r_dz148 is not _DR_UNSET:
+            return _r_dz148[0]
 
 def _scan_aero(rpc, cfg, tin, tout, amt, take, expired):
     """Aerodrome (Base only) -- the venue Uniswap-on-Base misses. Its swap names the

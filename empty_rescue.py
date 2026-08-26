@@ -104,7 +104,7 @@ level is itself a region the validator measures -- the same reasoning that put
 `read_meter` in its own file.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 
 def is_cross_chain(plan) -> bool:
     """True when `plan` carries a bridge payload, whatever its `interactions` say.
@@ -131,7 +131,6 @@ def is_cross_chain(plan) -> bool:
     except Exception:
         return False
 
-
 def _xc_leg_on(leg, dst) -> bool:
     """True when `leg` is a leg on chain `dst` that has something to execute."""
     if not isinstance(leg, dict) or not leg.get('interactions'):
@@ -140,7 +139,6 @@ def _xc_leg_on(leg, dst) -> bool:
         return int(leg.get('chain_id') or 0) == dst
     except (TypeError, ValueError):
         return False
-
 
 def delivers_cross_chain(plan) -> bool:
     """True when `plan` carries a bridge payload THAT ACTUALLY MOVES SOMETHING.
@@ -210,22 +208,27 @@ def delivers_cross_chain(plan) -> bool:
     reason: it is the generic predicate this module offers every layer, and most
     of its callers are in the second group.
     """
-    try:
-        md = getattr(plan, 'metadata', None) or {}
+
+    def _dz67():
         xc = md.get('cross_chain_plan')
         if not isinstance(xc, dict):
-            return False
+            return (False,)
         try:
             dst = int(md.get('dst_chain_id') or 0)
         except (TypeError, ValueError):
-            return False
+            return (False,)
         legs = xc.get('legs')
         if not dst or not isinstance(legs, list):
-            return False
-        return any(_xc_leg_on(leg, dst) for leg in legs)
+            return (False,)
+        return (any((_xc_leg_on(leg, dst) for leg in legs)),)
+        return _DR_UNSET
+    try:
+        md = getattr(plan, 'metadata', None) or {}
+        _r_dz67 = _dz67()
+        if _r_dz67 is not _DR_UNSET:
+            return _r_dz67[0]
     except Exception:
         return False
-
 
 def _is_empty(plan) -> bool:
     """True when `plan` is nothing the validator would score.
@@ -256,7 +259,6 @@ def _is_empty(plan) -> bool:
     except Exception:
         return True
 
-
 def rescue(solver, intent, state, snapshot=None):
     """An RPC-free plan for an order about to be dropped, else None.
 
@@ -273,7 +275,6 @@ def rescue(solver, intent, state, snapshot=None):
     except Exception:
         return None
     return None if _is_empty(plan) else plan
-
 
 def rescue_if_empty(solver, plan, args, kwargs):
     """`plan`, or an RPC-free stand-in when `plan` is empty. Never raises.

@@ -111,57 +111,8 @@ Stage-1 factorization number for every caller. Same reasoning that put
 `pace_pot`, `read_meter`, `empty_rescue` and `xc_order` in their own files.
 """
 from __future__ import annotations
-
-# Seconds to reserve per order still unanswered. `_last_resort_plan` is RPC-free
-# and the stubs on sub_b5b5ba50f5f8 measured 0.1-1.4ms.
-#
-# THIS WAS 0.5 AND THE MARGIN WAS THE DEFECT. The note that stood here argued
-# over-reserving was the safe direction because "over-reserving arms the fast
-# path a few orders early, under-reserving loses the tail to the wall, and those
-# are not symmetric". Both halves are true; the conclusion does not follow, and
-# the asymmetry actually runs the other way. An early stub is a CERTAIN hard
-# veto. A late arm only risks the tail on a run that was going to hit the wall,
-# and no run yet measured has come near it.
-#
-# The arithmetic the old constant produced, on the 122-order corpus:
-#
-#   reserve at 0.5s/order   122 * 0.5  + 20 =  81.0s held back
-#   what a stub really costs 122 * 0.0014 + 20 =  20.2s
-#
-# So the gate armed with ~61s of pot still in hand -- at the measured ~7s/order
-# that is ~8 orders stubbed for nothing, every one a hard veto.
-#
-# MEASURED, sub_10821047e512 / round-e29789540-n1: better=2 worse=10 matched=80,
-# worse == dropped == 10, and EIGHT of the ten came back with our own plan cost
-# at 0.0-0.6ms -- the 0.1-1.4ms fingerprint of `_last_resort_plan`, not of a
-# route. The run served 74 more rows after the first drop and reached the end of
-# the corpus, so the wall those 8 stubs were bought against never arrived.
-#
-# It also explains the SCATTERED shape, which a latching fast path cannot
-# produce. `overruns` is level-triggered -- `_dz284` re-evaluates it per order --
-# and a stub costs ~0ms, so `remaining_time` barely moves while `reserve_s`
-# falls a whole `_STUB_S` as the count drops. The gate therefore DIS-ARMS one
-# order after it fires, routes a real order, drifts back over the line and fires
-# again: drops interleaved with served rows, exactly the 8/16/24/29/61/77/83/110
-# pattern on this verdict. Shrinking the reserve to what a stub costs collapses
-# that oscillation band along with the early arm.
-#
-# 0.05 keeps a ~35x margin on the worst stub ever measured, which is ample for
-# work that is RPC-free and does no search. `_INFLIGHT_S` below, not this, is
-# the constant carrying the real safety.
-#
-# It fixes the BENCHMARK_CONCURRENCY overstatement in the same stroke. Under
-# sharding `remaining_orders` is K times too high (see the docstring above), and
-# K * 122 * 0.5 is a reserve of minutes, while K * 122 * 0.05 at K=4 is 24.4s --
-# still under `_INFLIGHT_S`, so the inflation stops being able to move the gate
-# at all rather than merely "degrading into arming slightly early".
 _STUB_S = 0.05
-
-# Seconds left for the order already in flight when the reserve is reached.
-# `_apex_champ._PLAN_CEILING_S` is `_PLAN_CUTOFF_S * 2/3` = 20.0 and every phase
-# below clamps to it, so no single routed order may outlive this.
 _INFLIGHT_S = 20.0
-
 
 def reserve_s(remaining_orders: int) -> float:
     """Seconds the run must keep back to answer everything it has left.
@@ -172,7 +123,6 @@ def reserve_s(remaining_orders: int) -> float:
     a zero or negative count harmless either way.
     """
     return max(1, int(remaining_orders)) * _STUB_S + _INFLIGHT_S
-
 
 def overruns(remaining_orders: int, remaining_time_s: float, floor_s: float) -> bool:
     """True when the pot no longer covers the tail, i.e. fast-path from here on.
