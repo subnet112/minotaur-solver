@@ -33,7 +33,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 _PUTTY_FINAL_BRAND = 'lattice-route-engine'
 
 def _solver_env(_brand):
-    return (os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine"), os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', "MichaelDev84"))
+    return (os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine'), os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'))
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _solver_env(_PUTTY_FINAL_BRAND)
 import shape_lib as _sl, shape_est2 as _se, shape_build as _sb, shape_lib3 as _sl3
 import viking_gate as _vg, viking_data as _vd, shape_base as _sba, chain1 as _c1
