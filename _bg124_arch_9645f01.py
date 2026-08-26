@@ -18,7 +18,7 @@ from eth_abi import encode as _enc, decode as _dec
 from eth_utils import keccak as _kk
 
 def _mk_meta():
-    return (os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine"), os.environ.get('MINOTAUR_SOLVER_VERSION', '3.37.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', "MichaelDev84"))
+    return (os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine'), os.environ.get('MINOTAUR_SOLVER_VERSION', '3.37.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'))
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _mk_meta()
 
 class _C:
@@ -1054,8 +1054,8 @@ try:
         except Exception:
             pass
         return p
-    _M3C1_SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
-    _M3C1_SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "MichaelDev84")
+    _M3C1_SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
+    _M3C1_SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
 
     class M3Chain1CoverSolver(_M3C1_BASE):
 
@@ -1208,8 +1208,8 @@ def _m3ac1_install():
             except Exception:
                 pass
             return p
-        _M3AC1_SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine")
-        _M3AC1_SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "MichaelDev84")
+        _M3AC1_SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
+        _M3AC1_SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
 
         class M3AChain1CoverSolver(_M3AC1_BASE):
 
