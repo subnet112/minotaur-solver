@@ -11,12 +11,7 @@ import json
 import os
 from eth_abi import encode as _enc
 import time
-from venues import CHAINS, DEADLINE, _SEARCH_DEADLINE, _v3_path_bytes, q_v2, q_v3_path, q_v3_single
-
-# swapExactTokensForTokensSupportingFeeOnTransferTokens. Spelled here rather than
-# imported from router_cover: these two cover modules sit at the same layer and an
-# import between them would close a cycle through venues.
-S_V2_SWAP_FOT = '5c11d795'
+from venues import CHAINS, DEADLINE, S_V2_SWAP, _SEARCH_DEADLINE, _v3_path_bytes, q_v2, q_v3_path, q_v3_single
 
 def _load():
     """Route table, preferring the generated PYTHON module over the JSON.
@@ -72,24 +67,13 @@ def _requote(rpc, cfg, route, tin, tout, amount):
     return 0
 
 def baked_legs(rpc, tin, tout, amount, chain_id, recipient):
-    """(interactions, out) from the pre-solved table, or (None, 0).
-
-    The requote window honours the TIGHTER of the enclosing deadline and its own
-    3.0s, the same discipline `router_cover.best_route` states. A flat +3.0s
-    overwrote whatever bound the caller had set: this is reached from
-    `_ext_legs`, inside the per-ORDER cover ceiling `MinerSolver._rb1_cap` now
-    arms, and re-arming there turned that ceiling back into a per-layer one. Time
-    over the ceiling is not paid by this order — it comes out of the shared
-    `_RUN_BUDGET_S` and starves the tail into `last_resort_empty`, i.e. dropped
-    orders and a hard veto.
-    """
+    """(interactions, out) from the pre-solved table, or (None, 0)."""
 
     def _dz51():
         if not row:
             return ((None, 0),)
         prev = _SEARCH_DEADLINE[0]
-        mine = time.monotonic() + 3.0
-        _SEARCH_DEADLINE[0] = min(mine, prev) if prev else mine
+        _SEARCH_DEADLINE[0] = time.monotonic() + 3.0
         try:
             cfg = CHAINS.get(int(chain_id)) or {}
             return (_rebuild(rpc, cfg, row, tin, tout, amount, recipient),)
@@ -103,34 +87,10 @@ def baked_legs(rpc, tin, tout, amount, chain_id, recipient):
     if _r_dz51 is not _DR_UNSET:
         return _r_dz51[0]
 
-def _v2_approve_rows(tin, router, amount):
-    """The approve row(s) for a V2 serve, carrying the USDT reset where it bites.
-
-    Same fourth-spender gap 7cfe2e6 closed in `router_cover`: the audit list in
-    `chain1_lib._approve_ixs` names only the three BAKED-spec builders, so this
-    module and `cover_ext` kept emitting a lone non-zero approve, which USDT
-    reverts outright -- taking the whole cover plan with it.
-    """
-    try:
-        from chain1_lib import _needs_reset_approve as _nra
-        reset = _nra(tin)
-    except Exception:
-        reset = False
-    rows = [{'target': tin, 'data': _approve(router, 0)}] if reset else []
-    return rows + [{'target': tin, 'data': _approve(router, amount)}]
-
 def _v2_path_swap(route, amount, recipient):
-    """approve + swapExactTokensForTokensSupportingFeeOnTransferTokens over the baked path.
-
-    On 5c11d795 rather than the plain 38ed1739 for the reason certify measured on
-    `dex:veto:q_6581642391f7` (see 7cfe2e6): the plain selector re-derives amounts
-    from getAmountsOut and asserts them AFTER the transfer, so a skimming token --
-    or a pair whose reserves moved since the route was baked -- reverts the swap
-    leg bare. min_out is already 0 here, which is what makes the swap-safe variant
-    a pure win: it can only succeed where the plain one did, and also where it did not.
-    """
+    """approve + swapExactTokensForTokens over the baked path."""
     body = _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount), 0, route['path'], recipient, DEADLINE])
-    return _v2_approve_rows(route['path'][0], route['router'], amount) + [{'target': route['router'], 'data': '0x' + S_V2_SWAP_FOT + body.hex()}]
+    return [{'target': route['path'][0], 'data': _approve(route['router'], amount)}, {'target': route['router'], 'data': '0x' + S_V2_SWAP + body.hex()}]
 
 def _tuple_body(cfg, args, types, at):
     """ABI-encode a router tuple, inserting the deadline only where the chain's

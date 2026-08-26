@@ -89,28 +89,14 @@ def _hop_legs(spec, hop, is_last, rcpt, Interaction, cid):
 def _final_transfer(spec, rcpt, Interaction, cid):
     """Curve-FINAL routes need an explicit transfer moving the output from
     the executor to rcpt, or the scorer measures zero (measured: 3 curve
-    routes executed clean, on-chain score 5000, raw_output 0).
-
-    The leg is skipped when the amount rounds to nothing. ERC20s revert a
-    zero-value transfer (`Transfer amount must be greater than zero`), and
-    that reverts the WHOLE intent, so a dust leg does not cost dust — it
-    costs the entire order. `not spec.get('out')` does not catch it: `out`
-    reaches here as the string `'0'` (truthy) on a zero-quote row, and a
-    small nonzero `out` still floors to 0 through `* bps // 10000`.
-    Measured 2026-08-25 on the exec fork, both trees reverting at ~398k
-    gas: veto:q_2ed4bdf29aea and veto:q_44f422b84029, USDC ->
-    0x72e4f9F8, quoted_output '0'. Returning None keeps the hop legs, so
-    the route can still deliver instead of reverting to zero."""
+    routes executed clean, on-chain score 5000, raw_output 0)."""
     last = spec['hops'][-1]
     if last['kind'] == 'v3' or not spec.get('out'):
         return None
     if last.get('recv'):
         return None
     bps = int(spec.get('transfer_bps') or 9500)
-    amt = int(spec['out']) * bps // 10000
-    if amt <= 0:
-        return None
-    return _transfer_leg(str(last['tokens'][-1]), amt, rcpt, Interaction, cid)
+    return _transfer_leg(str(last['tokens'][-1]), int(spec['out']) * bps // 10000, rcpt, Interaction, cid)
 
 def _route_legs(spec, rcpt, Interaction):
 

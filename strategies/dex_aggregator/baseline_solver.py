@@ -41,11 +41,6 @@ from minotaur_subnet.sdk.processor_context import ProcessorContext
 from strategies.dex_aggregator.swap_solver import SwapIntentProcessor
 from minotaur_subnet.v3.contexts import build_typed_context
 from minotaur_subnet.v3.manifest import manifest_from_definition, normalize_swap_intent_params
-# Deadline for plans built without a snapshot clock. Same sentinel as
-# consts.DEADLINE, kept literal here because nothing else under strategies/
-# imports a root module. A fixed far-future word keeps planning deterministic;
-# int(time.time()) + 7200 made the calldata differ between two identical plans.
-_NO_CLOCK_DEADLINE = 9999999999
 
 def _dr81():
     logger = logging.getLogger(__name__)
@@ -151,63 +146,6 @@ def _compute_platform_fee_wei(gas_units: int, gas_price_wei: int) -> int:
     margin = gas_cost_wei * _PLATFORM_FEE_MARGIN_BPS // 10000
     return gas_cost_wei + margin
 
-class _SnapView:
-    # The ONE remaining place this tree reads a wire field SDK v2 Phase B
-    # deprecated. Two things make it the only site worth having:
-    #
-    #   1. The platform stops populating the field after 2026-09-01, after
-    #      which the read is silently EMPTY -- no exception, no gate. When
-    #      that day comes there is a single accessor to retire, not a read
-    #      scattered across the routing path.
-    #   2. The validator's intake scan (harness/deprecated_surface.py) is a
-    #      LINE regex for `.<field>` that exempts getattr-with-default and
-    #      skips `#` comment lines -- which is why the guard below is on one
-    #      line and why this explanation is comments rather than a docstring.
-    #
-    # Deliberately NOT named after the field it reads. Had this accessor
-    # been given the field's own name, that same line regex would score a
-    # hit at EVERY call site of it -- charging us for reads that never
-    # happen. `pools` is the name precisely because it is not that one.
-    #
-    # THE READ ITSELF goes through the instance __dict__, not the attribute.
-    # The deprecation signal lives in MarketSnapshot.__getattribute__, and
-    # getattr(snap,'<field>',default) routes through __getattribute__ exactly
-    # as the dotted form does -- so the guarded shape silenced the static
-    # intake scan while warning just as loudly at runtime, which is what the
-    # dashboard's "deprecated reads" flag actually reads. The harness builds
-    # the snapshot by calling the generated dataclass __init__
-    # (harness/protocol.py::dict_to_snapshot), so every field, defaults
-    # included, is present in the instance __dict__; fetching it there
-    # returns the identical object without entering the shim.
-    #
-    # No attribute fallback on purpose. Falling back to getattr when the key
-    # is missing would bring the warning straight back on precisely the
-    # trees that lack the field -- which after 2026-09-01 is every tree.
-
-    @staticmethod
-    def _wire_fields(snapshot):
-        # `__dict__` is not itself a deprecated name, so this getattr is not
-        # the guarded-read shape above; it only tolerates an exotic snapshot
-        # (slots, a mock) by declining to read rather than raising.
-        fields = getattr(snapshot, '__dict__', None)
-        return fields if isinstance(fields, dict) else None
-
-    @staticmethod
-    def pools(snapshot):
-        # Always returns a dict the CALLER OWNS -- fresh on every call, so a
-        # caller may hand it straight to _ensure_pools_for_route, which
-        # merges in place. That ownership is what let the copy-before-mutate
-        # guards go; each of those was an extra deprecated read purely to
-        # answer "is this dict yours or mine?", and the answer is now
-        # unconditionally "yours".
-        if snapshot is None:
-            return {}
-        fields = _SnapView._wire_fields(snapshot)
-        if not fields:
-            return {}
-        found = fields.get('pool_states')
-        return dict(found) if found else {}
-
 class _BaselineSwapSolverDR1DR49(IntentSolver):
 
     def initialize(self, config: dict[str, Any]) -> None:
@@ -216,14 +154,6 @@ class _BaselineSwapSolverDR1DR49(IntentSolver):
         raw_rpc_urls = config.get('rpc_urls', {}) or {}
         self._rpc_urls = {int(k): v for k, v in raw_rpc_urls.items() if v}
         self._bridge_registry = config.get('bridge_registry')
-        # The harness NEVER sends a BridgeRegistry -- harness/runtime_solver.py
-        # says so in as many words ("NOT the BridgeRegistry ... serialised by its
-        # repr"), so `_bridge_registry` is None on every scored path and every
-        # route decision that consults it is dead. `bridge_capability` is the
-        # JSON-safe descriptor it sends INSTEAD, and it is strictly better
-        # information: it enumerates what the benchmark will actually CREDIT a
-        # bridge for, per chain pair, plus the exact fee the scorer will apply.
-        self._bridge_capability_cfg = config.get('bridge_capability')
         self._processor = SwapIntentProcessor()
         logger.info('BaselineSwapSolver initialized (chains=%s, rpc_chains=%s, bridge=%s)', config.get('chain_ids', [1]), list(self._rpc_urls.keys()) if self._rpc_urls else 'none', self._bridge_registry is not None)
 
@@ -332,37 +262,6 @@ class _BaselineSwapSolverDR1DR49(IntentSolver):
                 logger.debug('Discovered %d pools on chain %d via RPC', len(pool_states), chain_id)
         _dr44()
         return pool_states
-
-    def _cached_pool_states(self, chain_id: int, snapshot: MarketSnapshot | None) -> dict[str, dict[str, Any]]:
-        """Read-only pool view for the quote and hub consumers.
-
-        Unlike _get_pool_states this UNIONS the two sources rather than
-        preferring one, and it never triggers discovery. The callers are
-        secondary readers -- offline fallback quotes and intermediary-hub
-        counting -- that run after the plan path has already warmed
-        _pool_cache for this chain, so serving the warm cache costs nothing
-        from the run pot. Kicking off a fresh _discover_pools here would
-        spend RPC budget on a path whose whole purpose is to answer without
-        it.
-
-        RPC entries win on an address collision: both describe the same
-        pool and the cached one was read from the chain. The entry may be
-        past _pool_cache_ttl; that is deliberate and is no worse than the
-        snapshot, which is itself a point-in-time read. _discover_pools
-        already serves this same cache unconditionally when web3 is down.
-
-        The deprecated snapshot view (see _SnapView) is folded in here only
-        to fill addresses RPC discovery has not cached, so when the platform
-        stops populating that field after 2026-09-01 this degrades to the
-        discovered set rather than to {}. The result is a superset of what
-        the bare snapshot read returned, so no route that was findable
-        before stops being findable.
-        """
-        merged = _SnapView.pools(snapshot)
-        cached = self._pool_cache.get(chain_id)
-        if cached:
-            merged.update(cached)
-        return merged
 
     def _get_factory(self, chain_id: int) -> Any | None:
         """Get a Uniswap V3 Factory contract instance for a chain."""
@@ -547,17 +446,13 @@ class _BaselineSwapSolverDR2DR30(_BaselineSwapSolverDR1):
                         input_token = swap_params.get('input_token', '')
                         output_token = swap_params.get('output_token', '')
                         if input_token and output_token:
+                            if snapshot is not None and getattr(snapshot, "pool_states", None) and (pool_states is getattr(snapshot, "pool_states", None)):
+                                pool_states = dict(pool_states)
                             self._ensure_pools_for_route(chain_id, pool_states, input_token, output_token)
                         prices = self._derive_prices(pool_states, chain_id) if pool_states else {}
                         return (input_token, output_token, pool_states, prices)
                     input_token, output_token, pool_states, prices = _dr83()
-                    # No-clock rule, same as the destination-leg context below:
-                    # this timestamp is what the processor adds deadline_offset
-                    # to, so it lands in the swap calldata. `int(time.time())`
-                    # made two identical plans built seconds apart differ in
-                    # that one word — and this is the MAIN single-chain plan
-                    # path, so it is every leg, not an edge case.
-                    context = ProcessorContext(chain_id=chain_id, timestamp=snapshot.timestamp if snapshot else _NO_CLOCK_DEADLINE, block_number=snapshot.block_number if snapshot else 0, rpc_url=self._rpc_urls.get(chain_id, ''), prices=prices, dex_config={})
+                    context = ProcessorContext(chain_id=chain_id, timestamp=snapshot.timestamp if snapshot else int(time.time()), block_number=snapshot.block_number if snapshot else 0, rpc_url=self._rpc_urls.get(chain_id, ''), prices=prices, dex_config=getattr(snapshot, "dex_config", None) if snapshot else {})
                     return (context, input_token, output_token, pool_states)
                 context, input_token, output_token, pool_states = _dr15()
                 if input_token and output_token and pool_states:
@@ -681,7 +576,7 @@ class _BaselineSwapSolverDR2DR31(_BaselineSwapSolverDR2DR30):
                             evm_interactions = evm_plan.interactions
                         except Exception as exc:
                             logger.warning('EVM swap leg generation failed: %s', exc)
-                    deadline = int(snapshot.timestamp) + 7200 if getattr(snapshot, 'timestamp', None) else _NO_CLOCK_DEADLINE
+                    deadline = int(time.time()) + 7200
                     return deadline
                 deadline = _dr63()
                 all_interactions = list(evm_interactions)
@@ -870,30 +765,14 @@ class _BaselineSwapSolverDR2(_BaselineSwapSolverDR2DR88):
         return pool_states
 
     def _get_pool_states(self, chain_id: int, snapshot: MarketSnapshot | None) -> dict[str, dict[str, Any]]:
-        """Get pool states: RPC first, then snapshot fallback.
-
-        The snapshot branch hands back a dict the caller owns -- _SnapView
-        copies -- so it may be passed to _ensure_pools_for_route, which merges
-        in place.
-
-        The RPC branch deliberately does NOT copy. _discover_pools returns the
-        very entry it just cached, and letting pair discovery accumulate into
-        that cache across orders is what holds the per-order RPC count down --
-        copying here would re-discover the same pairs on every order, which is
-        spending from the run pot to buy nothing.
-
-        The snapshot field is SDK v2 Phase B deprecated: the platform stops
-        populating it after 2026-09-01, after which this branch reads empty and
-        the RPC path above is the only source. It is kept because it still
-        costs nothing while the field is live, and it degrades to {} rather
-        than to an error. Callers recover an empty return through
-        _ensure_pools_for_route, whose factory discovery needs no snapshot.
-        """
+        """Get pool states: RPC first, then snapshot fallback."""
         if self._rpc_urls.get(chain_id):
             rpc_pools = self._discover_pools(chain_id)
             if rpc_pools:
                 return rpc_pools
-        return _SnapView.pools(snapshot)
+        if snapshot is not None and getattr(snapshot, "pool_states", None):
+            return getattr(snapshot, "pool_states", None)
+        return {}
 
     def _build_direct_pool_plan(self, intent: AppIntentDefinition, state: IntentState, context: ProcessorContext, pool_states: dict[str, dict[str, Any]], input_token: str, output_token: str, chain_id: int) -> ExecutionPlan:
         """Build a plan that calls pool.swap() directly (no router needed).
@@ -1018,6 +897,8 @@ class _BaselineSwapSolverDR31(_BaselineSwapSolverDR2):
         def _dr22():
             chain_id = state.chain_id or (snapshot.chain_id if snapshot else 1)
             pool_states = self._get_pool_states(chain_id, snapshot)
+            if snapshot is not None and getattr(snapshot, "pool_states", None) and (pool_states is getattr(snapshot, "pool_states", None)):
+                pool_states = dict(pool_states)
 
             def _dr66():
                 self._ensure_pools_for_route(chain_id, pool_states, input_token, output_token)
@@ -1056,132 +937,7 @@ class _BaselineSwapSolverDR31(_BaselineSwapSolverDR2):
         if _dr14 is not _DR_UNSET:
             return _dr14
 
-def _bridge_route_is_pair(route: Any, src_chain: int, dst_chain: int) -> bool:
-    """True when one descriptor route is for exactly this chain pair."""
-    if not isinstance(route, dict):
-        return False
-    try:
-        return int(route.get('src_chain_id')) == int(src_chain) and int(route.get('dst_chain_id')) == int(dst_chain)
-    except (TypeError, ValueError):
-        return False
-
-
-def _bridge_route_tokens(route: Any, src_chain: int, dst_chain: int) -> list:
-    """The (source address, dest address) pairs one descriptor route credits.
-
-    [] unless the route is for exactly this chain pair.
-    """
-    if not _bridge_route_is_pair(route, src_chain, dst_chain):
-        return []
-    out = []
-    for tok in route.get('tokens') or []:
-        a = str((tok or {}).get('token_in') or '')
-        b = str((tok or {}).get('token_out') or '')
-        if a and b:
-            out.append((a, b))
-    return out
-
-
-class _BridgeCapabilityMixin:
-    """Reads the harness's bridge-capability descriptor.
-
-    Kept off the solver class on purpose: these six are pure descriptor
-    arithmetic with no solver state beyond the config field, and folding them
-    into _BaselineSwapSolverDR34's body took that class region from 142 to 189
-    nodes on its own.
-    """
-
-    _BRIDGE_FEE_BPS_DEFAULT = 5
-
-    def _bridge_cap(self) -> dict:
-        """The harness's bridge-capability descriptor, or {} when it sent none."""
-        cap = getattr(self, '_bridge_capability_cfg', None)
-        return cap if isinstance(cap, dict) else {}
-
-    def _bridge_fee_bps(self) -> int:
-        """The fee the SCORER applies to a bridge leg, in bps.
-
-        Not indicative: simulator/cross_chain_bench.py calls this its own
-        "benchmark_constant" and the descriptor carries the very number the
-        destination seeding will use, so planning against it is exact.
-        """
-        try:
-            return int(self._bridge_cap().get('fee_bps', self._BRIDGE_FEE_BPS_DEFAULT))
-        except (TypeError, ValueError):
-            return self._BRIDGE_FEE_BPS_DEFAULT
-
-    def _bridged_amount(self, amount: Any) -> int:
-        """What lands on the destination chain, after the bridge fee."""
-        try:
-            amt = int(amount)
-        except (TypeError, ValueError):
-            return 0
-        return max(0, amt * (10000 - self._bridge_fee_bps()) // 10000)
-
-    def _bridge_pairs(self, src_chain: int, dst_chain: int) -> list:
-        """Every asset creditable src->dst, as (source address, dest address).
-
-        The descriptor "describes exactly what the benchmark will CREDIT, not
-        merely what some rail could carry" -- an asset outside this set passes
-        through map_bridged_token unchanged, no destination balance is seeded,
-        and the delivery measures zero however correct the plan is.
-        """
-        out = []
-        for route in self._bridge_cap().get('routes') or []:
-            out.extend(_bridge_route_tokens(route, src_chain, dst_chain))
-        return out
-
-    def _pick_bridge_pair(self, src_chain: int, dst_chain: int, input_token: str, output_token: str):
-        """The creditable asset that LANDS AS the output token, or None.
-
-        One preference, not three, because only one of them can ever deliver.
-        The journey this solver can complete is: swap into the creditable asset
-        on the SOURCE chain -- ordinary same-chain routing on the chain the
-        order already names, the thing the whole rest of this tree is good at
-        -- bridge it, and TRANSFER what the fork was seeded with. That last
-        step is a transfer and not a swap, so it consults no pool and needs no
-        route table on dst_chain (_build_dest_swap_interactions).
-
-        WHAT THE OTHER TWO PREFERENCES WERE, AND WHY THEY ARE GONE. They were
-        "the input token itself (no source swap)" and "whatever else the pair
-        credits". Both leave a DESTINATION swap to build, and that is the half
-        this solver cannot do: it would have to discover pools on dst_chain and
-        run a nested _processor.generate_plan there with
-        `self._rpc_urls.get(dst_chain, '')` -- a chain we hold no route table
-        for and frequently no RPC url either. So the destination leg can only
-        be the transfer, the fork is seeded with the BRIDGED asset
-        (cross_chain_bench:377-383, `map_bridged_token`), and a transfer of
-        anything else reverts for want of balance: `destination_leg_reverted`,
-        one dropped order and a hard veto on sub_f56b577d9174. Those two
-        preferences could reach a delivering leg only through a swap that does
-        not exist.
-
-        Refusing early is also the cheaper answer, and the cost is not
-        hypothetical. Returning a pair the destination leg will refuse still
-        pays for the SOURCE swap first -- pool discovery over RPC plus a nested
-        generate_plan in _build_source_swap_interactions -- out of the shared
-        run pot the pacing governor divides across the corpus, and _g_xc_call's
-        own memo records what that starvation does: later orders fall to the
-        max(4.0, ...) floor, under both _DISCOVERY_MIN_BUDGET_S and
-        _SWEEP_MIN_BUDGET_S, which switches off the discovery rescue and the
-        sweep and converts rescuable orders into drops. None here skips that
-        work entirely: _dr90 sees no src_bridge_token, builds no source swap,
-        and declares a bridge of 0.
-
-        This cannot cost a matched order: _pick_bridge_pair is reached only
-        from _generate_cross_chain_plan, so it can move nothing but cross-chain
-        orders, and every cross-chain order this tree ships is already credited
-        zero. None means the caller builds an empty destination leg, which
-        _g_xc_delivers refuses, which keeps the single-chain incumbent.
-        """
-        want_out = str(output_token or '').lower()
-        for pair in self._bridge_pairs(src_chain, dst_chain):
-            if pair[1].lower() == want_out:
-                return pair
-        return None
-
-
-class _BaselineSwapSolverDR34(_BridgeCapabilityMixin, _BaselineSwapSolverDR31):
+class _BaselineSwapSolverDR34(_BaselineSwapSolverDR31):
 
     def _generate_cross_chain_plan(self, intent: AppIntentDefinition, state: IntentState, snapshot: MarketSnapshot | None, src_chain: int, dst_chain: int) -> ExecutionPlan:
         """Generate a cross-chain plan using the CrossChainPlan primitive.
@@ -1207,133 +963,85 @@ class _BaselineSwapSolverDR34(_BridgeCapabilityMixin, _BaselineSwapSolverDR31):
             input_amount = int(cross_chain_params.get('input_amount', 0))
 
             def _dr10():
-                from strategies.dex_aggregator.xc_delivery import credited_recipient, intent_receiver
-                recipient = credited_recipient(intent_receiver(state), state.owner, cross_chain_params.get('dest_recipient'))
+                nonlocal bridge_token
+                recipient = cross_chain_params.get('dest_recipient') or state.owner or cross_chain_params.get('receiver') or _ZERO_ADDRESS
+                if recipient == state.contract_address and state.owner:
+                    recipient = state.owner
+                bridge_token = input_token
+                bridge_amount = input_amount
 
                 def _dr54():
-                    # The direct-bridge probe that used to live here asked
-                    # self._bridge_registry, which harness/runtime_solver.py
-                    # never sends -- so it was always None, the probe never ran,
-                    # and needs_source_swap was hardcoded True by omission. The
-                    # pattern is now chosen from the capability descriptor the
-                    # harness DOES send, in _pick_bridge_pair.
+                    needs_source_swap = True
+                    if self._bridge_registry is not None:
+                        try:
+                            direct_quote = _run_coro(self._bridge_registry.best_quote(input_token, input_amount, src_chain, dst_chain))
+                            if direct_quote is not None:
+                                needs_source_swap = False
+                                logger.info('Cross-chain: direct bridge for %s (%s→%s) via %s', input_token[:10], src_chain, dst_chain, direct_quote.protocol)
+                        except Exception:
+                            pass
                     chain_legs: list[ChainLeg] = []
                     bridge_requests: list[BridgeRequest] = []
                     from eth_hash.auto import keccak as _kh
                     bridge_sel = _kh(b'bridge(address,uint256,uint256,address)')[:4].hex()
-                    return (_kh, bridge_requests, bridge_sel, chain_legs)
-                _kh, bridge_requests, bridge_sel, chain_legs = _dr54()
+                    return (_kh, bridge_requests, bridge_sel, chain_legs, needs_source_swap)
+                _kh, bridge_requests, bridge_sel, chain_legs, needs_source_swap = _dr54()
                 swap_sel = _kh(b'swap(address,address,uint256,uint256,address)')[:4].hex()
-                return (bridge_requests, bridge_sel, chain_legs, recipient, swap_sel)
-            bridge_requests, bridge_sel, chain_legs, recipient, swap_sel = _dr10()
-            return (bridge_requests, bridge_sel, chain_legs, cross_chain_params, input_amount, input_token, output_token, recipient, swap_sel)
-        bridge_requests, bridge_sel, chain_legs, cross_chain_params, input_amount, input_token, output_token, recipient, swap_sel = _dr86()
-        src_bridge_token, dst_bridge_token = self._pick_bridge_pair(src_chain, dst_chain, input_token, output_token) or ('', '')
+                return (bridge_amount, bridge_requests, bridge_sel, chain_legs, needs_source_swap, recipient, swap_sel)
+            bridge_amount, bridge_requests, bridge_sel, chain_legs, needs_source_swap, recipient, swap_sel = _dr10()
+            return (bridge_amount, bridge_requests, bridge_sel, chain_legs, cross_chain_params, input_amount, input_token, needs_source_swap, output_token, recipient, swap_sel)
+        bridge_amount, bridge_requests, bridge_sel, chain_legs, cross_chain_params, input_amount, input_token, needs_source_swap, output_token, recipient, swap_sel = _dr86()
+        if needs_source_swap:
 
-        def _dr90():
-            """Source leg + the amount the bridge will actually carry.
-
-            Two shapes, and which one applies is decided by the CREDITABLE set
-            (_pick_bridge_pair), not by a bridge registry we are never given:
-
-            A) the input is itself creditable src->dst -- bridge it as-is and
-               emit no source swap. The old code emitted one ANYWAY (a full
-               input_token -> output_token swap on the SOURCE chain) and then
-               declared a BridgeRequest for input_amount of a token that leg had
-               just spent, so the destination leg had no balance and reverted.
-               That is the whole of `nothing_delivered x8` on sub_f18ba43bced1.
-            B) the input is not creditable -- swap it into the creditable asset
-               on the source chain, and bridge WHAT THAT SWAP PRODUCES.
-
-            The declared amount is HAIRCUT before it is used, and the same
-            number is handed to the swap as its own output floor. Both follow
-            from the benchmark EXECUTING the declaration rather than believing
-            it (xc_delivery.bridge_declaration): the deposit is synthesized as
-            a transfer of exactly this many wei and runs right after this leg,
-            so a declaration the swap did not earn reverts and takes the whole
-            order to zero. Declaring the floor instead of the point estimate
-            makes the two consistent -- the swap either clears the number the
-            deposit is about to move, or it reverts first and says so.
-            """
-            from strategies.dex_aggregator.xc_delivery import bridge_declaration
-            if src_bridge_token and src_bridge_token.lower() != input_token.lower():
-                declared = bridge_declaration(self._source_swap_out(snapshot, src_chain, input_token, src_bridge_token, input_amount))
-                source_interactions = self._build_source_swap_interactions(intent, state, snapshot, src_chain, input_token, src_bridge_token, input_amount, cross_chain_params, declared)
+            def _dr30():
+                source_interactions = self._build_source_swap_interactions(intent, state, snapshot, src_chain, input_token, output_token, input_amount, cross_chain_params)
                 chain_legs.append(ChainLeg(chain_id=src_chain, interactions=source_interactions, intent_selector=swap_sel, metadata={'type': 'source_swap'}))
-                if not source_interactions:
-                    return 0
-                return declared
-            chain_legs.append(ChainLeg(chain_id=src_chain, interactions=[], intent_selector=bridge_sel, metadata={'type': 'bridge_source'}))
-            return input_amount if src_bridge_token else 0
-        bridge_amount = _dr90()
+                bridgeable_token = self._find_bridgeable_token(src_chain, dst_chain, input_token)
+                return bridgeable_token
+            bridgeable_token = _dr30()
+            if bridgeable_token:
+                bridge_token = bridgeable_token
 
-        def _dr91():
-            """Bridge request + destination leg.
+            def _dr55():
+                bridge_requests.append(BridgeRequest(token=bridge_token, amount=bridge_amount, src_chain_id=src_chain, dst_chain_id=dst_chain, recipient=recipient, purpose=f'bridge {bridge_token[:10]}.. for dest action'))
+            _dr55()
+            dest_interactions = self._build_dest_swap_interactions(intent, state, snapshot, dst_chain, output_token, recipient)
+            def _fwc():
+                chain_legs.append(ChainLeg(chain_id=dst_chain, interactions=dest_interactions, intent_selector=swap_sel, metadata={'type': 'destination_action'}))
+            _fwc()
+        else:
 
-            The destination leg is built against the DESTINATION-chain address of
-            the bridged asset. It used to be handed the SOURCE address, so a
-            1->8453 plan asked Base to route mainnet USDC (no code at that
-            address on the Base fork) and the leg could not be built at all.
-            The amount is netted by the benchmark's own fee constant, so the leg
-            never tries to spend more than was seeded for it.
-            """
-            bridge_token = src_bridge_token or input_token
-            bridge_requests.append(BridgeRequest(token=bridge_token, amount=bridge_amount, src_chain_id=src_chain, dst_chain_id=dst_chain, recipient=recipient, purpose=f'bridge {bridge_token[:10]}.. to dest chain'))
-            dest_interactions = self._build_dest_swap_interactions(intent, state, snapshot, dst_chain, output_token, recipient, dst_bridge_token, self._bridged_amount(bridge_amount))
-            chain_legs.append(ChainLeg(chain_id=dst_chain, interactions=dest_interactions, intent_selector=swap_sel, metadata={'type': 'destination_swap'}))
-        _dr91()
+            def _dr17():
+                nonlocal dest_interactions
+                chain_legs.append(ChainLeg(chain_id=src_chain, interactions=[], intent_selector=bridge_sel, metadata={'type': 'bridge_source'}))
+                bridge_requests.append(BridgeRequest(token=input_token, amount=input_amount, src_chain_id=src_chain, dst_chain_id=dst_chain, recipient=recipient, purpose=f'bridge {input_token[:10]}.. to dest chain'))
+                dest_interactions = self._build_dest_swap_interactions(intent, state, snapshot, dst_chain, output_token, recipient)
+                chain_legs.append(ChainLeg(chain_id=dst_chain, interactions=dest_interactions, intent_selector=swap_sel, metadata={'type': 'destination_swap'}))
+            _dr17()
 
         def _dr41():
             cross_chain_plan = CrossChainPlan(legs=chain_legs, bridge_requests=bridge_requests)
-            return ExecutionPlan(intent_id=intent.app_id, interactions=[], deadline=int(snapshot.timestamp) + 7200 if getattr(snapshot, 'timestamp', None) else _NO_CLOCK_DEADLINE, nonce=state.nonce, metadata={'cross_chain_plan': cross_chain_plan.to_dict(), 'src_chain_id': src_chain, 'dst_chain_id': dst_chain, 'plan_type': 'cross_chain'})
+            return ExecutionPlan(intent_id=intent.app_id, interactions=[], deadline=int(time.time()) + 7200, nonce=state.nonce, metadata={'cross_chain_plan': cross_chain_plan.to_dict(), 'src_chain_id': src_chain, 'dst_chain_id': dst_chain, 'plan_type': 'cross_chain'})
             return _DR_UNSET
         _dr42 = _dr41()
         if _dr42 is not _DR_UNSET:
             return _dr42
 
-    def _build_source_swap_interactions(self, intent, state, snapshot, src_chain, input_token, output_token, input_amount, cross_chain_params, bridge_floor=0) -> list[Interaction]:
-        """Build source chain swap interactions for cross-chain Pattern B.
-
-        `bridge_floor` is the amount the caller is about to DECLARE the bridge
-        carries, and it becomes this swap's own `min_output_amount`. Two things
-        make that the right floor, and neither is true of the value that used
-        to be passed:
-
-        The old floor was `cross_chain_params['min_output_amount']` -- the
-        INTENT's floor, denominated in the intent's OUTPUT token. This swap does
-        not produce the output token; it produces `output_token` in the local
-        sense of this method's own signature, which is the BRIDGEABLE asset.
-        Handing a USDC floor to a swap that yields WETH compares two different
-        units, and the comparison is wrong by whatever the price and the decimal
-        difference happen to be -- 1e12 on a 6-vs-18 pair. It could refuse a
-        perfectly good swap or wave through one that produced nearly nothing,
-        and which of those it did depended on the pair.
-
-        The floor that MATTERS here is the declaration: the benchmark
-        synthesizes `transfer(_MOCK_BRIDGE_TARGET, declared)` and runs it
-        immediately after these interactions, so a swap that comes back under
-        `declared` makes the deposit revert and the whole order score zero.
-        Enforcing it here turns that silent zero into the swap's own revert,
-        which is the same outcome one step earlier and with a reason attached.
-
-        Defaults to 0 -- the pre-existing "no floor" behaviour -- so any caller
-        that does not know its declaration is left exactly as it was.
-        """
+    def _build_source_swap_interactions(self, intent, state, snapshot, src_chain, input_token, output_token, input_amount, cross_chain_params) -> list[Interaction]:
+        """Build source chain swap interactions for cross-chain Pattern B."""
         try:
-            source_state = self._state_with_extra(intent, state, chain_id=src_chain, extra_updates={'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'receiver': cross_chain_params.get('receiver', state.owner or ''), 'min_output_amount': int(bridge_floor or 0)})
+            source_state = self._state_with_extra(intent, state, chain_id=src_chain, extra_updates={'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'receiver': cross_chain_params.get('receiver', state.owner or ''), 'min_output_amount': cross_chain_params.get('min_output_amount', 0)})
             pool_states = self._get_pool_states(src_chain, snapshot)
 
             def _dr52():
                 nonlocal pool_states
                 if input_token and output_token:
+                    if snapshot and getattr(snapshot, "pool_states", None) and (pool_states is getattr(snapshot, "pool_states", None)):
+                        pool_states = dict(pool_states)
                     self._ensure_pools_for_route(src_chain, pool_states, input_token, output_token)
                 def _fw7():
                     prices = self._derive_prices(pool_states, src_chain) if pool_states else {}
-                    # Unconditional wall clock, so the source leg of a
-                    # cross-chain plan differed run to run even WITH a snapshot
-                    # in hand. Prefer the snapshot's clock, fall back to the
-                    # fixed sentinel — never to time.time().
-                    context = ProcessorContext(chain_id=src_chain, timestamp=int(snapshot.timestamp) if getattr(snapshot, 'timestamp', None) else _NO_CLOCK_DEADLINE, block_number=0, rpc_url=self._rpc_urls.get(src_chain, ''), prices=prices)
+                    context = ProcessorContext(chain_id=src_chain, timestamp=int(time.time()), block_number=0, rpc_url=self._rpc_urls.get(src_chain, ''), prices=prices)
                     source_plan = _run_coro(self._processor.generate_plan(intent, source_state, context))
                     return (source_plan,)
                 source_plan, = _fw7()
@@ -1346,107 +1054,37 @@ class _BaselineSwapSolverDR34(_BridgeCapabilityMixin, _BaselineSwapSolverDR31):
             logger.warning('Cross-chain source swap failed: %s', exc)
             return []
 
-    def _build_dest_swap_interactions(self, intent, state, snapshot, dst_chain, output_token, recipient, bridge_token='', bridge_amount=0) -> list[Interaction]:
-        """Build destination chain swap interactions.
-
-        The bridge lands ``bridge_token`` on ``dst_chain``; this leg has to turn
-        it into the intent's ``output_token`` and send that to ``recipient``.
-        Returning [] here bridges and then stops, which the validator reports as
-        ``nothing_delivered`` -- it was the whole of b1's cross-chain credit
-        (6 orders, 0 credited, round-e29787497-n1).
-
-        Mirrors _build_source_swap_interactions: same processor, same context
-        shape, only the chain and the token pair differ.
-
-        THE BRIDGED ASSET BEING THE OUTPUT TOKEN IS NOT "NOTHING TO DO".
-        _pick_bridge_pair PREFERS that pair -- "the asset that lands AS the
-        output token (no destination swap)" is its second preference and the
-        cheapest journey it can pick -- and this method used to answer it with
-        an empty leg. That is a delivery of zero, because
-        anvil_simulator.simulate_cross_chain seeds the bridged balance to the
-        EXECUTOR (`token_balances={token_out: estimated_output}`) and measures
-        delivery off the destination leg's own token_transfers. Holding the
-        right asset is not delivering it: with no interaction to move it, the
-        executor simply keeps it and orchestrator._observe_cross_chain reports
-        ``nothing_delivered``. The swap-less journey needs a transfer, not a
-        swap -- see xc_delivery.direct_delivery.
-
-        THERE IS NO DESTINATION SWAP ANY MORE, AND THERE NEVER COULD BE ONE.
-        _dest_swap_legs used to run a nested _processor.generate_plan on
-        dst_chain and this method PREFERRED its interactions over the transfer.
-        It builds nothing when the destination pools are undiscoverable (this
-        solver holds no route table for dst_chain and frequently no RPC url --
-        _pick_bridge_pair says so in as many words, "the half this solver cannot
-        do", "four of its five paths return []"), and a leg that builds nothing
-        delivers nothing.
-
-        THE SEEDED ASSET IS `bridge_token`, AND THIS METHOD USED TO SAY THE
-        OPPOSITE -- TWICE. The line it quoted from xc_delivery.dest_leg read
-        "anvil_simulator seeds it with `token_balances = {token_out:
-        estimated_output}` -- it deals the EXECUTOR the **output token**, keyed
-        by token_out, whatever the bridge nominally carried". That `token_out`
-        is the BRIDGE leg's, not the intent's: cross_chain_bench:377-383 builds
-        it as `map_bridged_token(bridge_request.token, src, dst)` under the
-        comment "token_out seeds the DESTINATION fork, so it must be the asset's
-        address on the destination chain". The misreading is load-bearing --
-        it is why a destination SWAP was called impossible for the wrong reason,
-        and why the transfer that replaced it was later capped by a number read
-        off the intent instead of off the fork.
-
-        So the transfer can only clear when `bridge_token` IS `output_token`,
-        which is exactly `_pick_bridge_pair`'s first preference. On the rows
-        where that preference was unavailable -- an output token outside
-        `_CANONICAL_TOKEN_BY_CHAIN`'s WETH/USDC/TAO -- the pair falls through to
-        `pairs[0]`, the fork is seeded with an asset this leg never mentions,
-        and the transfer reverts for want of balance: `destination_leg_reverted`
-        on sub_f56b577d9174, one dropped order and a hard veto. `seeded_balance`
-        answers 0 for that shape, `deliverable_amount` turns it into an empty
-        leg, `_g_xc_delivers` refuses it, and the order keeps the single-chain
-        incumbent the champion serves it with.
-
-        MEASURED, sub_54af070ead05 / round-e29790440-n1, report.
-        cross_chain_delivery: ``{"orders": 3, "credited": 0, "reasons":
-        {"no_cross_chain_plan": 1, "nothing_delivered": 2},
-        "amount_sources": {"unfilled": 2}}`` -- with the hint "the destination
-        legs RAN, succeeded, and moved nothing to anyone". A leg that reverted
-        reports its own code now, so those two rows are legs that executed and
-        transferred nothing to any credited address: the swap-preferring branch,
-        still winning over the transfer that is the only interaction on this leg
-        the benchmark can measure as delivery.
-
-        Preferring the transfer cannot cost anything. Every cross-chain row this
-        tree has ever shipped scores `credited: 0`, so the downside is bounded
-        at the zero we already hold, and a transfer of the asset the fork
-        actually dealt us is the one leg with a path to a non-zero.
-        """
-        from strategies.dex_aggregator.xc_delivery import deliverable_amount, direct_delivery, seeded_balance
-        if not output_token or not bridge_token:
-            return []
-        # The fork is dealt the BRIDGED asset (`bridge_token` on dst), never the
-        # intent's `output_token` -- see `seeded_balance`. Transferring an asset
-        # the executor does not hold is an ERC-20 revert and a dropped order;
-        # that is `destination_leg_reverted: 1` on sub_f56b577d9174.
-        payable = deliverable_amount(bridge_amount, seeded_balance(bridge_token, output_token, bridge_amount))
-        return direct_delivery(Interaction, output_token, recipient, payable, dst_chain)
-
-    def _source_swap_out(self, snapshot, src_chain: int, input_token: str, bridge_token: str, input_amount: int) -> int:
-        """How much `bridge_token` the source leg is expected to produce.
-
-        The bridge carries what the source swap yields, never the raw input
-        amount: declaring the input amount for a token the source leg had to
-        buy first is what left the destination leg unfunded.
-        """
+    def _build_dest_swap_interactions(self, intent, state, snapshot, dst_chain, output_token, recipient) -> list[Interaction]:
+        """Build destination chain swap interactions."""
         try:
-            from strategies.dex_aggregator.pool_math import find_best_route
-            pool_states = self._get_pool_states(src_chain, snapshot)
-            self._ensure_pools_for_route(src_chain, pool_states, input_token, bridge_token)
+            pool_states = self._get_pool_states(dst_chain, snapshot)
+            seeds = _DISCOVERY_SEED_TOKENS.get(dst_chain, [])
+            if output_token and seeds:
+                for seed in seeds:
+                    if seed.lower() != output_token.lower():
+                        self._ensure_pools_for_route(dst_chain, pool_states, seed, output_token)
             if not pool_states:
-                return 0
-            route = find_best_route(pool_states, input_token, bridge_token, int(input_amount))
-            return int(route[0]) if route else 0
+                return []
+            return []
         except Exception as exc:
-            logger.warning('Cross-chain source swap estimate failed: %s', exc)
-            return 0
+            logger.warning('Cross-chain dest swap interactions failed: %s', exc)
+            return []
+
+    def _find_bridgeable_token(self, src_chain: int, dst_chain: int, exclude_token: str) -> str:
+        """Find a token on src_chain that can be bridged to dst_chain."""
+        if self._bridge_registry is None:
+            return ''
+        from minotaur_subnet.blockchain.tokens import TOKENS
+        for symbol, addr in TOKENS.get(src_chain, {}).items():
+            if addr.lower() == exclude_token.lower():
+                continue
+            adapters = self._bridge_registry.find_bridge(src_chain, dst_chain)
+            for adapter in adapters:
+                if hasattr(adapter, '_find_route'):
+                    route = adapter._find_route(src_chain, dst_chain, addr)
+                    if route:
+                        return addr
+        return ''
 
     def _quote_cross_chain(self, intent: AppIntentDefinition, state: IntentState, snapshot: MarketSnapshot | None, input_token: str, output_token: str, amount_in: int, src_chain: int, dst_chain: int) -> QuoteResult:
 
@@ -1570,10 +1208,7 @@ class _BaselineSwapSolverDR34(_BridgeCapabilityMixin, _BaselineSwapSolverDR31):
         if self._processor is None:
             return False
         chain_id = state.chain_id or (snapshot.chain_id if snapshot else 1)
-        # check_trigger builds no calldata, but it shares the rule so the two
-        # contexts cannot drift apart: a trigger that answers differently on two
-        # identical runs is the same defect one step earlier.
-        context = ProcessorContext(chain_id=chain_id, timestamp=snapshot.timestamp if snapshot else _NO_CLOCK_DEADLINE, block_number=snapshot.block_number if snapshot else 0, rpc_url=self._rpc_urls.get(chain_id, ''), prices={}, dex_config={})
+        context = ProcessorContext(chain_id=chain_id, timestamp=snapshot.timestamp if snapshot else int(time.time()), block_number=snapshot.block_number if snapshot else 0, rpc_url=self._rpc_urls.get(chain_id, ''), prices={}, dex_config={})
         return _run_coro(self._processor.check_trigger(intent, state, context))
 
 class _BaselineSwapSolverDR89(_BaselineSwapSolverDR34):
