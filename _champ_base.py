@@ -33,7 +33,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 _PUTTY_FINAL_BRAND = 'lattice-route-engine'
 
 def _solver_env(_brand):
-    return (os.environ.get('MINOTAUR_SOLVER_NAME', "lattice-route-engine"), os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', "MichaelDev84"))
+    return (os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine'), os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'))
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _solver_env(_PUTTY_FINAL_BRAND)
 import shape_lib as _sl, shape_est2 as _se, shape_build as _sb, shape_lib3 as _sl3
 import viking_gate as _vg, viking_data as _vd, shape_base as _sba, chain1 as _c1
@@ -181,14 +181,47 @@ class VikingSolver(_HydraBase):
     _V_ROW_FRESH_S = 6 * 3600.0
     _V_GATE_MIN_BUDGET_S = 8.0
 
+    def _v_fresh_probe(self, intent, state, snapshot, dyn):
+        """`_score_aware_singlehop` under THIS plan's remaining clock, or None.
+
+        THE GATE ABOVE IS AN ENTRY TEST, NOT A LEASH, and this probe is the LAST
+        phase pacing_bridge lists — so it runs on a plan that has already spent
+        most of its 30s. king_base calls this very method bounded at :3820
+        (`timeout=min(_SELECT_BUDGET_S, _dyn)`); here it was called directly, so
+        the one phase furthest into the plan was the one with no duration bound.
+        :4361's "within _SELECT_BUDGET_S even on a slow fork RPC" is a promise
+        the CALLER keeps at :3820, not something the method enforces itself.
+
+        Unlike `king_base._sweep_plan`, which returns at :4516 unless
+        `chain_id == _BASE`, nothing here is chain-scoped: this probe runs on
+        chain 1 too, which is where both drops in sub_0017e3158c34 live.
+
+        `dyn` is already `min(pace, time_left_in_this_plan)`, so it IS the bound
+        this site wants and no new constant is introduced. `max(1.0, ...)`
+        mirrors the same idiom at king_base:3674.
+
+        `dyn is None` means the governor is idle — live mode, and any path that
+        returns before pacing_bridge arms. The gate above already reads that as
+        99.0/open, so the call runs unwrapped and live behaviour is unchanged.
+
+        Overrun returns None, which is this probe's existing "no fresh route"
+        answer: `_v_gated` falls through to `_c1.superset` and then
+        `_vs.tail_serve` exactly as it does when the gate is shut."""
+        if dyn is None:
+            return self._score_aware_singlehop(intent, state, snapshot, None)
+        return self._bounded_call(
+            self._score_aware_singlehop, (intent, state, snapshot, None),
+            timeout=max(1.0, float(dyn)))
+
     def _v_engine_fresh(self, intent, state, snapshot):
         """Live-engine route for this order on the round's own fork, or None.
         _score_aware_singlehop(base_plan=None) returns None unless a candidate
         clears the order min, so a non-None result is a deliverable plan."""
         try:
-            if float(getattr(self, '_dyn_order_budget', None) or 99.0) < self._V_GATE_MIN_BUDGET_S:
+            _dyn = getattr(self, '_dyn_order_budget', None)
+            if float(_dyn or 99.0) < self._V_GATE_MIN_BUDGET_S:
                 return None
-            fresh = self._score_aware_singlehop(intent, state, snapshot, None)
+            fresh = self._v_fresh_probe(intent, state, snapshot, _dyn)
             if fresh is None or not getattr(fresh, 'interactions', None):
                 return None
             return fresh

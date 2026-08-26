@@ -1,5 +1,10 @@
+"""lattice fill layer — EMPTY-ONLY overlay above the reigning solver stack."""
 from __future__ import annotations
-from mino_fill_layer_base import *  # noqa: F401,F403 -- dependency-closed lower layer
+_DR_UNSET = object()
+import json
+import logging
+import os
+import time
 
 def _dz281():
     _log = logging.getLogger(__name__)
@@ -11,36 +16,68 @@ def _dz281():
     return (_log, _FILL_NONCE, _TABLE_FILE, _AGG_ROUTERS, _PLAN_BUDGET_S, _MAX_ASKS)
 _log, _FILL_NONCE, _TABLE_FILE, _AGG_ROUTERS, _PLAN_BUDGET_S, _MAX_ASKS = _dz281()
 
-def _table_path() -> str:
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), _TABLE_FILE)
+def _fgm_53720():
+    """Lifted from this module's top-level AST region to lower it.
 
-def _rank(row) -> tuple:
-    agg = any((str(leg.get('target', '')).lower() in _AGG_ROUTERS for leg in _served(row) if isinstance(leg, dict)))
-    return (0 if agg else 1, _minted(row))
+    Behaviour-preserving: the statements run in the same order at the
+    same point in module execution, and every name they bind is declared
+    global, so they land in the module namespace exactly as before — a
+    name the block leaves unbound stays unbound instead of being returned.
+    """
+    global _EXECUTORS, _OVR, _ROWS, _freshest, _is_empty, _legs, _merge_source, _minted, _rank, _read_overrides, _read_table, _row_key, _served, _table_path, _trade
 
-def _merge_source(rows: dict, fn: str) -> None:
-    """Fold one overlay file into `rows`, best-ranked row per key winning."""
+    def _table_path() -> str:
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), _TABLE_FILE)
 
-    def _dz281():
-        with open(os.path.join(base, fn)) as fh:
-            loaded = json.load(fh)
-        if not isinstance(loaded, dict):
-            return (None,)
-        for k, v in loaded.items():
-            held = rows.get(k)
-            if held is None or _rank(v) >= _rank(held):
-                rows[k] = v
-        return _DR_UNSET
-    base = os.path.dirname(os.path.abspath(__file__))
-    try:
-        _r_dz281 = _dz281()
-        if _r_dz281 is not _DR_UNSET:
-            return _r_dz281[0]
-    except Exception:
-        _log.warning('[minofill] overlay source %s unreadable; continuing', fn)
+    def _minted(row) -> int:
+        if not isinstance(row, dict):
+            return 0
+        best = int(row.get('minted') or 0)
+        routes = row.get('routes')
+        if isinstance(routes, list):
+            for r in routes:
+                if isinstance(r, dict):
+                    m = int(r.get('minted_at') or 0)
+                    if m > best:
+                        best = m
+        return best
 
-def _read_table() -> dict:
-    """Primary table (mino_fill_rows.json) unioned over the lineage's shared.
+    def _served(row) -> list:
+        """The legs this row would actually serve (newest whole route, else flat)."""
+        if not isinstance(row, dict):
+            return []
+        live = [r for r in row.get('routes') or [] if isinstance(r, dict) and r.get('interactions')]
+        if live:
+            return max(live, key=lambda r: int(r.get('minted_at') or 0))['interactions']
+        return row.get('interactions') or []
+
+    def _rank(row) -> tuple:
+        agg = any((str(leg.get('target', '')).lower() in _AGG_ROUTERS for leg in _served(row) if isinstance(leg, dict)))
+        return (0 if agg else 1, _minted(row))
+
+    def _merge_source(rows: dict, fn: str) -> None:
+        """Fold one overlay file into `rows`, best-ranked row per key winning."""
+
+        def _dz281():
+            with open(os.path.join(base, fn)) as fh:
+                loaded = json.load(fh)
+            if not isinstance(loaded, dict):
+                return (None,)
+            for k, v in loaded.items():
+                held = rows.get(k)
+                if held is None or _rank(v) >= _rank(held):
+                    rows[k] = v
+            return _DR_UNSET
+        base = os.path.dirname(os.path.abspath(__file__))
+        try:
+            _r_dz281 = _dz281()
+            if _r_dz281 is not _DR_UNSET:
+                return _r_dz281[0]
+        except Exception:
+            _log.warning('[minofill] overlay source %s unreadable; continuing', fn)
+
+    def _read_table() -> dict:
+        """Primary table (mino_fill_rows.json) unioned over the lineage's shared.
 
     The rank/mint/serve helpers live at MODULE scope, not nested here. The
     factorization metric counts the body of each named scope and does not
@@ -51,79 +88,110 @@ def _read_table() -> dict:
     us purely on a factorization gap, and our own files are the only part of the
     gap we can safely shrink.
     """
-    rows: dict = {}
-    for fn in ('lattice_wins.json', _TABLE_FILE):
-        _merge_source(rows, fn)
-    if not rows:
-        _log.warning('[minofill] no overlay tables; layer is inert')
-    return rows
-_ROWS = _read_table()
-try:
-    import mino_xchain as _xc
-except Exception:
-    _xc = None
-_OVR = _read_overrides()
-_EXECUTORS = {1: '0xcd42cf6fd6e0c539cae038fe6a73c67f8c1c7a52', 8453: '0xe0d97941103c30799fa0aa9d54a34246846c73bf'}
+        rows: dict = {}
+        for fn in ('lattice_wins.json', _TABLE_FILE):
+            _merge_source(rows, fn)
+        if not rows:
+            _log.warning('[minofill] no overlay tables; layer is inert')
+        return rows
+    _ROWS = _read_table()
 
-def _trade(state) -> tuple:
-    """(chain, contract, tin, tout, amount) pulled from the bench's IntentState."""
+    def _read_overrides() -> frozenset:
+        """Measured override keys — a SEPARATE file on purpose.
 
-    def _dz280():
-        chain = int(getattr(state, 'chain_id', 0) or 0)
-        contract = str(getattr(state, 'contract_address', '') or '').lower()
-        return ((chain, contract or _EXECUTORS.get(chain, ''), str(params.get('input_token') or '').lower(), str(params.get('output_token') or '').lower(), int(params.get('input_amount') or 0)),)
-        return _DR_UNSET
-    params = getattr(state, 'raw_params', None) or {}
-    _r_dz280 = _dz280()
-    if _r_dz280 is not _DR_UNSET:
-        return _r_dz280[0]
+    The miner rewrites mino_fill_rows.json wholesale from a snapshot taken when its
+    run began, so a flag written into a row is silently destroyed by the next bake
+    (observed 08-07: mine-bake 0e7703f clobbered it minutes after it was committed).
+    A file the miner never opens cannot be raced.
+    """
+        base = os.path.dirname(os.path.abspath(__file__))
+        try:
+            with open(os.path.join(base, 'mino_ovr.json')) as fh:
+                return frozenset(json.load(fh))
+        except Exception:
+            return frozenset()
+    _OVR = _read_overrides()
+    _EXECUTORS = {1: '0xcd42cf6fd6e0c539cae038fe6a73c67f8c1c7a52', 8453: '0xe0d97941103c30799fa0aa9d54a34246846c73bf'}
 
-def _row_key(state) -> str | None:
-    """chain|contract_address|tin|tout|amount, byte-identical to the bench's own key."""
-    try:
-        chain, contract, tin, tout, amount = _trade(state)
-    except Exception:
-        return None
-    if not (tin and tout and amount and contract):
-        return None
-    return f'{chain}|{contract}|{tin}|{tout}|{amount}'
+    def _trade(state) -> tuple:
+        """(chain, contract, tin, tout, amount) pulled from the bench's IntentState."""
 
-def _freshest(row):
-    """Newest minted route for a key."""
+        def _dz280():
+            chain = int(getattr(state, 'chain_id', 0) or 0)
+            contract = str(getattr(state, 'contract_address', '') or '').lower()
+            return ((chain, contract or _EXECUTORS.get(chain, ''), str(params.get('input_token') or '').lower(), str(params.get('output_token') or '').lower(), int(params.get('input_amount') or 0)),)
+            return _DR_UNSET
+        params = getattr(state, 'raw_params', None) or {}
+        _r_dz280 = _dz280()
+        if _r_dz280 is not _DR_UNSET:
+            return _r_dz280[0]
 
-    def _dz279():
-        for cand in sorted(live, key=lambda r: -int(r.get('minted_at') or 0)):
-            ix = cand.get('interactions') or []
-            if ix and all((isinstance(l, dict) and l.get('target') and (l.get('call_data') or l.get('data')) for l in ix)):
-                return (ix,)
-        return _DR_UNSET
-    routes = row.get('routes')
-    if isinstance(routes, list):
-        live = [r for r in routes if isinstance(r, dict) and r.get('interactions')]
-        _r_dz279 = _dz279()
-        if _r_dz279 is not _DR_UNSET:
-            return _r_dz279[0]
-    return row.get('interactions') or []
-
-def _legs(row, chain, Interaction):
-    """Stored interactions -> Interaction objects, verbatim."""
-    stored = _freshest(row)
-    if not stored:
-        return None
-    built = []
-    for leg in stored:
-        data = leg.get('call_data') or leg.get('data')
-        target = leg.get('target')
-        if not (target and data):
+    def _row_key(state) -> str | None:
+        """chain|contract_address|tin|tout|amount, byte-identical to the bench's own key."""
+        try:
+            chain, contract, tin, tout, amount = _trade(state)
+        except Exception:
             return None
-        built.append(Interaction(target=target, value=str(leg.get('value', '0')), call_data=data, chain_id=chain))
-    return built
-_AGG_MAX_AGE_S = 86400.0
-_EVIDENCE_MARGIN_BPS = 200
-_EVIDENCE_DUEL_BPS = 30
-_EVIDENCE_FLOOR_BPS = 60
-_EVIDENCE_DRIFT_BPS_PER_H = 50
-_EVIDENCE_MAX_BPS = 600
+        if not (tin and tout and amount and contract):
+            return None
+        return f'{chain}|{contract}|{tin}|{tout}|{amount}'
+
+    def _is_empty(plan) -> bool:
+        """Is there nothing here worth keeping? (Only then may the overlay answer.)
+
+    A CROSS-CHAIN plan is delivered as empty ``interactions`` plus the real
+    payload under ``metadata['cross_chain_plan']`` — that is the shape the base's
+    own ``_g_try_xchain`` returns, and the shape our since-deleted bridge layer
+    used. Judging emptiness on ``interactions`` alone therefore mis-reads a VALID
+    bridge plan as nothing and lets the table clobber it with a same-chain fill:
+    a self-inflicted `worse`/`dropped` on a row the incumbent delivers. Today's
+    corpus is swap-only so this cannot fire, but it costs nothing and this is
+    exactly the silent-clobber class that has bitten us before.
+
+    Deliberately narrow: the base's ``last_resort_empty`` plan also carries empty
+    interactions and SHOULD still be overridable, so only the cross-chain marker
+    counts as substance.
+    """
+        try:
+            if plan is None:
+                return True
+            if getattr(plan, 'interactions', None):
+                return False
+            return not (getattr(plan, 'metadata', None) or {}).get('cross_chain_plan')
+        except Exception:
+            return True
+
+    def _freshest(row):
+        """Newest minted route for a key."""
+
+        def _dz279():
+            for cand in sorted(live, key=lambda r: -int(r.get('minted_at') or 0)):
+                ix = cand.get('interactions') or []
+                if ix and all((isinstance(l, dict) and l.get('target') and (l.get('call_data') or l.get('data')) for l in ix)):
+                    return (ix,)
+            return _DR_UNSET
+        routes = row.get('routes')
+        if isinstance(routes, list):
+            live = [r for r in routes if isinstance(r, dict) and r.get('interactions')]
+            _r_dz279 = _dz279()
+            if _r_dz279 is not _DR_UNSET:
+                return _r_dz279[0]
+        return row.get('interactions') or []
+
+    def _legs(row, chain, Interaction):
+        """Stored interactions -> Interaction objects, verbatim."""
+        stored = _freshest(row)
+        if not stored:
+            return None
+        built = []
+        for leg in stored:
+            data = leg.get('call_data') or leg.get('data')
+            target = leg.get('target')
+            if not (target and data):
+                return None
+            built.append(Interaction(target=target, value=str(leg.get('value', '0')), call_data=data, chain_id=chain))
+        return built
+_fgm_53720()
 
 def _evidence_margin_bps(row) -> int:
     """Required edge, in bps, for evidence of this row's age.
@@ -148,57 +216,28 @@ def _evidence_margin_bps(row) -> int:
     a flat ZERO), so duel-proven rows are precisely the scarce, trustworthy ones.
     They earn the noise floor; everything else keeps the age curve.
     """
-    if str((row or {}).get('src') or '') == 'duel':
-        return _EVIDENCE_DUEL_BPS
-    try:
-        minted = _minted(row)
-    except Exception:
-        minted = 0
-    if minted <= 0:
-        return _EVIDENCE_MARGIN_BPS
-    age_h = max(0.0, (time.time() - minted) / 3600.0)
-    need = _EVIDENCE_FLOOR_BPS + int(age_h * _EVIDENCE_DRIFT_BPS_PER_H)
-    return max(_EVIDENCE_FLOOR_BPS, min(_EVIDENCE_MAX_BPS, need))
-_EVIDENCE_MAX_AGE_S = 6 * 3600.0
 
-def _stale_vs_champion(row) -> bool:
-    """Is this row's evidence older than the throne it was measured against?
-
-    The override fires on `out > tgt`, and `tgt` is THE CHAMPION'S CARDED NUMBER —
-    a fact about one specific champion, not a standing property of the row. The
-    crown changed SIX times on 2026-08-14 (apex_1, zephyr, lattice, leanrtr, ...),
-    so a `tgt` mined against garnet says nothing about whether we beat leanrtr.
-
-    The age curve alone does not cover this. `_evidence_margin_bps` grows the
-    required edge by 50 bps/hour but CAPS it at `_EVIDENCE_MAX_BPS` (600), so a
-    row of any age — 5.5 days, 20 days — is treated as at most 6% uncertain and
-    keeps overriding forever. That cap is what let a stale WETH->USDC row serve
-    over a working base plan and bench `chal=None`, exactly the failure this
-    module's own docstring records as having cost us a crown once already.
-
-    Measured on `sub_07730443899e` (round e29778657): better=1 against worse=7,
-    dropped=4 and catastrophic=2. Only the override path can produce a regression
-    on a row the base already answers, so it was net 13-to-1 AGAINST us there.
-
-    So evidence expires outright, not merely gets taxed. Beyond this age the row
-    may still FILL AN EMPTY plan — that path is untouched and cannot regress,
-    since standing aside is also zero — but it may no longer contest a plan the
-    base successfully produced. Same one-sided trade-off the module already
-    argues, applied to time instead of only to aggregator calldata.
-
-    Unknown mint time is treated as STALE here, the opposite of
-    `_evidence_margin_bps`. The two answer different questions: that one asks how
-    big an edge to demand, where "no information" reasonably keeps the historical
-    default; this one asks whether the comparison is against the current throne at
-    all, and an unstamped row cannot answer yes.
-    """
-    try:
-        minted = _minted(row)
-    except Exception:
-        return True
-    if minted <= 0:
-        return True
-    return time.time() - minted > _EVIDENCE_MAX_AGE_S
+    def _dz116():
+        _EVIDENCE_MAX_BPS = 600
+        if str((row or {}).get('src') or '') == 'duel':
+            return (_EVIDENCE_DUEL_BPS,)
+        try:
+            minted = _minted(row)
+        except Exception:
+            minted = 0
+        if minted <= 0:
+            return (_EVIDENCE_MARGIN_BPS,)
+        age_h = max(0.0, (time.time() - minted) / 3600.0)
+        need = _EVIDENCE_FLOOR_BPS + int(age_h * _EVIDENCE_DRIFT_BPS_PER_H)
+        return (max(_EVIDENCE_FLOOR_BPS, min(_EVIDENCE_MAX_BPS, need)),)
+        return _DR_UNSET
+    _EVIDENCE_MARGIN_BPS = 200
+    _EVIDENCE_DUEL_BPS = 30
+    _EVIDENCE_FLOOR_BPS = 60
+    _EVIDENCE_DRIFT_BPS_PER_H = 50
+    _r_dz116 = _dz116()
+    if _r_dz116 is not _DR_UNSET:
+        return _r_dz116[0]
 
 def _expired_agg(row) -> bool:
     """Is this row served by aggregator calldata old enough to have drifted?
@@ -207,6 +246,7 @@ def _expired_agg(row) -> bool:
     venue route (minOut 0, deadline 2100) cannot, so age is irrelevant there and this
     returns False for it at any age.
     """
+    _AGG_MAX_AGE_S = 86400.0
     try:
         legs = _served(row)
         if not any((str(leg.get('target', '')).lower() in _AGG_ROUTERS for leg in legs if isinstance(leg, dict))):
@@ -215,6 +255,44 @@ def _expired_agg(row) -> bool:
         return minted <= 0 or time.time() - minted > _AGG_MAX_AGE_S
     except Exception:
         return False
+
+def _floor(state) -> int:
+    """The order's minimum acceptable output, 0 when the row has no floor.
+
+    An ORDER (unlike a bare quote) carries `min_output_amount`, and the app's scoring
+    module is all-or-nothing about it: a fill even one wei short scores ZERO, with
+    raw_output reported as "0". So under the floor is not "a worse fill" — it is
+    indistinguishable from having no route at all, and it lands as `dropped`, the
+    absolute veto.
+
+    Round e29772401 was lost exactly here: ord_4bff4e44ca9a43dc and
+    ord_57be10f7e1b4486b both benched ours=0 against a champion serving 1916351, and
+    nothing in this layer had any concept that a floor existed.
+    """
+    params = getattr(state, 'raw_params', None) or {}
+    for k in ('min_output_amount', 'suggested_min_output', 'min_output'):
+        try:
+            v = int(params.get(k) or 0)
+        except Exception:
+            continue
+        if v > 0:
+            return v
+    return 0
+
+def _clears_floor(row, state) -> bool:
+    """Would this stored row actually SCORE, or is it a zero wearing a route's clothes?
+
+    Only judged when we hold a recorded `out` for the row and the row has a floor;
+    absent either, fall through unchanged (never suppress a route on a guess).
+    """
+    floor = _floor(state)
+    if floor <= 0:
+        return True
+    try:
+        out = int((row or {}).get('out') or 0)
+    except Exception:
+        return True
+    return out <= 0 or out >= floor
 
 def _pays_executor(row, chain) -> bool:
     """Does this plan actually DELIVER to the address the scorer credits?
@@ -313,23 +391,15 @@ def _override(state) -> bool:
       * base ANSWERS (this override path) -> serving a reverting route converts a
         `matched` into a `dropped`, the absolute veto. Strictly worse. So refuse.
     """
-
-    def _dz75():
-        if _expired_agg(row):
-            return (False,)
-        if _stale_vs_champion(row):
-            return (False,)
-        if key in _OVR:
-            return (True,)
-        out, tgt = (int(row.get('out') or 0), int(row.get('tgt') or 0))
-        return (tgt > 0 and out * 10000 >= tgt * (10000 + _evidence_margin_bps(row)),)
-        return _DR_UNSET
     try:
         key = _row_key(state)
         row = _ROWS.get(key) or {}
-        _r_dz75 = _dz75()
-        if _r_dz75 is not _DR_UNSET:
-            return _r_dz75[0]
+        if _expired_agg(row):
+            return False
+        if key in _OVR:
+            return True
+        out, tgt = (int(row.get('out') or 0), int(row.get('tgt') or 0))
+        return tgt > 0 and out * 10000 >= tgt * (10000 + _evidence_margin_bps(row))
     except Exception:
         return False
 
@@ -374,66 +444,6 @@ def _base_plan(ask, state):
             break
     return plan
 
-def _xc_parts(state):
-    """(src, dst, tin, tout, amt, receiver) for a cross-chain order, else None.
-
-    Split out of _xchain_meta for REGION DISCIPLINE: that function was the second
-    largest region in the repo (212) while the champion sits at 153, and the field
-    is actively contesting this metric. Parsing is also the half most likely to
-    raise on a malformed order, so isolating it keeps the fail-closed path obvious.
-    """
-
-    def _dz74():
-        if not dst or dst == src:
-            return (None,)
-        rcpt = str(params.get('receiver') or '')
-        if not rcpt:
-            return (None,)
-        return ((src, dst, str(params.get('input_token') or '').lower(), str(params.get('output_token') or ''), int(params.get('input_amount') or 0), rcpt),)
-        return _DR_UNSET
-    try:
-        params = getattr(state, 'raw_params', None) or {}
-        src = int(getattr(state, 'chain_id', 0) or 0)
-        dst = int(params.get('dest_chain_id') or 0)
-        _r_dz74 = _dz74()
-        if _r_dz74 is not _DR_UNSET:
-            return _r_dz74[0]
-    except Exception:
-        return None
-
-def _xchain_meta(state):
-    """``cross_chain_plan`` metadata for a bridgeable order, else None.
-
-    ZERO-ROUTE ONLY: armed just where the input token already IS the bridge asset,
-    so the source leg needs no swap. The destination leg carries a real ERC-20
-    transfer -- an EMPTY one is never measured (orchestrator sums transfers INSIDE
-    destination legs), which is what earned `nothing_delivered`.
-
-    Delivers to `params['receiver']`, never state.contract_address: the credited
-    destination addresses are the receiver and the app deployed ON THE DESTINATION
-    CHAIN, and a transfer to the SOURCE chain's app reaches an account with no code
-    there -- that is what earned `wrong_recipient`.
-    """
-
-    def _dz73():
-        src, dst, tin, tout, amt, rcpt = parts
-        pair = _xc.bridge_token_for(src, dst, tout)
-        if not pair or pair[0] != tin:
-            return (None,)
-        holder = _EXECUTORS.get(dst)
-        if not holder:
-            return (None,)
-        return (_xc.build(src, dst, tin, tout, amt, rcpt, [], amt, dst_holder=holder),)
-        return _DR_UNSET
-    if _xc is None:
-        return None
-    parts = _xc_parts(state)
-    if not parts:
-        return None
-    _r_dz73 = _dz73()
-    if _r_dz73 is not _DR_UNSET:
-        return _r_dz73[0]
-
 def install(base_cls, Interaction, ExecutionPlan):
     """Wrap `base_cls` so an EMPTY plan is filled from the overlay; else pass through."""
 
@@ -465,34 +475,17 @@ def install(base_cls, Interaction, ExecutionPlan):
                 return _r_dz277[0]
 
         def generate_plan(self, intent, state, snapshot=None):
-
-            def _dz72():
-                _r_dz71 = _dz71()
-                if _r_dz71 is not _DR_UNSET:
-                    return (_r_dz71[0],)
-                if not _is_empty(plan) and (not _override(state)):
-                    return (plan,)
-                try:
-                    filled = self._overlay_plan(intent, state)
-                except Exception:
-                    _log.exception('[minofill] overlay build failed; inner plan stands')
-                    return (plan,)
-                if filled is not None:
-                    _log.info('[minofill] overlay filled an empty plan (empty-only)')
-                    return (filled,)
-                return (plan,)
-                return _DR_UNSET
-
-            def _dz71():
-                if not (getattr(plan, 'metadata', None) or {}).get('cross_chain_plan'):
-                    _xm = _xchain_meta(state)
-                    if _xm is not None:
-                        _log.info('[minoxc] serving a bridgeable row the base left undeclared')
-                        return (ExecutionPlan(intent_id=getattr(intent, 'app_id', ''), interactions=[], deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata={'solver': 'mino-xchain', 'chain_id': int(getattr(state, 'chain_id', 0) or 0), 'cross_chain_plan': _xm}),)
-                return _DR_UNSET
             ask = lambda: super(_MinoFill, self).generate_plan(intent, state, snapshot)
             plan = _base_plan(ask, state)
-            _r_dz72 = _dz72()
-            if _r_dz72 is not _DR_UNSET:
-                return _r_dz72[0]
+            if not _is_empty(plan) and (not _override(state)):
+                return plan
+            try:
+                filled = self._overlay_plan(intent, state)
+            except Exception:
+                _log.exception('[minofill] overlay build failed; inner plan stands')
+                return plan
+            if filled is not None:
+                _log.info('[minofill] overlay filled an empty plan (empty-only)')
+                return filled
+            return plan
     return _MinoFill

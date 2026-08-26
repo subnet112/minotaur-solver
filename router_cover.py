@@ -90,18 +90,6 @@ def best_route(rpc, chain_id, tin, tout, amt):
         _SEARCH_DEADLINE[0] = 0.0
     return best
 
-def _legs_v3_single(cfg, tin, tout, amt, app_addr, route):
-
-    def _dz290():
-        nonlocal body
-        body = _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint256', 'uint160'], [tin, tout, int(route['fee']), app_addr, DEADLINE, int(amt), 0, 0])
-    r = cfg['v3router']
-    if cfg['v3_deadline']:
-        _dz290()
-    else:
-        body = _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint160'], [tin, tout, int(route['fee']), app_addr, int(amt), 0, 0])
-    return [(tin, _approve(tin, r, amt)), (r, '0x' + cfg['v3sel_single'] + body.hex())]
-
 def _legs_v3_path(cfg, tin, amt, app_addr, route):
     """exactInput takes a STRUCT, so the args must be tuple-encoded, not flat.
 
@@ -133,16 +121,28 @@ def _legs_v3_path(cfg, tin, amt, app_addr, route):
     if _r_dz289 is not _DR_UNSET:
         return _r_dz289[0]
 
-def _legs_v2(tin, amt, app_addr, route):
-    r = route['router']
-    body = _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amt), 0, route['path'], app_addr, DEADLINE])
-    return [(tin, _approve(tin, r, amt)), (r, '0x' + S_V2_SWAP + body.hex())]
-
-def _legs_aero(tin, amt, app_addr, route):
-    body = _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amt), 0, route['routes'], app_addr, DEADLINE])
-    return [(tin, _approve(tin, AERO_ROUTER, amt)), (AERO_ROUTER, '0x' + S_AERO_SWAP + body.hex())]
-
 def _legs_for(cfg, kind, tin, tout, amt, app_addr, route):
+
+    def _legs_v3_single(cfg, tin, tout, amt, app_addr, route):
+
+        def _dz290():
+            nonlocal body
+            body = _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint256', 'uint160'], [tin, tout, int(route['fee']), app_addr, DEADLINE, int(amt), 0, 0])
+        r = cfg['v3router']
+        if cfg['v3_deadline']:
+            _dz290()
+        else:
+            body = _enc(['address', 'address', 'uint24', 'address', 'uint256', 'uint256', 'uint160'], [tin, tout, int(route['fee']), app_addr, int(amt), 0, 0])
+        return [(tin, _approve(tin, r, amt)), (r, '0x' + cfg['v3sel_single'] + body.hex())]
+
+    def _legs_v2(tin, amt, app_addr, route):
+        r = route['router']
+        body = _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amt), 0, route['path'], app_addr, DEADLINE])
+        return [(tin, _approve(tin, r, amt)), (r, '0x' + S_V2_SWAP + body.hex())]
+
+    def _legs_aero(tin, amt, app_addr, route):
+        body = _enc(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amt), 0, route['routes'], app_addr, DEADLINE])
+        return [(tin, _approve(tin, AERO_ROUTER, amt)), (AERO_ROUTER, '0x' + S_AERO_SWAP + body.hex())]
     if kind == 'v3_single':
         return _legs_v3_single(cfg, tin, tout, amt, app_addr, route)
     if kind == 'v3_path':

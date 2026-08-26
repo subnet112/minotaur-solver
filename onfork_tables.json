@@ -61,7 +61,15 @@
     "agg3": "82ad56cb",
     "approve": "095ea7b3",
     "v2out": "d06ca61f",
-    "v2swap": "38ed1739"
+    "v2swap": "38ed1739",
+    "aerogao": "5509a1ac",
+    "aeroswap": "cac88ea9"
+  },
+  "aero": {
+    "8453": {
+      "r": "0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43",
+      "f": "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"
+    }
   },
   "mids2": {
     "1": [
