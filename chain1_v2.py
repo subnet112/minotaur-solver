@@ -25,7 +25,7 @@ def _v2_lookup(tin, tout):
     return (pair, tin == t0)
 from lat_swapcd_ext import _v2_swap_cd
 from lat_xfercd_ext import _v2_xfer_cd
-from min1_rr_g13 import _c1_curve_ix  # relocated leaf; see that module
+from min1_rr_g13 import _c1_curve_ix
 
 def _v2_build(pair, in_is_t0, tin, amt, out, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX
@@ -87,7 +87,6 @@ def _c1_v2_plan(solver, intent, state, tin, amt, spec):
     recip = _c1_recip_v2(solver._normalized_swap_params(intent, state), state)
     ix = _c1_build_ix_v2(tin, recip, [str(t).lower() for t in spec['tokens']], amt)
     return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'chain1-baked', 'chain_id': 1})
-
 
 def _c1_curve_plan(solver, intent, state, tin, amt, spec):
     """ZERO-RPC Curve serve for a baked {'venue':'curve','route':[address[11]],'swap':[[..]x5]}
