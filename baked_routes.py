@@ -12,10 +12,6 @@ import os
 from eth_abi import encode as _enc
 import time
 from venues import CHAINS, DEADLINE, _SEARCH_DEADLINE, _v3_path_bytes, q_v2, q_v3_path, q_v3_single
-
-# swapExactTokensForTokensSupportingFeeOnTransferTokens. Spelled here rather than
-# imported from router_cover: these two cover modules sit at the same layer and an
-# import between them would close a cycle through venues.
 S_V2_SWAP_FOT = '5c11d795'
 
 def _load():

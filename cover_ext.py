@@ -24,10 +24,6 @@ from eth_utils import keccak, to_checksum_address as ck
 from eth_abi import encode as _enc
 import time
 from venues import CHAINS, DEADLINE, _SEARCH_DEADLINE, eth_call as _eth_call, q_v2
-
-# swapExactTokensForTokensSupportingFeeOnTransferTokens. Spelled here rather than
-# imported from router_cover: these two cover modules sit at the same layer and an
-# import between them would close a cycle through venues.
 S_V2_SWAP_FOT = '5c11d795'
 from baked_routes import baked_legs
 _COVER_BUDGET_S = 3.0

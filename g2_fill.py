@@ -275,7 +275,6 @@ def _g2_is_cross_chain(plan) -> bool:
     except Exception:
         return False
 
-
 def _served(plan) -> bool:
     """Structurally non-empty: the base delivered a route for this row.
 
@@ -346,14 +345,19 @@ def install(base_cls, Interaction, ExecutionPlan):
             return super().initialize(config)
 
         def generate_plan(self, intent, state, snapshot=None):
+
+            def _dz69():
+                nonlocal built, hit
+                if hit is not None and _cover_class(hit[0]):
+                    built = _try_cover(hit, intent, state, Interaction, ExecutionPlan)
+                    if built is not None:
+                        return (built,)
+                    hit = None
+                return _DR_UNSET
             hit = _cover_hit(state)
-            if hit is not None and _cover_class(hit[0]):
-                built = _try_cover(hit, intent, state, Interaction, ExecutionPlan)
-                if built is not None:
-                    return built
-                # The spec would not assemble. It will not assemble on the
-                # second pass either, so stop carrying it.
-                hit = None
+            _r_dz69 = _dz69()
+            if _r_dz69 is not _DR_UNSET:
+                return _r_dz69[0]
             base = super().generate_plan(intent, state, snapshot)
             if _served(base):
                 return base

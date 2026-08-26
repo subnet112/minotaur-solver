@@ -43,19 +43,11 @@ strictly negative EV here, so a pool is used only where the table already
 attests it.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 import logging
-
 _log = logging.getLogger(__name__)
-
-_WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-
-# The encoder `_chain1_build_plan` documents itself as single-hop (len2/len1)
-# or 2-hop via WETH (len3/len2). Composing deeper is representable in the V3
-# path encoding but steps outside the shape that path is proven on, so it is
-# refused rather than trusted.
+_WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
 _MAX_TOKENS = 3
-
 
 def _v3(row):
     """The (tokens, fees) of a plain Uniswap-V3 spec, or None.
@@ -66,17 +58,22 @@ def _v3(row):
     count -- a malformed row reshaped into a path would encode a pool address
     that does not exist, which reverts.
     """
-    if not isinstance(row, dict) or row.get("noroute") or row.get("venue"):
-        return None
-    try:
-        toks = [str(t).lower() for t in (row.get("tokens") or [])]
-        fees = [int(f) for f in (row.get("fees") or [])]
-    except (TypeError, ValueError):
-        return None
-    if len(toks) < 2 or len(toks) != len(fees) + 1:
-        return None
-    return toks, fees
 
+    def _dz36():
+        try:
+            toks = [str(t).lower() for t in row.get('tokens') or []]
+            fees = [int(f) for f in row.get('fees') or []]
+        except (TypeError, ValueError):
+            return (None,)
+        if len(toks) < 2 or len(toks) != len(fees) + 1:
+            return (None,)
+        return ((toks, fees),)
+        return _DR_UNSET
+    if not isinstance(row, dict) or row.get('noroute') or row.get('venue'):
+        return None
+    _r_dz36 = _dz36()
+    if _r_dz36 is not _DR_UNSET:
+        return _r_dz36[0]
 
 def _leg(table, a, b):
     """A verified V3 path from `a` to `b`, or None.
@@ -87,17 +84,22 @@ def _leg(table, a, b):
     for rather than trusting the key string, which has been written by several
     bakers in more than one casing.
     """
-    for x, y, flip in ((a, b, False), (b, a, True)):
-        got = _v3(table.get("1|%s|%s" % (x, y)))
-        if got is None:
-            continue
+
+    def _dz35():
         toks, fees = got
         if flip:
-            toks, fees = toks[::-1], fees[::-1]
-        if toks[0] == a and toks[-1] == b and len(toks) <= _MAX_TOKENS:
-            return toks, fees
+            toks, fees = (toks[::-1], fees[::-1])
+        if toks[0] == a and toks[-1] == b and (len(toks) <= _MAX_TOKENS):
+            return ((toks, fees),)
+        return _DR_UNSET
+    for x, y, flip in ((a, b, False), (b, a, True)):
+        got = _v3(table.get('1|%s|%s' % (x, y)))
+        if got is None:
+            continue
+        _r_dz35 = _dz35()
+        if _r_dz35 is not _DR_UNSET:
+            return _r_dz35[0]
     return None
-
 
 def _compose(table, tin, tout):
     """A V3 path for an un-baked pair, or None if the table cannot attest one.
@@ -107,19 +109,24 @@ def _compose(table, tin, tout):
     lookup was the whole question, and a "bridge" would be a degenerate
     WETH->WETH leg.
     """
+
+    def _dz34():
+        one = _leg(table, tin, _WETH)
+        two = _leg(table, _WETH, tout)
+        if one is None or two is None:
+            return (None,)
+        toks = one[0] + two[0][1:]
+        fees = one[1] + two[1]
+        return ((toks, fees) if len(toks) <= _MAX_TOKENS else None,)
+        return _DR_UNSET
     got = _leg(table, tin, tout)
     if got is not None:
         return got
     if tin == _WETH or tout == _WETH:
         return None
-    one = _leg(table, tin, _WETH)
-    two = _leg(table, _WETH, tout)
-    if one is None or two is None:
-        return None
-    toks = one[0] + two[0][1:]
-    fees = one[1] + two[1]
-    return (toks, fees) if len(toks) <= _MAX_TOKENS else None
-
+    _r_dz34 = _dz34()
+    if _r_dz34 is not _DR_UNSET:
+        return _r_dz34[0]
 
 def _pair(solver, intent, state):
     """(tin, tout, amt) for a chain-1 swap this module may consider, else None.
@@ -128,17 +135,22 @@ def _pair(solver, intent, state):
     as `_chain1_baked_core` read it a moment earlier; parsing it a second way
     would risk covering a pair the base engine never actually skipped.
     """
-    if int(getattr(state, "chain_id", 0) or 0) != 1:
-        return None
-    pr = solver._mc_params(intent, state)
-    if pr is None:
-        return None
-    tin, tout, amt, _mino = pr
-    tin, tout = str(tin).lower(), str(tout).lower()
-    if not tin.startswith("0x") or not tout.startswith("0x") or tin == tout:
-        return None
-    return tin, tout, int(amt)
 
+    def _dz33():
+        pr = solver._mc_params(intent, state)
+        if pr is None:
+            return (None,)
+        tin, tout, amt, _mino = pr
+        tin, tout = (str(tin).lower(), str(tout).lower())
+        if not tin.startswith('0x') or not tout.startswith('0x') or tin == tout:
+            return (None,)
+        return ((tin, tout, int(amt)),)
+        return _DR_UNSET
+    if int(getattr(state, 'chain_id', 0) or 0) != 1:
+        return None
+    _r_dz33 = _dz33()
+    if _r_dz33 is not _DR_UNSET:
+        return _r_dz33[0]
 
 def _gap_plan(solver, intent, state, tin, tout, amt):
     """The plan for an UN-baked pair, or None if the table cannot attest one.
@@ -146,19 +158,16 @@ def _gap_plan(solver, intent, state, tin, tout, amt):
     Split out of `try_cover` for the factorization metric only. It runs inside
     the caller's `try`, so a raise here is still swallowed exactly as before.
     """
-    # A baked pair is the base engine's business; only the gap is ours.
     if solver._chain1_spec_key(tin, tout, amt) is not None:
         return None
     path = _compose(solver._chain1_load(), tin, tout)
     if path is None:
         return None
     toks, fees = path
-    plan = solver._chain1_build_plan(
-        intent, state, tin, amt, {"tokens": toks, "fees": fees})
+    plan = solver._chain1_build_plan(intent, state, tin, amt, {'tokens': toks, 'fees': fees})
     if plan is not None:
-        _log.info("[c1weth] cover %s->%s via %d hop(s)", tin, tout, len(fees))
+        _log.info('[c1weth] cover %s->%s via %d hop(s)', tin, tout, len(fees))
     return plan
-
 
 def try_cover(solver, intent, state):
     """A zero-RPC chain-1 plan for a pair the table has no key for, else None.

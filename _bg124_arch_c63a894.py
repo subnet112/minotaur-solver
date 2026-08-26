@@ -60,7 +60,6 @@ def _bridges(plan):
             return False
     return _x(plan)
 
-
 def _empty(plan):
     """True when `plan` has nothing to serve -- BRIDGE PAYLOADS INCLUDED as content.
 
@@ -90,7 +89,7 @@ def _empty(plan):
     """
     if plan is None:
         return True
-    return not getattr(plan, 'interactions', None) and not _bridges(plan)
+    return not getattr(plan, 'interactions', None) and (not _bridges(plan))
 
 class MinerSolver(_Base):
     """Champion stack + confirmed-zero / fill-only-empty cover delta."""
@@ -228,7 +227,6 @@ class MinerSolver(_Base):
         """Raw legs -> ExecutionPlan in the harness's own types."""
         ix = [Interaction(target=str(l['target']), value='0', call_data=str(l['data']), chain_id=int(chain)) for l in legs]
         return ExecutionPlan(interactions=ix, deadline=0, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'chain_id': int(chain), 'route': 'ext_cover', 'expected_output': str(out)})
-
     _RB1_COVER_S = 6.0
 
     def _rb1_cap(self):
@@ -539,7 +537,7 @@ def _g_install():
             legs = xc.get('legs')
             if not dst or not isinstance(legs, list):
                 return False
-            return any(_g_xc_leg_on(leg, dst) for leg in legs)
+            return any((_g_xc_leg_on(leg, dst) for leg in legs))
         return _d(pl)
 
     def _g_xc_bridges(pl):
@@ -758,10 +756,6 @@ def _g_install():
                 chain = int(getattr(state, 'chain_id', 0) or 0)
                 if dest and dest != chain:
                     pl = self._g_xc_call(intent, state, snapshot)
-                    # _g_xc_delivers subsumes the old `metadata['cross_chain_plan']`
-                    # test -- it requires that key AND a non-empty destination leg.
-                    # Shipping the plan on the key alone is what scored 2 orders /
-                    # 0 credited / nothing_delivered x2 on sub_a00b73cb6f94.
                     if pl is not None and _g_xc_delivers(pl):
                         return pl
             except Exception:
@@ -770,7 +764,7 @@ def _g_install():
 
         def _g_try_cover(self, champ, intent, state, snapshot):
             try:
-                if champ is None or (not getattr(champ, 'interactions', None) and not _g_xc_bridges(champ)):
+                if champ is None or (not getattr(champ, 'interactions', None) and (not _g_xc_bridges(champ))):
                     alt = self._g_xc_call(intent, state, snapshot)
                     if alt is not None and getattr(alt, 'interactions', None) and (not (getattr(alt, 'metadata', None) or {}).get('cross_chain_plan')):
                         return alt
@@ -790,9 +784,9 @@ def _g_install():
             what it saw when `super()` was called from the old call site.
             """
             try:
-                return super().generate_plan(intent, state, snapshot), None
+                return (super().generate_plan(intent, state, snapshot), None)
             except Exception as raised:
-                return None, raised
+                return (None, raised)
 
         def _g_xc_serves(self, champ):
             """True when the incumbent ALREADY carries a delivering destination leg.

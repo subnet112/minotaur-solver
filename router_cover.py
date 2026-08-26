@@ -52,14 +52,18 @@ def best_route(rpc, chain_id, tin, tout, amt):
     Curve stays serial -- pool lookup, coin indices and get_dy are three DEPENDENT
     calls, so there is nothing to batch -- and stays deadline-gated as the tail.
     """
+
+    def _dz101(tin, tout):
+        tin = tin.lower()
+        tout = tout.lower()
+        best = None
+        prev = _SEARCH_DEADLINE[0]
+        deadline = time.monotonic() + BUDGET_S
+        return (best, deadline, prev, tin, tout)
     cfg = CHAINS.get(int(chain_id))
     if not cfg:
         return None
-    tin = tin.lower()
-    tout = tout.lower()
-    best = None
-    prev = _SEARCH_DEADLINE[0]
-    deadline = time.monotonic() + BUDGET_S
+    best, deadline, prev, tin, tout = _dz101(tin, tout)
     if prev:
         deadline = min(deadline, prev)
     _SEARCH_DEADLINE[0] = deadline
@@ -119,7 +123,6 @@ def _legs_v3_path(cfg, tin, amt, app_addr, route):
     _r_dz289 = _dz289()
     if _r_dz289 is not _DR_UNSET:
         return _r_dz289[0]
-
 S_V2_SWAP_FOT = '5c11d795'
 
 def _v2_approve_legs(tin, r, amt):

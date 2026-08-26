@@ -30,27 +30,19 @@ the caller's accumulator, and the caller runs the old serial scans. A node with 
 Multicall3 deployed is exactly as well off as it was before.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import time
 from eth_abi import encode as _enc, decode as _dec
 from web3 import Web3
 from venues import FEES, AERO_ROUTER, eth_call, _aero_candidates, _SEARCH_DEADLINE
 from venue_codec import _cd_v3_single, _cd_v3_path, _cd_v2, _cd_aero, _dec_u256, _dec_last
-
 MC3 = '0xcA11bde05977b3631167028862bE2a173976CA11'
 S_AGG3 = '82ad56cb'
 HUB_FEES = (500, 3000)
 MC_CHUNK = 40
 MC_TIMEOUT = 4.0
-# Wall time the serial fallback keeps NO MATTER WHAT the batch does. `eth_call`
-# runs at timeout=1.5s and the serial scan needs several of them back to back to
-# reach a route at all, so anything under one full call is the same as no
-# fallback. This is a floor on the fallback, not a share of it: see
-# `_batch_window` for the measurement that made the difference matter.
 SERIAL_RESERVE_S = 2.5
-# Below this a batch of ~30 quoter calls will not come back at all, so spending
-# what is left of the window on it only starves the fallback that would have.
 MC_MIN_TIMEOUT = 0.75
-
 
 def _batch_window(left):
     """Wall time the batch may spend IN TOTAL, or None to skip it entirely.
@@ -99,7 +91,6 @@ def _batch_window(left):
         return None
     return min(MC_TIMEOUT, budget)
 
-
 def _batch_deadline():
     """The instant the whole batch must be finished by, or None to skip it.
 
@@ -118,7 +109,6 @@ def _batch_deadline():
     if window is None:
         return None
     return now + window
-
 
 def _chunk_timeout(batch_dl):
     """Timeout for one chunk: what is left of the batch's own window, capped.
@@ -144,31 +134,40 @@ def mc_quote(rpc, subs, timeout=MC_TIMEOUT):
     """Run `subs` through Multicall3.aggregate3. Returns raw return-bytes aligned
     with `subs` (None where that subcall reverted), or None if the batch itself
     did not come back -- caller falls back to the serial scans."""
+
+    def _dz147():
+        r = eth_call(rpc, MC3, data, timeout=timeout)
+        if not r:
+            return (None,)
+        try:
+            res = _dec(['(bool,bytes)[]'], r)[0]
+        except Exception:
+            return (None,)
+        if len(res) != len(subs):
+            return (None,)
+        return ([bytes(d) if ok and d else None for ok, d in res],)
+        return _DR_UNSET
     if not subs:
         return []
     data = '0x' + S_AGG3 + _enc(['(address,bool,bytes)[]'], [subs]).hex()
-    r = eth_call(rpc, MC3, data, timeout=timeout)
-    if not r:
-        return None
-    try:
-        res = _dec(['(bool,bytes)[]'], r)[0]
-    except Exception:
-        return None
-    if len(res) != len(subs):
-        return None
-    return [bytes(d) if ok and d else None for ok, d in res]
+    _r_dz147 = _dz147()
+    if _r_dz147 is not _DR_UNSET:
+        return _r_dz147[0]
 
 def _cands_v3(cfg, tin, tout, amt):
     """uniV3: direct across every fee tier, then 2-hop via each hub."""
+
+    def _dz146():
+        for hub in cfg['hubs']:
+            if hub.lower() in (tin, tout):
+                continue
+            for f1 in HUB_FEES:
+                for f2 in HUB_FEES:
+                    route = {'kind': 'v3_path', 'tokens': [tin, hub, tout], 'fees': [f1, f2]}
+                    out.append((q, _cd_v3_path(route['tokens'], route['fees'], amt), route, False))
     q = cfg['quoter']
     out = [(q, _cd_v3_single(tin, tout, amt, f), {'kind': 'v3_single', 'fee': f}, False) for f in FEES]
-    for hub in cfg['hubs']:
-        if hub.lower() in (tin, tout):
-            continue
-        for f1 in HUB_FEES:
-            for f2 in HUB_FEES:
-                route = {'kind': 'v3_path', 'tokens': [tin, hub, tout], 'fees': [f1, f2]}
-                out.append((q, _cd_v3_path(route['tokens'], route['fees'], amt), route, False))
+    _dz146()
     return out
 
 def _cands_v2(cfg, tin, tout, amt):
@@ -203,19 +202,25 @@ def _quote_all(rpc, cands):
     what this did before -- let two chunks take ~80% of it between them and left
     the fallback nothing to run on, which is how a well-formed order came back
     with no plan at all."""
+
+    def _dz145():
+        for i in range(0, len(cands), MC_CHUNK):
+            tmo = _chunk_timeout(batch_dl)
+            if tmo is None:
+                return (None,)
+            chunk = cands[i:i + MC_CHUNK]
+            rets = mc_quote(rpc, [_sub(target, data) for target, data, _route, _multi in chunk], tmo)
+            if rets is None:
+                return (None,)
+            landed.extend(zip(chunk, rets))
+        return _DR_UNSET
     batch_dl = _batch_deadline()
     if batch_dl is None:
         return None
     landed = []
-    for i in range(0, len(cands), MC_CHUNK):
-        tmo = _chunk_timeout(batch_dl)
-        if tmo is None:
-            return None
-        chunk = cands[i:i + MC_CHUNK]
-        rets = mc_quote(rpc, [_sub(target, data) for target, data, _route, _multi in chunk], tmo)
-        if rets is None:
-            return None
-        landed.extend(zip(chunk, rets))
+    _r_dz145 = _dz145()
+    if _r_dz145 is not _DR_UNSET:
+        return _r_dz145[0]
     return landed
 
 def scan_all(rpc, cfg, chain_id, tin, tout, amt, take):

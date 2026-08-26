@@ -66,45 +66,6 @@ except Exception:
     SolverMetadata = None
 logger = logging.getLogger(__name__)
 import time as _time
-# THE RUN CLOCK STARTS HERE, NOT AT on_benchmark_start.
-#
-# The harness measures its own 900s TOTAL_BENCHMARK_TIMEOUT from
-# SolverSession.__init__ (harness/orchestrator.py:338 sets _start_time; :668
-# kills the session when elapsed_total exceeds it). That instant is BEFORE our
-# process is handed initialize(), and long before the first on_benchmark_start.
-#
-# Everything in between is ours and is not small. Importing this tree runs
-# solver.py:537 _apex_load_cover_layers() -> `import payload_cover_apex`, an
-# 18MB source file, plus king_solver -> king_base -> _champ_base:439 loading
-# route_table.json (14MB). Dockerfile has no `compileall` and .gitignore drops
-# __pycache__, so the benchmark container parses all of it from source on the
-# first import, every run.
-#
-# Anchoring _bm_t0 at on_benchmark_start therefore handed the governor a pot of
-# 860s measured from an origin that is `import + initialize` seconds LATER than
-# the one the killer uses -- so the governor's own deadline sits past 900s
-# whenever that prologue costs more than the 40s margin. Both consumers are
-# wrong in the same direction: _pace_order_budget hands every order more time
-# than the run can afford, and _behind_pace believes there is more runway left
-# than there is, so the emergency fast path engages too late. The run is killed
-# mid-corpus and every order it never reached arrives at the validator as
-# `chal: null` -- a DROPPED order, which is a hard veto.
-#
-# Module import time is the earliest instant this process can observe. It is
-# still strictly LATER than the harness's t0 (container start and interpreter
-# boot happen before us), so this can only ever under-report elapsed time,
-# never over-report it: the 40s margin absorbs that direction and the fix
-# cannot make the governor arm late again.
-#
-# Deliberately NOT reset per batch. A session that runs several benchmark
-# batches keeps one _start_time on the harness side -- it is reset only on
-# respawn (orchestrator.py:471), which gives us a new process and therefore a
-# new import anyway. Process-scoped mirrors that exactly.
-#
-# Non-zero by construction: _bm_t0 doubles as the governor's armed flag
-# (`if not getattr(self, '_bm_t0', None)`), so a clock reading exactly 0.0
-# would silently disarm the governor -- the very state that drops the tail.
-
 
 def _proc_t0():
     """The monotonic instant THIS PROCESS started, not the instant we imported.
@@ -146,23 +107,27 @@ def _proc_t0():
     unparseable stat line, a clock disagreement -- so a non-Linux or sandboxed
     host behaves exactly as it does today rather than mis-anchoring.
     """
+
+    def _dz3(fh):
+        after_comm = fh.read().rsplit(b')', 1)[1].split()
+        return after_comm
+
+    def _dz2(after_comm):
+        started_at = float(after_comm[19]) / _os.sysconf('SC_CLK_TCK')
+        return started_at
     import os as _os
     now = _time.monotonic()
-    # A prologue longer than this is not a slow import, it is a broken reading
-    # (a long-lived process that imported us late, or a monotonic/uptime clock
-    # disagreement). Anchoring the pot hours in the past would floor every order
-    # at max(4.0, ...) for a whole run, so an implausible age is discarded.
     sane_age_s = 300.0
     try:
         with open('/proc/self/stat', 'rb') as fh:
-            after_comm = fh.read().rsplit(b')', 1)[1].split()
-        started_at = float(after_comm[19]) / _os.sysconf('SC_CLK_TCK')
+            after_comm = _dz3(fh)
+        started_at = _dz2(after_comm)
         with open('/proc/uptime', 'rb') as fh:
             age = float(fh.read().split()[0]) - started_at
     except Exception:
         return now
     return now - age if 0.0 <= age <= sane_age_s else now
-_PROC_T0 = _proc_t0() or 1e-9
+_PROC_T0 = _proc_t0() or 1e-09
 
 def _load_agent_strategies() -> dict:
     """No agent-strategy blind-spot layer: delivery is fully handled by the
@@ -279,56 +244,6 @@ class JamesSolver(_JamesSolverDR17):
     """
     _FAST_BELOW_S = 6.0
     _RUN_BUDGET_S = 860.0
-
-    # THE PER-PLAN CUTOFF, WHICH THE RUN POT DOES NOT KNOW ABOUT.
-    #
-    # _RUN_BUDGET_S is sized against the harness's 900s PER-CONTAINER limit, but
-    # the harness enforces a SECOND, independent limit the pot has never modelled:
-    # 30s per GENERATE_PLAN call. Blowing it is not a slow plan, it is NO plan --
-    # the command is killed, the validator records `chal: null`, and that is a
-    # dropped order and a hard veto.
-    #
-    # Measured 2026-08-21T04:32Z, certify chunk-006 on 64979fa (chunk-006.log:129):
-    #
-    #   EXEC GATE: UNMEASURED -- SolverTimeoutError: Command
-    #   Command.GENERATE_PLAN timed out after 30.0s
-    #
-    # on veto:q_9de56d30c548, which genesis serves at 29574226355 / gas 482123 /
-    # on_chain=9999 -- the heaviest route in the chunk. _pace_order_budget clamped
-    # from BELOW at 4.0 and not at all from above, so a 12-order corpus handed one
-    # order 860/12 = 71.7s and the killer took it at 30.
-    #
-    # This is not a certify-chunk artifact. remaining_orders is
-    # `_bm_total - done + 1`, so it shrinks toward 1 as a run finishes: the LAST
-    # orders of every full run are handed the entire unspent pot as a single-order
-    # budget. A run that banks time early arrives at its tail authorised to spend
-    # far past 30s on one plan, which is why tail drops appear with no routing
-    # change behind them.
-    #
-    # Consumers read this as a ceiling on sub-phase timeouts -- king_base:3728
-    # `min(_SELECT_BUDGET_S, _dyn)`, :3729 `min(_BASELINE_BUDGET_S, _dyn)` -- so an
-    # oversized value does not merely permit an overrun, it switches those min()
-    # clamps off and lets each phase run to its own static budget back to back.
-    #
-    # 20.0 rather than 30.0 because this number governs the SEARCH only. The cover
-    # ladder is charged to a separate run-wide pot (_BG124_COVER_BUDGET_S = 12.0,
-    # solver.py:379) that this does not govern, and plan encode plus the IPC round
-    # trip sit outside it too. Two thirds of the cutoff leaves those the rest.
-    #
-    # The common path is untouched: a full ~122-order corpus paces at 860/122 = 7s,
-    # far under the ceiling, so this binds only where the division already exceeded
-    # what the harness will allow -- small corpora and run tails.
-    # CORRECTION, sourced 2026-08-22. Everything above is right about the 30s
-    # entry in `TIMEOUTS`, and wrong that a scored round enforces it.
-    # `orchestrator.py:679` replaces it for this one command --
-    # `timeout = generate_plan_recv_timeout(timeout)` -- which returns 300.0
-    # whenever the deterministic read budget is in force, and that budget is
-    # default-on (`DEFAULT_GENERATE_PLAN_BUDGET = 5000`, a consensus code
-    # constant, no env required). So these two numbers are the wall for an
-    # UNPROXIED run only, and `pace_pot.ceiling` now decides which wall applies
-    # from the `rpc_urls` this solver was initialized with. They stay here as
-    # that function's floor and its unproxied default: it never returns less
-    # than `_PLAN_CEILING_S`, so no window narrows.
     _PLAN_CUTOFF_S = 30.0
     _PLAN_CEILING_S = _PLAN_CUTOFF_S * 2.0 / 3.0
 
@@ -351,15 +266,6 @@ class JamesSolver(_JamesSolverDR17):
         except Exception:
             pass
         self._bm_t0 = _PROC_T0
-        # THE POT AND THE MEAN ARE TWO DIFFERENT CLOCKS.
-        #
-        # _bm_t0 anchors the POT: the 900s limit is a per-CONTAINER wall, so
-        # import+init is spent budget and remaining_time must be charged for it.
-        # _bm_work_t0 anchors the MEAN: `elapsed / completed` is meant to be the
-        # measured cost of ONE ORDER, and no order pays for the prologue twice.
-        # Sharing one anchor made the mean carry the whole import, which
-        # pace_pot.surplus multiplies by remaining_orders to size its reserve --
-        # see pace_pot.surplus for what that costs the head of a run.
         self._bm_work_t0 = _time.monotonic()
         self._bm_total = int(intent_count or 0)
         self._bm_done = 0
@@ -483,6 +389,15 @@ class JamesSolver(_JamesSolverDR17):
 
     def generate_plan(self, intent, state, snapshot=None):
 
+        def _dz1():
+            try:
+                better = self._james_v4_edge(intent, state, snapshot)
+                if not self._is_empty(better) and (not _plan_xc_delivers(plan)):
+                    return (better,)
+            except Exception:
+                logger.exception('[james] v4 edge failed; king plan stands')
+            return _DR_UNSET
+
         def _dr8():
             self._bm_done = getattr(self, '_bm_done', 0) + 1
             self._dyn_order_budget = None
@@ -512,20 +427,9 @@ class JamesSolver(_JamesSolverDR17):
         except Exception:
             logger.exception('[james] king generate_plan raised')
             plan = None
-        try:
-            better = self._james_v4_edge(intent, state, snapshot)
-            # The incumbent test is on `plan`, not on `better`, and it has to be
-            # HERE rather than left to `_dr12` below: this branch returns ahead
-            # of `_dr12`, so a fixed `_is_empty` alone would not save the bridge
-            # plan -- the v4 edge would already have returned over the top of it.
-            # `_james_v4_edge` probes V4 pools on the SOURCE chain only, so
-            # whatever it finds cannot deliver an order whose `dest_chain_id`
-            # points elsewhere; taking it would trade a served bridge for a
-            # `no_cross_chain_plan` drop. Guard mirrors _bg124_arch_c63a894:634.
-            if not self._is_empty(better) and (not _plan_xc_delivers(plan)):
-                return better
-        except Exception:
-            logger.exception('[james] v4 edge failed; king plan stands')
+        _r_dz1 = _dz1()
+        if _r_dz1 is not _DR_UNSET:
+            return _r_dz1[0]
 
         def _dr12():
             if not self._is_empty(plan):
@@ -540,23 +444,6 @@ class JamesSolver(_JamesSolverDR17):
                         return alt
                 except Exception:
                     logger.exception('[james] agent strategy fallback raised')
-            # NO RESCUE HERE. 4aed53c put `empty_rescue.rescue` on this line and
-            # it was the wrong altitude: this class is at the BOTTOM of the live
-            # MRO, not the top. Every fill-only-empty layer in the tree sits
-            # ABOVE it and keys on `_is_empty(super().generate_plan(...))` --
-            # Bg124Solver._bg124_fill (solver.py:345), whose onfork and c1weth
-            # rungs are gated `bar == 0`, and payload_cover_apex._HybridLayer,
-            # which "only assembles from the table when we come back empty"
-            # (solver.py:529) across 1900 baked exact-key rows. Handing them a
-            # non-empty best-effort plan does not merely change which plan they
-            # see, it deletes the signal they fire on: `_expected` reads 0 on a
-            # last-resort plan, so `_blind` is true and the ladder runs at
-            # bar == -1, where onfork and c1weth are switched off, and the apex
-            # table is skipped outright. Those layers are where this lineage's
-            # blind_spot_cover wins come from -- 11 of them on sub_5befa0ccb2a7.
-            # The rescue now lives at min_amt_alias._PlanBoundary, the LAST
-            # install and the true outermost generate_plan, so it fires only
-            # after every one of those layers has had the empty plan it needs.
             return plan
             return _DR_UNSET
         _dr13 = _dr12()
@@ -603,7 +490,6 @@ class JamesSolver(_JamesSolverDR17):
             amt, min_out = _dr15()
         except (TypeError, ValueError):
             return None
-
         _sup = super()
 
         def _fw2():

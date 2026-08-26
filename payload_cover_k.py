@@ -38,7 +38,6 @@ def _k_is_cross_chain(plan):
     only fires on a NON-hollow incumbent, so an empty plan is still rescued.
     """
     return bool((getattr(plan, 'metadata', None) or {}).get('cross_chain_plan'))
-
 _ROUTE_TABLE = None
 
 def _route_table():
@@ -145,18 +144,6 @@ def install(base_cls):
             return blob
 
         def is_hollow(self, plan):
-            # INTERACTIONS ALONE IS THE DEFECT. A bridge plan is
-            # `interactions=[]` with the payload under
-            # `metadata['cross_chain_plan']` (baseline_solver.py:1181), so this
-            # called it hollow, `not hollow` was False, and the guard below --
-            #     if not hollow and _k_is_cross_chain(held): return held
-            # -- could not fire on the only plan shape it was written for. The
-            # fill path ran instead and `_dz117` returned source-chain pieces
-            # stamped with `lane`, discarding the bridge request and the
-            # destination leg: delivered nothing where the intent asked, and
-            # DROPPED. Same dead-guard shape as payload_cover_apex._empty,
-            # fixed in the same commit series; `_k_is_cross_chain` is this
-            # module's one owner of the rule.
             if plan is None:
                 return True
             try:
@@ -195,8 +182,7 @@ def install(base_cls):
                 try:
                     return super().generate_plan(intent, state, snapshot)
                 except (RecursionError, MemoryError) as exhausted:
-                    trace.error('[cover] champion exhausted %s; not retried',
-                                type(exhausted).__name__)
+                    trace.error('[cover] champion exhausted %s; not retried', type(exhausted).__name__)
                     return None
                 except Exception as raised:
                     if _attempt:
@@ -239,13 +225,6 @@ def install(base_cls):
                 return (_r_dz117, lane, live)
 
             def _dz117(lane, live):
-                # `lane` and `live` are PARAMETERS, not closure reads. As
-                # generated they were read from `_dz118`, which is this
-                # closure's SIBLING and not its enclosing scope, so every table
-                # hit raised NameError into the `except` below and returned the
-                # incumbent -- the layer's rows were unreachable even on a hit.
-                # The closure audit is blind to this class; see the sibling-scope
-                # note in solver.py.
                 pieces = []
                 for step in steps:
                     pieces.append(Interaction(target=step['target'], value=str(step.get('value', '0')), call_data=self.swap_word(step['data'], live), chain_id=lane))

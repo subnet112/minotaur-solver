@@ -41,7 +41,6 @@ except Exception:
         future edit from touching one and not the other, it stops that edit from
         being invisible when someone looks.
         """
-
         _STUB_S = 0.05
         _INFLIGHT_S = 20.0
 
@@ -144,35 +143,17 @@ def install(base_cls):
             """
 
             def _dz284():
+
+                def _dz96():
+                    remaining_time = float(getattr(self, '_RUN_BUDGET_S', 0.0) or 0.0) - (time.monotonic() - float(started))
+                    remaining_orders = max(1, total - done)
+                    fast_below = float(getattr(self, '_FAST_BELOW_S', 0.0) or 0.0)
+                    pace = remaining_time / remaining_orders
+                    self._dyn_order_budget = self._pb_order_budget(done, pace)
+                    return (fast_below, pace, remaining_orders, remaining_time)
                 if not started or total <= 0:
                     return (None,)
-                remaining_time = float(getattr(self, '_RUN_BUDGET_S', 0.0) or 0.0) - (time.monotonic() - float(started))
-                remaining_orders = max(1, total - done)
-                fast_below = float(getattr(self, '_FAST_BELOW_S', 0.0) or 0.0)
-                pace = remaining_time / remaining_orders
-                # The fast-path test stays on the RAW pace: the ceiling bounds what
-                # one plan may SPEND, it must not change WHEN the cheap path fires.
-                self._dyn_order_budget = self._pb_order_budget(done, pace)
-                # `pace >= fast_below` USED TO BE THE WHOLE TEST HERE, and this is
-                # the OUTERMOST generate_plan (solver.py:544), so it fires before
-                # `_apex_champ._behind_pace` and its stub short-circuits the entire
-                # stack. Fixing the governor's copy alone would have left this one
-                # deciding every order.
-                #
-                # Both that test and the measured-rate projection that replaced it
-                # armed EARLY, and early is the whole defect: a stub is a hard veto
-                # per order (`real_sim_reverted` -> `chal: null`), so it is only
-                # ever worth taking on orders the wall would otherwise have taken
-                # anyway. `pace_mean.overruns` arms when the pot is down to
-                # `remaining_orders * _STUB_S + _INFLIGHT_S` -- what it costs to
-                # stub everything left -- and is False for the whole of any run
-                # that is not about to hit the wall. See `pace_mean` for the
-                # measurement on sub_b5b5ba50f5f8: 7 dropped orders, front-loaded
-                # and scattered, every one planned in under 1ms, on a run that
-                # reached the end of the corpus and never came near the wall.
-                #
-                # `_dyn_order_budget` is still written from the raw pace above, so
-                # a declined fast path leaves the order paced exactly as it was.
+                fast_below, pace, remaining_orders, remaining_time = _dz96()
                 if _xc_dest_chain(state) or not pace_mean.overruns(remaining_orders, remaining_time, fast_below):
                     return (None,)
                 return _DR_UNSET
@@ -426,6 +407,12 @@ def install(base_cls):
             raises, and the caller's own `finally` restores the entry window
             after this one has already restored the share.
             """
+
+            def _dz97():
+                if _win is not None:
+                    _win[0][0] = _win[1]
+                if armed and int(getattr(self, '_bm_done', 0) or 0) <= before:
+                    self._bm_done = before + 1
             if armed:
                 fast = self._pb_prepare(intent, state, snapshot, before)
                 if fast is not None:
@@ -435,10 +422,7 @@ def install(base_cls):
             try:
                 return super().generate_plan(intent, state, snapshot)
             finally:
-                if _win is not None:
-                    _win[0][0] = _win[1]
-                if armed and int(getattr(self, '_bm_done', 0) or 0) <= before:
-                    self._bm_done = before + 1
+                _dz97()
 
         def generate_plan(self, intent, state, snapshot=None):
 
@@ -448,16 +432,10 @@ def install(base_cls):
                 return (armed, before)
             armed, before = _dz283(self)
             self._pb_fresh_order()
-            # Opened BEFORE `_pb_prepare`, so the fast-path attempt is inside the
-            # plan's clock instead of being added to it. See `_pb_entry_window`:
-            # only ever tightens, and the share armed below still binds whenever
-            # it is the smaller of the two.
             _entry = self._pb_arm_window(self._pb_entry_window())
             try:
                 return self._pb_planned(intent, state, snapshot, armed, before)
             finally:
-                # Restored outermost-last: the inner scope restores to the entry
-                # deadline, this one to whatever an enclosing scope had set.
                 if _entry is not None:
                     _entry[0][0] = _entry[1]
     return _PacingBridge
