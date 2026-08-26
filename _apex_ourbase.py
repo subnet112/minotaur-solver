@@ -21,21 +21,8 @@ import json
 import logging
 import time
 from pathlib import Path
+from min1_rr_g14 import _resolve_base  # relocated leaf; see that module
 
-def _resolve_base():
-    """Import ladder: this generation's sha-named shim, then the legacy
-    fixed-name shim a champion tree may carry, then the bare engine."""
-    try:
-        from _bg124_shim_c63a894 import SOLVER_CLASS, base_module, SOLVER_VERSION
-        return (SOLVER_CLASS, base_module, SOLVER_VERSION)
-    except Exception:
-        pass
-    try:
-        from _blueguider_uid124_shim import SOLVER_CLASS, base_module, SOLVER_VERSION
-        return (SOLVER_CLASS, base_module, SOLVER_VERSION)
-    except Exception:
-        import king_solver as base_module
-        return (base_module.MinerSolver, base_module, getattr(base_module, 'SOLVER_VERSION', 'unknown'))
 
 def _resolve_metadata_cls():
     try:
