@@ -14,12 +14,16 @@ def _v_gated_table():
     """Lazy gated_rows.json — 'tin|tout|amt' -> champion-route-gated row spec
     (own-built routes only; pool params machine-extracted from oracle route
     hops). Inert when the file is absent."""
+
+    def _dz1668():
+        nonlocal _V_GATED_CACHE
+        _V_GATED_CACHE = {str(k).lower(): v for k, v in (_json.load(open(path)) or {}).items()}
     global _V_GATED_CACHE
     if _V_GATED_CACHE is None:
         import json as _json
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gated_rows.json')
         try:
-            _V_GATED_CACHE = {str(k).lower(): v for k, v in (_json.load(open(path)) or {}).items()}
+            _dz1668()
         except Exception:
             _V_GATED_CACHE = {}
     return _V_GATED_CACHE
@@ -29,13 +33,17 @@ def _viking_override() -> set:
     scorecard-PROVEN to deliver 0 ALWAYS (structural miss), so the replay row
     is served unconditionally: our delivery vs their 0 = a win; a stale row
     reverts to 0 = the tie we already had. Ships empty at re-fork."""
+
+    def _dz1667():
+        nonlocal _VIKING_OVERRIDE_CACHE
+        data = _json.load(open(path))
+        _VIKING_OVERRIDE_CACHE = {str(k).lower() for k in data} if isinstance(data, list) else set()
     global _VIKING_OVERRIDE_CACHE
     if _VIKING_OVERRIDE_CACHE is None:
         import json as _json
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_override.json')
         try:
-            data = _json.load(open(path))
-            _VIKING_OVERRIDE_CACHE = {str(k).lower() for k in data} if isinstance(data, list) else set()
+            _dz1667()
         except Exception:
             _VIKING_OVERRIDE_CACHE = set()
     return _VIKING_OVERRIDE_CACHE
@@ -50,9 +58,8 @@ def _viking_cached_bar(key):
         def _dr22():
 
             def _dz407():
-                bars: dict = {}
-                try:
-                    data = _json.load(open(path)) or {}
+
+                def _dz1663():
                     for k, v in data.items() if isinstance(data, dict) else []:
                         try:
                             iv = int(v)
@@ -60,6 +67,10 @@ def _viking_cached_bar(key):
                             continue
                         if iv > 0:
                             bars[str(k).lower()] = iv
+                bars: dict = {}
+                try:
+                    data = _json.load(open(path)) or {}
+                    _dz1663()
                 except Exception:
                     bars = {}
                 return (bars,)
@@ -80,21 +91,28 @@ def _viking_frozen_index() -> dict:
     construction — those are never overridden."""
 
     def _dz408():
+
+        def _dz1666():
+            for k, spec in data.items() if isinstance(data, dict) else []:
+
+                def _dr12():
+
+                    def _dz1662():
+                        rows = (spec or {}).get('interactions') or []
+                        sig = frozenset(((str(r.get('target', '')).lower(), str(r.get('data', '')).lower()) for r in rows))
+                        return (rows, sig)
+                    rows, sig = _dz1662()
+                    if sig:
+                        idx.setdefault(str(k).lower(), []).append(sig)
+                    return (rows, sig)
+                rows, sig = _dr12()
         here = os.path.dirname(os.path.abspath(__file__))
         for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
             try:
                 data = _json.load(open(os.path.join(here, fname))) or {}
             except Exception:
                 continue
-            for k, spec in data.items() if isinstance(data, dict) else []:
-
-                def _dr12():
-                    rows = (spec or {}).get('interactions') or []
-                    sig = frozenset(((str(r.get('target', '')).lower(), str(r.get('data', '')).lower()) for r in rows))
-                    if sig:
-                        idx.setdefault(str(k).lower(), []).append(sig)
-                    return (rows, sig)
-                rows, sig = _dr12()
+            _dz1666()
     global _VIKING_FROZEN_INDEX
     if _VIKING_FROZEN_INDEX is None:
         import json as _json
@@ -116,25 +134,39 @@ def _viking_replay() -> dict:
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_replay.json')
 
         def _dr19():
+
+            def _dz1665():
+                data = _json.load(open(path)) or {}
+                return data
+
+            def _dz1664(spec):
+                rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
+                return rows
             out: dict = {}
             try:
-                data = _json.load(open(path)) or {}
+                data = _dz1665()
                 for key, spec in data.items() if isinstance(data, dict) else []:
-                    rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
+                    rows = _dz1664(spec)
                     if not rows:
                         continue
 
                     def _dr7():
+
+                        def _dz1661():
+                            try:
+                                bout = int((spec or {}).get('built_out', 0) or 0)
+                            except (TypeError, ValueError):
+                                bout = 0
+                            out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
+                            return ((at, bout),)
+                            return _DR_UNSET
                         try:
                             at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
                         except Exception:
                             at = 0
-                        try:
-                            bout = int((spec or {}).get('built_out', 0) or 0)
-                        except (TypeError, ValueError):
-                            bout = 0
-                        out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
-                        return (at, bout)
+                        _r_dz1661 = _dz1661()
+                        if _r_dz1661 is not _DR_UNSET:
+                            return _r_dz1661[0]
                     at, bout = _dr7()
             except Exception:
                 out = {}

@@ -8,6 +8,7 @@ stays small. Address/selector tables live in onfork_tables.json because JSON
 data contributes zero AST nodes.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import json
 from pathlib import Path
 
@@ -72,14 +73,20 @@ def _sel4(sig):
 def decode_one(kind, data):
     """V2 getAmountsOut returns uint256[] (take the last leg); the V3 quoter
     returns uint256 in the first word."""
+
+    def _dz484():
+        if kind == 'v2':
+            arr = dec(['uint256[]'], data)[0]
+            return (int(arr[-1]) if arr else 0,)
+        return (int(dec(['uint256'], data[:32])[0]),)
+        return _DR_UNSET
     from eth_abi import decode as dec
     if not data or len(data) < 32:
         return 0
     try:
-        if kind == 'v2':
-            arr = dec(['uint256[]'], data)[0]
-            return int(arr[-1]) if arr else 0
-        return int(dec(['uint256'], data[:32])[0])
+        _r_dz484 = _dz484()
+        if _r_dz484 is not _DR_UNSET:
+            return _r_dz484[0]
     except Exception:
         return 0
 
@@ -101,14 +108,26 @@ def s_path(tin, mid, tout, fees, amt, min_out, to):
 def swap_cd(desc, tin, tout, amt, min_out, to):
     """desc = ("v2", router, path) | ("curve", pool, (kind,i,j))
     | ("single", fee, None) | ("path", fees, mid)."""
+
+    def _dz483():
+        if kind == 'v2':
+            return (s_v2(amt, min_out, b, to),)
+        _r_dz482 = _dz482()
+        if _r_dz482 is not _DR_UNSET:
+            return (_r_dz482[0],)
+        return (s_path(tin, b, tout, a, amt, min_out, to),)
+        return _DR_UNSET
+
+    def _dz482():
+        if kind == 'curve':
+            return (s_curve(b[0], b[1], b[2], amt, min_out),)
+        if kind == 'single':
+            return (s_single(tin, tout, a, amt, min_out, to),)
+        return _DR_UNSET
     kind, a, b = desc
-    if kind == 'v2':
-        return s_v2(amt, min_out, b, to)
-    if kind == 'curve':
-        return s_curve(b[0], b[1], b[2], amt, min_out)
-    if kind == 'single':
-        return s_single(tin, tout, a, amt, min_out, to)
-    return s_path(tin, b, tout, a, amt, min_out, to)
+    _r_dz483 = _dz483()
+    if _r_dz483 is not _DR_UNSET:
+        return _r_dz483[0]
 
 def spender(desc, chain):
     """Approve target = whoever pulls the tokens: the V2 router or the Curve
