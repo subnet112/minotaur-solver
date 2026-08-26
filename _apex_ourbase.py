@@ -21,8 +21,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from min1_rr_g14 import _resolve_base  # relocated leaf; see that module
-
+from min1_rr_g14 import _resolve_base
 
 def _resolve_metadata_cls():
     try:
