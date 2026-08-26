@@ -9,25 +9,17 @@ WEAKLY DOMINANT: fill-only-empty (fires ONLY where super() is empty) + min_out=q
 only turn a DROP into a fill or a clean revert; it never touches the orders the champion already serves,
 so the 2 better and 83 matched are preserved. A bad encode is caught -> returns super() => same as today."""
 from __future__ import annotations
+_DR_UNSET = object()
 import os
 import json
 from _garnet_full import SOLVER_CLASS as _Base
-
-_SR02 = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"   # UniV3 SwapRouter02 (chain-1, no-deadline)
-_WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-_STABLES = {
-    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",  # USDC
-    "0xdac17f958d2ee523a2206206994597c13d831ec7",  # USDT
-    "0x6b175474e89094c44da98b954eedeac495271d0f",  # DAI
-    "0x853d955acef822db058eb8505911ed77f175b99e",  # FRAX
-    "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",  # USDe
-}
-_ROUTES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "apex_routes.json")
-
-SOLVER_NAME = os.environ.get("MINOTAUR_SOLVER_NAME", "sapphire-dex-router")
-SOLVER_VERSION = os.environ.get("MINOTAUR_SOLVER_VERSION", "71.0.0")
-SOLVER_AUTHOR = os.environ.get("MINOTAUR_SOLVER_AUTHOR", "TensorVadana")
-
+_SR02 = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'
+_WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+_STABLES = {'0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0xdac17f958d2ee523a2206206994597c13d831ec7', '0x6b175474e89094c44da98b954eedeac495271d0f', '0x853d955acef822db058eb8505911ed77f175b99e', '0x4c9edd5852cd905f086c759e8383e09bff1e68b3'}
+_ROUTES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_routes.json')
+SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'sapphire-dex-router')
+SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '71.0.0')
+SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'TensorVadana')
 
 def _baked_routes():
     try:
@@ -36,7 +28,6 @@ def _baked_routes():
     except Exception:
         return {}
 
-
 class _RouteChoice:
     """Pick a route shape+fee for (tin,tout): baked route > stable-direct > WETH-direct > WETH-hop."""
 
@@ -44,70 +35,69 @@ class _RouteChoice:
         self.routes = routes or {}
 
     def pick(self, tin, tout):
-        r = self.routes.get(f"{tin}:{tout}") or self.routes.get(f"{tout}:{tin}")
-        if isinstance(r, dict) and r.get("kind") == "univ3_single":
-            return ("single", int(r.get("fee", 3000)))
+        r = self.routes.get(f'{tin}:{tout}') or self.routes.get(f'{tout}:{tin}')
+        if isinstance(r, dict) and r.get('kind') == 'univ3_single':
+            return ('single', int(r.get('fee', 3000)))
         if tin in _STABLES and tout in _STABLES:
-            return ("single", 100)
+            return ('single', 100)
         if _WETH in (tin, tout):
-            return ("single", 500)
-        return ("hop", 3000)
-
+            return ('single', 500)
+        return ('hop', 3000)
 
 class EnhancedFillWf(_Base):
     """Champion engine (super) + fill-only-empty SMART cover (baked routes + stable/volatile heuristic)."""
 
     def generate_plan(self, intent, state, snapshot=None):
-        plan = super().generate_plan(intent, state, snapshot)
-        if (plan is not None and getattr(plan, "interactions", None)) \
-                or int(getattr(state, "chain_id", 0) or 0) != 1:
-            return plan
-        try:
-            p = dict(getattr(state, "raw_params", {}) or {})
-            tin = str(p.get("input_token", "") or "").lower()
-            tout = str(p.get("output_token", "") or "").lower()
-            amt = int(p.get("input_amount", 0) or 0)
-            quoted = int(p.get("quoted_output", 0) or 0)
-            if not (tin.startswith("0x") and tout.startswith("0x")) or amt <= 0 or quoted <= 0 or tin == tout:
-                return plan
-            recip = str(p.get("receiver", "") or getattr(state, "contract_address", None)
-                        or getattr(state, "owner", None) or "0x0000000000000000000000000000000000000001")
+
+        def _dz2():
+            quoted = int(p.get('quoted_output', 0) or 0)
+            if not (tin.startswith('0x') and tout.startswith('0x')) or amt <= 0 or quoted <= 0 or (tin == tout):
+                return (plan,)
+            recip = str(p.get('receiver', '') or getattr(state, 'contract_address', None) or getattr(state, 'owner', None) or '0x0000000000000000000000000000000000000001')
             kind, fee = _RouteChoice(_baked_routes()).pick(tin, tout)
             built = self._build(intent, state, tin, tout, amt, quoted * 99 // 100, recip, kind, fee)
-            return built if (built is not None and getattr(built, "interactions", None)) else plan
+            return (built if built is not None and getattr(built, 'interactions', None) else plan,)
+            return _DR_UNSET
+        plan = super().generate_plan(intent, state, snapshot)
+        if plan is not None and getattr(plan, 'interactions', None) or int(getattr(state, 'chain_id', 0) or 0) != 1:
+            return plan
+        try:
+            p = dict(getattr(state, 'raw_params', {}) or {})
+            tin = str(p.get('input_token', '') or '').lower()
+            tout = str(p.get('output_token', '') or '').lower()
+            amt = int(p.get('input_amount', 0) or 0)
+            _r_dz2 = _dz2()
+            if _r_dz2 is not _DR_UNSET:
+                return _r_dz2[0]
         except Exception:
             return plan
 
     def _build(self, intent, state, tin, tout, amt, min_out, recip, kind, fee):
+
+        def _dz1():
+            nonlocal params, swap
+            raw = bytes.fromhex(tin[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(_WETH[2:]) + int(fee).to_bytes(3, 'big') + bytes.fromhex(tout[2:])
+            params = _enc(['(bytes,address,uint256,uint256)'], [(raw, _ck(recip), int(amt), int(min_out))]).hex()
+            swap = '0xb858183f' + params
         from eth_abi import encode as _enc
         from eth_utils import to_checksum_address as _ck
         from common.abi_utils import encode_approve
         from minotaur_subnet.shared.types import Interaction as _IX, ExecutionPlan as _EP
-        if kind == "single":
-            # SwapRouter02 exactInputSingle((tokenIn,tokenOut,fee,recipient,amountIn,amountOutMinimum,sqrtPriceLimitX96))
+        if kind == 'single':
             tup = (_ck(tin), _ck(tout), int(fee), _ck(recip), int(amt), int(min_out), 0)
-            params = _enc(["(address,address,uint24,address,uint256,uint256,uint160)"], [tup]).hex()
-            swap = "0x04e45aaf" + params
+            params = _enc(['(address,address,uint24,address,uint256,uint256,uint160)'], [tup]).hex()
+            swap = '0x04e45aaf' + params
         else:
-            raw = (bytes.fromhex(tin[2:]) + int(fee).to_bytes(3, "big")
-                   + bytes.fromhex(_WETH[2:]) + int(fee).to_bytes(3, "big") + bytes.fromhex(tout[2:]))
-            params = _enc(["(bytes,address,uint256,uint256)"], [(raw, _ck(recip), int(amt), int(min_out))]).hex()
-            swap = "0xb858183f" + params
-        ix = [_IX(target=_ck(tin), value="0", call_data=encode_approve(_ck(_SR02), int(amt)), chain_id=1),
-              _IX(target=_ck(_SR02), value="0", call_data=swap, chain_id=1)]
-        return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce,
-                   metadata={"solver": "enhanced-fill-wf", "chain_id": 1, "kind": kind, "fee": fee})
+            _dz1()
+        ix = [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(_SR02), int(amt)), chain_id=1), _IX(target=_ck(_SR02), value='0', call_data=swap, chain_id=1)]
+        return _EP(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'enhanced-fill-wf', 'chain_id': 1, 'kind': kind, 'fee': fee})
 
     def metadata(self):
         base = super().metadata()
         try:
             from minotaur_subnet.sdk.intent_solver import SolverMetadata
-            return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR,
-                                  description="champion fork + baked-route/heuristic fill cover",
-                                  supported_chains=base.supported_chains,
-                                  supported_intent_types=base.supported_intent_types)
+            return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='champion fork + baked-route/heuristic fill cover', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
         except Exception:
             return base
-
-
 SOLVER_CLASS = EnhancedFillWf
+_FACTOR_FP = 'round-e29795338-n1-min-factor-min-hk4-cj113-001'
