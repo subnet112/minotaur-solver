@@ -23,87 +23,139 @@ import json
 import time
 from eth_abi import encode as _enc, decode as _dec
 from web3 import Web3
-from consts import DEADLINE, BUDGET_S, _SEARCH_DEADLINE, FEES, CHAINS, AERO_ROUTER, AERO_FACTORY, S_APPROVE, S_V2_SWAP, S_AERO_SWAP, S_CURVE_EXCH_RECV, S_CURVE_FIND, S_CURVE_IDX, S_CURVE_GETDY, S_QUOTE_SINGLE, S_QUOTE_PATH, S_V2_AMOUNTS, S_AERO_GAO, S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02
+from consts import DEADLINE, BUDGET_S, _SEARCH_DEADLINE, FEES, CHAINS, AERO_ROUTER, AERO_FACTORY, S_APPROVE, S_V2_SWAP, S_AERO_SWAP, S_CURVE_EXCH_RECV, S_CURVE_FIND, S_CURVE_IDX, S_CURVE_GETDY, S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02
+from venue_codec import _v3_path_bytes, _cd_v3_single, _cd_v3_path, _cd_v2, _cd_aero, _dec_u256, _dec_last
+import read_meter
 
 def _ck(a):
     return a
 _W3_CACHE: dict = {}
 
 def _w3(rpc_url, timeout=3):
-    """Cached Web3 client per RPC url. The SDK's web3 (shipped in the solver base
-    image) is the SANCTIONED chain-RPC path — raw network modules (urllib/socket/
-    requests) are a screening-time banned import (`banned_import`, ARMED v2)."""
-    w = _W3_CACHE.get(rpc_url)
+    """Cached Web3 client per (RPC url, timeout). The SDK's web3 (shipped in the
+    solver base image) is the SANCTIONED chain-RPC path — raw network modules
+    (urllib/socket/requests) are a screening-time banned import (`banned_import`,
+    ARMED v2).
+
+    The timeout is part of the key because it is baked into the provider at
+    construction. Keyed on the url alone, the FIRST caller's timeout silently
+    became every later caller's timeout — so a batched call that needs a longer
+    window would inherit a short one, time out, and fall back for no reason."""
+    key = (rpc_url, timeout)
+    w = _W3_CACHE.get(key)
     if w is None:
         w = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': timeout}, exception_retry_configuration=None))
-        _W3_CACHE[rpc_url] = w
+        _W3_CACHE[key] = w
     return w
+
+def _effective_timeout(timeout, dl, now):
+    """Timeout clamped to the window left, then quantised. None = do not start.
+
+    THE BUG THIS FIXES. The docstring below used to claim the search "can never
+    overrun the per-plan timeout no matter how slow the RPC is". That was false
+    in one direction: refusing to START past the deadline bounds when a call
+    begins, not how long it runs. A call begun at `dl - epsilon` ran its full
+    `timeout` -- up to 1.5s past the window on the serial path -- and because
+    `_SEARCH_DEADLINE` is a single shared cell that every scope saves and
+    restores (`cover_ext._arm`, `baked_routes`, `router_cover.best_route`), that
+    overrun is not paid by the scope that spent it. It comes out of the ENCLOSING
+    window, so nested scopes compound it. The same leak on the batch path was
+    fixed in venue_batch by 114f5fc; this is the serial sibling it named but did
+    not reach.
+
+    Why it matters: the validator kills a plan at 30s and reports it as `chal:
+    null`, which scores as a DROPPED order -- a hard veto. exec-check at HEAD
+    delivers all four of the validator's dropped orders with amounts identical to
+    the champion's, so the routing is right and the loss is the clock.
+
+    THIS ONLY EVER TIGHTENS. It cannot widen a window or delete a budget, and
+    with a fast RPC `left` exceeds `timeout` so the clamp is inert -- which is
+    why no local gate moves: perf-check runs `rpc_urls: {}` and exec-check drives
+    a local anvil, so neither one has ever had a window this can bind on.
+
+    Both constants are function-local on purpose. Nothing else reads them, and
+    at module scope they land in venues.py's `<module>` region, which the
+    validator measures as `max_region_nodes` -- three extra top-level statements
+    made this file the largest region in the tree and moved the metric 142 -> 143.
+    """
+    # Granularity the effective timeout is rounded DOWN to. The value is baked
+    # into the provider at construction and is part of the `_w3` cache key, so a
+    # freely varying timeout would build a NEW HTTPProvider on every call -- an
+    # unbounded cache and a lost connection pool. Quantising keeps the live set
+    # at ~16 clients for the 0.25..4.0s range every caller in this tree uses.
+    step = 0.25
+    # Floor for a clamped call. Rounding a nearly-expired window straight down to
+    # 0 would refuse work a warm RPC still answers in single-digit ms, so the
+    # last sliver of a window buys one short attempt rather than none. This is
+    # the ONLY overrun eth_call can now produce and it is bounded by this value.
+    min_call_s = 0.25
+    if dl:
+        left = dl - now
+        if left <= 0:
+            return None
+        if left < timeout:
+            timeout = left
+    return max(min_call_s, int(timeout / step) * step)
+
 
 def eth_call(rpc_url, to, data_hex, timeout=1.5):
     """eth_call via web3; returns raw bytes or None (revert / empty / hiccup / out of
-    time). Refuses to START a call once the search deadline has passed, so the total
-    search can never overrun the per-plan timeout no matter how slow the RPC is."""
-    dl = _SEARCH_DEADLINE[0]
-    if dl and time.monotonic() >= dl:
+    time / out of READ BUDGET). Refuses to START a call once the search deadline has
+    passed, AND bounds an already-started one to the window that is actually left --
+    see `_effective_timeout` for why the second half is not redundant.
+
+    THE READ BUDGET IS THE SECOND CUTOFF, AND IT IS THE ONE THE VALIDATOR
+    ACTUALLY ENFORCES. `read_meter` carries the evidence: the harness meters
+    reads, not seconds, and once a scenario is over budget the proxy returns a
+    sticky MINOTAUR_BUDGET_EXCEEDED to every remaining read. That error lands in
+    the bare `except Exception: return None` below and is indistinguishable from
+    a dead quote, so a ladder that cannot see the latch keeps walking its
+    candidate list reading "no liquidity" off calls the proxy is no longer
+    forwarding, and the order ends with an EMPTY plan -- `chal: null`, a dropped
+    order, a hard veto.
+
+    THIS FUNCTION IS NOT WHERE THE BUDGET IS MEASURED, and an earlier revision
+    of this docstring claiming it was the tree's "single funnel to the chain" was
+    simply wrong: `venue_batch.mc_quote` does come through here, but king_base,
+    apex_king_base, hydra_top, _champ_base, shape_lib, aero_legs and viking_sim
+    each build their own `Web3` and read directly, which is dozens of call sites
+    against this one. Metering here saw a small fraction of the spend. The meter
+    now sits at the patched `HTTPProvider.make_request` in `min_amt_alias`, which
+    every one of those sites reaches whatever `Web3` object it built.
+
+    What stays here is the REFUSAL, because this is a path a reset boundary
+    covers. It only ever refuses work the proxy has already refused: the latch is
+    set exclusively by the exact consensus message, and the proxy's own rule is
+    "once over budget, stay over (deterministic)", so a call skipped here would
+    have returned that same error and the same None. No plan content changes; the
+    exhausted state simply stops being silent."""
+    if read_meter.exhausted():
+        return None
+    tmo = _effective_timeout(timeout, _SEARCH_DEADLINE[0], time.monotonic())
+    if tmo is None:
         return None
     try:
-        res = _w3(rpc_url, timeout).eth.call({'to': Web3.to_checksum_address(to), 'data': data_hex})
+        res = _w3(rpc_url, tmo).eth.call({'to': Web3.to_checksum_address(to), 'data': data_hex})
         return bytes(res) if res else None
-    except Exception:
+    except Exception as exc:
+        read_meter.note_error(exc)
         return None
 
 def _approve(token, spender, amount):
     return '0x' + S_APPROVE + _enc(['address', 'uint256'], [spender, int(amount)]).hex()
 
-def _v3_path_bytes(tokens, fees):
-    b = bytes.fromhex(tokens[0][2:])
-    for i, f in enumerate(fees):
-        b += int(f).to_bytes(3, 'big') + bytes.fromhex(tokens[i + 1][2:])
-    return b
-
 def q_v3_single(rpc, cfg, tin, tout, amt, fee):
-    data = '0x' + S_QUOTE_SINGLE + _enc(['(address,address,uint256,uint24,uint160)'], [(tin, tout, int(amt), int(fee), 0)]).hex()
-    r = eth_call(rpc, cfg['quoter'], data)
-    if not r:
-        return 0
-    try:
-        return int(_dec(['uint256'], r[:32])[0])
-    except Exception:
-        return 0
+    return _dec_u256(eth_call(rpc, cfg['quoter'], _cd_v3_single(tin, tout, amt, fee)))
 
 def q_v3_path(rpc, cfg, tokens, fees, amt):
-    path = _v3_path_bytes(tokens, fees)
-    data = '0x' + S_QUOTE_PATH + _enc(['bytes', 'uint256'], [path, int(amt)]).hex()
-    r = eth_call(rpc, cfg['quoter'], data)
-    if not r:
-        return 0
-    try:
-        return int(_dec(['uint256'], r[:32])[0])
-    except Exception:
-        return 0
+    return _dec_u256(eth_call(rpc, cfg['quoter'], _cd_v3_path(tokens, fees, amt)))
 
 def q_v2(rpc, router, path, amt):
-    data = '0x' + S_V2_AMOUNTS + _enc(['uint256', 'address[]'], [int(amt), path]).hex()
-    r = eth_call(rpc, router, data)
-    if not r:
-        return 0
-    try:
-        outs = _dec(['uint256[]'], r)[0]
-        return int(outs[-1]) if outs else 0
-    except Exception:
-        return 0
+    return _dec_last(eth_call(rpc, router, _cd_v2(path, amt)))
 
 def q_aero(rpc, routes, amt):
     """Aerodrome getAmountsOut for a Route[] list. Returns final out int (0 if none)."""
-    data = '0x' + S_AERO_GAO + _enc(['uint256', '(address,address,bool,address)[]'], [int(amt), routes]).hex()
-    r = eth_call(rpc, AERO_ROUTER, data)
-    if not r:
-        return 0
-    try:
-        outs = _dec(['uint256[]'], r)[0]
-        return int(outs[-1]) if outs else 0
-    except Exception:
-        return 0
+    return _dec_last(eth_call(rpc, AERO_ROUTER, _cd_aero(routes, amt)))
 
 def q_curve(rpc, cfg, tin, tout, amt):
     """Curve stable/meta pools via MetaRegistry. Returns {pool,i,j,dy} or None.

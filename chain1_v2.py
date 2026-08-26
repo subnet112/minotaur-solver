@@ -25,7 +25,6 @@ def _v2_lookup(tin, tout):
     return (pair, tin == t0)
 from lat_swapcd_ext import _v2_swap_cd
 from lat_xfercd_ext import _v2_xfer_cd
-from kira_rr_g9 import _c1_build_ix_v2  # relocated leaf; see that module
 
 def _v2_build(pair, in_is_t0, tin, amt, out, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX
@@ -60,6 +59,27 @@ def _v2_best(w3, tin, tout, amt, block, best):
             best = (q2, ('v2', v2[0], v2[1], q2))
     return best
 
+def _c1_build_ix_v2(tin, recip, tokens, amt):
+    """ZERO-RPC Uniswap-V2 router serve (baked-spec sibling of solver._c1_build_ix).
+    Returns [approve_ix, v2swap_ix] for the V2 SwapRouter02:
+    swapExactTokensForTokensSupportingFeeOnTransferTokens (sel 0x5c11d795), min_out=0,
+    deadline 9999999999. The SupportingFeeOnTransfer variant + min_out=0 make it safe for
+    fee-on-transfer exotics (never reverts on tax skim). `tokens` is the full V2 path
+    (direct [tin,tout] or 2-hop [tin,WETH,tout]) baked pre-verified via getAmountsOut>0.
+
+    The approve leg comes from chain1_lib._approve_ixs, NOT from a bare encode_approve
+    here. min_out=0 and the SupportingFeeOnTransfer selector make the SWAP unable to
+    revert, which is what this path was built for -- but that guarantee is worth nothing
+    if the approve in front of it reverts, and a USDT input against a non-zero standing
+    allowance does exactly that. The whole plan goes down with it and the row scores as a
+    delivery failure."""
+    from eth_abi import encode as _enc
+    from eth_utils import to_checksum_address as _ck
+    from minotaur_subnet.shared.types import Interaction as _IX
+    from chain1_lib import _approve_ixs
+    ROUTER_V2 = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+    swap_data = '0x5c11d795' + _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amt), 0, [_ck(t) for t in tokens], _ck(recip), 9999999999]).hex()
+    return _approve_ixs(_ck(tin), ROUTER_V2, amt, 1) + [_IX(target=_ck(ROUTER_V2), value='0', call_data=swap_data, chain_id=1)]
 
 def _c1_recip_v2(p, state):
     return str(p.get('receiver', '') or getattr(state, 'contract_address', None) or getattr(state, 'owner', None) or '0x0000000000000000000000000000000000000001')
@@ -78,14 +98,19 @@ def _c1_curve_ix(tin, amt, recip, spec):
     """Build [approve_ix, exchange_ix] for a baked curve spec by REUSING the pure (no-RPC)
     curve_venue.curve_calldata to rebuild the CurveRouterNG.exchange calldata. Split out of
     _c1_curve_plan so that method's AST region stays tiny (the crown region floor). tin is
-    approved to the router curve_calldata returns; min_out floored to >=1 inside curve_calldata."""
+    approved to the router curve_calldata returns; min_out floored to >=1 inside curve_calldata.
+
+    Same reasoning as _c1_build_ix_v2: the approve comes from chain1_lib._approve_ixs so a
+    USDT input gets its reset leg. The spender here is not a constant -- curve_calldata
+    picks the CurveRouterNG address per route -- which is exactly why the guard had to
+    become router-parameterised rather than be copied."""
     from eth_utils import to_checksum_address as _ck
-    from common.abi_utils import encode_approve
     from minotaur_subnet.shared.types import Interaction as _IX
+    from chain1_lib import _approve_ixs
     import curve_venue as _cv
     rspec = {'route': spec['route'], 'swap': spec['swap']}
     router, cd = _cv.curve_calldata(1, tin, None, int(amt), 0, recip, 9999999999, rspec)
-    return [_IX(target=_ck(tin), value='0', call_data=encode_approve(_ck(router), int(amt)), chain_id=1), _IX(target=_ck(router), value='0', call_data=cd, chain_id=1)]
+    return _approve_ixs(_ck(tin), router, amt, 1) + [_IX(target=_ck(router), value='0', call_data=cd, chain_id=1)]
 
 def _c1_curve_plan(solver, intent, state, tin, amt, spec):
     """ZERO-RPC Curve serve for a baked {'venue':'curve','route':[address[11]],'swap':[[..]x5]}

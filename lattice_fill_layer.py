@@ -153,9 +153,41 @@ def _row_fields(state):
     except Exception:
         return None
 
-def _is_empty(plan) -> bool:
+def _lat_is_cross_chain(plan) -> bool:
+    """True when the plan's payload is a bridge rather than interactions.
+
+    `_generate_cross_chain_plan` (baseline_solver.py:1181) emits
+    `interactions=[]` with the destination leg and bridge request under
+    `metadata['cross_chain_plan']`. This layer's overlay is a baked single-chain
+    route, so it can never serve such an order -- only destroy it.
+    """
     try:
-        return plan is None or not getattr(plan, 'interactions', None)
+        return bool((getattr(plan, 'metadata', None) or {}).get('cross_chain_plan'))
+    except Exception:
+        return False
+
+
+def _is_empty(plan) -> bool:
+    """True when `plan` is nothing the validator would score.
+
+    Testing `interactions` ALONE called a bridge plan empty, which sent
+    `generate_plan` into `_on_empty` and returned `_overlay_plan`'s source-chain
+    route over the top of it -- the bridge request and destination leg
+    discarded, nothing delivered where the intent asked, order DROPPED. That is
+    a hard veto (sub_226692a9b998, no_cross_chain_plan x2), and the same
+    dead-guard shape closed in payload_cover_apex._empty, payload_cover_k.
+    is_hollow and g2_fill._served this commit series.
+
+    The reading only moves for plans carrying `metadata['cross_chain_plan']`;
+    every other plan classifies exactly as before, so the empty-fill path that
+    rescues genuine champion-zeroes is untouched.
+    """
+    try:
+        if plan is None:
+            return True
+        if getattr(plan, 'interactions', None):
+            return False
+        return not _lat_is_cross_chain(plan)
     except Exception:
         return True
 

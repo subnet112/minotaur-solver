@@ -85,18 +85,53 @@ def _needs_reset_approve(tin):
     reverts with it, and the row scores as a delivery failure rather than as anything that
     points at an allowance. Naming the condition keeps the reason attached to the test, which
     a bare `tin == _USDT` beside a zero-amount approve does not.
-    """
-    return tin == _USDT
 
-def _approves(tin, amt, chain_id):
+    COMPARED CASE-INSENSITIVELY. `_USDT` is spelled lowercase in chain1_c, and the test
+    used to be a bare `==`, so the guard only ever fired for a caller that happened to
+    hold a lowercased address. `_approve_ixs` is now shared with chain1_v2's builders,
+    which carry `to_checksum_address(tin)` -- against a lowercase constant that compares
+    False for every single order, and the guard would have been dead code at its two new
+    call sites while looking present. Normalising here fixes it once for every caller
+    instead of requiring each to remember which form it holds; it can only ever ADD the
+    reset where it was needed, never drop one that was already firing.
+    """
+    return str(tin or '').lower() == _USDT.lower()
+
+def _approve_ixs(tin, router, amt, chain_id):
+    """The approve leg(s) for `tin` -> `router`, carrying the USDT reset where it is
+    load-bearing.
+
+    ROUTER-PARAMETERISED BECAUSE THE RESET CONDITION IS A PROPERTY OF THE TOKEN, NOT OF
+    THE VENUE. `_needs_reset_approve` documents exactly why a bare non-zero approve on
+    USDT reverts and takes the whole plan down with it -- but the guard was welded to
+    THIS module's V3 `_ROUTER`, and chain-1 has three baked builders that each approve a
+    different spender:
+
+        chain1_lib._build        -> _ROUTER            (V3 SwapRouter02)   guarded
+        chain1_v2._c1_build_ix_v2 -> ROUTER_V2          (V2 Router02)      NOT guarded
+        chain1_v2._c1_curve_ix    -> CurveRouterNG      (per-route)        NOT guarded
+
+    The two unguarded ones emitted a single `approve(router, amt)` and so inherited the
+    precise revert the docstring above warns about. Nothing local could see it: the plan
+    is well-formed and carries the right leg count, so a plan-level gate reads it as
+    SAFE, and the row comes back from the validator as a delivery failure with no
+    allowance anywhere in the verdict.
+
+    `tin` is used as the interaction target verbatim rather than checksummed here, so
+    each caller keeps the address form it already shipped and non-USDT orders stay
+    byte-identical to what they were.
+    """
     from eth_utils import to_checksum_address as _ck
     from common.abi_utils import encode_approve
     from minotaur_subnet.shared.types import Interaction as _IX
     ixs = []
     if _needs_reset_approve(tin):
-        ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), 0), chain_id=chain_id))
-    ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), int(amt)), chain_id=chain_id))
+        ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(router), 0), chain_id=chain_id))
+    ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(router), int(amt)), chain_id=chain_id))
     return ixs
+
+def _approves(tin, amt, chain_id):
+    return _approve_ixs(tin, _ROUTER, amt, chain_id)
 
 def _build(route, tin, amt, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX

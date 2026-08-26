@@ -261,10 +261,36 @@ def _cover_class(spec) -> bool:
     measured, champ = _champ_adm(spec)
     return measured and champ <= 0
 
-def _served(plan) -> bool:
-    """Structurally non-empty: the base delivered a route for this row."""
+def _g2_is_cross_chain(plan) -> bool:
+    """True when the plan's payload is a bridge rather than interactions.
+
+    `_generate_cross_chain_plan` (baseline_solver.py:1181) returns
+    `interactions=[]` and puts the destination leg and the bridge request under
+    `metadata['cross_chain_plan']`. This layer's baked table is keyed by a
+    single-chain row and `_cover_plan` stamps every leg with one `chain_id`, so
+    a cover can never serve such an order -- it can only destroy it.
+    """
     try:
-        return plan is not None and bool(getattr(plan, 'interactions', None))
+        return bool((getattr(plan, 'metadata', None) or {}).get('cross_chain_plan'))
+    except Exception:
+        return False
+
+
+def _served(plan) -> bool:
+    """Structurally non-empty: the base delivered a route for this row.
+
+    A bridge plan carries no interactions, so testing them ALONE read one as
+    unserved and dropped `generate_plan` through to the cover branch below,
+    which returns source-chain legs and throws the bridge away. Scored as an
+    ordinary single-chain plan it delivers nothing on the requested chain and is
+    DROPPED -- a hard veto (sub_226692a9b998, no_cross_chain_plan x2). Same
+    dead-guard shape closed this commit series in payload_cover_apex._empty and
+    payload_cover_k.is_hollow.
+    """
+    try:
+        if plan is None:
+            return False
+        return bool(getattr(plan, 'interactions', None)) or _g2_is_cross_chain(plan)
     except Exception:
         return plan is not None
 
@@ -320,19 +346,14 @@ def install(base_cls, Interaction, ExecutionPlan):
             return super().initialize(config)
 
         def generate_plan(self, intent, state, snapshot=None):
-
-            def _dz52():
-                nonlocal built, hit
-                if hit is not None and _cover_class(hit[0]):
-                    built = _try_cover(hit, intent, state, Interaction, ExecutionPlan)
-                    if built is not None:
-                        return (built,)
-                    hit = None
-                return _DR_UNSET
             hit = _cover_hit(state)
-            _r_dz52 = _dz52()
-            if _r_dz52 is not _DR_UNSET:
-                return _r_dz52[0]
+            if hit is not None and _cover_class(hit[0]):
+                built = _try_cover(hit, intent, state, Interaction, ExecutionPlan)
+                if built is not None:
+                    return built
+                # The spec would not assemble. It will not assemble on the
+                # second pass either, so stop carrying it.
+                hit = None
             base = super().generate_plan(intent, state, snapshot)
             if _served(base):
                 return base

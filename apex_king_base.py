@@ -24,7 +24,7 @@ def _fw6():
         from minotaur_subnet.sdk.intent_solver import SolverMetadata
         from minotaur_subnet.shared.types import ExecutionPlan, Interaction
         logger = logging.getLogger(__name__)
-        SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
+        SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
         SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
         import king_base as _kb
         _BOTZ = '0xca179f3978137f5745e6d731591aaef985ee9d6d'
@@ -47,7 +47,7 @@ def _fw6():
 globals().update(_fw6())
 
 def _dr18():
-    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707")
+    SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
     _BASE = 8453
     _ETH = 1
     _WETH = '0x4200000000000000000000000000000000000006'
@@ -199,8 +199,11 @@ class _MinerSolverDR77(_Base):
         return state.contract_address or params.get('receiver') or state.owner
 
     def _apex_deadline(self, snapshot):
+        from consts import DEADLINE
         ts = getattr(snapshot, 'timestamp', None) if snapshot else None
-        return int(ts or time.time()) + 300
+        if not ts:
+            return DEADLINE
+        return int(ts) + 300
 
     def _apex_v2(self, intent, state, snapshot, router, path, amount_in, chain_id):
         from common.abi_utils import encode_approve

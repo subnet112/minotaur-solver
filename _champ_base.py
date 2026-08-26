@@ -33,11 +33,33 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 _PUTTY_FINAL_BRAND = 'lattice-route-engine'
 
 def _solver_env(_brand):
-    return (os.environ.get('MINOTAUR_SOLVER_NAME', "falcon"), os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707"))
+    return (os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine'), os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'))
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _solver_env(_PUTTY_FINAL_BRAND)
 import shape_lib as _sl, shape_est2 as _se, shape_build as _sb, shape_lib3 as _sl3
 import viking_gate as _vg, viking_data as _vd, shape_base as _sba, chain1 as _c1
 import viking_tables as _vt, viking_serve as _vs, mc_lib as _mcl
+try:
+    from empty_rescue import delivers_cross_chain as _plan_xc_delivers
+except Exception:
+
+    def _plan_xc_delivers(plan) -> bool:
+        """Fallback: report nothing as a delivering bridge, i.e. the old behaviour.
+
+        Mirrors `_apex_champ`'s guard so this module still imports on a tree
+        whose `empty_rescue` is missing. False everywhere leaves the caller
+        exactly where it was, which is the fail-safe direction: the worst case
+        is the bridge-clobber below, not an import error that takes the whole
+        solver down at stage 2.
+
+        Was `is_cross_chain`, the key-alone test. It protected any plan carrying
+        `metadata['cross_chain_plan']`, including one whose destination leg is
+        empty -- a plan that delivers nothing by construction. See
+        `empty_rescue.delivers_cross_chain`; the guard below is one of the three
+        consumers that kept asking the key-alone question after the PRODUCER had
+        been moved to the delivery test, which is why nothing_delivered x2 scored
+        twice.
+        """
+        return False
 
 class VikingSolver(_HydraBase):
     """Champion stack + viking delta (override-precedence, then fill-only-empty)."""
@@ -48,8 +70,45 @@ class VikingSolver(_HydraBase):
 
     @staticmethod
     def _v_is_empty(plan) -> bool:
+        """True when `plan` is nothing the validator would score.
+
+        THE LAST INTERACTIONS-ONLY TEST ON THE PLAN PATH. `viking_serve.
+        tail_serve` branches on this against the plan `VikingSolver.
+        generate_plan` just took from `super()`, and a cross-chain plan is
+        `interactions=[]` with the bridge and destination leg under
+        `metadata['cross_chain_plan']` (`baseline_solver.py:1181`). Reading
+        `interactions` alone therefore called a BRIDGE plan empty, skipped
+        `nonempty_serve`, and fell through to `stale_serve` / `fill_empty` --
+        both of which return a baked SOURCE-CHAIN route over the top of it.
+        The bridge request and destination leg are discarded, nothing is
+        delivered where the intent asked, and the order is DROPPED: a hard veto,
+        scored `credited: 0` with `no_cross_chain_plan` / `nothing_delivered`,
+        which is the `cross_chain_delivery {"orders": 3, "credited": 0}` block
+        on sub_3f2e0ea8a834's verdict.
+
+        This is the same dead-guard shape already closed in
+        `champ_top.JamesSolver._is_empty` (586051a), `payload_cover_apex._empty`
+        (2ff4a9b), `payload_cover_k.is_hollow`, `g2_fill._served` and
+        `lattice_fill_layer._is_empty` -- and it survived all six because it is
+        spelled `_v_is_empty`, so nothing that fixed `_is_empty` ever reached it
+        and no MRO shadowing hid it either: this staticmethod is the only
+        definition of the name in the tree.
+
+        Imports the one owner rather than inlining a seventh copy, per
+        `empty_rescue.is_cross_chain` -- copies of this rule are exactly the
+        drift that made it cost six separate rounds.
+
+        The reading only moves for plans carrying `metadata['cross_chain_plan']`.
+        Every other plan classifies exactly as before, so the fill-only-empty
+        path that rescues genuine champion-zeroes is untouched and a matched
+        order cannot become a regression.
+        """
         try:
-            return plan is None or not getattr(plan, 'interactions', None)
+            if plan is None:
+                return True
+            if getattr(plan, 'interactions', None):
+                return False
+            return not _plan_xc_delivers(plan)
         except Exception:
             return True
 

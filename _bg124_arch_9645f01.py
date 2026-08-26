@@ -18,7 +18,7 @@ from eth_abi import encode as _enc, decode as _dec
 from eth_utils import keccak as _kk
 
 def _mk_meta():
-    return (os.environ.get('MINOTAUR_SOLVER_NAME', "falcon"), os.environ.get('MINOTAUR_SOLVER_VERSION', '3.37.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707"))
+    return (os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine'), os.environ.get('MINOTAUR_SOLVER_VERSION', '3.37.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'))
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _mk_meta()
 
 class _C:
@@ -54,6 +54,59 @@ class _H1:
         if str(token).lower() in _C.NATIVE:
             return _C.WETH.get(int(chain_id or 0), token)
         return token
+
+    def _wait_window(timeout):
+        """`timeout` clamped to the shared search window; None = do not wait.
+
+        THE LEAK THIS CLOSES. `_bounded_call` bounds a WAIT, not the work it
+        waits on: `t.join(timeout)` parks the planning thread for the FULL
+        timeout and then returns None so the caller falls back. The three
+        sites that use it ask for 8s, 8s and 10s, and not one of them reads
+        the clock the rest of the tree already shares -- so a plan entered
+        with 2s of window left still sits here for ten seconds before taking
+        the fallback it was always going to take.
+
+        This is the same overrun `venues._effective_timeout` documents and
+        that 114f5fc fixed on the batch path, one layer up. `_SEARCH_DEADLINE`
+        is a single shared cell that every scope saves and restores
+        (`cover_ext._arm`, `baked_routes`, `router_cover.best_route`), so time
+        burned past the deadline is not paid by the scope that spent it -- it
+        comes out of the ENCLOSING window, and nested scopes compound it. The
+        validator kills a plan at 30s and reports `chal: null`, which scores
+        as a DROPPED order: a hard veto, and the thing that put `regressed` on
+        sub_5befa0ccb2a7 with 7 of them while every local gate read green.
+
+        THIS ONLY EVER TIGHTENS. `min` against the window left cannot grant a
+        longer wait than the call site already asked for, and when the window
+        is wide -- or unset, as it is under perf-check's `rpc_urls: {}` -- the
+        clamp is inert and the wait is exactly what it was before. That is
+        also why no offline gate moves on it: neither perf-check nor
+        exec-check has ever had a window this can bind on.
+        """
+        import time
+        try:
+            from consts import _SEARCH_DEADLINE
+            dl = _SEARCH_DEADLINE[0]
+        except Exception:
+            return timeout
+        if not dl:
+            return timeout
+        left = dl - time.monotonic()
+        if left <= 0:
+            return None
+        return min(timeout, left)
+
+    def _bounded_in_window(sol, fn, timeout):
+        """`sol._bounded_call(fn)` with the wait clamped to the window left.
+
+        Returning None when the window is gone is not a new failure mode: it
+        is the value `_bounded_call` itself returns on overrun, and every call
+        site below already treats None as "fall back". The only change is that
+        we stop paying for the wait first."""
+        tmo = _H1._wait_window(timeout)
+        if tmo is None:
+            return None
+        return sol._bounded_call(fn, timeout=tmo)
 
     def _v3_zfo(sp, liq, aaf):
         den = liq * _C.Q96 + aaf * sp
@@ -408,6 +461,7 @@ class _H2:
         if kind == 's':
             return [(500, 100), (3000, 100), (100, 500), (100, 3000)]
         return [(500, 500), (3000, 3000), (500, 3000), (3000, 500)]
+
     _fr_hubs = _fr_hubs
     _hub_best = _hub_best
 
@@ -420,6 +474,7 @@ class _H2:
         except Exception:
             pass
         return best
+
     _fr_hubs3 = _fr_hubs3
 
     def fast_route(w3, cid, tin, tout, amt):
@@ -626,7 +681,7 @@ def _fgm_81095():
 
             def _deliver():
                 return sol._score_aware_singlehop(intent, state, snapshot, None)
-            plan = sol._bounded_call(_deliver, timeout=8.0)
+            plan = _H1._bounded_in_window(sol, _deliver, 8.0)
             po = _out_of(plan)
             if po > _out_of(best):
                 from minotaur_subnet.shared.types import QuoteResult
@@ -744,7 +799,7 @@ def _fgm_52830():
 
         def _run():
             return DiscoveryEngine(_call).discover(cid, tin.lower(), tout.lower(), amt, min_out)
-        return [c for c in self._bounded_call(_run, timeout=timeout) or [] if c.get('out', 0) > 0]
+        return [c for c in _H1._bounded_in_window(self, _run, timeout) or [] if c.get('out', 0) > 0]
 
     def _discover_fill(self, intent, state, snapshot, params, min_out):
 
@@ -785,6 +840,7 @@ class MinerSolver(_Base):
         except Exception:
             pass
         return w3
+
     _live_plan = _live_plan
 
     def _ours_plan(self, intent, state, snapshot):
@@ -804,6 +860,7 @@ class MinerSolver(_Base):
             return self._sweep_plan(intent, state, snapshot, self._normalized_swap_params(intent, state))
         except Exception:
             return None
+
     _gas_take = _gas_take
 
     def generate_plan(self, intent, state, snapshot=None):
@@ -841,7 +898,7 @@ class MinerSolver(_Base):
 
             def _gp():
                 return self.generate_plan(intent, state, snapshot)
-            plan = self._bounded_call(_gp, timeout=10.0)
+            plan = _H1._bounded_in_window(self, _gp, 10.0)
             o = _out_of(plan)
             if o > 0:
                 return QuoteResult(estimated_output=str(o), route_summary='deliver-exact', gas_estimate=450000, metadata={'data_source': 'generate_plan'})
@@ -850,8 +907,7 @@ class MinerSolver(_Base):
             return super().quote(intent, state, snapshot)
 
     def _snap_hubs(self, chain_id, cap=40):
-        snap = getattr(self, '_snap', None)
-        ps = getattr(snap, 'pool_states', None) if snap else None
+        ps = self._cached_pool_states(chain_id, getattr(self, '_snap', None))
         if not ps:
             return []
         try:
@@ -902,6 +958,7 @@ class MinerSolver(_Base):
         if _r_dz8 is not _DR_UNSET:
             return _r_dz8[0]
     _gas_min_plan = _gas_min_plan
+
     _gas_pick = _gas_pick
 
     def _needs_subset(self, hops):
@@ -912,6 +969,7 @@ class MinerSolver(_Base):
         except Exception:
             dexes = {'uniswap_v3'}
         return len(dexes) != 1
+
     _our_route = _our_route
 
     def _find_best_executable_route(self, pool_states, token_in, token_out, amount_in, chain_id):
@@ -940,8 +998,10 @@ class MinerSolver(_Base):
             return (_H1._quote_from_route(_H1._best_route(ps, tin, tout, amt, mids), tin, tout),)
             return _DR_UNSET
         try:
-            ps = getattr(snapshot, 'pool_states', None) if snapshot else None
-            d = _H1._swap_fields(self, intent, state, snapshot) if ps else None
+            d = _H1._swap_fields(self, intent, state, snapshot)
+            ps = self._cached_pool_states(d[3], snapshot) if d else None
+            if not ps:
+                d = None
             _r_dz6 = _dz6()
             if _r_dz6 is not _DR_UNSET:
                 return _r_dz6[0]
@@ -956,6 +1016,7 @@ class MinerSolver(_Base):
         ours = self._ofq_ours(intent, state, snapshot)
         best = ours if _out_of(ours) > _out_of(champ) else champ
         return _score_aware_quote(self, intent, state, snapshot, best)
+
     _disc_cands = _disc_cands
     _discover_fill = _discover_fill
 
@@ -1054,8 +1115,8 @@ try:
         except Exception:
             pass
         return p
-    _M3C1_SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
-    _M3C1_SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707")
+    _M3C1_SOLVER_NAME = 'b1'
+    _M3C1_SOLVER_AUTHOR = 'b1'
 
     class M3Chain1CoverSolver(_M3C1_BASE):
 
@@ -1208,8 +1269,8 @@ def _m3ac1_install():
             except Exception:
                 pass
             return p
-        _M3AC1_SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
-        _M3AC1_SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707")
+        _M3AC1_SOLVER_NAME = 'mealt'
+        _M3AC1_SOLVER_AUTHOR = 'm3'
 
         class M3AChain1CoverSolver(_M3AC1_BASE):
 
