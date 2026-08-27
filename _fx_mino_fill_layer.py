@@ -7,32 +7,47 @@ original module re-imports them so every existing reference still
 resolves.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import json
 import logging
 import os
 import time
 
 def _minted(row) -> int:
+
+    def _dz230():
+        nonlocal best
+        routes = row.get('routes')
+        if isinstance(routes, list):
+            for r in routes:
+                if isinstance(r, dict):
+                    m = int(r.get('minted_at') or 0)
+                    if m > best:
+                        best = m
     if not isinstance(row, dict):
         return 0
     best = int(row.get('minted') or 0)
-    routes = row.get('routes')
-    if isinstance(routes, list):
-        for r in routes:
-            if isinstance(r, dict):
-                m = int(r.get('minted_at') or 0)
-                if m > best:
-                    best = m
+    _dz230()
     return best
 
 def _served(row) -> list:
     """The legs this row would actually serve (newest whole route, else flat)."""
+
+    def _dz229(row):
+        live = [r for r in row.get('routes') or [] if isinstance(r, dict) and r.get('interactions')]
+        _r_dz228 = _dz228()
+        return (_r_dz228, live)
+
+    def _dz228():
+        if live:
+            return (max(live, key=lambda r: int(r.get('minted_at') or 0))['interactions'],)
+        return (row.get('interactions') or [],)
+        return _DR_UNSET
     if not isinstance(row, dict):
         return []
-    live = [r for r in row.get('routes') or [] if isinstance(r, dict) and r.get('interactions')]
-    if live:
-        return max(live, key=lambda r: int(r.get('minted_at') or 0))['interactions']
-    return row.get('interactions') or []
+    _r_dz228, live = _dz229(row)
+    if _r_dz228 is not _DR_UNSET:
+        return _r_dz228[0]
 
 def _read_overrides() -> frozenset:
     """Measured override keys — a SEPARATE file on purpose.
