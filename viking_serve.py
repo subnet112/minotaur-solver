@@ -97,12 +97,12 @@ def _gated_gate(s, state, snapshot, plan, key):
     chain_id = int(getattr(state, 'chain_id', 0) or (getattr(snapshot, 'chain_id', 0) if snapshot else 0) or 0)
     return None if chain_id not in (8453, 1) else (spec, chain_id)
 
-def gated_eval(s, intent, state, snapshot, plan, key):
+def _gated_plan(s, intent, state, spec, tin, tout, amt, mid_q, est, chain_id):
+    rcpt = state.contract_address or getattr(state, 'owner', None)
+    ixs = _vg.build_gated(s, spec, tin, tout, amt, mid_q, est, rcpt, state, chain_id)
+    return _EP(intent_id=intent.app_id, interactions=ixs, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-gated', 'chain_id': chain_id})
 
-    def _gated_plan(s, intent, state, spec, tin, tout, amt, mid_q, est, chain_id):
-        rcpt = state.contract_address or getattr(state, 'owner', None)
-        ixs = _vg.build_gated(s, spec, tin, tout, amt, mid_q, est, rcpt, state, chain_id)
-        return _EP(intent_id=intent.app_id, interactions=ixs, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-gated', 'chain_id': chain_id})
+def gated_eval(s, intent, state, snapshot, plan, key):
 
     def _dz406():
         if hit is None:

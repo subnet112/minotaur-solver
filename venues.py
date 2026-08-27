@@ -113,48 +113,46 @@ def q_curve(rpc, cfg, tin, tout, amt):
     there is no fixed-amount `transfer(app, dy)` leg that could revert when the
     realized dy is 1 wei below the quote. Covers the stETH/wstETH/crvUSD/3pool tail
     that Uniswap-only routing misses."""
-    def _curve_pool(rpc, mr, tin, tout):
-        d = eth_call(rpc, mr, '0x' + S_CURVE_FIND + _enc(['address', 'address'], [tin, tout]).hex())
-        if not d or len(d) < 32:
-            return None
-        pool = '0x' + d[12:32].hex()
-        return pool if int(pool, 16) else None
+    mr = cfg.get('curve_metareg')
+    if not mr:
+        return None
+    pool = _curve_pool(rpc, mr, tin, tout)
+    if not pool:
+        return None
+    idx = _curve_indices(rpc, mr, pool, tin, tout)
+    if not idx:
+        return None
+    i, j = idx
+    out = _curve_dy(rpc, pool, i, j, amt)
+    return {'pool': pool, 'i': i, 'j': j, 'dy': out} if out else None
 
-    def _curve_indices(rpc, mr, pool, tin, tout):
-        """(i, j) coin indices, or None when absent or underlying-only (an underlying
-        pair needs exchange_underlying, a different selector — skip rather than mis-encode)."""
-        di = eth_call(rpc, mr, '0x' + S_CURVE_IDX + _enc(['address', 'address', 'address'], [pool, tin, tout]).hex())
-        if not di:
-            return None
-        try:
-            i, j, is_under = _dec(['int128', 'int128', 'bool'], di)
-        except Exception:
-            return None
-        return None if is_under else (int(i), int(j))
+def _curve_pool(rpc, mr, tin, tout):
+    d = eth_call(rpc, mr, '0x' + S_CURVE_FIND + _enc(['address', 'address'], [tin, tout]).hex())
+    if not d or len(d) < 32:
+        return None
+    pool = '0x' + d[12:32].hex()
+    return pool if int(pool, 16) else None
 
-    def _curve_dy(rpc, pool, i, j, amt):
-        dy = eth_call(rpc, pool, '0x' + S_CURVE_GETDY + _enc(['int128', 'int128', 'uint256'], [i, j, int(amt)]).hex())
-        if not dy or len(dy) < 32:
-            return 0
-        try:
-            return int(_dec(['uint256'], dy[:32])[0])
-        except Exception:
-            return 0
-    def _resolve():
-        """MetaRegistry lookup -> indices -> dy. None at the first step that misses."""
-        mr = cfg.get('curve_metareg')
-        if not mr:
-            return None
-        pool = _curve_pool(rpc, mr, tin, tout)
-        if not pool:
-            return None
-        idx = _curve_indices(rpc, mr, pool, tin, tout)
-        if not idx:
-            return None
-        i, j = idx
-        out = _curve_dy(rpc, pool, i, j, amt)
-        return {'pool': pool, 'i': i, 'j': j, 'dy': out} if out else None
-    return _resolve()
+def _curve_indices(rpc, mr, pool, tin, tout):
+    """(i, j) coin indices, or None when absent or underlying-only (an underlying
+    pair needs exchange_underlying, a different selector — skip rather than mis-encode)."""
+    di = eth_call(rpc, mr, '0x' + S_CURVE_IDX + _enc(['address', 'address', 'address'], [pool, tin, tout]).hex())
+    if not di:
+        return None
+    try:
+        i, j, is_under = _dec(['int128', 'int128', 'bool'], di)
+    except Exception:
+        return None
+    return None if is_under else (int(i), int(j))
+
+def _curve_dy(rpc, pool, i, j, amt):
+    dy = eth_call(rpc, pool, '0x' + S_CURVE_GETDY + _enc(['int128', 'int128', 'uint256'], [i, j, int(amt)]).hex())
+    if not dy or len(dy) < 32:
+        return 0
+    try:
+        return int(_dec(['uint256'], dy[:32])[0])
+    except Exception:
+        return 0
 
 def _legs_curve(tin, amt, app_addr, route):
     """approve + exchange with receiver=app (0xddc1f59d) — no forward leg, no revert."""

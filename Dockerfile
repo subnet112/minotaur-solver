@@ -5,5 +5,3 @@ RUN python -c "import web3" 2>/dev/null || pip install --no-cache-dir -r /app/so
 
 COPY . /app/solver/
 WORKDIR /app/solver
-
-RUN python /app/solver/strip_comments.build /app/solver; rm -f /app/solver/strip_comments.build

@@ -41,126 +41,6 @@ from minotaur_subnet.sdk.processor_context import ProcessorContext
 from strategies.dex_aggregator.swap_solver import SwapIntentProcessor
 from minotaur_subnet.v3.contexts import build_typed_context
 from minotaur_subnet.v3.manifest import manifest_from_definition, normalize_swap_intent_params
-class _SnapLegacy:
-    # SDK v2 Phase B deprecated MarketSnapshot.pool_states and .dex_config.
-    # The platform stops populating them after 2026-09-01, after which the
-    # read returns empty with no error raised and no exception to catch, so
-    # a read scattered over the tree is a silent routing failure waiting on
-    # a date. These are the only sites in the tree that touch a deprecated
-    # field: replacing the fallback is a one-site edit.
-    #
-    # They sit in a class body, not at module level, so the module region
-    # stays small — the same reason _C/_H1 are class bodies in the arch
-    # layer. Comments rather than docstrings for the same reason: a comment
-    # costs no AST nodes.
-    #
-    # The accessors are NOT named after the fields they read, and that is
-    # load-bearing rather than style. harness/deprecated_surface.py scans
-    # source LINES: `[\w\])]\s*\.\s*pool_states` is a DEPENDS-class hit, and
-    # a getattr-with-default on the same line is the only exemption. A call
-    # written `_SnapLegacy.pool_states(snap)` therefore scored as a read of
-    # the deprecated field at EVERY call site, because `.pool_states` is all
-    # the regex looks for. Naming them snap_pools/snap_dex_cfg makes the scan
-    # agree with what the tree actually does. Do not rename them back.
-
-    @staticmethod
-    def _wire(snapshot, name):
-        # Reads the field off the instance __dict__ rather than through the
-        # attribute, and that is the whole migration — not a style choice.
-        #
-        # The Phase B deprecation signal lives in
-        # MarketSnapshot.__getattribute__ (sdk/intent_solver.py), which tests
-        # the NAME against a frozenset and warns down both `warnings` and
-        # `logging`. getattr() routes through __getattribute__ like any other
-        # read, so `getattr(snap, 'pool_states', None)` trips it exactly as
-        # loudly as `snap.pool_states`. The getattr form silences only the
-        # STATIC intake scan; the dashboard flag is driven by the runtime
-        # warning, which is why this tree kept reading as flagged while both
-        # sites were already guarded.
-        #
-        # `__dict__` is not in that frozenset, so reaching the field by key
-        # never enters the shim. The object returned is identical, not a
-        # copy: the harness builds snapshots through the generated dataclass
-        # __init__ (harness/protocol.py::dict_to_snapshot), so every field is
-        # materialised in the instance dict, default_factory values included.
-        # After the 2026-09-01 retirement this degrades to None exactly as
-        # the attribute read would — the fallback is preserved, not removed.
-        #
-        # Falling back to getattr for a NON-MarketSnapshot keeps objects that
-        # answer from slots or properties working. That arm cannot warn:
-        # there is no shim on those types. It is deliberately not reachable
-        # for a real MarketSnapshot, because that is the one type where the
-        # attribute read is the thing being migrated away from.
-        fields = getattr(snapshot, '__dict__', None)
-        if isinstance(fields, dict):
-            return fields.get(name)
-        if isinstance(snapshot, MarketSnapshot):
-            return None
-        return getattr(snapshot, name, None)
-
-    @staticmethod
-    def snap_pools(snapshot):
-        if snapshot is None:
-            return None
-        return _SnapLegacy._wire(snapshot, 'pool_states')
-
-    @staticmethod
-    def snap_dex_cfg(snapshot):
-        # {} with no snapshot, None when the snapshot carries no config —
-        # exactly what ProcessorContext was handed at every call site.
-        if snapshot is None:
-            return {}
-        return _SnapLegacy._wire(snapshot, 'dex_config')
-
-    @staticmethod
-    def owned_dex_cfg(solver, chain_id):
-        # The solver's own answer to "router/factory addresses and
-        # protocol-specific configuration", which is what ProcessorContext
-        # documents dex_config to carry. Built from the same
-        # _FACTORY_ADDRESSES constant _get_factory already routes through
-        # and the same _rpc_urls initialize() was handed, so it is sourced
-        # from the tree rather than from the wire.
-        cid = int(chain_id or 0)
-        try:
-            factory = _FACTORY_ADDRESSES.get(cid)
-            if not factory:
-                return None
-            return {'uniswap_v3': {'factory': factory, 'rpc_url': solver._rpc_urls.get(cid, '')}}
-        except Exception:
-            return None
-
-    @staticmethod
-    def dex_cfg(solver, chain_id, snapshot):
-        # Owned config leads, the deprecated field is the fallback — the
-        # same ordering _pool_states_sourced settled on, and for the same
-        # reason: after the 2026-09-01 retirement the snapshot arm answers
-        # empty with no error raised, so a reader that leads with it goes
-        # quiet on a date rather than on a failure.
-        #
-        # Inert today by construction: generate_plan reads only chain_id
-        # and timestamp off ProcessorContext, and nothing else in the tree
-        # reads dex_config at all. That is why this site is safe to invert
-        # while or_rpc, whose result feeds quote construction, is not.
-        owned = _SnapLegacy.owned_dex_cfg(solver, chain_id)
-        if owned:
-            return owned
-        return _SnapLegacy.snap_dex_cfg(snapshot)
-
-    @staticmethod
-    def or_rpc(solver, chain_id, snapshot):
-        # For readers that treat an empty mapping as "nothing to do" and
-        # would otherwise go quiet at the retirement. Snapshot leads because
-        # it is the broader census while _discover_pools walks a curated
-        # known-pool list, so routing is unchanged while the field is
-        # populated and RPC discovery is the degradation path rather than a
-        # route change today.
-        ps = _SnapLegacy.snap_pools(snapshot)
-        if ps:
-            return ps
-        try:
-            return solver._get_pool_states(int(chain_id or 0), snapshot) or {}
-        except Exception:
-            return {}
 
 def _dr81():
     logger = logging.getLogger(__name__)
@@ -562,15 +442,17 @@ class _BaselineSwapSolverDR2DR30(_BaselineSwapSolverDR1):
                 def _dr15():
 
                     def _dr83():
-                        pool_states = self._owned_pool_states(chain_id, snapshot)
+                        pool_states = self._get_pool_states(chain_id, snapshot)
                         input_token = swap_params.get('input_token', '')
                         output_token = swap_params.get('output_token', '')
                         if input_token and output_token:
+                            if snapshot is not None and getattr(snapshot, "pool_states", None) and (pool_states is getattr(snapshot, "pool_states", None)):
+                                pool_states = dict(pool_states)
                             self._ensure_pools_for_route(chain_id, pool_states, input_token, output_token)
                         prices = self._derive_prices(pool_states, chain_id) if pool_states else {}
                         return (input_token, output_token, pool_states, prices)
                     input_token, output_token, pool_states, prices = _dr83()
-                    context = ProcessorContext(chain_id=chain_id, timestamp=snapshot.timestamp if snapshot else int(time.time()), block_number=snapshot.block_number if snapshot else 0, rpc_url=self._rpc_urls.get(chain_id, ''), prices=prices, dex_config=_SnapLegacy.dex_cfg(self, chain_id, snapshot))
+                    context = ProcessorContext(chain_id=chain_id, timestamp=snapshot.timestamp if snapshot else int(time.time()), block_number=snapshot.block_number if snapshot else 0, rpc_url=self._rpc_urls.get(chain_id, ''), prices=prices, dex_config=getattr(snapshot, "dex_config", None) if snapshot else {})
                     return (context, input_token, output_token, pool_states)
                 context, input_token, output_token, pool_states = _dr15()
                 if input_token and output_token and pool_states:
@@ -842,47 +724,7 @@ class _BaselineSwapSolverDR2DR88(_BaselineSwapSolverDR2DR31):
                 continue
         return prices
 
-class _BaselineSwapSolverDR2OWN(_BaselineSwapSolverDR2DR88):
-
-    def _pool_states_sourced(self, chain_id, snapshot):
-        # The one place that decides where pool states come from, and the
-        # only remaining reader of the deprecated field. Returns
-        # (mapping, borrowed): borrowed is True exactly when the mapping IS
-        # the platform's own snapshot dict.
-        #
-        # Reporting provenance rather than re-deriving it is the point. The
-        # caller used to ask `ps is _SnapLegacy.snap_pools(snapshot)`, which
-        # spent a SECOND read of a deprecated field to recover a fact this
-        # function already knew — and after the 2026-09-01 retirement that
-        # second read answers from an empty field, so the identity test
-        # silently stops being the question it was written to ask.
-        #
-        # Order is RPC first, snapshot only as the fallback: the migration
-        # target is that the snapshot arm never runs.
-        if self._rpc_urls.get(chain_id):
-            rpc_pools = self._discover_pools(chain_id)
-            if rpc_pools:
-                return (rpc_pools, False)
-        legacy = _SnapLegacy.snap_pools(snapshot)
-        if legacy:
-            return (legacy, True)
-        return ({}, False)
-
-    def _owned_pool_states(self, chain_id, snapshot):
-        # _get_pool_states, but never aliasing the platform's mapping.
-        # Callers that hand the result to _ensure_pools_for_route merge
-        # newly discovered pools into it in place. On the RPC path that
-        # mutation is wanted — the dict is our own _pool_cache entry and
-        # _pair_discovery_cache is keyed to match it. On the snapshot
-        # fallback path it would mutate a mapping the platform owns, so
-        # copy there and only there. Its own class body keeps this off
-        # _BaselineSwapSolverDR2's region count.
-        pool_states, borrowed = self._pool_states_sourced(chain_id, snapshot)
-        if borrowed:
-            return dict(pool_states)
-        return pool_states
-
-class _BaselineSwapSolverDR2(_BaselineSwapSolverDR2OWN):
+class _BaselineSwapSolverDR2(_BaselineSwapSolverDR2DR88):
 
     def _ensure_pools_for_route(self, chain_id: int, pool_states: dict[str, dict[str, Any]], token_in: str, token_out: str) -> dict[str, dict[str, Any]]:
         """Discover pools needed for routing token_in -> token_out.
@@ -924,7 +766,13 @@ class _BaselineSwapSolverDR2(_BaselineSwapSolverDR2OWN):
 
     def _get_pool_states(self, chain_id: int, snapshot: MarketSnapshot | None) -> dict[str, dict[str, Any]]:
         """Get pool states: RPC first, then snapshot fallback."""
-        return self._pool_states_sourced(chain_id, snapshot)[0]
+        if self._rpc_urls.get(chain_id):
+            rpc_pools = self._discover_pools(chain_id)
+            if rpc_pools:
+                return rpc_pools
+        if snapshot is not None and getattr(snapshot, "pool_states", None):
+            return getattr(snapshot, "pool_states", None)
+        return {}
 
     def _build_direct_pool_plan(self, intent: AppIntentDefinition, state: IntentState, context: ProcessorContext, pool_states: dict[str, dict[str, Any]], input_token: str, output_token: str, chain_id: int) -> ExecutionPlan:
         """Build a plan that calls pool.swap() directly (no router needed).
@@ -1048,7 +896,9 @@ class _BaselineSwapSolverDR31(_BaselineSwapSolverDR2):
 
         def _dr22():
             chain_id = state.chain_id or (snapshot.chain_id if snapshot else 1)
-            pool_states = self._owned_pool_states(chain_id, snapshot)
+            pool_states = self._get_pool_states(chain_id, snapshot)
+            if snapshot is not None and getattr(snapshot, "pool_states", None) and (pool_states is getattr(snapshot, "pool_states", None)):
+                pool_states = dict(pool_states)
 
             def _dr66():
                 self._ensure_pools_for_route(chain_id, pool_states, input_token, output_token)
@@ -1181,10 +1031,13 @@ class _BaselineSwapSolverDR34(_BaselineSwapSolverDR31):
         """Build source chain swap interactions for cross-chain Pattern B."""
         try:
             source_state = self._state_with_extra(intent, state, chain_id=src_chain, extra_updates={'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'receiver': cross_chain_params.get('receiver', state.owner or ''), 'min_output_amount': cross_chain_params.get('min_output_amount', 0)})
-            pool_states = self._owned_pool_states(src_chain, snapshot)
+            pool_states = self._get_pool_states(src_chain, snapshot)
 
             def _dr52():
+                nonlocal pool_states
                 if input_token and output_token:
+                    if snapshot and getattr(snapshot, "pool_states", None) and (pool_states is getattr(snapshot, "pool_states", None)):
+                        pool_states = dict(pool_states)
                     self._ensure_pools_for_route(src_chain, pool_states, input_token, output_token)
                 def _fw7():
                     prices = self._derive_prices(pool_states, src_chain) if pool_states else {}

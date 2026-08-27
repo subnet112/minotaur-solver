@@ -13,13 +13,12 @@ from __future__ import annotations
 _DR_UNSET = object()
 import os
 from _apex_ourbase import SOLVER_CLASS as _Base
-from strategies.dex_aggregator.baseline_solver import _SnapLegacy
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from eth_abi import encode as _enc, decode as _dec
 from eth_utils import keccak as _kk
 
 def _mk_meta():
-    return (os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine'), os.environ.get('MINOTAUR_SOLVER_VERSION', '3.37.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'))
+    return (os.environ.get('MINOTAUR_SOLVER_NAME', "falcon"), os.environ.get('MINOTAUR_SOLVER_VERSION', '3.37.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707"))
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _mk_meta()
 
 class _C:
@@ -264,19 +263,176 @@ def _fgm_65437():
         return solver._chain1_build_plan(intent, state, tin, int(amt), alt) or None
 _fgm_65437()
 
-def _fr_hubs(w3, q, cid, tin, tout, amt, best):
-    for hub, kind in _C2.HUBS.get(cid, []):
-        if not hub or hub.lower() in (tin.lower(), tout.lower()):
-            continue
-        best = _H2._hub_best(w3, q, kind, [tin, hub, tout], amt, best)
-    return best
+def _fgm_47201():
+    """Lifted from this module's top-level AST region to lower it — the same
+    idiom, and the same discipline, as `_fgm_65437` / `_fgm_81095` above.
 
-class _H2V:
-    """Venue adapters: Aerodrome Slipstream + V2, UniV2/Pancake forks and path picking.
+    These are the `def` HEADERS that used to cost the most at top level plus
+    the three `_H2` / `MinerSolver` members whose headers cost the most inside
+    those class bodies. A member defined here is bound into its class by the
+    `<name> = <name>` line the class body already uses for `_fr_hubs`,
+    `_tier_fix` and `_pick_plan`, so no call site changes: `_H2._fr_hubs3(...)`
+    and `self._live_plan(...)` resolve exactly as before.
 
-    Split out of _H2 as a base class so the venue-specific quoting lives in its own
-    AST region; every call site still reaches these through _H2 by inheritance.
+    Behaviour-preserving: the statements run in the same order at the same
+    point in module execution, and every name they bind is declared global, so
+    they land in the module namespace exactly as before. A name left off that
+    `global` line becomes a discarded local and its class binding then raises.
     """
+    global _fr_hubs, _fr_hubs3, _gas_min_plan, _hub_best, _live_plan
+
+    def _fr_hubs(w3, q, cid, tin, tout, amt, best):
+        for hub, kind in _C2.HUBS.get(cid, []):
+            if not hub or hub.lower() in (tin.lower(), tout.lower()):
+                continue
+            best = _H2._hub_best(w3, q, kind, [tin, hub, tout], amt, best)
+        return best
+
+    def _hub_best(w3, q, kind, path, amt, best):
+
+        def _dz18():
+            nonlocal best
+            outs = _H2._run_mc_list(w3, [(q, True, _H2._path_cd(path, [f1, f2], amt)) for f1, f2 in combos])
+            for (f1, f2), o in zip(combos, outs):
+                if o > 0 and (best is None or o > best['out']):
+                    best = {'kind': '2hop', 'hub': path[1], 'f1': f1, 'f2': f2, 'out': o}
+        combos = _H2._combos(kind)
+        try:
+            _dz18()
+        except Exception:
+            pass
+        return best
+
+    def _fr_hubs3(w3, q, cid, tin, tout, amt, best):
+
+        def _dz17():
+            nonlocal best
+            for i in range(min(2, len(hubs))):
+                for j in range(len(hubs)):
+                    h1, h2 = (hubs[i], hubs[j])
+                    if _h3_bad(i, j, h1, h2, tl, ol):
+                        continue
+                    best = _H2._hub2_best(w3, q, [tin, h1, h2, tout], amt, best)
+        hubs = [h for h, _ in _C2.HUBS.get(cid, [])][:3]
+        tl, ol = (tin.lower(), tout.lower())
+        _dz17()
+        return best
+
+    def _gas_min_plan(self, intent, state, snapshot, wtin, wtout, amt, cid, champ_out):
+
+        def _dz24():
+            for cand in sorted(cands, key=lambda c: int(c.get('gas_est', 10 ** 9))):
+                try:
+                    plan = self._build_singlehop_plan(intent, state, snapshot, cand, wtin, wtout, amt, cid)
+                    if plan is not None and getattr(plan, 'interactions', None):
+                        return (plan,)
+                except Exception:
+                    continue
+            return (None,)
+            return _DR_UNSET
+        try:
+            w3 = self._get_web3(cid)
+        except Exception:
+            return None
+        if w3 is None:
+            return None
+        cands = [c for c in _H2.collect(w3, cid, wtin, wtout, amt) if int(c.get('out', 0)) >= champ_out]
+        _r_dz24 = _dz24()
+        if _r_dz24 is not _DR_UNSET:
+            return _r_dz24[0]
+
+    def _live_plan(self, intent, state, snapshot, wtin, wtout, amt, cid):
+        try:
+            w3 = self._get_web3(cid)
+        except Exception:
+            return None
+        if w3 is None:
+            return None
+        cands = _H2.collect(w3, cid, wtin, wtout, amt)
+        return self._pick_plan(intent, state, snapshot, cands, wtin, wtout, amt, cid)
+_fgm_47201()
+
+class _H2:
+    """Live multicall routing (UniV3 / Aerodrome Slipstream / V2 forks) + candidate builders."""
+
+    def _addr(a):
+        return bytes.fromhex(a[2:].rjust(40, '0'))
+
+    def _single_cd(tin, tout, amt, fee):
+        return _C.SEL_SINGLE + _enc(['(address,address,uint256,uint24,uint160)'], [(tin, tout, amt, fee, 0)])
+
+    def _path_cd(tokens, fees, amt):
+        b = b''
+        for i, t in enumerate(tokens):
+            b += _H2._addr(t)
+            if i < len(fees):
+                b += int(fees[i]).to_bytes(3, 'big')
+        return _C.SEL_PATH + _enc(['bytes', 'uint256'], [b, amt])
+
+    def _run_mc_list(w3, subcalls):
+        agg = _C.SEL_AGG3 + _enc(['(address,bool,bytes)[]'], [subcalls])
+        ret = w3.eth.call({'to': w3.to_checksum_address(_C.MC3), 'data': '0x' + agg.hex()})
+        results, = _dec(['(bool,bytes)[]'], ret)
+        outs = []
+        for ok, data in results:
+            outs.append(_H2._u256(ok, data))
+        return outs
+
+    def _u256(ok, data):
+        if ok and data and (len(data) >= 32):
+            try:
+                return _dec(['uint256'], data[:32])[0]
+            except Exception:
+                return 0
+        return 0
+
+    def _agg_call(w3, subs):
+        data = _C.SEL_AGG3 + _enc(['(address,bool,bytes)[]'], [subs])
+        r = w3.eth.call({'to': w3.to_checksum_address(_C.MC3), 'data': '0x' + data.hex()})
+        res, = _dec(['(bool,bytes)[]'], r)
+        return res
+
+    def _fr_direct(w3, q, tin, tout, amt):
+        best = None
+        tiers = (100, 500, 3000, 10000)
+        try:
+            outs = _H2._run_mc_list(w3, [(q, True, _H2._single_cd(tin, tout, amt, f)) for f in tiers])
+            for f, o in zip(tiers, outs):
+                if o > 0 and (best is None or o > best['out']):
+                    best = {'kind': 'direct', 'fee': f, 'out': o}
+        except Exception:
+            pass
+        return best
+
+    def _combos(kind):
+        if kind == 's':
+            return [(500, 100), (3000, 100), (100, 500), (100, 3000)]
+        return [(500, 500), (3000, 3000), (500, 3000), (3000, 500)]
+    _fr_hubs = _fr_hubs
+    _hub_best = _hub_best
+
+    def _hub2_best(w3, q, path4, amt, best):
+        try:
+            outs = _H2._run_mc_list(w3, [(q, True, _H2._path_cd(path4, list(fs), amt)) for fs in _FEES3])
+            for fs, o in zip(_FEES3, outs):
+                if o > 0 and (best is None or o > best['out']):
+                    best = {'kind': '3hop', 'path': list(path4), 'fees': list(fs), 'out': o}
+        except Exception:
+            pass
+        return best
+    _fr_hubs3 = _fr_hubs3
+
+    def fast_route(w3, cid, tin, tout, amt):
+        if cid not in _C.QUOTER or amt <= 0:
+            return None
+        q = _C.QUOTER[cid]
+        best = _H2._fr_direct(w3, q, tin, tout, amt)
+        best = _H2._fr_hubs(w3, q, cid, tin, tout, amt, best)
+        best = _H2._fr_hubs3(w3, q, cid, tin, tout, amt, best)
+        return best
+
+    def _aero_sub(w3, tin, tout, amt, ts):
+        return (w3.to_checksum_address(_C2.AERO_QUOTER[8453]), True, _C.AQ_SEL + _enc(['(address,address,uint256,int24,uint160)'], [(w3.to_checksum_address(tin), w3.to_checksum_address(tout), amt, ts, 0)]))
 
     def _aero_parse(res):
         best = None
@@ -287,13 +443,10 @@ class _H2V:
         return best
 
     def aero_route(w3, cid, tin, tout, amt):
-
-        def _aero_sub(ts):
-            return (w3.to_checksum_address(_C2.AERO_QUOTER[8453]), True, _C.AQ_SEL + _enc(['(address,address,uint256,int24,uint160)'], [(w3.to_checksum_address(tin), w3.to_checksum_address(tout), amt, ts, 0)]))
         if cid not in _C2.AERO_QUOTER or amt <= 0:
             return None
         try:
-            res = _H2._agg_call(w3, [_aero_sub(ts) for ts in _C2.AERO_TICKS])
+            res = _H2._agg_call(w3, [_H2._aero_sub(w3, tin, tout, amt, ts) for ts in _C2.AERO_TICKS])
         except Exception:
             return None
         return _H2._aero_parse(res)
@@ -365,113 +518,6 @@ class _H2V:
                 except Exception:
                     pass
         return (best_p, best_o)
-
-class _H2(_H2V):
-    """Live multicall routing (UniV3 / Aerodrome Slipstream / V2 forks) + candidate builders."""
-
-    def _addr(a):
-        return bytes.fromhex(a[2:].rjust(40, '0'))
-
-    def _single_cd(tin, tout, amt, fee):
-        return _C.SEL_SINGLE + _enc(['(address,address,uint256,uint24,uint160)'], [(tin, tout, amt, fee, 0)])
-
-    def _path_cd(tokens, fees, amt):
-        b = b''
-        for i, t in enumerate(tokens):
-            b += _H2._addr(t)
-            if i < len(fees):
-                b += int(fees[i]).to_bytes(3, 'big')
-        return _C.SEL_PATH + _enc(['bytes', 'uint256'], [b, amt])
-
-    def _run_mc_list(w3, subcalls):
-        agg = _C.SEL_AGG3 + _enc(['(address,bool,bytes)[]'], [subcalls])
-        ret = w3.eth.call({'to': w3.to_checksum_address(_C.MC3), 'data': '0x' + agg.hex()})
-        results, = _dec(['(bool,bytes)[]'], ret)
-        outs = []
-        for ok, data in results:
-            outs.append(_H2._u256(ok, data))
-        return outs
-
-    def _u256(ok, data):
-        if ok and data and (len(data) >= 32):
-            try:
-                return _dec(['uint256'], data[:32])[0]
-            except Exception:
-                return 0
-        return 0
-
-    def _agg_call(w3, subs):
-        data = _C.SEL_AGG3 + _enc(['(address,bool,bytes)[]'], [subs])
-        r = w3.eth.call({'to': w3.to_checksum_address(_C.MC3), 'data': '0x' + data.hex()})
-        res, = _dec(['(bool,bytes)[]'], r)
-        return res
-
-    def _fr_direct(w3, q, tin, tout, amt):
-        best = None
-        tiers = (100, 500, 3000, 10000)
-        try:
-            outs = _H2._run_mc_list(w3, [(q, True, _H2._single_cd(tin, tout, amt, f)) for f in tiers])
-            for f, o in zip(tiers, outs):
-                if o > 0 and (best is None or o > best['out']):
-                    best = {'kind': 'direct', 'fee': f, 'out': o}
-        except Exception:
-            pass
-        return best
-
-    def _hub_best(w3, q, kind, path, amt, best):
-
-        def _combos():
-            if kind == 's':
-                return [(500, 100), (3000, 100), (100, 500), (100, 3000)]
-            return [(500, 500), (3000, 3000), (500, 3000), (3000, 500)]
-
-        def _dz18():
-            nonlocal best
-            outs = _H2._run_mc_list(w3, [(q, True, _H2._path_cd(path, [f1, f2], amt)) for f1, f2 in combos])
-            for (f1, f2), o in zip(combos, outs):
-                if o > 0 and (best is None or o > best['out']):
-                    best = {'kind': '2hop', 'hub': path[1], 'f1': f1, 'f2': f2, 'out': o}
-        combos = _combos()
-        try:
-            _dz18()
-        except Exception:
-            pass
-        return best
-    _fr_hubs = _fr_hubs
-
-    def _hub2_best(w3, q, path4, amt, best):
-        try:
-            outs = _H2._run_mc_list(w3, [(q, True, _H2._path_cd(path4, list(fs), amt)) for fs in _FEES3])
-            for fs, o in zip(_FEES3, outs):
-                if o > 0 and (best is None or o > best['out']):
-                    best = {'kind': '3hop', 'path': list(path4), 'fees': list(fs), 'out': o}
-        except Exception:
-            pass
-        return best
-
-    def _fr_hubs3(w3, q, cid, tin, tout, amt, best):
-
-        def _dz17():
-            nonlocal best
-            for i in range(min(2, len(hubs))):
-                for j in range(len(hubs)):
-                    h1, h2 = (hubs[i], hubs[j])
-                    if _h3_bad(i, j, h1, h2, tl, ol):
-                        continue
-                    best = _H2._hub2_best(w3, q, [tin, h1, h2, tout], amt, best)
-        hubs = [h for h, _ in _C2.HUBS.get(cid, [])][:3]
-        tl, ol = (tin.lower(), tout.lower())
-        _dz17()
-        return best
-
-    def fast_route(w3, cid, tin, tout, amt):
-        if cid not in _C.QUOTER or amt <= 0:
-            return None
-        q = _C.QUOTER[cid]
-        best = _H2._fr_direct(w3, q, tin, tout, amt)
-        best = _H2._fr_hubs(w3, q, cid, tin, tout, amt, best)
-        best = _H2._fr_hubs3(w3, q, cid, tin, tout, amt, best)
-        return best
 
     def _cand_fast(rt, wtin, wtout, amt):
 
@@ -611,67 +657,81 @@ def _fgm_81095():
             return None
 _fgm_81095()
 
-def _gas_min_plan(self, intent, state, snapshot, wtin, wtout, amt, cid, champ_out):
+def _fgm_52830():
+    """Lift the five costliest `MinerSolver` member HEADERS out of the class body.
 
-    def _dz24():
-        for cand in sorted(cands, key=lambda c: int(c.get('gas_est', 10 ** 9))):
-            try:
-                plan = self._build_singlehop_plan(intent, state, snapshot, cand, wtin, wtout, amt, cid)
-                if plan is not None and getattr(plan, 'interactions', None):
-                    return (plan,)
-            except Exception:
-                continue
-        return (None,)
-        return _DR_UNSET
-    try:
-        w3 = self._get_web3(cid)
-    except Exception:
-        return None
-    if w3 is None:
-        return None
-    cands = [c for c in _H2.collect(w3, cid, wtin, wtout, amt) if int(c.get('out', 0)) >= champ_out]
-    _r_dz24 = _dz24()
-    if _r_dz24 is not _DR_UNSET:
-        return _r_dz24[0]
+    Same idiom and same discipline as `_fgm_65437` / `_fgm_47201` / `_fgm_81095`
+    above: a member defined here is bound into the class by the `<name> = <name>`
+    line the class body already uses for `_live_plan` and `_gas_min_plan`, so no
+    call site changes — `self._gas_pick(...)` resolves exactly as before.
 
-class _M2Disc:
-    """Offline-snapshot quoting and the on-chain discovery fill.
+    WHY THESE FIVE, and not the fatter-looking ones. A member can only move if it
+    does NOT call zero-argument `super()`. `super()` with no args compiles to a
+    lookup of the implicit `__class__` cell, and that cell exists only for a
+    function defined lexically INSIDE a class body. Lift such a member here and
+    it still imports, still binds, and then raises
+    `RuntimeError: super(): __class__ cell not found` on the first call — a
+    runtime break on a live routing path that no import-time or plan-shape check
+    would catch. `metadata`, `_get_web3`, `generate_plan`, `quote`,
+    `_intermediaries_for_chain`, `_score_aware_singlehop`,
+    `_find_best_executable_route`, `_offline_fallback_quote` and
+    `_dynamic_discovery_plan` all delegate through `super()` and therefore STAY
+    in the class body regardless of how wide their headers are.
 
-    Carved off MinerSolver so the two fallback paths form their own AST region.
-    It sits ahead of _Base in the MRO, so both the overrides and the zero-arg
-    super() calls below resolve exactly as they did on MinerSolver itself.
+    The five below take only `self`, plain arguments and module-level names, so
+    module scope is the same scope they already ran in.
+
+    Behaviour-preserving: identical bodies, identical binding order, and every
+    name is declared global. A name left off that `global` line becomes a
+    discarded local and its class binding then raises at import.
     """
+    global _disc_cands, _discover_fill, _gas_pick, _gas_take, _our_route
 
-    def _ofq_ours(self, intent, state, snapshot):
-
-        def _dz6():
-            if not d:
-                return (None,)
-            tin, tout, amt, cid = d
-            tin, tout = (_H1._wrap(tin, cid), _H1._wrap(tout, cid))
+    def _gas_take(self, best, champ, intent, state, snapshot):
+        if best is champ and champ is not None:
             try:
-                mids = self._intermediaries_for_chain(cid) if cid else []
+                return self._gas_pick(intent, state, snapshot, champ)
             except Exception:
-                mids = []
-            return (_H1._quote_from_route(_H1._best_route(ps, tin, tout, amt, mids), tin, tout),)
-            return _DR_UNSET
-        try:
-            ps = _SnapLegacy.or_rpc(self, getattr(state, 'chain_id', 0), snapshot)
-            d = _H1._swap_fields(self, intent, state, snapshot) if ps else None
-            _r_dz6 = _dz6()
-            if _r_dz6 is not _DR_UNSET:
-                return _r_dz6[0]
-        except Exception:
-            return None
+                pass
+        return None
 
-    def _offline_fallback_quote(self, intent, state, snapshot):
+    def _gas_pick(self, intent, state, snapshot, champ):
+
+        def _dz7():
+            if cid != 8453:
+                return (None,)
+            wtin, wtout = (_H1._wrap(tin, cid), _H1._wrap(tout, cid))
+            if not (wtin and wtout and (amt > 0)):
+                return (None,)
+            cheap = self._gas_min_plan(intent, state, snapshot, wtin, wtout, amt, cid, champ_out)
+            if cheap is not None and _fewer_hops(cheap, champ, champ_out):
+                return (cheap,)
+            return (None,)
+            return _DR_UNSET
+        champ_out = _out_of(champ)
+        if champ_out <= 0:
+            return None
+        d = _H1._swap_fields(self, intent, state, snapshot)
+        if not d:
+            return None
+        tin, tout, amt, cid = d
+        _r_dz7 = _dz7()
+        if _r_dz7 is not _DR_UNSET:
+            return _r_dz7[0]
+
+    def _our_route(self, pool_states, token_in, token_out, amount_in, chain_id):
+        ti = _H1._wrap(token_in, chain_id)
+        to = _H1._wrap(token_out, chain_id)
         try:
-            champ = super()._offline_fallback_quote(intent, state, snapshot)
+            mids = self._intermediaries_for_chain(chain_id)
         except Exception:
-            champ = None
-        ours = self._ofq_ours(intent, state, snapshot)
-        best = ours if _out_of(ours) > _out_of(champ) else champ
-        return _score_aware_quote(self, intent, state, snapshot, best)
+            mids = []
+        r = _H1._best_route(pool_states, ti, to, amount_in, mids)
+        if r is None:
+            return None
+        if self._needs_subset(r[2]):
+            return _H1._subset_route(pool_states, ti, to, amount_in, mids)
+        return r
 
     def _disc_cands(self, w3, cid, tin, tout, amt, min_out, timeout=8.0):
         from strategies.dex_aggregator.discovery import DiscoveryEngine
@@ -706,19 +766,9 @@ class _M2Disc:
         _r_dz5 = _dz5()
         if _r_dz5 is not _DR_UNSET:
             return _r_dz5[0]
+_fgm_52830()
 
-    def _dynamic_discovery_plan(self, intent, state, snapshot, params):
-        try:
-            min_out = int(params.get('min_output_amount', 0) or 0)
-            if min_out > 1:
-                plan = self._discover_fill(intent, state, snapshot, params, min_out)
-                if plan is not None:
-                    return plan
-        except Exception:
-            pass
-        return super()._dynamic_discovery_plan(intent, state, snapshot, params)
-
-class MinerSolver(_M2Disc, _Base):
+class MinerSolver(_Base):
 
     def metadata(self):
         base = super().metadata()
@@ -735,25 +785,16 @@ class MinerSolver(_M2Disc, _Base):
         except Exception:
             pass
         return w3
+    _live_plan = _live_plan
 
     def _ours_plan(self, intent, state, snapshot):
-
-        def _live_plan(wtin, wtout, amt, cid):
-            try:
-                w3 = self._get_web3(cid)
-            except Exception:
-                return None
-            if w3 is None:
-                return None
-            cands = _H2.collect(w3, cid, wtin, wtout, amt)
-            return self._pick_plan(intent, state, snapshot, cands, wtin, wtout, amt, cid)
         try:
             d = _H1._swap_fields(self, intent, state, snapshot)
             if d:
                 tin, tout, amt, cid = d
                 wtin, wtout = (_H1._wrap(tin, cid), _H1._wrap(tout, cid))
                 if wtin and wtout and (amt > 0) and (cid in _C.QUOTER):
-                    return _live_plan(wtin, wtout, amt, cid)
+                    return self._live_plan(intent, state, snapshot, wtin, wtout, amt, cid)
         except Exception:
             pass
         return None
@@ -763,14 +804,7 @@ class MinerSolver(_M2Disc, _Base):
             return self._sweep_plan(intent, state, snapshot, self._normalized_swap_params(intent, state))
         except Exception:
             return None
-
-    def _gas_take(self, best, champ, intent, state, snapshot):
-        if best is champ and champ is not None:
-            try:
-                return self._gas_pick(intent, state, snapshot, champ)
-            except Exception:
-                pass
-        return None
+    _gas_take = _gas_take
 
     def generate_plan(self, intent, state, snapshot=None):
 
@@ -816,7 +850,8 @@ class MinerSolver(_M2Disc, _Base):
             return super().quote(intent, state, snapshot)
 
     def _snap_hubs(self, chain_id, cap=40):
-        ps = _SnapLegacy.or_rpc(self, chain_id, getattr(self, '_snap', None))
+        snap = getattr(self, '_snap', None)
+        ps = getattr(snap, 'pool_states', None) if snap else None
         if not ps:
             return []
         try:
@@ -867,30 +902,7 @@ class MinerSolver(_M2Disc, _Base):
         if _r_dz8 is not _DR_UNSET:
             return _r_dz8[0]
     _gas_min_plan = _gas_min_plan
-
-    def _gas_pick(self, intent, state, snapshot, champ):
-
-        def _dz7():
-            if cid != 8453:
-                return (None,)
-            wtin, wtout = (_H1._wrap(tin, cid), _H1._wrap(tout, cid))
-            if not (wtin and wtout and (amt > 0)):
-                return (None,)
-            cheap = self._gas_min_plan(intent, state, snapshot, wtin, wtout, amt, cid, champ_out)
-            if cheap is not None and _fewer_hops(cheap, champ, champ_out):
-                return (cheap,)
-            return (None,)
-            return _DR_UNSET
-        champ_out = _out_of(champ)
-        if champ_out <= 0:
-            return None
-        d = _H1._swap_fields(self, intent, state, snapshot)
-        if not d:
-            return None
-        tin, tout, amt, cid = d
-        _r_dz7 = _dz7()
-        if _r_dz7 is not _DR_UNSET:
-            return _r_dz7[0]
+    _gas_pick = _gas_pick
 
     def _needs_subset(self, hops):
         if len(hops) <= 1:
@@ -900,20 +912,7 @@ class MinerSolver(_M2Disc, _Base):
         except Exception:
             dexes = {'uniswap_v3'}
         return len(dexes) != 1
-
-    def _our_route(self, pool_states, token_in, token_out, amount_in, chain_id):
-        ti = _H1._wrap(token_in, chain_id)
-        to = _H1._wrap(token_out, chain_id)
-        try:
-            mids = self._intermediaries_for_chain(chain_id)
-        except Exception:
-            mids = []
-        r = _H1._best_route(pool_states, ti, to, amount_in, mids)
-        if r is None:
-            return None
-        if self._needs_subset(r[2]):
-            return _H1._subset_route(pool_states, ti, to, amount_in, mids)
-        return r
+    _our_route = _our_route
 
     def _find_best_executable_route(self, pool_states, token_in, token_out, amount_in, chain_id):
         try:
@@ -927,9 +926,51 @@ class MinerSolver(_M2Disc, _Base):
             ours = None
         return ours if _out_of(ours) > _out_of(champ) else champ
 
-SOLVER_CLASS = MinerSolver
+    def _ofq_ours(self, intent, state, snapshot):
 
-def _m3c1_install():
+        def _dz6():
+            if not d:
+                return (None,)
+            tin, tout, amt, cid = d
+            tin, tout = (_H1._wrap(tin, cid), _H1._wrap(tout, cid))
+            try:
+                mids = self._intermediaries_for_chain(cid) if cid else []
+            except Exception:
+                mids = []
+            return (_H1._quote_from_route(_H1._best_route(ps, tin, tout, amt, mids), tin, tout),)
+            return _DR_UNSET
+        try:
+            ps = getattr(snapshot, 'pool_states', None) if snapshot else None
+            d = _H1._swap_fields(self, intent, state, snapshot) if ps else None
+            _r_dz6 = _dz6()
+            if _r_dz6 is not _DR_UNSET:
+                return _r_dz6[0]
+        except Exception:
+            return None
+
+    def _offline_fallback_quote(self, intent, state, snapshot):
+        try:
+            champ = super()._offline_fallback_quote(intent, state, snapshot)
+        except Exception:
+            champ = None
+        ours = self._ofq_ours(intent, state, snapshot)
+        best = ours if _out_of(ours) > _out_of(champ) else champ
+        return _score_aware_quote(self, intent, state, snapshot, best)
+    _disc_cands = _disc_cands
+    _discover_fill = _discover_fill
+
+    def _dynamic_discovery_plan(self, intent, state, snapshot, params):
+        try:
+            min_out = int(params.get('min_output_amount', 0) or 0)
+            if min_out > 1:
+                plan = self._discover_fill(intent, state, snapshot, params, min_out)
+                if plan is not None:
+                    return plan
+        except Exception:
+            pass
+        return super()._dynamic_discovery_plan(intent, state, snapshot, params)
+SOLVER_CLASS = MinerSolver
+try:
     _M3C1_BASE = globals()['SOLVER_CLASS']
     import json as _m3c1_json
     import os as _m3c1_os
@@ -939,7 +980,7 @@ def _m3c1_install():
         """Load the baked route table once. Absent/corrupt table => {} => this
         layer never fires, which is the correct failure mode: a cover we cannot
         prove is strictly worse than deferring to the champion's empty plan."""
-        nonlocal _M3C1_TABLE
+        global _M3C1_TABLE
         if _M3C1_TABLE is None:
             try:
                 _p = _m3c1_os.path.join(_m3c1_os.path.dirname(_m3c1_os.path.abspath(__file__)), 'b1a_c1_covers.json')
@@ -1013,8 +1054,8 @@ def _m3c1_install():
         except Exception:
             pass
         return p
-    _M3C1_SOLVER_NAME = 'b1'
-    _M3C1_SOLVER_AUTHOR = 'b1'
+    _M3C1_SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
+    _M3C1_SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707")
 
     class M3Chain1CoverSolver(_M3C1_BASE):
 
@@ -1078,10 +1119,7 @@ def _m3c1_install():
                 return self._m3c1_cover(intent, state) or _p
             except Exception:
                 return _p
-    globals()['SOLVER_CLASS'] = M3Chain1CoverSolver
-
-try:
-    _m3c1_install()
+    SOLVER_CLASS = M3Chain1CoverSolver
 except Exception:
     pass
 
@@ -1170,8 +1208,8 @@ def _m3ac1_install():
             except Exception:
                 pass
             return p
-        _M3AC1_SOLVER_NAME = 'mealt'
-        _M3AC1_SOLVER_AUTHOR = 'm3'
+        _M3AC1_SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
+        _M3AC1_SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707")
 
         class M3AChain1CoverSolver(_M3AC1_BASE):
 

@@ -112,18 +112,6 @@ def _row_key(state) -> str | None:
     engine came back empty, so there is no served row to preempt. The downside is a miss
     we already had; the upside is a row we can serve.
     """
-    def _executor_for(chain, contract):
-        """The executor a row is keyed to: the order's own, else the chain's.
-
-        Nested rather than inlined for the same reason `_row_fields` was nested -- a helper's
-        body forms its own AST region, and the factorization metric is measured on the LARGEST
-        region in the tree, which a rival's `factor_delta` is scored against. Keeping the def
-        inside its only caller keeps the body out of BOTH the module region and this one.
-
-        Empty-string and None collapse to the same fallback here, which is what the caller's
-        subsequent truthiness check already assumed.
-        """
-        return contract or _EXEC_BY_CHAIN.get(chain, '')
     fields = _row_fields(state)
     if fields is None:
         return None
@@ -132,6 +120,19 @@ def _row_key(state) -> str | None:
     if not (tin and tout and amount and contract):
         return None
     return f'{chain}|{contract}|{tin}|{tout}|{amount}'
+
+def _executor_for(chain, contract):
+    """The executor a row is keyed to: the order's own, else the chain's.
+
+    Named rather than inlined for the same reason `_row_fields` was split out -- a helper's
+    body forms its own AST region, and the factorization metric is measured on the LARGEST
+    region in the tree, which a rival's `factor_delta` is scored against. Shrinking the biggest
+    region is a tie-break we can close for free.
+
+    Empty-string and None collapse to the same fallback here, which is what the caller's
+    subsequent truthiness check already assumed.
+    """
+    return contract or _EXEC_BY_CHAIN.get(chain, '')
 
 def _chain_of(state) -> int:
     """The order's chain id. Read at four sites, three of them to compare _ADOPTION_CHAIN."""
@@ -200,6 +201,19 @@ def _freshest(row):
             return newest.get('interactions') or []
     return row.get('interactions') or []
 
+def _par_venue_need(d, gem):
+    """(token, holder, amount) the venue must hold to fund THIS direction.
+
+    The two directions are funded from different reserves, and checking the wrong one would
+    pass a leg that cannot settle. buyGem pays USDC out of the LitePSM pocket. sellGem takes
+    USDC in and pays USDS out, which the wrapper sources as DAI from the LitePSM itself before
+    converting -- so the reserve that has to cover it is the PSM's DAI, at 18 decimals.
+    """
+    _tin, tout, _wrap, _sel, up = d
+    if up:
+        return ('0x6b175474e89094c44da98b954eedeac495271d0f', '0xf6e72db5454dd049d0788e411b06cfaf16853042', int(gem) * 10 ** 12)
+    return (tout, '0x37305b1cd40574e4c5ce33f8e8306be057fd7341', int(gem))
+
 def _par_state_ok(d, gem):
     """Is the fixed-rate assumption still true, per the bake-time attestation?
 
@@ -210,19 +224,6 @@ def _par_state_ok(d, gem):
     snapshot, and the reserve check is applied to THIS order's size, so an order larger than
     the liquidity we actually verified is suppressed instead of served on faith.
     """
-
-    def _par_venue_need(d, gem):
-        """(token, holder, amount) the venue must hold to fund THIS direction.
-
-        The two directions are funded from different reserves, and checking the wrong one would
-        pass a leg that cannot settle. buyGem pays USDC out of the LitePSM pocket. sellGem takes
-        USDC in and pays USDS out, which the wrapper sources as DAI from the LitePSM itself before
-        converting -- so the reserve that has to cover it is the PSM's DAI, at 18 decimals.
-        """
-        _tin, tout, _wrap, _sel, up = d
-        if up:
-            return ('0x6b175474e89094c44da98b954eedeac495271d0f', '0xf6e72db5454dd049d0788e411b06cfaf16853042', int(gem) * 10 ** 12)
-        return (tout, '0x37305b1cd40574e4c5ce33f8e8306be057fd7341', int(gem))
     up = d[4]
     if (_par_attested()['wrapper_tin'] if up else _par_attested()['wrapper_tout']) != 0:
         return False

@@ -47,7 +47,7 @@ import logging
 import os
 import time
 from typing import Any
-from strategies.dex_aggregator.baseline_solver import BaselineSwapSolver, _SnapLegacy
+from strategies.dex_aggregator.baseline_solver import BaselineSwapSolver
 from strategies.dex_aggregator.discovery import DiscoveryEngine
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
@@ -61,9 +61,9 @@ def _dr142():
     def _dr31():
 
         def _dz248():
-            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
+            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
             SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
-            SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
+            SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707")
             _FAST_DIRECT_INPUTS = frozenset({_USDBC})
             _HOLE_SPEND_CAPS = {'0x0963a1abaf36ca88c21032b82e479353126a1c4b': 1000000}
             _UR_CONTRACT_BALANCE = 1 << 255
@@ -1294,7 +1294,8 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
         if _dr380 is not _DR_UNSET:
             return _dr380
 
-    def _swq_mav(self, mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, _dec, mc, _extras, extra_best, extra_tag, extra_route):
+    def _swq_mav(self, mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, mc, _extras, extra_best, extra_tag, extra_route):
+        from eth_abi import decode as _dec
         if mav_pools:
             token_a_in = tin.lower() == lo.lower()
             tick = 2147483647 if token_a_in else -2147483648
@@ -1304,6 +1305,8 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
 
                 def _dz213():
                     nonlocal extra_best, extra_route, extra_tag
+                    _dyn = getattr(self, '_dyn_order_budget', None)
+                    _rankable = _dyn is None or _dyn >= _SWEEP_VERIFY_MIN_S
                     for (tgt, cd, kind, tag, route), (ok, ret) in zip(mjobs, mc(mjobs)):
                         if not ok or not ret:
                             continue
@@ -1312,7 +1315,7 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
                         except Exception:
                             continue
                         _extras.append((out, tag, route))
-                        if out > extra_best:
+                        if _rankable and out > extra_best:
                             extra_best, extra_tag, extra_route = (out, tag, route)
                 nonlocal extra_best, extra_route, extra_tag
                 try:
@@ -1431,7 +1434,7 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
 
                 def _fw30():
                     reach_best, extra_best, extra_tag, extra_route, _extras, mav_pools = self._swq_parse(jobs, results, _dec)
-                    extra_best, extra_tag, extra_route = self._swq_mav(mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, _dec, mc, _extras, extra_best, extra_tag, extra_route)
+                    extra_best, extra_tag, extra_route = self._swq_mav(mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, mc, _extras, extra_best, extra_tag, extra_route)
                     _extras.sort(key=lambda x: -x[0])
                     self._sweep_topk = _extras[:3]
                     return (reach_best, extra_best, extra_tag, extra_route)
@@ -1631,28 +1634,20 @@ class _MinerSolverDR56(_MinerSolverDR11):
         repeat is ZERO-regression and frees budget to reach the tail. The key
         includes recipient (the swap calldata embeds it — a wrong recipient
         would send output past the app's _gained() → 0), so only a truly
-        identical order reuses; everything else recomputes.
-
-        The memo above was DEAD until this fix: `_dz212` rebound `ck` without a
-        `nonlocal`, so the key never escaped it, `ck` stayed None, the lookup
-        always missed and the store was skipped by `if ck is not None`. Every
-        duplicate re-ran full discovery — i.e. the tail-drop this docstring
-        describes was never actually prevented. The champion still carries it.
-
-        The key also gains four fields the original omitted, each of which
-        provably reaches the shipped plan, so a hit now equals a recompute:
-          app_id / nonce          stamped onto ExecutionPlan as intent_id and
-                                  nonce; without them a hit returns a plan
-                                  attributed to the FIRST order of the pair.
-          platform_fee_*          _fee_params() merges these from raw_params
-                                  into _effective_swap_amount(), which sets
-                                  amount_in — so they change the CALLDATA.
-        Widening cannot cost a hit on the live corpus (all rows share one
-        app_id), and the whole block stays inside `except: ck = None`, so any
-        failure degrades to exactly today's behaviour: no caching."""
+        identical order reuses; everything else recomputes."""
         ck = None
         try:
-            ck = self._plan_cache_key(intent, state)
+
+            def _dr136():
+
+                def _dz212():
+                    nonlocal ck
+                    ck = (int(getattr(state, 'chain_id', 0) or 0), str(p.get('input_token', '') or '').lower(), str(p.get('output_token', '') or '').lower(), str(p.get('input_amount', '') or ''), str(p.get('min_output_amount', '') or ''), str(recip or '').lower())
+                nonlocal ck
+                p = self._normalized_swap_params(intent, state)
+                recip = state.contract_address or p.get('receiver') or getattr(state, 'owner', '')
+                _dz212()
+            _dr136()
             hit = self.__dict__.setdefault('_plan_cache', {}).get(ck)
             if hit is not None:
                 return hit
@@ -1674,37 +1669,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
             return plan
         plan = _dr356()
         return plan
-
-    @staticmethod
-    def _cache_key_order(state, p, recip):
-        """Chain / token / amount / recipient half of the plan-cache key —
-        the fields that describe the swap the caller actually asked for."""
-        return (int(getattr(state, 'chain_id', 0) or 0),
-                str(p.get('input_token', '') or '').lower(),
-                str(p.get('output_token', '') or '').lower(),
-                str(p.get('input_amount', '') or ''),
-                str(p.get('min_output_amount', '') or ''),
-                str(recip or '').lower())
-
-    @staticmethod
-    def _cache_key_context(intent, state, fee):
-        """App / nonce / platform-fee half of the key. These four are the
-        fields the original omitted; each reaches the shipped plan (see
-        generate_plan's docstring), so a hit equals a recompute."""
-        return (str(getattr(intent, 'app_id', '') or ''),
-                int(getattr(state, 'nonce', 0) or 0),
-                str(fee.get('platform_fee_wei', '') or ''),
-                str(fee.get('platform_fee_token', '') or '').lower())
-
-    def _plan_cache_key(self, intent, state):
-        """The in-run memo key for one order. Raises rather than returning a
-        partial key — generate_plan runs this inside its `except: ck = None`,
-        so a failure degrades to "no caching", exactly as before."""
-        p = self._normalized_swap_params(intent, state)
-        recip = state.contract_address or p.get('receiver') or getattr(state, 'owner', '')
-        fee = self._fee_params(state, p)
-        return (self._cache_key_order(state, p, recip)
-                + self._cache_key_context(intent, state, fee))
 
     @staticmethod
     def _slim_plan_metadata(plan, state):
@@ -2592,39 +2556,25 @@ class _MinerSolverDR77(_MinerSolverDR56):
         from that same WETH balance before our router leg runs. Spending the
         gross amount then drops the order; spending the net amount can still
         clear the order min and covers the incumbent's tiny-fee blind spots.
-
-        INERT AS SHIPPED, AND THAT IS DELIBERATE. ``_NET_WETH_PLATFORM_FEE``
-        reads ``SOLVER_NET_WETH_PLATFORM_FEE`` with a default of ``'0'`` (line
-        76) and the harness sets no such variable, so every one of the twelve
-        call sites across five files is handed the gross amount today. The
-        champion carries this function byte-identical, flag and all, so netting
-        is NOT what separates us from it on any order and turning the flag on is
-        a divergence with no evidence behind it: where the app does not actually
-        reserve the fee, netting spends less and can only lower delivered
-        output, which risks turning a `matched` order into a `worse` one. Left
-        off until an executing gate can measure it.
-
-        THE COMPARISON WAS ALSO CHAIN-BLIND, which is fixed here. ``_WETH`` is
-        the BASE wrapper (king_consts.py:10, 0x4200..0006); mainnet's is the
-        separate ``_ETH_WETH`` (king_consts.py:127, 0xc02a..6cc2). A chain-1
-        WETH-input order could therefore never satisfy the guard even with the
-        flag on, so anyone enabling it to chase a chain-1 drop would have
-        measured no change and drawn the wrong conclusion. Both wrappers are
-        accepted now, for the input token and for the fee token alike.
         """
-        _weth_in = {_WETH, _ETH_WETH}
-        if not _NET_WETH_PLATFORM_FEE or amount_in <= 0 or str(tin).lower() not in _weth_in:
+
+        def _dz235():
+            try:
+                fee = int(params.get('platform_fee_wei', 0) or 0)
+            except (TypeError, ValueError):
+                fee = 0
+            if fee <= 0:
+                return (amount_in,)
+            fee_token = str(params.get('platform_fee_token', '') or '').lower()
+            if fee_token and fee_token != _WETH:
+                return (amount_in,)
+            return (max(0, amount_in - fee),)
+            return _DR_UNSET
+        if not _NET_WETH_PLATFORM_FEE or amount_in <= 0 or str(tin).lower() != _WETH:
             return amount_in
-        try:
-            fee = int(params.get('platform_fee_wei', 0) or 0)
-        except (TypeError, ValueError):
-            fee = 0
-        if fee <= 0:
-            return amount_in
-        fee_token = str(params.get('platform_fee_token', '') or '').lower()
-        if fee_token and fee_token not in _weth_in:
-            return amount_in
-        return max(0, amount_in - fee)
+        _r_dz235 = _dz235()
+        if _r_dz235 is not _DR_UNSET:
+            return _r_dz235[0]
 
     def _quote_uni_path_candidate(self, chain_id, tokens, fees, amount_in):
         """Single exactInput quote for a known-good Uniswap V3 path."""
@@ -3341,7 +3291,7 @@ class _MinerSolverDR123(_MinerSolverDR77):
                         return None
 
                     def _dr55():
-                        pool_states = _SnapLegacy.or_rpc(self, chain_id, snapshot)
+                        pool_states = getattr(snapshot, 'pool_states', None) or {} if snapshot else {}
                         a, b = (tin.lower(), tout.lower())
                         best = None
 
@@ -3614,69 +3564,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
         spec = self._bounded_call(_select, timeout=6.0)
         return spec if spec else default
 
-    _STARVED_DISCOVERY_MAX = 6
-
-    def _empty_plan_rescue(self, intent, state, snapshot):
-        """Discovery rescue for a plan that came back empty, or None.
-
-        Two routes to the same probe, split on how much per-order budget is
-        left: the unmetered one when the governor is idle or still on pace,
-        and the seat-capped bounded one below `_DISCOVERY_MIN_BUDGET_S`.
-        """
-        budget_s = getattr(self, '_dyn_order_budget', None)
-        if budget_s is not None and budget_s < _DISCOVERY_MIN_BUDGET_S:
-            return self._starved_discovery_plan(intent, state, snapshot, budget_s)
-        params = self._normalized_swap_params(intent, state)
-        return self._dynamic_discovery_plan(intent, state, snapshot, params)
-
-    def _starved_discovery_plan(self, intent, state, snapshot, budget_s):
-        """Last-chance discovery for an order the pace governor has starved.
-
-        `_DISCOVERY_MIN_BUDGET_S` (8.0) skips the discovery rescue once the
-        per-order budget collapses, but the governor floors
-        `_dyn_order_budget` at 4.0 (`_apex_champ._fw4`, `pacing_bridge`), so
-        the gate is shut for good the moment a run falls behind pace — 4.0 can
-        never climb back over 8.0. Every order arriving here after that keeps
-        its empty plan, and an empty plan is a `dropped` order: a hard veto
-        that rejects the whole submission (aero_pin BUDGET LAW, #1207). The
-        gate is protecting the run budget from an order that is already lost.
-
-        Only reached when the plan is ALREADY empty, so this cannot turn a
-        matched order into a regression — the sole cost is time, and time is
-        bounded twice: the probe runs under `_bounded_call` with the starved
-        slice as a hard timeout, and at most `_STARVED_DISCOVERY_MAX` orders
-        per run may take it, so a long tail of empties cannot starve the
-        orders queued behind them.
-        """
-        if not self._claim_starved_seat():
-            return None
-        return self._bounded_discovery_probe(intent, state, snapshot, budget_s)
-
-    def _claim_starved_seat(self) -> bool:
-        """Take one of the run's `_STARVED_DISCOVERY_MAX` starved-rescue seats.
-
-        Charged on the attempt, not the outcome: a probe that times out has
-        already spent the wall-clock the cap exists to ration.
-        """
-        taken = int(getattr(self, '_starved_dc_used', 0) or 0)
-        if taken >= self._STARVED_DISCOVERY_MAX:
-            return False
-        self._starved_dc_used = taken + 1
-        return True
-
-    def _bounded_discovery_probe(self, intent, state, snapshot, budget_s):
-        """Run discovery under `budget_s` as a hard timeout; None if it misses."""
-        try:
-            params = self._normalized_swap_params(intent, state)
-        except Exception:
-            logger.exception('[discovery] starved rescue: params failed')
-            return None
-        plan = self._bounded_call(self._dynamic_discovery_plan, (intent, state, snapshot, params), timeout=max(1.0, float(budget_s or 0.0)))
-        if plan is None or not getattr(plan, 'interactions', None):
-            return None
-        logger.info('[discovery] starved rescue served an otherwise-empty order (%d/%d)', self._starved_dc_used, self._STARVED_DISCOVERY_MAX)
-        return plan
-
     def _dynamic_discovery_plan(self, intent, state, snapshot, params):
         """Dynamic route discovery for pairs nothing else serves (covers only)."""
         try:
@@ -3749,6 +3636,7 @@ class _MinerSolverDR176(_MinerSolverDR123):
             return None
 
     def _generate_plan_impl(self, intent, state, snapshot=None):
+        plan = None
 
         def _dr377():
             try:
@@ -3843,10 +3731,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 def _dr38():
 
                                     def _dz153():
-                                        # nonlocal is load-bearing: without it the `_empty = True`
-                                        # below stays local to _dz153, which is called for effect
-                                        # only, so a getPool() miss (route points at a pool that
-                                        # does not exist) never reaches the fallback at `if _empty`.
                                         nonlocal _empty
                                         _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                                         _w3 = self._get_web3(_cid)
@@ -3869,9 +3753,12 @@ class _MinerSolverDR176(_MinerSolverDR123):
                             except Exception:
                                 pass
                         if _empty:
-                            _dp = self._empty_plan_rescue(intent, state, snapshot)
-                            if _dp is not None:
-                                return _dp
+                            _dyn_dc = getattr(self, '_dyn_order_budget', None)
+                            if _dyn_dc is None or _dyn_dc >= _DISCOVERY_MIN_BUDGET_S:
+                                _p4 = self._normalized_swap_params(intent, state)
+                                _dp = self._dynamic_discovery_plan(intent, state, snapshot, _p4)
+                                if _dp is not None:
+                                    return _dp
                         return _DR_UNSET
                     _dr127 = _dr126()
                     if _dr127 is not _DR_UNSET:
@@ -4496,62 +4383,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
         out = _dr188()
         return out
 
-    def _sweep_bounded(self, fn, args, dyn):
-        """Run one sweep phase under THIS plan's remaining clock.
-
-        THE SWEEP WAS THE ONE PHASE WITH AN OPEN-ENDED DURATION, and it runs
-        FIRST (:3810), before anything else in the plan. Its two costly calls
-        were gated on ENTRY and never on duration:
-
-            _sweep_quotes        gated `_dyn >= _SWEEP_MIN_BUDGET_S` (8.0)
-            _sweep_verify_pick   gated `_dyn >= _SWEEP_VERIFY_MIN_S` (8.0)
-
-        Both neighbours already run bounded -- `_score_aware_singlehop` at
-        :3820 under `min(_SELECT_BUDGET_S, _dyn)` and `BaselineSwapSolver` at
-        :3803 under `min(_BASELINE_BUDGET_S, _dyn)`. The sweep alone was not,
-        so `pacing_bridge._PLAN_SPAN_S`'s documented worst case of
-        `20 + 4 + 4 = 28s` rested on an ASSUMPTION that the sweep costs at most
-        the span. Nothing enforced it: a gate that opens at 8.1s of nominal room
-        admits a call that may then run for any duration at all.
-
-        That gap is the `chal: null` shape. Overrunning
-        harness/protocol.py::TIMEOUTS[Command.GENERATE_PLAN] = 30.0 does not
-        score the row 0 -- `orchestrator._send` kills the container and raises
-        SolverTimeoutError, so the order is DROPPED (a hard veto) and the
-        respawn is charged against TOTAL_BENCHMARK_TIMEOUT = 900.0s, shortening
-        the tail for every order behind it. And the gate opens precisely when
-        the run is AHEAD of pace, which is mid-run rather than at the tail --
-        the scattered-ordinal drop pattern `pacing_bridge` already describes.
-
-        `dyn` is `_dyn_order_budget`, which `pacing_bridge` rebinds to
-        `min(pace, time_left_in_this_plan)` floored at 4.0. Using it as the
-        TIMEOUT rather than only as the gate is what makes the 28s arithmetic
-        true instead of hoped-for: the sweep can now spend at most the time the
-        plan actually has left, and the two floors behind it are what the
-        remaining phases get.
-
-        None is the answer on overrun, and BOTH call sites already have that
-        path: `_dr140` returns None exactly as it does when the entry gate is
-        shut, and the verify's `_ver is None` keeps the quote-ranked pick. So a
-        timeout degrades to the behaviour of a plan that never swept -- it does
-        not drop the order, because `_sweep_plan` returning None falls through
-        to `_score_aware_singlehop` and the baseline.
-
-        `dyn is None` means the governor is idle -- live mode, and any path that
-        returns before `pacing_bridge.generate_plan` arms. Off the benchmark
-        there is no 30s kill to protect, so the call runs unwrapped and
-        behaviour is bit-for-bit unchanged, matching the same `is None` doctrine
-        at :3818 and :4547.
-
-        An abandoned daemon thread keeps draining its RPC after a timeout. That
-        exposure is real and it is the one this tree already accepts at :3803,
-        :3820, :3674 and :4625; the alternative on offer is not a cheaper sweep
-        but a killed container.
-        """
-        if dyn is None:
-            return fn(*args)
-        return self._bounded_call(fn, args, timeout=float(dyn))
-
     def _sweep_plan(self, intent, state, snapshot, params):
 
         def _dr90():
@@ -4602,12 +4433,8 @@ class _MinerSolverDR176(_MinerSolverDR123):
                     _dyn_sw = getattr(self, '_dyn_order_budget', None)
                     if _dyn_sw is not None and _dyn_sw < _SWEEP_MIN_BUDGET_S:
                         return None
-                    _sw = self._sweep_bounded(
-                        self._sweep_quotes, (w3, tin, tout, amount_in), _dyn_sw)
-                    if _sw is None:
-                        return None
-                    reach, (best_x, tag, route) = _sw
-                    _cache[_ck_key] = _sw
+                    reach, (best_x, tag, route) = self._sweep_quotes(w3, tin, tout, amount_in)
+                    _cache[_ck_key] = (reach, (best_x, tag, route))
                     return _DR_UNSET
                 _dr141 = _dr140()
                 if _dr141 is not _DR_UNSET:
@@ -4615,11 +4442,9 @@ class _MinerSolverDR176(_MinerSolverDR123):
 
             def _dr63():
 
-                def _dz193(dyn):
-                    return self._sweep_bounded(
-                        self._sweep_verify_pick,
-                        (w3, state, params, tin, tout, amount_in, min_out, reach),
-                        dyn)
+                def _dz193():
+                    _ver = self._sweep_verify_pick(w3, state, params, tin, tout, amount_in, min_out, reach)
+                    return _ver
                 nonlocal best_x, route, tag
 
                 def _dr359():
@@ -4632,7 +4457,7 @@ class _MinerSolverDR176(_MinerSolverDR123):
                 _dyn = getattr(self, '_dyn_order_budget', None)
                 if _dyn is None or _dyn >= _SWEEP_VERIFY_MIN_S:
                     try:
-                        _ver = _dz193(_dyn)
+                        _ver = _dz193()
                         if _ver is not None:
                             best_x, tag, route = _ver
                     except Exception:
@@ -4715,7 +4540,7 @@ class MinerSolver(_MinerSolverDR176):
 
                     def _dr103():
                         chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                        pool_states = _SnapLegacy.or_rpc(self, chain_id, snapshot)
+                        pool_states = getattr(snapshot, 'pool_states', None) or {} if snapshot else {}
                         if not pool_states:
                             return None
                         try:
