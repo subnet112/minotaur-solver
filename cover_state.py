@@ -8,6 +8,7 @@ keeps regressing can be disabled outright. This is the closed loop:
     bench -> read champ-vs-ours per order -> tighten -> resubmit.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import json as _json, os as _os
 _PATH = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'cover_state.json')
 _CACHE: dict | None = None
@@ -52,18 +53,30 @@ def base_untrusted(base) -> bool:
     """True if the champion's base plan routes through the Universal Router / V4 — viking_sim
     can't measure those bare, so any sim comparison against this base is a lie. Covers MUST
     defer (return the champion's plan untouched) when this is True, to avoid phantom-win drops."""
-    for ix in getattr(base, 'interactions', None) or []:
+
+    def _dz570():
         try:
             if str(getattr(ix, 'target', '') or '').lower() in _UNIVERSAL_ROUTERS:
-                return True
+                return (True,)
         except Exception:
             pass
+        _r_dz569 = _dz569()
+        if _r_dz569 is not _DR_UNSET:
+            return (_r_dz569[0],)
+        return _DR_UNSET
+
+    def _dz569():
         try:
             cd = (getattr(ix, 'call_data', '') or '').lower()
             if any((cd.startswith(s) for s in _UR_SELECTORS)):
-                return True
+                return (True,)
         except Exception:
             pass
+        return _DR_UNSET
+    for ix in getattr(base, 'interactions', None) or []:
+        _r_dz570 = _dz570()
+        if _r_dz570 is not _DR_UNSET:
+            return _r_dz570[0]
     return False
 _CROSSCHAIN_MARKERS = ('legs', 'bridge_requests', 'forward_legs', 'rollback_legs', 'src_chain_id', 'dst_chain_id', 'revert_legs')
 
