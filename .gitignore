@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+.plan-census.log
 .pytest_cache/
 .venv/
 .env

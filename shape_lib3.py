@@ -30,17 +30,17 @@ def _sv3_parts(spec, tin, tout, amt, exec_addr, chain_id):
     leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid1'], tick_spacing=int(spec['slip_ts']), recipient=exec_addr, deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
     return (slip_router, leg1, _sv3_path(spec, tout))
 
-def _sv3_leg2(path, q1, rcpt):
-    from eth_abi import encode as _enc
-    from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    sel = _keccak(text='exactInput((bytes,address,uint256,uint256))')[:4]
-    return '0x' + (sel + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(rcpt), int(q1), 0)])).hex()
-
 def _v_build_sv3(spec, tin, tout, amt, q1, exec_addr, chain_id):
     """3-leg sv3 row builder (slipstream leg1 to executor, uni 2-hop leg2)."""
     from eth_utils import to_checksum_address as _ck
     from common.abi_utils import encode_approve
     from minotaur_subnet.shared.types import Interaction as _IX
+
+    def _sv3_leg2(path, q1, rcpt):
+        from eth_abi import encode as _enc
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        sel = _keccak(text='exactInput((bytes,address,uint256,uint256))')[:4]
+        return '0x' + (sel + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(rcpt), int(q1), 0)])).hex()
     slip_router, leg1, path = _sv3_parts(spec, tin, tout, amt, exec_addr, chain_id)
     uni_r = _V_V3_ROUTERS['uni']
 
