@@ -5,21 +5,8 @@ too, so this module never imports back from mino_fill_layer and no cycle is poss
 Semantics unchanged -- same objects, same names, same order.
 """
 from __future__ import annotations
-__all__ = [
-    '_DR_UNSET',
-    '_clears_floor',
-    '_floor',
-    '_is_empty',
-    '_minted',
-    '_read_overrides',
-    '_served',
-    'annotations',
-    'json',
-    'logging',
-    'os',
-    'time',
-]
-"""lattice fill layer — EMPTY-ONLY overlay above the reigning solver stack."""
+__all__ = ['_DR_UNSET', '_clears_floor', '_floor', '_is_empty', '_minted', '_read_overrides', '_served', 'annotations', 'json', 'logging', 'os', 'time']
+'lattice fill layer — EMPTY-ONLY overlay above the reigning solver stack.'
 _DR_UNSET = object()
 import json
 import logging
