@@ -150,8 +150,8 @@ _APEX_FP = _apex_fp_29798270n1(0)
 # Rotating it every round makes every submission a distinct fingerprint, so we never trip
 # SUBMISSIONS_MAX_ROUNDS_PER_FINGERPRINT (2 benched rounds per identical code). Both
 # markers below are matched verbatim by the patcher; keep them stable.
-_PYMSNO_NAME = "pymsno-mvstrike-raptor-80"  # __PYMSNO_NAME__
-_PYMSNO_FP = "e29798386-n1-80-razgriz"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
+_PYMSNO_NAME = "pymsno-mvstrike-raptor-99"  # __PYMSNO_NAME__
+_PYMSNO_FP = "e29798515-n1-99-razgriz"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
 # Frozen PROVEN-WINS table (base64 of pymsno_wins.json), embedded at reprep time.
 # Each entry is a plan the subnet's OWN /apps/{app_id}/score oracle sim-VERIFIED to
 # deliver on-chain (like the champions' live_wins.json). Served deterministically on
@@ -762,8 +762,8 @@ SOLVER_CLASS = _PymsnoStrike
 # Rotating it every round makes every submission a distinct fingerprint, so we never trip
 # SUBMISSIONS_MAX_ROUNDS_PER_FINGERPRINT (2 benched rounds per identical code). Both
 # markers below are matched verbatim by the patcher; keep them stable.
-_PYMSNO_NAME = "pymsno-strike"  # __PYMSNO_NAME__
-_PYMSNO_FP = "fp0"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
+_PYMSNO_NAME = "pymsno-mvstrike-raptor-99"  # __PYMSNO_NAME__
+_PYMSNO_FP = "e29798515-n1-99-razgriz"  # __PYMSNO_FP__  (rotated per submission -> unique fingerprint each round)
 # Frozen PROVEN-WINS table (base64 of pymsno_wins.json), embedded at reprep time.
 # Each entry is a plan the subnet's OWN /apps/{app_id}/score oracle sim-VERIFIED to
 # deliver on-chain (like the champions' live_wins.json). Served deterministically on
