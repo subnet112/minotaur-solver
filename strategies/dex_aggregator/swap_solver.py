@@ -113,19 +113,31 @@ class SwapIntentProcessor(IntentProcessor):
         params = self._extract_swap_params(intent, state)
 
         def _fw1():
-            input_token: str = params['input_token']
-            output_token: str = params['output_token']
-            input_amount: int = params['input_amount']
-            min_output_amount: int = params['min_output_amount']
-            recipient: str = state.contract_address or params.get('receiver', state.owner)
-            fee_tier: int = params.get('fee_tier', self.default_fee_tier)
+
+            def _dz1600():
+                input_amount, input_token, min_output_amount, output_token = _dz1599()
+                recipient: str = state.contract_address or params.get('receiver', state.owner)
+                fee_tier: int = params.get('fee_tier', self.default_fee_tier)
+                return (fee_tier, input_amount, input_token, min_output_amount, output_token, recipient)
+
+            def _dz1599():
+                input_token: str = params['input_token']
+                output_token: str = params['output_token']
+                input_amount: int = params['input_amount']
+                min_output_amount: int = params['min_output_amount']
+                return (input_amount, input_token, min_output_amount, output_token)
+            fee_tier, input_amount, input_token, min_output_amount, output_token, recipient = _dz1600()
             chain_id = context.chain_id
             router_address = self._get_router(chain_id)
 
             def _dr1():
 
                 def _dz399():
-                    deadline = context.timestamp + self.deadline_offset
+
+                    def _dz1596():
+                        deadline = context.timestamp + self.deadline_offset
+                        return deadline
+                    deadline = _dz1596()
                     interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router_address, input_amount), chain_id=chain_id), Interaction(target=router_address, value='0', call_data=encode_exact_input_single(token_in=input_token, token_out=output_token, fee=fee_tier, recipient=recipient, deadline=deadline, amount_in=input_amount, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
                     return (deadline, interactions)
                 deadline, interactions = _dz399()
@@ -138,6 +150,11 @@ class SwapIntentProcessor(IntentProcessor):
             return _dr2
 
     def _extract_swap_params(self, intent: AppIntentDefinition, state: IntentState) -> dict[str, Any]:
+
+        def _dz1601(intent, self, state):
+            params = _state_params(state)
+            normalized = normalize_swap_intent_params(params, manifest=manifest_from_definition(intent), intent_name=_intent_function_from_state(state, 'swap'), receiver_default=state.contract_address or state.owner, slippage_bps=self.slippage_bps)
+            return (normalized, params)
 
         def _dz400():
             """Extract and validate swap parameters from intent + state.
@@ -162,21 +179,32 @@ class SwapIntentProcessor(IntentProcessor):
         _r_dz400 = _dz400()
         if _r_dz400 is not _DR_UNSET:
             return _r_dz400[0]
-        params = _state_params(state)
-        normalized = normalize_swap_intent_params(params, manifest=manifest_from_definition(intent), intent_name=_intent_function_from_state(state, 'swap'), receiver_default=state.contract_address or state.owner, slippage_bps=self.slippage_bps)
+        normalized, params = _dz1601(intent, self, state)
 
         def _dr3():
+
+            def _dz1598():
+                if not input_token:
+                    raise ValueError('Missing required parameter: input_token in state.raw_params')
+                if not output_token:
+                    raise ValueError('Missing required parameter: output_token in state.raw_params')
+                _r_dz1597 = _dz1597()
+                if _r_dz1597 is not _DR_UNSET:
+                    return (_r_dz1597[0],)
+                return _DR_UNSET
+
+            def _dz1597():
+                if input_amount <= 0:
+                    raise ValueError(f'input_amount must be positive, got {input_amount}')
+                result: dict[str, Any] = {'input_token': input_token, 'output_token': output_token, 'input_amount': input_amount, 'min_output_amount': normalized['min_output_amount'], 'receiver': normalized['receiver'], 'fee_tier': normalized['fee_tier']}
+                return (result,)
+                return _DR_UNSET
             input_token = normalized.get('input_token')
             output_token = normalized.get('output_token')
             input_amount = normalized.get('input_amount', 0)
-            if not input_token:
-                raise ValueError('Missing required parameter: input_token in state.raw_params')
-            if not output_token:
-                raise ValueError('Missing required parameter: output_token in state.raw_params')
-            if input_amount <= 0:
-                raise ValueError(f'input_amount must be positive, got {input_amount}')
-            result: dict[str, Any] = {'input_token': input_token, 'output_token': output_token, 'input_amount': input_amount, 'min_output_amount': normalized['min_output_amount'], 'receiver': normalized['receiver'], 'fee_tier': normalized['fee_tier']}
-            return result
+            _r_dz1598 = _dz1598()
+            if _r_dz1598 is not _DR_UNSET:
+                return _r_dz1598[0]
         result = _dr3()
         return result
 

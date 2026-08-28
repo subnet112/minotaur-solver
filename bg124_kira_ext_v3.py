@@ -6,13 +6,24 @@ and the structural fingerprint collapses them into one identity, costing one its
 This is a LEAF -- it reads only its arguments and what it imports itself -- so moving it
 cannot change resolution of any name it uses.
 """
+_DR_UNSET = object()
 from chain1_lib import _build
 from chain1_v2 import _v2_build
 
 def _mk_plan(route, tin, amt, rcpt, intent, state):
+
+    def _dz453():
+        return (_EP(intent_id=intent.app_id, interactions=ixs, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-eth-dyn', 'chain_id': 1}),)
+        return _DR_UNSET
+
+    def _dz452():
+        nonlocal ixs
+        ixs = _v2_build(route[1], route[2], tin, amt, route[3], rcpt, 1)
     from minotaur_subnet.shared.types import ExecutionPlan as _EP
     if isinstance(route, tuple) and route and (route[0] == 'v2'):
-        ixs = _v2_build(route[1], route[2], tin, amt, route[3], rcpt, 1)
+        _dz452()
     else:
         ixs = _build(route, tin, amt, rcpt, 1)
-    return _EP(intent_id=intent.app_id, interactions=ixs, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'viking-eth-dyn', 'chain_id': 1})
+    _r_dz453 = _dz453()
+    if _r_dz453 is not _DR_UNSET:
+        return _r_dz453[0]

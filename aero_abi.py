@@ -19,6 +19,7 @@ depth is the RESERVE ($2.1B USDC / 2.12M WETH on L1), not a thin pool. Fork-prov
 contract, all 5 calls status 0x1.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 _AAVE_WITHDRAW = '0x69328dec'
 _AAVE_SUPPLY = '0x617ba037'
 _ERC20_APPROVE = '0x095ea7b3'
@@ -40,10 +41,17 @@ def _path_bytes(path_toks, fees):
 
     Lifted verbatim out of `_v3_exact_input` and `_quote_v3`, which each built it
     with identical code."""
+
+    def _dz268():
+        nonlocal raw
+        for f, t in zip(fees, path_toks[1:]):
+            raw += hex(int(f))[2:].rjust(6, '0') + t[2:].lower()
+        return (bytes.fromhex(raw),)
+        return _DR_UNSET
     raw = path_toks[0][2:].lower()
-    for f, t in zip(fees, path_toks[1:]):
-        raw += hex(int(f))[2:].rjust(6, '0') + t[2:].lower()
-    return bytes.fromhex(raw)
+    _r_dz268 = _dz268()
+    if _r_dz268 is not _DR_UNSET:
+        return _r_dz268[0]
 
 def _pad(b):
     """Packed path as hex, right-padded to a whole number of 32-byte words."""
