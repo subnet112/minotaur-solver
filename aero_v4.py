@@ -32,7 +32,11 @@ def _v4_input(tin, tout, path, rcpt):
     byte-shape parity with cr_exotic_v4; only the multi-hop action differs."""
 
     def _dz22():
-        params = [_e(_V4_SETTLE_T, [_ck(tin), 1 << 255, False]), _e([_V4_EXACT_IN], [(_ck(tin), keys, 0, 0)]), _e(_V4_TAKE_T, [_ck(tout), _ck(rcpt), 0])]
+
+        def _dz300():
+            params = [_e(_V4_SETTLE_T, [_ck(tin), 1 << 255, False]), _e([_V4_EXACT_IN], [(_ck(tin), keys, 0, 0)]), _e(_V4_TAKE_T, [_ck(tout), _ck(rcpt), 0])]
+            return params
+        params = _dz300()
         return (_e(_V4_INPUT_T, [bytes(_V4_ACTIONS), params]),)
         return _DR_UNSET
     from eth_abi import encode as _e
@@ -44,11 +48,17 @@ def _v4_input(tin, tout, path, rcpt):
 
 def _v4_calls(tin, amt, v4in):
     """(transfer calldata, UniversalRouter.execute calldata)."""
+
+    def _dz301():
+        ex = _k(text='execute(bytes,bytes[],uint256)')[:4] + _e(_V4_EXEC_T, [bytes(_V4_CMDS), [v4in], 9999999999])
+        return (('0x' + xfer.hex(), '0x' + ex.hex()),)
+        return _DR_UNSET
     from eth_abi import encode as _e
     from eth_utils import keccak as _k, to_checksum_address as _ck
     xfer = _k(text='transfer(address,uint256)')[:4] + _e(_V4_XFER_T, [_ck(_UR_L1), int(amt)])
-    ex = _k(text='execute(bytes,bytes[],uint256)')[:4] + _e(_V4_EXEC_T, [bytes(_V4_CMDS), [v4in], 9999999999])
-    return ('0x' + xfer.hex(), '0x' + ex.hex())
+    _r_dz301 = _dz301()
+    if _r_dz301 is not _DR_UNSET:
+        return _r_dz301[0]
 
 def _v4_ixs(tin, tout, amt, path, rcpt):
     """[transfer(tin -> UR), UR.execute(V4_SWAP)] for an exact-in V4 path."""
