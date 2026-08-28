@@ -40,58 +40,8 @@ That still matters, but only while the proxy runs in observe mode (budget=0), wh
 300s backstop once the budget is enforced. So this memo is decisive in observe mode and
 merely free in enforce mode. It is never harmful, which is why it stays.
 """
-# ---------------------------------------------------------------------------
-# DO NOT DELETE. This whole component -- `_mino_make_request`, `_mino_route`,
-# `_mino_orig_make_request`, `_mino_cid_by_url` and everything in mino_vol_memo --
-# is LIVE code on the RPC read path, and it used to read as the tree's entire
-# deadwood mass. That was a REACHABILITY FALSE POSITIVE, never dead code.
-#
-# RESOLVED 2026-08-19 (7c15c65), confirmed by the validator on sub_df12b7e5b330:
-# unproductive_nodes is now 0, down from 440. Nothing was deleted to get there.
-# The analyzer could not reach these nodes because the only edge into them is an
-# attribute assignment onto an imported class -- `_MinoHP.make_request =
-# _mino_make_request` below -- which web3 invokes from its own internals and no
-# static walk can follow. Running the installers from a bare module-level `try:`
-# left them unreachable; moving each into a CALLED def (`_mino_load_vol`,
-# `_mino_install_chainid`) gave the walk an edge it can follow, and the whole
-# component became reachable. Keep them that way: a name that must survive the
-# call has to be on the `global` line, or it is a discarded local.
-#
-# HISTORY, so a future tick does not re-litigate a fixed problem. The mass grew
-# three times on 2026-08-19 and every jump was EXPECTED: 74 at the start, 196 once
-# the chainId memo was shared across provider instances (6f51fd6, b5ed435,
-# 3a225ac), 391 when the per-plan eth_call memo landed, 440 when that memo widened
-# to the rest of the block-invariant reads. Each was live memo code being
-# mis-bucketed, which is why the answer was to fix the edge rather than to delete
-# anything. The tell for a REAL deletion is a NEW region name appearing in DEAD
-# MASS from a file that is not this memo -- never the total moving on its own.
-#
-# This module IS on the live path. Verified chain from the entrypoint:
-#   solver.py                 -> _bg124_shim_9645f01
-#   _bg124_arch_9645f01  :15     from _apex_ourbase import SOLVER_CLASS
-#   _apex_ourbase        :29     from _bg124_shim_c63a894 import SOLVER_CLASS
-#   _bg124_arch_c63a894  :597    from min_amt_alias import install as _w
-#
-# Cost of deleting: this is the ONLY eth_chainId memo in the tree (grep
-# confirms). Removing it restores 1143-of-1716 redundant RPC calls per row --
-# free on a warm fork, 11-114s at validator latency -- i.e. it re-introduces
-# exactly the `dropped=43` rounds recorded above. Dropped orders are a HARD
-# VETO, the most expensive failure on the ladder.
-#
-# Benefit of deleting: zero, and now provably so. unproductive_nodes is 0 against
-# a cap of 4600, so there is no gate pressure left to relieve; and the deadwood
-# tie-break rung needs champion-minus-ours >= 2000 while the champion sits at 82,
-# a target of -1918 that is unreachable by construction no matter what we delete.
-# Shrinking this component therefore pays NOTHING on the ladder at any size it can
-# reach, and it is not worth the drop risk of editing the live RPC path to do it.
-#
-# Comments cost 0 AST nodes, so this block moves neither metric.
-# ---------------------------------------------------------------------------
-# The per-plan eth_call memo lives in its own module so the nodes it costs land
-# in ITS regions, not in this file's. `None` when it cannot be imported: the
-# branch below then routes every eth_call straight to the node, exactly as this
-# file did before 2026-08-19. See mino_vol_memo.py for why a per-plan window is
-# sound where the chainId table's process-lifetime one would not be.
+_DR_UNSET = object()
+
 def _mino_load_vol():
     """Bind `_mino_vol`, or None when the per-plan memo cannot be imported.
 
@@ -104,10 +54,7 @@ def _mino_load_vol():
         import mino_vol_memo as _mino_vol
     except Exception:
         _mino_vol = None
-
-
 _mino_load_vol()
-
 
 def _mino_route(self, method, params):
     """Everything that is not eth_chainId: the block-invariant reads through the
@@ -126,10 +73,8 @@ def _mino_route(self, method, params):
     `_mino_make_request`, which exists only when the patch below installed, so
     `_mino_orig_make_request` is always bound by the time this runs."""
     if _mino_vol is not None and method in _mino_vol.MEMOABLE:
-        return _mino_vol.cached_call(
-            self, _mino_orig_make_request, method, params)
+        return _mino_vol.cached_call(self, _mino_orig_make_request, method, params)
     return _mino_orig_make_request(self, method, params)
-
 
 def _mino_install_chainid():
     """Patch HTTPProvider.make_request with the chainId memo. Idempotent.
@@ -148,6 +93,26 @@ def _mino_install_chainid():
         _mino_cid_by_url = {}
 
         def _mino_make_request(self, method, params):
+
+            def _dz1561():
+                _r_dz1560 = _dz1560()
+                if _r_dz1560 is not _DR_UNSET:
+                    return (_r_dz1560[0],)
+                try:
+                    self._mino_cid_cache = _c
+                except Exception:
+                    pass
+                return (_c,)
+                return _DR_UNSET
+
+            def _dz1560():
+                nonlocal _c
+                _c = _mino_cid_by_url.get(_k) if _k is not None else None
+                if _c is None:
+                    _c, _ok = _mino_cid_slow(_k)
+                    if not _ok:
+                        return (_c,)
+                return _DR_UNSET
             if method != 'eth_chainId':
                 return _mino_route(self, method, params)
             _c = getattr(self, '_mino_cid_cache', None)
@@ -155,10 +120,15 @@ def _mino_install_chainid():
                 return _c
 
             def _mino_cid_slow(_k):
+
+                def _dz1558():
+                    if not (isinstance(_r, dict) and _r.get('error') is None and (_r.get('result') is not None)):
+                        return ((_r, False),)
+                    return _DR_UNSET
                 _r = _mino_orig_make_request(self, method, params)
-                if not (isinstance(_r, dict) and _r.get('error') is None
-                        and _r.get('result') is not None):
-                    return (_r, False)
+                _r_dz1558 = _dz1558()
+                if _r_dz1558 is not _DR_UNSET:
+                    return _r_dz1558[0]
                 if _k is not None:
                     try:
                         _mino_cid_by_url[_k] = _r
@@ -166,56 +136,63 @@ def _mino_install_chainid():
                         pass
                 return (_r, True)
             _k = getattr(self, 'endpoint_uri', None)
-            _c = _mino_cid_by_url.get(_k) if _k is not None else None
-            if _c is None:
-                _c, _ok = _mino_cid_slow(_k)
-                if not _ok:
-                    return _c
-            try:
-                self._mino_cid_cache = _c
-            except Exception:
-                pass
-            return _c
+            _r_dz1561 = _dz1561()
+            if _r_dz1561 is not _DR_UNSET:
+                return _r_dz1561[0]
         _MinoHP.make_request = _mino_make_request
         _MinoHP._mino_chainid_memo = True
     except Exception:
         pass
-
-
 _mino_install_chainid()
 
-
 def _raw_params(state):
+
+    def _dz1564():
+        _r_dz1563 = _dz1563()
+        if _r_dz1563 is not _DR_UNSET:
+            return (_r_dz1563[0],)
+        return (raw if isinstance(raw, dict) else {},)
+        return _DR_UNSET
+
+    def _dz1563():
+        nonlocal raw
+        try:
+            view = getattr(state, 'raw_params_view', None)
+            if callable(view):
+                raw = view()
+                if isinstance(raw, dict):
+                    return (raw,)
+        except Exception:
+            pass
+        raw = getattr(state, 'raw_params', None)
+        return _DR_UNSET
     typed = getattr(state, 'typed_context', None)
     if typed is not None:
         raw = getattr(typed, 'raw_params', None)
         if isinstance(raw, dict):
             return raw
-    try:
-        view = getattr(state, 'raw_params_view', None)
-        if callable(view):
-            raw = view()
-            if isinstance(raw, dict):
-                return raw
-    except Exception:
-        pass
-    raw = getattr(state, 'raw_params', None)
-    return raw if isinstance(raw, dict) else {}
+    _r_dz1564 = _dz1564()
+    if _r_dz1564 is not _DR_UNSET:
+        return _r_dz1564[0]
 
 def install(cls):
 
     class _AmtAlias(cls):
 
         def _normalized_swap_params(self, intent, state):
+
+            def _dz1559():
+                nonlocal p
+                alt = raw.get('amount_in') or raw.get('amountIn') or 0
+                alt = int(str(alt)) if alt else 0
+                if alt > 0:
+                    p = dict(p)
+                    p['input_amount'] = alt
             p = super()._normalized_swap_params(intent, state)
             try:
                 if not int(p.get('input_amount') or 0):
                     raw = _raw_params(state)
-                    alt = raw.get('amount_in') or raw.get('amountIn') or 0
-                    alt = int(str(alt)) if alt else 0
-                    if alt > 0:
-                        p = dict(p)
-                        p['input_amount'] = alt
+                    _dz1559()
             except Exception:
                 pass
             return p

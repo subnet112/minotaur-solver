@@ -3,12 +3,16 @@ from lat_rescall_ext import _res_call
 
 def _v_v2_out(s, pair, amt_in, in_is_t0, chain_id):
     """UniswapV2-style pair forward quote from getReserves (997/1000 fee)."""
+
+    def _dz1728(amt_in, in_is_t0, res):
+        rin, rout = (res[0], res[1]) if in_is_t0 else (res[1], res[0])
+        ai = int(amt_in) * 997
+        return (ai, rin, rout)
     try:
         res = _res_call(s, pair, chain_id)
         if res is None:
             return None
-        rin, rout = (res[0], res[1]) if in_is_t0 else (res[1], res[0])
-        ai = int(amt_in) * 997
+        ai, rin, rout = _dz1728(amt_in, in_is_t0, res)
         return ai * rout // (rin * 1000 + ai) or None
     except Exception:
         return None
@@ -16,11 +20,17 @@ def _v_v2_out(s, pair, amt_in, in_is_t0, chain_id):
 def _v_bs_quote(s, venue, param, tin, tout, amt, chain_id):
     """Same-block forward quote of one single-hop candidate via the engine's
     own quoters; None on any failure (absent pool / no liquidity)."""
+
+    def _dz1727():
+        router = 'pancake' if venue == 'pancake_v3' else 'uni'
+        return (s._hydra_quote_leg1({'leg1_router': router, 'leg1_fee': int(param), 'mid': tout}, tin, amt, chain_id),)
+        return _DR_UNSET
     try:
         if venue == 'aerodrome_slipstream':
             return slip_quote(s, int(param), tin, tout, amt, chain_id)
-        router = 'pancake' if venue == 'pancake_v3' else 'uni'
-        return s._hydra_quote_leg1({'leg1_router': router, 'leg1_fee': int(param), 'mid': tout}, tin, amt, chain_id)
+        _r_dz1727 = _dz1727()
+        if _r_dz1727 is not _DR_UNSET:
+            return _r_dz1727[0]
     except Exception:
         return None
 
@@ -81,41 +91,67 @@ def _e1_qdata(path_hex, amt):
 
 def _v_e1_qpath(s, path_hex, amt, chain_id):
     """Forward quote of a packed v3 path on chain 1; None off-chain-1 or on failure."""
+
+    def _dz1726(s):
+        w3 = s._get_web3(1) or s._get_web3(31337)
+        _r_dz1725 = _dz1725()
+        return (_r_dz1725, w3)
+
+    def _dz1725():
+        if w3 is None:
+            return (None,)
+        r = w3.eth.call({'to': _ck(_V_E1_QUOTER), 'data': _e1_qdata(path_hex, amt)})
+        return (_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0] or None,)
+        return _DR_UNSET
     try:
         if int(chain_id) != 1:
             return None
         from eth_abi import decode as _dec
         from eth_utils import to_checksum_address as _ck
         from shape_lib2 import _V_E1_QUOTER
-        w3 = s._get_web3(1) or s._get_web3(31337)
-        if w3 is None:
-            return None
-        r = w3.eth.call({'to': _ck(_V_E1_QUOTER), 'data': _e1_qdata(path_hex, amt)})
-        return _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0] or None
+        _r_dz1725, w3 = _dz1726(s)
+        if _r_dz1725 is not _DR_UNSET:
+            return _r_dz1725[0]
     except Exception:
         return None
 
 def _slip_call(s, ts, tin, tout, amt, chain_id, quoter):
+
+    def _dz1723():
+        return (w3.eth.call({'to': _ck(quoter or _AERO_QUOTER), 'data': '0x' + (sel + params).hex()}),)
+        return _DR_UNSET
+
+    def _dz1722(amt, tin, tout, ts):
+        sel = _keccak(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
+        params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amt), int(ts), 0)])
+        return (params, sel)
     from eth_abi import encode as _enc
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
     from king_consts import _AERO_QUOTER
     w3 = s._get_web3(int(chain_id))
     if w3 is None:
         return None
-    sel = _keccak(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
-    params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amt), int(ts), 0)])
-    return w3.eth.call({'to': _ck(quoter or _AERO_QUOTER), 'data': '0x' + (sel + params).hex()})
+    params, sel = _dz1722(amt, tin, tout, ts)
+    _r_dz1723 = _dz1723()
+    if _r_dz1723 is not _DR_UNSET:
+        return _r_dz1723[0]
 
 def slip_quote(s, ts, tin, tout, amt, chain_id, quoter=None):
     """Slipstream-family quoter exact-in single — int24 tickSpacing selector
     (the lineage's uint24 variant reverts on every pool). `quoter` overrides the
     canonical deployment for CLFactory variants (factory3 etc)."""
+
+    def _dz1721():
+        if r is None:
+            return (None,)
+        out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], r)[0])
+        return (out if out > 0 else None,)
+        return _DR_UNSET
     try:
         from eth_abi import decode as _dec
         r = _slip_call(s, ts, tin, tout, amt, chain_id, quoter)
-        if r is None:
-            return None
-        out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], r)[0])
-        return out if out > 0 else None
+        _r_dz1721 = _dz1721()
+        if _r_dz1721 is not _DR_UNSET:
+            return _r_dz1721[0]
     except Exception:
         return None

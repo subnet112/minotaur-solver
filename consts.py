@@ -4,28 +4,39 @@ A module top level is itself a region and every top-level assignment counts in
 it, so the constant block lives here rather than inflating the venue module.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 
 def _dz70():
 
     def _selectors():
         """The 4-byte function selectors, split off so neither block is the
         largest region in the tree."""
-        S_APPROVE = '095ea7b3'
-        S_V3_SINGLE_V1 = '414bf389'
-        S_V3_SINGLE_02 = '04e45aaf'
-        S_V3_PATH_V1 = 'c04b8d59'
-        S_V3_PATH_02 = 'b858183f'
-        S_V2_SWAP = '38ed1739'
-        S_QUOTE_SINGLE = 'c6a5026a'
-        S_QUOTE_PATH = 'cdca1753'
-        S_V2_AMOUNTS = 'd06ca61f'
+
+        def _dz666():
+            S_APPROVE = '095ea7b3'
+            S_V3_SINGLE_V1 = '414bf389'
+            S_V3_SINGLE_02 = '04e45aaf'
+            S_V3_PATH_V1 = 'c04b8d59'
+            S_V3_PATH_02 = 'b858183f'
+            S_V2_SWAP = '38ed1739'
+            S_QUOTE_SINGLE = 'c6a5026a'
+            S_QUOTE_PATH = 'cdca1753'
+            S_V2_AMOUNTS = 'd06ca61f'
+            return (S_APPROVE, S_QUOTE_PATH, S_QUOTE_SINGLE, S_V2_AMOUNTS, S_V2_SWAP, S_V3_PATH_02, S_V3_PATH_V1, S_V3_SINGLE_02, S_V3_SINGLE_V1)
+
+        def _dz665():
+            S_CURVE_IDX = 'eb85226d'
+            S_CURVE_GETDY = '5e0d443f'
+            S_CURVE_EXCH_RECV = 'ddc1f59d'
+            S_AERO_GAO = '5509a1ac'
+            S_AERO_SWAP = 'cac88ea9'
+            return ((S_APPROVE, S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02, S_V2_SWAP, S_QUOTE_SINGLE, S_QUOTE_PATH, S_V2_AMOUNTS, S_CURVE_FIND, S_CURVE_IDX, S_CURVE_GETDY, S_CURVE_EXCH_RECV, S_AERO_GAO, S_AERO_SWAP),)
+            return _DR_UNSET
+        S_APPROVE, S_QUOTE_PATH, S_QUOTE_SINGLE, S_V2_AMOUNTS, S_V2_SWAP, S_V3_PATH_02, S_V3_PATH_V1, S_V3_SINGLE_02, S_V3_SINGLE_V1 = _dz666()
         S_CURVE_FIND = 'a87df06c'
-        S_CURVE_IDX = 'eb85226d'
-        S_CURVE_GETDY = '5e0d443f'
-        S_CURVE_EXCH_RECV = 'ddc1f59d'
-        S_AERO_GAO = '5509a1ac'
-        S_AERO_SWAP = 'cac88ea9'
-        return (S_APPROVE, S_V3_SINGLE_V1, S_V3_SINGLE_02, S_V3_PATH_V1, S_V3_PATH_02, S_V2_SWAP, S_QUOTE_SINGLE, S_QUOTE_PATH, S_V2_AMOUNTS, S_CURVE_FIND, S_CURVE_IDX, S_CURVE_GETDY, S_CURVE_EXCH_RECV, S_AERO_GAO, S_AERO_SWAP)
+        _r_dz665 = _dz665()
+        if _r_dz665 is not _DR_UNSET:
+            return _r_dz665[0]
     DEADLINE = 9999999999
     BUDGET_S = 6.0
     _SEARCH_DEADLINE = [0.0]

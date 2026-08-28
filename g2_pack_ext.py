@@ -7,9 +7,13 @@ that module's namespace and therefore in its `from ... import *` surface.
 from __future__ import annotations
 
 def _pack_path(tokens, fees) -> bytes:
+
+    def _dz762():
+        nonlocal b
+        for i, t in enumerate(tokens):
+            b += bytes.fromhex(str(t)[2:])
+            if i < len(fees):
+                b += int(fees[i]).to_bytes(3, 'big')
     b = b''
-    for i, t in enumerate(tokens):
-        b += bytes.fromhex(str(t)[2:])
-        if i < len(fees):
-            b += int(fees[i]).to_bytes(3, 'big')
+    _dz762()
     return b

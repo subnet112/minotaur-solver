@@ -29,15 +29,18 @@ def _refresh_table():
     before it existed, which is the correct failure mode for a cover we
     cannot prove.
     """
+
+    def _dz1670():
+        nonlocal _REFRESH_TABLE
+        import os
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apex_cover_h5_refresh.json')
+        with open(path) as handle:
+            _REFRESH_TABLE = json.load(handle) or {}
     global _REFRESH_TABLE
     if _REFRESH_TABLE is _DR_UNSET:
         _REFRESH_TABLE = {}
         try:
-            import os
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                'apex_cover_h5_refresh.json')
-            with open(path) as handle:
-                _REFRESH_TABLE = json.load(handle) or {}
+            _dz1670()
         except Exception:
             trace.exception('[cover] refresh sidecar unavailable; miss-only fallback off')
             _REFRESH_TABLE = {}
@@ -53,36 +56,60 @@ def install(base_cls):
     class _BoundCover(base_cls):
 
         def __init__(self, *args, **kwargs):
+
+            def _dz1669():
+                try:
+                    self.route_table = json.loads(SERIALISED_TABLE) or {}
+                except Exception:
+                    self.route_table = {}
+                try:
+                    self.contest_keys = set(json.loads(SERIALISED_CONTEST) or [])
+                except Exception:
+                    self.contest_keys = set()
             super().__init__(*args, **kwargs)
-            try:
-                self.route_table = json.loads(SERIALISED_TABLE) or {}
-            except Exception:
-                self.route_table = {}
-            try:
-                self.contest_keys = set(json.loads(SERIALISED_CONTEST) or [])
-            except Exception:
-                self.contest_keys = set()
+            _dz1669()
             self.stale_word = ('0' * 24 + SEED_ADDRESS.replace('0x', '')).lower()
 
         def _h5_key(self, data):
             """`sell|buy|qty` for a params dict, or None when it is not keyable."""
-            try:
+
+            def _dz1668(data):
+                buy, sell = _dz1666(data)
+                qty = str(int(data.get('input_amount', 0) or 0))
+                return (buy, qty, sell)
+
+            def _dz1667():
+                if not sell or not buy or qty == '0':
+                    return (None,)
+                return (sell + '|' + buy + '|' + qty,)
+                return _DR_UNSET
+
+            def _dz1666(data):
                 sell = str(data.get('input_token', '') or '').lower()
                 buy = str(data.get('output_token', '') or '').lower()
-                qty = str(int(data.get('input_amount', 0) or 0))
+                return (buy, sell)
+            try:
+                buy, qty, sell = _dz1668(data)
             except Exception:
                 return None
-            if not sell or not buy or qty == '0':
-                return None
-            return sell + '|' + buy + '|' + qty
+            _r_dz1667 = _dz1667()
+            if _r_dz1667 is not _DR_UNSET:
+                return _r_dz1667[0]
 
         def order_id(self, state):
+
+            def _dz1665():
+                nonlocal data
+                if not data.get('input_token'):
+                    wrapper = getattr(state, 'typed_context', None)
+                    if wrapper is not None:
+                        data = getattr(wrapper, 'raw_params', data) or data
+                return (self._h5_key(data),)
+                return _DR_UNSET
             data = dict(getattr(state, 'raw_params', None) or {})
-            if not data.get('input_token'):
-                wrapper = getattr(state, 'typed_context', None)
-                if wrapper is not None:
-                    data = getattr(wrapper, 'raw_params', data) or data
-            return self._h5_key(data)
+            _r_dz1665 = _dz1665()
+            if _r_dz1665 is not _DR_UNSET:
+                return _r_dz1665[0]
 
         def is_hollow(self, plan):
             if plan is None:
@@ -126,20 +153,27 @@ def install(base_cls):
             rewrites it, which is why its calldata delivers and a rewritten
             copy does not.
             """
+
+            def _dz1663():
+                if not pieces:
+                    return (None,)
+                return (ExecutionPlan(intent_id=intent.app_id, interactions=pieces, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'apex-hybrid-best', 'chain_id': lane}),)
+                return _DR_UNSET
             lane = int(getattr(state, 'chain_id', 0) or 0)
-            pieces = [Interaction(target=step['target'],
-                                  value=str(step.get('value', '0')),
-                                  call_data=step['data'], chain_id=lane)
-                      for step in steps]
-            if not pieces:
-                return None
-            return ExecutionPlan(intent_id=intent.app_id, interactions=pieces,
-                                 deadline=9999999999, nonce=state.nonce,
-                                 metadata={'solver': 'apex-hybrid-best',
-                                           'chain_id': lane})
+            pieces = [Interaction(target=step['target'], value=str(step.get('value', '0')), call_data=step['data'], chain_id=lane) for step in steps]
+            _r_dz1663 = _dz1663()
+            if _r_dz1663 is not _DR_UNSET:
+                return _r_dz1663[0]
 
         def _h5_cover_or(self, intent, state, ident, hollow, held):
             """Our baked plan for this order, falling back to `held`."""
+
+            def _dz1661():
+                if mine is None:
+                    return (held,)
+                trace.info('[cover] h5 %s', 'fill' if hollow else 'replace')
+                return (mine,)
+                return _DR_UNSET
             steps = self.route_steps(ident)
             if not steps:
                 return held
@@ -148,22 +182,33 @@ def install(base_cls):
             except Exception:
                 trace.exception('[cover] hybrid failed')
                 return held
-            if mine is None:
-                return held
-            trace.info('[cover] h5 %s', 'fill' if hollow else 'replace')
-            return mine
+            _r_dz1661 = _dz1661()
+            if _r_dz1661 is not _DR_UNSET:
+                return _r_dz1661[0]
 
         def generate_plan(self, intent, state, snapshot=None):
+
+            def _dz1659():
+                if ident is None:
+                    return (held,)
+                _r_dz1658 = _dz1658()
+                if _r_dz1658 is not _DR_UNSET:
+                    return (_r_dz1658[0],)
+                return _DR_UNSET
+
+            def _dz1658():
+                hollow = self.is_hollow(held)
+                if not hollow and ident not in self.contest_keys:
+                    return (held,)
+                return (self._h5_cover_or(intent, state, ident, hollow, held),)
+                return _DR_UNSET
             try:
                 held = super().generate_plan(intent, state, snapshot)
             except Exception:
                 trace.exception('[cover] champion raised')
                 held = None
             ident = self.order_id(state)
-            if ident is None:
-                return held
-            hollow = self.is_hollow(held)
-            if not hollow and ident not in self.contest_keys:
-                return held
-            return self._h5_cover_or(intent, state, ident, hollow, held)
+            _r_dz1659 = _dz1659()
+            if _r_dz1659 is not _DR_UNSET:
+                return _r_dz1659[0]
     return _BoundCover
