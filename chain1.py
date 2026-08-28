@@ -4,8 +4,7 @@ from chain1_v2 import _v2_build, _sweep, _v2_best
 from bg124_kira_ext import _beats_champ
 from bg124_kira_ext_v2 import _meets_min_out
 from kira_rr_g1 import _decide
-from bg124_kira_ext_v3 import _mk_plan  # relocated leaf; see that module
-
+from bg124_kira_ext_v3 import _mk_plan
 
 def _rdctx(s, snapshot):
     w3 = s._get_web3(1) or s._get_web3(31337)

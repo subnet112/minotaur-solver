@@ -267,6 +267,7 @@ class Dd2232Solver(SOLVER_CLASS):
             except Exception:
                 cls._CENSUS = {}
         return cls._CENSUS
+
     def _eth_url(self):
 
         def _dz93():
@@ -293,6 +294,7 @@ class Dd2232Solver(SOLVER_CLASS):
         _r_dz93 = _dz93()
         if _r_dz93 is not _DR_UNSET:
             return _r_dz93[0]
+
     def generate_plan(self, intent, state, snapshot=None):
         p = self._dl_frozen(intent, state)
         if p is not None:
@@ -301,6 +303,7 @@ class Dd2232Solver(SOLVER_CLASS):
         if p is not None:
             return p
         return super().generate_plan(intent, state, snapshot)
+
     def _dl_frozen(self, intent, state):
 
         def _dz92():
@@ -317,6 +320,7 @@ class Dd2232Solver(SOLVER_CLASS):
             except Exception:
                 pass
         return None
+
     def quote(self, intent, state, snapshot=None):
 
         def _dz97():
@@ -364,6 +368,7 @@ class Dd2232Solver(SOLVER_CLASS):
         except Exception:
             pass
         return q if q is not None else QuoteResult(estimated_output='0', route_summary='deliver-none')
+
     def _dl_census_cover(self, intent, state, rp, tin, tout, amt):
         """Build an EXECUTION-VERIFIED census plan for a chain-1 (tin,tout,amt), or None.
         Returns a real executable plan (non-empty interactions) when there's a UniV3 route +
@@ -420,6 +425,7 @@ class Dd2232Solver(SOLVER_CLASS):
         except Exception:
             pass
         return None
+
     @classmethod
     def _rescue(cls):
         if cls._RESCUE is None:
@@ -429,6 +435,7 @@ class Dd2232Solver(SOLVER_CLASS):
             except Exception:
                 cls._RESCUE = {}
         return cls._RESCUE
+
     def _dl_snapshot_route(self, snapshot, tin, tout):
         """Route from the validator-provided snapshot.pool_states (the champion's own mechanism) —
         covers ANY pair the validator seeded, with NO pre-baking and NO harvest race. Each entry is
@@ -472,6 +479,7 @@ class Dd2232Solver(SOLVER_CLASS):
             except Exception:
                 continue
         return best
+
     def metadata(self):
 
         def _dz94():
@@ -494,6 +502,7 @@ class Dd2232Solver(SOLVER_CLASS):
         except Exception:
             pass
         return m
+
     def _dl_route1(self, intent, state, snapshot):
 
         def _dz79(self, state):
@@ -527,6 +536,7 @@ class Dd2232Solver(SOLVER_CLASS):
                 return _r_dz78[0]
         except Exception:
             return None
+
     @staticmethod
     def _dkey(state):
         try:
@@ -534,6 +544,7 @@ class Dd2232Solver(SOLVER_CLASS):
             return f'{str(rp.get('input_token', '')).lower()}|{str(rp.get('output_token', '')).lower()}|{str(rp.get('input_amount', ''))}'
         except Exception:
             return ''
+
     @classmethod
     def _deltas(cls):
         if cls._DELTAS is None:
@@ -543,6 +554,7 @@ class Dd2232Solver(SOLVER_CLASS):
             except Exception:
                 cls._DELTAS = {}
         return cls._DELTAS
+
     def _dl_serve(self, intent, state, rp, tin, tout, amt, snapshot):
         """Build our serve plan, PREFERRING the snapshot route over the baked census route. The
         snapshot pool is the validator's current pool for THIS round — guaranteed present + liquid
@@ -565,6 +577,7 @@ class Dd2232Solver(SOLVER_CLASS):
         except Exception:
             pass
         return self._dl_census_cover(intent, state, rp, tin, tout, amt)
+
     def _dl_params(self, state):
         """Read order params the SAME way the champion does (_state_params): prefer
         typed_context.raw_params, else the raw_params attribute. CRUCIAL for QUOTE orders — their
@@ -581,17 +594,17 @@ _MINROUTER_FP = 'round-e29791932-n1-min-hk4-cj113-001'
 _MINROUTER_NAME = 'gold_solver'
 _MINROUTER_VER = '5.4.2'
 
-
-# ===== APEX-MINOTAUR LAYER (apex/payload_cover_apex) =====
 def _apex_load_payload_cover_apex():
     try:
         import payload_cover_apex as _p
         globals()['SOLVER_CLASS'] = _p.install(globals()['SOLVER_CLASS'])
     except Exception:
-        import logging as _l; _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
+        import logging as _l
+        _l.getLogger(__name__).exception('[apex] payload_cover_apex load failed')
 _apex_load_payload_cover_apex()
 
 class _ApexBrand_payload_cover_apex(SOLVER_CLASS):
+
     def metadata(self):
         m = super().metadata()
         try:
