@@ -61,7 +61,7 @@ def _dr142():
     def _dr31():
 
         def _dz248():
-            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "falcon")
+            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "gold_solver")
             SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
             SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', "randy707")
             _FAST_DIRECT_INPUTS = frozenset({_USDBC})
