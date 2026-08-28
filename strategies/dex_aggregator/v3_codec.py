@@ -24,29 +24,17 @@ def _dz192():
 EXACT_INPUT_SINGLE_SELECTOR_V1, EXACT_INPUT_SINGLE_SELECTOR_V2, SWAP_ROUTER_V2_CHAINS, EXACT_INPUT_SELECTOR = _dz192()
 
 def encode_exact_input_single(token_in: str, token_out: str, fee: int, recipient: str, deadline: int, amount_in: int, amount_out_minimum: int, sqrt_price_limit_x96: int=0, chain_id: int=0) -> str:
-    """Encode Uniswap V3 SwapRouter.exactInputSingle calldata.
 
-    Auto-detects SwapRouter version by chain_id:
-    - V1 (Ethereum mainnet, Anvil forks): includes deadline param
-    - V2 (Base, Optimism, Arbitrum): no deadline param
-
-    Args:
-        token_in: Address of the input token (0x-prefixed).
-        token_out: Address of the output token (0x-prefixed).
-        fee: Pool fee tier in hundredths of a bip (e.g. 500, 3000, 10000).
-        recipient: Address that receives the output tokens (0x-prefixed).
-        deadline: Unix timestamp after which the transaction reverts (V1 only).
-        amount_in: Exact amount of input tokens to swap (in wei).
-        amount_out_minimum: Minimum acceptable output amount (in wei).
-        sqrt_price_limit_x96: Price limit for the swap. 0 = no limit.
-        chain_id: Target chain ID. Determines SwapRouter version.
-
-    Returns:
-        The ABI-encoded calldata as a 0x-prefixed hex string.
-    """
-    if chain_id in SWAP_ROUTER_V2_CHAINS:
-        encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
-        return '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V2 + encoded_params).hex()
+    def _dz1603():
+        nonlocal encoded_params
+        'Encode Uniswap V3 SwapRouter.exactInputSingle calldata.\n\n    Auto-detects SwapRouter version by chain_id:\n    - V1 (Ethereum mainnet, Anvil forks): includes deadline param\n    - V2 (Base, Optimism, Arbitrum): no deadline param\n\n    Args:\n        token_in: Address of the input token (0x-prefixed).\n        token_out: Address of the output token (0x-prefixed).\n        fee: Pool fee tier in hundredths of a bip (e.g. 500, 3000, 10000).\n        recipient: Address that receives the output tokens (0x-prefixed).\n        deadline: Unix timestamp after which the transaction reverts (V1 only).\n        amount_in: Exact amount of input tokens to swap (in wei).\n        amount_out_minimum: Minimum acceptable output amount (in wei).\n        sqrt_price_limit_x96: Price limit for the swap. 0 = no limit.\n        chain_id: Target chain ID. Determines SwapRouter version.\n\n    Returns:\n        The ABI-encoded calldata as a 0x-prefixed hex string.\n    '
+        if chain_id in SWAP_ROUTER_V2_CHAINS:
+            encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
+            return ('0x' + (EXACT_INPUT_SINGLE_SELECTOR_V2 + encoded_params).hex(),)
+        return _DR_UNSET
+    _r_dz1603 = _dz1603()
+    if _r_dz1603 is not _DR_UNSET:
+        return _r_dz1603[0]
     encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, deadline, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
     return '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex()
 
@@ -98,12 +86,16 @@ def encode_swap_path(tokens: list[str], fees: list[int]) -> bytes:
     def _dr1():
 
         def _dz401():
-            path = b''
-            for i, token in enumerate(tokens):
+
+            def _dz1602():
+                nonlocal path
                 addr_hex = token[2:] if token.startswith('0x') else token
                 path += bytes.fromhex(addr_hex)
                 if i < len(fees):
                     path += fees[i].to_bytes(3, byteorder='big')
+            path = b''
+            for i, token in enumerate(tokens):
+                _dz1602()
             return (path,)
             return _DR_UNSET
         if len(fees) != len(tokens) - 1:

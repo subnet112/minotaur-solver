@@ -22,14 +22,22 @@ from typing import Any, Callable
 from eth_abi.abi import encode as abi_encode
 
 def _aero_c():
-    logger = logging.getLogger(__name__)
-    AERODROME_SLIPSTREAM_FACTORY: dict[int, str] = {8453: '0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A'}
-    AERODROME_SLIPSTREAM_ROUTER: dict[int, str] = {8453: '0xBE6D8f0d05cC4be24d5167a3eF062215bE6D18a5'}
-    AERODROME_TICK_SPACINGS: tuple[int, ...] = (1, 50, 100, 200, 2000)
+
+    def _dz1428():
+        logger = logging.getLogger(__name__)
+        AERODROME_SLIPSTREAM_FACTORY: dict[int, str] = {8453: '0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A'}
+        AERODROME_SLIPSTREAM_ROUTER: dict[int, str] = {8453: '0xBE6D8f0d05cC4be24d5167a3eF062215bE6D18a5'}
+        AERODROME_TICK_SPACINGS: tuple[int, ...] = (1, 50, 100, 200, 2000)
+    _dz1428()
     globals().update(locals())
 _aero_c()
 
 def _dr4():
+
+    def _dz1426():
+        _EXACT_INPUT_SINGLE_SELECTOR, discover_pools_for_pair = _dr2()
+        _EXACT_INPUT_SELECTOR = bytes.fromhex('c04b8d59')
+        return (_EXACT_INPUT_SELECTOR, _EXACT_INPUT_SINGLE_SELECTOR, discover_pools_for_pair)
 
     def _fw2():
         _FACTORY_ABI = [{'inputs': [{'internalType': 'address', 'name': 'tokenA', 'type': 'address'}, {'internalType': 'address', 'name': 'tokenB', 'type': 'address'}, {'internalType': 'int24', 'name': 'tickSpacing', 'type': 'int24'}], 'name': 'getPool', 'outputs': [{'internalType': 'address', 'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
@@ -65,6 +73,10 @@ def _dr4():
     ``base_query_pool_state`` is accepted for symmetry with the original
     plumbing but is unused; kept so callers don't have to branch.
     """
+
+                    def _dz1424():
+                        return ({'token0': token0, 'token1': token1, 'fee': int(fee), 'tickSpacing': int(tick_spacing), 'sqrtPriceX96': str(slot0[0]), 'tick': int(slot0[1]), 'liquidity': str(liquidity), 'dex': 'aerodrome_slipstream'},)
+                        return _DR_UNSET
                     del base_query_pool_state
                     try:
 
@@ -73,12 +85,18 @@ def _dr4():
                             slot0 = pool.functions.slot0().call()
 
                             def _fw3():
+
+                                def _dz1418():
+                                    token0 = pool.functions.token0().call()
+                                    token1 = pool.functions.token1().call()
+                                    tick_spacing = pool.functions.tickSpacing().call()
+                                    return (((fee, liquidity, slot0, tick_spacing, token0, token1),),)
+                                    return _DR_UNSET
                                 liquidity = pool.functions.liquidity().call()
                                 fee = pool.functions.fee().call()
-                                token0 = pool.functions.token0().call()
-                                token1 = pool.functions.token1().call()
-                                tick_spacing = pool.functions.tickSpacing().call()
-                                return ((fee, liquidity, slot0, tick_spacing, token0, token1),)
+                                _r_dz1418 = _dz1418()
+                                if _r_dz1418 is not _DR_UNSET:
+                                    return _r_dz1418[0]
                             _fwr3 = _fw3()
                             if _fwr3 is not None:
                                 return _fwr3[0]
@@ -86,7 +104,9 @@ def _dr4():
                     except Exception as exc:
                         logger.debug('Slipstream pool query failed for %s: %s', pool_address, exc)
                         return None
-                    return {'token0': token0, 'token1': token1, 'fee': int(fee), 'tickSpacing': int(tick_spacing), 'sqrtPriceX96': str(slot0[0]), 'tick': int(slot0[1]), 'liquidity': str(liquidity), 'dex': 'aerodrome_slipstream'}
+                    _r_dz1424 = _dz1424()
+                    if _r_dz1424 is not _DR_UNSET:
+                        return _r_dz1424[0]
 
                 def _dr7():
 
@@ -100,32 +120,60 @@ def _dr4():
     The discovered pool states are merged into ``pool_states`` (mutated
     in place) with the ``dex='aerodrome_slipstream'`` marker.
     """
+
+                        def _dz1422():
+                            if w3 is None or w3.eth.get_code(w3.to_checksum_address(factory_addr)) == b'':
+                                return (pool_states,)
+                            return _DR_UNSET
                         if not _is_supported_chain(chain_id):
                             return pool_states
                         factory_addr = AERODROME_SLIPSTREAM_FACTORY[chain_id]
-                        if w3 is None or w3.eth.get_code(w3.to_checksum_address(factory_addr)) == b'':
-                            return pool_states
+                        _r_dz1422 = _dz1422()
+                        if _r_dz1422 is not _DR_UNSET:
+                            return _r_dz1422[0]
                         a_lower, b_lower = (token_a.lower(), token_b.lower())
 
                         def _dr5():
-                            cache_key = (chain_id, 'aero_slip', min(a_lower, b_lower), max(a_lower, b_lower))
-                            now = time.time()
-                            if discovery_cache is not None:
-                                if now - discovery_cache.get(cache_key, 0) < cache_ttl:
-                                    return pool_states
-                            factory = w3.eth.contract(address=w3.to_checksum_address(factory_addr), abi=_FACTORY_ABI)
+
+                            def _dz1421():
+                                factory = w3.eth.contract(address=w3.to_checksum_address(factory_addr), abi=_FACTORY_ABI)
+                                return factory
+
+                            def _dz1420():
+                                if discovery_cache is not None:
+                                    if now - discovery_cache.get(cache_key, 0) < cache_ttl:
+                                        return (pool_states,)
+                                return _DR_UNSET
+
+                            def _dz1419():
+                                cache_key = (chain_id, 'aero_slip', min(a_lower, b_lower), max(a_lower, b_lower))
+                                now = time.time()
+                                return (cache_key, now)
+                            cache_key, now = _dz1419()
+                            _r_dz1420 = _dz1420()
+                            if _r_dz1420 is not _DR_UNSET:
+                                return _r_dz1420[0]
+                            factory = _dz1421()
 
                             def _dr3():
                                 discovered = 0
 
                                 def _dr10():
+
+                                    def _dz1417(ts):
+                                        pool_addr = factory.functions.getPool(w3.to_checksum_address(token_a), w3.to_checksum_address(token_b), ts).call()
+                                        return pool_addr
+
+                                    def _dz1416():
+                                        nonlocal rpc_errors
+                                        logger.debug('Aerodrome factory.getPool(%s, %s, ts=%d) failed: %s', token_a[:10], token_b[:10], ts, exc)
+                                        rpc_errors += 1
                                     rpc_errors = 0
                                     for ts in AERODROME_TICK_SPACINGS:
                                         try:
-                                            pool_addr = factory.functions.getPool(w3.to_checksum_address(token_a), w3.to_checksum_address(token_b), ts).call()
+                                            pool_addr = _dz1417(ts)
                                         except Exception as exc:
-                                            logger.debug('Aerodrome factory.getPool(%s, %s, ts=%d) failed: %s', token_a[:10], token_b[:10], ts, exc)
-                                            rpc_errors += 1
+                                            _dz1416()
                                             continue
 
                                         def _fw3():
@@ -171,8 +219,7 @@ def _dr4():
             return _dr12
         _EXACT_INPUT_SINGLE_SELECTOR = bytes.fromhex('a026383e')
         return (_EXACT_INPUT_SINGLE_SELECTOR, discover_pools_for_pair)
-    _EXACT_INPUT_SINGLE_SELECTOR, discover_pools_for_pair = _dr2()
-    _EXACT_INPUT_SELECTOR = bytes.fromhex('c04b8d59')
+    _EXACT_INPUT_SELECTOR, _EXACT_INPUT_SINGLE_SELECTOR, discover_pools_for_pair = _dz1426()
 
     def encode_exact_input_single(token_in: str, token_out: str, tick_spacing: int, recipient: str, deadline: int, amount_in: int, amount_out_minimum: int, sqrt_price_limit_x96: int=0) -> str:
         """Encode Slipstream SwapRouter.exactInputSingle calldata."""
@@ -191,13 +238,16 @@ def _dr4():
             raise ValueError('encode_path: need len(tokens) == len(tick_spacings) + 1')
 
         def _fw1():
-            out = bytearray()
-            for i, tok in enumerate(tokens):
-                addr_hex = tok[2:] if tok.startswith('0x') else tok
+
+            def _dz1425():
                 out.extend(bytes.fromhex(addr_hex.zfill(40)))
                 if i < len(tick_spacings):
                     ts = int(tick_spacings[i])
                     out.extend((ts & 16777215).to_bytes(3, 'big'))
+            out = bytearray()
+            for i, tok in enumerate(tokens):
+                addr_hex = tok[2:] if tok.startswith('0x') else tok
+                _dz1425()
             return (out,)
         out, = _fw1()
         return bytes(out)
