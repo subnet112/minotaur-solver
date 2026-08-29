@@ -3,24 +3,46 @@ from lat_rescall_ext import _res_call
 
 def _v_v2_out(s, pair, amt_in, in_is_t0, chain_id):
     """UniswapV2-style pair forward quote from getReserves (997/1000 fee)."""
+
+    def _dz2446():
+        ai = int(amt_in) * 997
+        return (ai * rout // (rin * 1000 + ai) or None,)
+        return _DR_UNSET
+
+    def _dz2445(in_is_t0, res):
+        rin, rout = (res[0], res[1]) if in_is_t0 else (res[1], res[0])
+        return (rin, rout)
     try:
         res = _res_call(s, pair, chain_id)
         if res is None:
             return None
-        rin, rout = (res[0], res[1]) if in_is_t0 else (res[1], res[0])
-        ai = int(amt_in) * 997
-        return ai * rout // (rin * 1000 + ai) or None
+        rin, rout = _dz2445(in_is_t0, res)
+        _r_dz2446 = _dz2446()
+        if _r_dz2446 is not _DR_UNSET:
+            return _r_dz2446[0]
     except Exception:
         return None
 
 def _v_bs_quote(s, venue, param, tin, tout, amt, chain_id):
     """Same-block forward quote of one single-hop candidate via the engine's
     own quoters; None on any failure (absent pool / no liquidity)."""
-    try:
+
+    def _dz2444():
         if venue == 'aerodrome_slipstream':
-            return slip_quote(s, int(param), tin, tout, amt, chain_id)
+            return (slip_quote(s, int(param), tin, tout, amt, chain_id),)
+        return _DR_UNSET
+
+    def _dz2443():
         router = 'pancake' if venue == 'pancake_v3' else 'uni'
-        return s._hydra_quote_leg1({'leg1_router': router, 'leg1_fee': int(param), 'mid': tout}, tin, amt, chain_id)
+        return (s._hydra_quote_leg1({'leg1_router': router, 'leg1_fee': int(param), 'mid': tout}, tin, amt, chain_id),)
+        return _DR_UNSET
+    try:
+        _r_dz2444 = _dz2444()
+        if _r_dz2444 is not _DR_UNSET:
+            return _r_dz2444[0]
+        _r_dz2443 = _dz2443()
+        if _r_dz2443 is not _DR_UNSET:
+            return _r_dz2443[0]
     except Exception:
         return None
 
@@ -81,21 +103,41 @@ def _e1_qdata(path_hex, amt):
 
 def _v_e1_qpath(s, path_hex, amt, chain_id):
     """Forward quote of a packed v3 path on chain 1; None off-chain-1 or on failure."""
+
+    def _dz2441(s):
+        w3 = s._get_web3(1) or s._get_web3(31337)
+        _r_dz2440 = _dz2440()
+        return (_r_dz2440, w3)
+
+    def _dz2440():
+        if w3 is None:
+            return (None,)
+        _r_dz2439 = _dz2439()
+        if _r_dz2439 is not _DR_UNSET:
+            return (_r_dz2439[0],)
+        return _DR_UNSET
+
+    def _dz2439():
+        r = w3.eth.call({'to': _ck(_V_E1_QUOTER), 'data': _e1_qdata(path_hex, amt)})
+        return (_dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0] or None,)
+        return _DR_UNSET
     try:
         if int(chain_id) != 1:
             return None
         from eth_abi import decode as _dec
         from eth_utils import to_checksum_address as _ck
         from shape_lib2 import _V_E1_QUOTER
-        w3 = s._get_web3(1) or s._get_web3(31337)
-        if w3 is None:
-            return None
-        r = w3.eth.call({'to': _ck(_V_E1_QUOTER), 'data': _e1_qdata(path_hex, amt)})
-        return _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)[0] or None
+        _r_dz2440, w3 = _dz2441(s)
+        if _r_dz2440 is not _DR_UNSET:
+            return _r_dz2440[0]
     except Exception:
         return None
 
 def _slip_call(s, ts, tin, tout, amt, chain_id, quoter):
+
+    def _dz2437():
+        return (w3.eth.call({'to': _ck(quoter or _AERO_QUOTER), 'data': '0x' + (sel + params).hex()}),)
+        return _DR_UNSET
     from eth_abi import encode as _enc
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
     from king_consts import _AERO_QUOTER
@@ -104,18 +146,26 @@ def _slip_call(s, ts, tin, tout, amt, chain_id, quoter):
         return None
     sel = _keccak(text='quoteExactInputSingle((address,address,uint256,int24,uint160))')[:4]
     params = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amt), int(ts), 0)])
-    return w3.eth.call({'to': _ck(quoter or _AERO_QUOTER), 'data': '0x' + (sel + params).hex()})
+    _r_dz2437 = _dz2437()
+    if _r_dz2437 is not _DR_UNSET:
+        return _r_dz2437[0]
 
 def slip_quote(s, ts, tin, tout, amt, chain_id, quoter=None):
     """Slipstream-family quoter exact-in single — int24 tickSpacing selector
     (the lineage's uint24 variant reverts on every pool). `quoter` overrides the
     canonical deployment for CLFactory variants (factory3 etc)."""
+
+    def _dz2435():
+        if r is None:
+            return (None,)
+        out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], r)[0])
+        return (out if out > 0 else None,)
+        return _DR_UNSET
     try:
         from eth_abi import decode as _dec
         r = _slip_call(s, ts, tin, tout, amt, chain_id, quoter)
-        if r is None:
-            return None
-        out = int(_dec(['uint256', 'uint160', 'uint32', 'uint256'], r)[0])
-        return out if out > 0 else None
+        _r_dz2435 = _dz2435()
+        if _r_dz2435 is not _DR_UNSET:
+            return _r_dz2435[0]
     except Exception:
         return None

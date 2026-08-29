@@ -8,6 +8,7 @@ keeps regressing can be disabled outright. This is the closed loop:
     bench -> read champ-vs-ours per order -> tighten -> resubmit.
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import json as _json, os as _os
 _PATH = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'cover_state.json')
 _CACHE: dict | None = None
@@ -52,18 +53,36 @@ def base_untrusted(base) -> bool:
     """True if the champion's base plan routes through the Universal Router / V4 — viking_sim
     can't measure those bare, so any sim comparison against this base is a lie. Covers MUST
     defer (return the champion's plan untouched) when this is True, to avoid phantom-win drops."""
-    for ix in getattr(base, 'interactions', None) or []:
+
+    def _dz975():
+        _r_dz974 = _dz974()
+        if _r_dz974 is not _DR_UNSET:
+            return (_r_dz974[0],)
+        _r_dz973 = _dz973()
+        if _r_dz973 is not _DR_UNSET:
+            return (_r_dz973[0],)
+        return _DR_UNSET
+
+    def _dz974():
         try:
             if str(getattr(ix, 'target', '') or '').lower() in _UNIVERSAL_ROUTERS:
-                return True
+                return (True,)
         except Exception:
             pass
+        return _DR_UNSET
+
+    def _dz973():
         try:
             cd = (getattr(ix, 'call_data', '') or '').lower()
             if any((cd.startswith(s) for s in _UR_SELECTORS)):
-                return True
+                return (True,)
         except Exception:
             pass
+        return _DR_UNSET
+    for ix in getattr(base, 'interactions', None) or []:
+        _r_dz975 = _dz975()
+        if _r_dz975 is not _DR_UNSET:
+            return _r_dz975[0]
     return False
 _CROSSCHAIN_MARKERS = ('legs', 'bridge_requests', 'forward_legs', 'rollback_legs', 'src_chain_id', 'dst_chain_id', 'revert_legs')
 

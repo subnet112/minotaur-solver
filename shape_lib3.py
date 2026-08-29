@@ -25,8 +25,12 @@ def _sv3_path(spec, tout):
     return bytes.fromhex(spec['mid1'][2:]) + int(spec['f2']).to_bytes(3, 'big') + bytes.fromhex(spec['mid2'][2:]) + int(spec['f3']).to_bytes(3, 'big') + bytes.fromhex(tout[2:])
 
 def _sv3_parts(spec, tin, tout, amt, exec_addr, chain_id):
+
+    def _dz2475(chain_id, spec):
+        slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+        return slip_router
     from strategies.dex_aggregator import aerodrome as _aero
-    slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+    slip_router = _dz2475(chain_id, spec)
     leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid1'], tick_spacing=int(spec['slip_ts']), recipient=exec_addr, deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
     return (slip_router, leg1, _sv3_path(spec, tout))
 
@@ -37,49 +41,75 @@ def _v_build_sv3(spec, tin, tout, amt, q1, exec_addr, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX
 
     def _sv3_leg2(path, q1, rcpt):
+
+        def _dz2464():
+            return ('0x' + (sel + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(rcpt), int(q1), 0)])).hex(),)
+            return _DR_UNSET
         from eth_abi import encode as _enc
         from eth_utils import keccak as _keccak, to_checksum_address as _ck
         sel = _keccak(text='exactInput((bytes,address,uint256,uint256))')[:4]
-        return '0x' + (sel + _enc(['(bytes,address,uint256,uint256)'], [(path, _ck(rcpt), int(q1), 0)])).hex()
+        _r_dz2464 = _dz2464()
+        if _r_dz2464 is not _DR_UNSET:
+            return _r_dz2464[0]
     slip_router, leg1, path = _sv3_parts(spec, tin, tout, amt, exec_addr, chain_id)
     uni_r = _V_V3_ROUTERS['uni']
 
     def _dr347(rcpt):
-        leg2 = _sv3_leg2(path, q1, rcpt)
+
+        def _dz2463(rcpt):
+            leg2 = _sv3_leg2(path, q1, rcpt)
+            return leg2
+        leg2 = _dz2463(rcpt)
         return [_IX(target=tin, value='0', call_data=encode_approve(_ck(slip_router), int(amt)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid1'], value='0', call_data=encode_approve(_ck(uni_r), int(q1)), chain_id=chain_id), _IX(target=uni_r, value='0', call_data=leg2, chain_id=chain_id)]
     return _dr347
 
 def _vs2_leg1(spec, tin, amt):
+
+    def _dz2473():
+        sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4]
+        return sel
     from eth_abi import encode as _enc
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))')[:4]
+    sel = _dz2473()
     return '0x' + (sel + _enc(['(address,address,uint24,address,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['l1_fee']), '0x0000000000000000000000000000000000000001', int(amt), 0, 0)])).hex()
 
 def _v_build_vs2(spec, tin, tout, amt, q1, chain_id):
     """2-leg vs2 row builder (v3 sentinel leg1, slipstream leg2)."""
+
+    def _dz2472(amt, chain_id, spec, tin):
+        uni_r = '0x2626664c2603336E57B271c5C0b26F421741e481'
+        slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+        leg1 = _vs2_leg1(spec, tin, amt)
+        return (leg1, slip_router, uni_r)
     from eth_utils import to_checksum_address as _ck
     from strategies.dex_aggregator import aerodrome as _aero
     from common.abi_utils import encode_approve
     from minotaur_subnet.shared.types import Interaction as _IX
-    uni_r = '0x2626664c2603336E57B271c5C0b26F421741e481'
-    slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
-    leg1 = _vs2_leg1(spec, tin, amt)
+    leg1, slip_router, uni_r = _dz2472(amt, chain_id, spec, tin)
 
     def _dr343(rcpt):
+
+        def _dz2462(rcpt):
+            leg2 = _aero.encode_exact_input_single(token_in=spec['mid'], token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=rcpt, deadline=9999999999, amount_in=int(q1), amount_out_minimum=0)
+            return leg2
 
         def _dz297():
             return ([_IX(target=tin, value='0', call_data=encode_approve(_ck(uni_r), int(amt)), chain_id=chain_id), _IX(target=uni_r, value='0', call_data=leg1, chain_id=chain_id), _IX(target=spec['mid'], value='0', call_data=encode_approve(_ck(slip_router), int(q1)), chain_id=chain_id), _IX(target=slip_router, value='0', call_data=leg2, chain_id=chain_id)],)
             return _DR_UNSET
-        leg2 = _aero.encode_exact_input_single(token_in=spec['mid'], token_out=tout, tick_spacing=int(spec['slip_ts']), recipient=rcpt, deadline=9999999999, amount_in=int(q1), amount_out_minimum=0)
+        leg2 = _dz2462(rcpt)
         _r_dz297 = _dz297()
         if _r_dz297 is not _DR_UNSET:
             return _r_dz297[0]
     return _dr343
 
 def _p2_leg1(spec, tin, amt):
+
+    def _dz2471():
+        sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))')[:4]
+        return sel
     from eth_abi import encode as _enc
     from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    sel = _keccak(text='exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))')[:4]
+    sel = _dz2471()
     return '0x' + (sel + _enc(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(_ck(tin), _ck(spec['mid']), int(spec['l1_fee']), _ck(spec['pair']), 9999999999, int(amt), 0, 0)])).hex()
 
 def _v_build_p2(spec, tin, tout, amt, est, chain_id):
@@ -100,18 +130,28 @@ def _a3_leg2(spec, q1, chain_id):
     return _aero.encode_exact_input_single(token_in=spec['mid1'], token_out=spec['mid2'], tick_spacing=int(spec['slip_ts']), recipient=spec['pair'], deadline=9999999999, amount_in=int(q1), amount_out_minimum=0)
 
 def _a3_parts(spec, tin, amt, q1, est, chain_id):
+
+    def _dz2468(amt, chain_id, spec, tin):
+        leg1 = _vs2_leg1(dict(spec, mid=spec['mid1']), tin, amt)
+        slip_router = _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+        return (leg1, slip_router)
     from strategies.dex_aggregator import aerodrome as _aero
-    leg1 = _vs2_leg1(dict(spec, mid=spec['mid1']), tin, amt)
-    slip_router = _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+    leg1, slip_router = _dz2468(amt, chain_id, spec, tin)
     a0, a1 = (int(est), 0) if int(spec['out_index']) == 0 else (0, int(est))
     return (leg1, slip_router, _a3_leg2(spec, q1, chain_id), a0, a1)
 
 def _a3_head(tin, amt, leg1, chain_id):
+
+    def _dz2467():
+        return ([_IX(target=tin, value='0', call_data=encode_approve(_ck(uni), int(amt)), chain_id=chain_id), _IX(target=uni, value='0', call_data=leg1, chain_id=chain_id)],)
+        return _DR_UNSET
     from eth_utils import to_checksum_address as _ck
     from common.abi_utils import encode_approve
     from minotaur_subnet.shared.types import Interaction as _IX
     uni = '0x2626664c2603336E57B271c5C0b26F421741e481'
-    return [_IX(target=tin, value='0', call_data=encode_approve(_ck(uni), int(amt)), chain_id=chain_id), _IX(target=uni, value='0', call_data=leg1, chain_id=chain_id)]
+    _r_dz2467 = _dz2467()
+    if _r_dz2467 is not _DR_UNSET:
+        return _r_dz2467[0]
 
 def _a3_ixs(spec, tin, amt, q1, parts, rcpt, chain_id):
     from eth_utils import to_checksum_address as _ck
@@ -133,7 +173,11 @@ def build_s2(spec, tin, tout, amt, q1, est, chain_id):
     """2-leg s2 row builder (slip leg paid to the pair, pair.swap)."""
 
     def _dz298(amt, chain_id, spec, tin):
-        slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+
+        def _dz2461(chain_id, spec):
+            slip_router = spec.get('r') or _aero.AERODROME_SLIPSTREAM_ROUTER[chain_id]
+            return slip_router
+        slip_router = _dz2461(chain_id, spec)
         leg1 = _aero.encode_exact_input_single(token_in=tin, token_out=spec['mid'], tick_spacing=int(spec['slip_ts']), recipient=spec['pair'], deadline=9999999999, amount_in=int(amt), amount_out_minimum=0)
         return (leg1, slip_router)
     from eth_utils import to_checksum_address as _ck
