@@ -100,42 +100,12 @@ reads both. Every other order takes one dict read and one `in` test, then the
 identical path it takes today.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 import logging
 import time
-
 logger = logging.getLogger(__name__)
-
-# The champion-blind rows of round-e29795066-n1 that are arithmetically winnable.
-# An id leaves this tuple only when a SCORED verdict stops calling it champion-
-# blind; adding one needs the same evidence, a `champ: "0"` OR a `champ: null`
-# row in a scored report — the adoption rule does not distinguish the two (see
-# the module docstring) — plus the id still being present in a live draw. Do not
-# widen it to a pair or a token.
-_BLIND_ORDER_IDS = (
-    "ord_4e9e550239ec41d5",
-    "ord_7dc3630137ea4c7c",
-    "ord_9c399716c1354e28",
-    "ord_211bd4c968e343d0",
-)
-
-# A re-quote is a live Multicall3 round trip, so it is charged against a pot of
-# its own rather than solver.py's 12s cover budget — sharing one would let
-# either path starve the other. The pot is a RUN pot, tested BEFORE the call, so
-# it has to hold EVERY row in `_BLIND_ORDER_IDS` or the last one silently never
-# escalates: at the 5.0s bg124_onfork measures when its phase-2 batch fires, a
-# 6.0s pot let row one and row two through and then read 10.0s >= 6.0 and
-# declined row three.
-#
-# Sized for FOUR rows, not three. Because the test is BEFORE the call, row N runs
-# iff (N-1) * per_row < the pot, so 24.0 admits all four at anything under 8.0s
-# each — a 60% margin over the measured 5.0s, and the chain-1 row is the one that
-# actually spends the Curve leg. Two batched calls per row against four rows is
-# the whole exposure, and each row is a SEPARATE plan with its own 30s harness
-# kill — the pot bounds the 900s run clock, not any single plan, and one row's
-# two eth_calls are nowhere near 30s.
+_BLIND_ORDER_IDS = ('ord_4e9e550239ec41d5', 'ord_7dc3630137ea4c7c', 'ord_9c399716c1354e28', 'ord_211bd4c968e343d0')
 _ESCALATE_BUDGET_S = 24.0
-
 
 def _scenario_label(state):
     """The row label this plan was requested under, or "" when there is none.
@@ -144,23 +114,27 @@ def _scenario_label(state):
     are read because a tree rebased onto an older base may carry only one, and a
     label we cannot find must degrade to "no escalation" — never to a raise on
     the champion's own plan path."""
-    for name in ("control_view", "control"):
+
+    def _dz581():
+        ctl = getattr(state, name, None)
+        ctl = ctl() if callable(ctl) else ctl
+        label = str((ctl or {}).get('_scenario_name', '') or '')
+        if label:
+            return (label,)
+        return _DR_UNSET
+    for name in ('control_view', 'control'):
         try:
-            ctl = getattr(state, name, None)
-            ctl = ctl() if callable(ctl) else ctl
-            label = str((ctl or {}).get("_scenario_name", "") or "")
-            if label:
-                return label
+            _r_dz581 = _dz581()
+            if _r_dz581 is not _DR_UNSET:
+                return _r_dz581[0]
         except Exception:
             continue
-    return ""
-
+    return ''
 
 def _is_blind_row(state):
     """True only for the validator-confirmed champion-blind orders above."""
     label = _scenario_label(state)
-    return bool(label) and any(oid in label for oid in _BLIND_ORDER_IDS)
-
+    return bool(label) and any((oid in label for oid in _BLIND_ORDER_IDS))
 
 def _requote(solver, intent, state):
     """bg124_onfork's multi-venue fork quote, taken at the champion-empty bar
@@ -191,9 +165,8 @@ def _requote(solver, intent, state):
         import bg124_onfork
         return bg124_onfork.try_cover(solver, intent, state, 0, True)
     except Exception:
-        logger.exception("[besc] re-quote failed; base plan stands")
+        logger.exception('[besc] re-quote failed; base plan stands')
         return None
-
 
 def install(base_cls):
     """Wrap `base_cls` so a champion-zero row is re-quoted after the stack.
@@ -214,14 +187,18 @@ def install(base_cls):
 
         def _besc_requote(self, intent, state):
             """Re-quote under this layer's own pace pot. None leaves the plan."""
-            if getattr(self, "_besc_secs", 0.0) >= _ESCALATE_BUDGET_S:
+
+            def _dz580():
+                try:
+                    cand = _requote(self, intent, state)
+                    return (cand if getattr(cand, 'interactions', None) else None,)
+                finally:
+                    self._besc_secs = getattr(self, '_besc_secs', 0.0) + time.monotonic() - t0
+                return _DR_UNSET
+            if getattr(self, '_besc_secs', 0.0) >= _ESCALATE_BUDGET_S:
                 return None
             t0 = time.monotonic()
-            try:
-                cand = _requote(self, intent, state)
-                return cand if getattr(cand, "interactions", None) else None
-            finally:
-                self._besc_secs = (
-                    getattr(self, "_besc_secs", 0.0) + time.monotonic() - t0)
-
+            _r_dz580 = _dz580()
+            if _r_dz580 is not _DR_UNSET:
+                return _r_dz580[0]
     return _BlindEscalate

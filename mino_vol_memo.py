@@ -88,36 +88,13 @@ we only plan, but it is the single read whose caller may reasonably expect it to
 after a send, so it keeps going to the node -- the saving is not worth owning that
 argument. Anything that writes is not a read and was never a candidate.
 """
-
+_DR_UNSET = object()
 import json as _json
-
-# Reads that cannot change inside one pinned-block planning window. Routed here by
-# min_amt_alias._mino_route; anything absent from this set goes straight to the node.
-MEMOABLE = frozenset((
-    'eth_call', 'eth_getStorageAt', 'eth_getCode', 'eth_getBalance',
-    'eth_getBlockByNumber', 'eth_getLogs',
-    'eth_blockNumber', 'eth_gasPrice', 'net_version',
-))
-
-# Reads whose answer is WRITE-ONCE outlive the plan window and are banked in
-# `_STICKY`. There are two such classes and each carries its own argument: the
-# factory selectors below, and a non-empty eth_getCode (see `_sticky_code`).
-# Both are promoted on a HIT ONLY -- an absence is true of a block, not of the
-# chain, so it stays in the per-plan table.
-#
-# Factory lookups whose answer is WRITE-ONCE, so a HIT outlives the plan window.
-# Uniswap-V3 getPool(address,address,uint24) and V2 getPair(address,address): a
-# factory mapping is assigned when the pool is deployed and never reassigned, so
-# once the node has told us (t0, t1, fee) -> P at this fork, it returns P at every
-# later block too. Aerodrome Slipstream's getPool(address,address,int24) is a
-# DIFFERENT selector and is deliberately absent -- it is not guessed here, and a
-# missing selector costs only the per-plan behaviour this file already had.
+MEMOABLE = frozenset(('eth_call', 'eth_getStorageAt', 'eth_getCode', 'eth_getBalance', 'eth_getBlockByNumber', 'eth_getLogs', 'eth_blockNumber', 'eth_gasPrice', 'net_version'))
 STICKY_SELECTORS = frozenset(('1698ee82', 'e6a43905'))
-
 _BY_KEY = {}
 _STICKY = {}
 _GEN = [0]
-
 
 def new_plan():
     """Open a fresh window. Called once per generate_plan, from solver.py.
@@ -135,7 +112,6 @@ def new_plan():
     _BY_KEY.clear()
     _GEN[0] += 1
 
-
 def _key(provider, method, params):
     """Canonical key for one memoable read inside the current window, or None.
 
@@ -150,19 +126,13 @@ def _key(provider, method, params):
         helpers it calls: this body would otherwise count against
         `_mino_make_request`, the caller two frames up and the file's largest."""
         try:
-            uri = getattr(provider, "endpoint_uri", None)
+            uri = getattr(provider, 'endpoint_uri', None)
             if uri is None:
                 return None
-            # Empty params is a KEY, not a skip: eth_blockNumber, eth_gasPrice and
-            # net_version all take none, and they are the round trips web3 repeats
-            # most. Guarding on `not params` (correct while eth_call was the only
-            # caller, where empty params is malformed) would drop exactly those.
-            return (str(uri), method,
-                    _json.dumps(params or [], sort_keys=True, default=repr))
+            return (str(uri), method, _json.dumps(params or [], sort_keys=True, default=repr))
         except Exception:
             return None
     return _canonical()
-
 
 def cached_call(provider, orig, method, params):
     """Serve `method` from this plan's window when we have already asked for it.
@@ -170,17 +140,26 @@ def cached_call(provider, orig, method, params):
     Fail-open throughout: any key we cannot build, and any response we are not
     certain of, goes to the node exactly as it does today.
     """
+
+    def _dz1632():
+        if key is None:
+            return (orig(provider, method, params),)
+        _r_dz1631 = _dz1631()
+        if _r_dz1631 is not _DR_UNSET:
+            return (_r_dz1631[0],)
+        return _DR_UNSET
+
+    def _dz1631():
+        hit = _BY_KEY.get(key)
+        if hit is None:
+            hit = _STICKY.get(key)
+        if hit is not None:
+            return (dict(hit),)
+        return _DR_UNSET
     key = _key(provider, method, params)
-    if key is None:
-        return orig(provider, method, params)
-    hit = _BY_KEY.get(key)
-    if hit is None:
-        # A factory hit banked by an EARLIER plan. Same key shape, so the block
-        # tag is part of it: an explicit-number query can never collide with the
-        # 'latest' one that banked the entry.
-        hit = _STICKY.get(key)
-    if hit is not None:
-        return dict(hit)
+    _r_dz1632 = _dz1632()
+    if _r_dz1632 is not _DR_UNSET:
+        return _r_dz1632[0]
 
     def _worth_caching(out):
         """True for any answer the node actually returned. Nested for the same
@@ -235,10 +214,10 @@ def cached_call(provider, orig, method, params):
         the rest of the plan -- the one way this memo could cost an adoption.
         """
         try:
-            if not isinstance(err, dict) or err.get("code") != 3:
+            if not isinstance(err, dict) or err.get('code') != 3:
                 return False
-            msg = err.get("message")
-            return isinstance(msg, str) and "execution reverted" in msg
+            msg = err.get('message')
+            return isinstance(msg, str) and 'execution reverted' in msg
         except Exception:
             return False
 
@@ -269,7 +248,7 @@ def cached_call(provider, orig, method, params):
         try:
             if method != 'eth_getCode':
                 return
-            out = res.get("result")
+            out = res.get('result')
             if isinstance(out, str) and len(out) > 2:
                 _STICKY[key] = dict(res)
         except Exception:
@@ -294,19 +273,39 @@ def cached_call(provider, orig, method, params):
         '0x' raises in int() and is caught here, so an absent contract can never
         become sticky by another door.
         """
+
+        def _dz1629():
+            call = (params or [None])[0]
+            return call
+
+        def _dz1628(call):
+            data = call.get('data') or call.get('input') or ''
+            _r_dz1627 = _dz1627()
+            return (_r_dz1627, data)
+
+        def _dz1627():
+            _r_dz1626 = _dz1626()
+            if _r_dz1626 is not _DR_UNSET:
+                return (_r_dz1626[0],)
+            _STICKY[key] = dict(res)
+            return _DR_UNSET
+
+        def _dz1626():
+            if data[2:10].lower() not in STICKY_SELECTORS:
+                return (None,)
+            out = res.get('result')
+            if not isinstance(out, str) or int(out, 16) == 0:
+                return (None,)
+            return _DR_UNSET
         try:
             if method != 'eth_call':
                 return
-            call = (params or [None])[0]
+            call = _dz1629()
             if not isinstance(call, dict):
                 return
-            data = call.get("data") or call.get("input") or ""
-            if data[2:10].lower() not in STICKY_SELECTORS:
-                return
-            out = res.get("result")
-            if not isinstance(out, str) or int(out, 16) == 0:
-                return
-            _STICKY[key] = dict(res)
+            _r_dz1627, data = _dz1628(call)
+            if _r_dz1627 is not _DR_UNSET:
+                return _r_dz1627[0]
         except Exception:
             pass
 
@@ -317,25 +316,20 @@ def cached_call(provider, orig, method, params):
         this function's body counts against `_mino_make_request` upstream; a
         nested def is the split point that keeps the merged region off the wall.
         """
+
+        def _dz1625():
+            if not err:
+                if _worth_caching(res.get('result')):
+                    _BY_KEY[key] = dict(res)
+                    _sticky_put(res)
+                    _sticky_code(res)
+            elif _worth_caching_error(err):
+                _BY_KEY[key] = dict(res)
         res = orig(provider, method, params)
         try:
-            # SUCCESSFUL and NON-EMPTY, or a deterministic revert. Copy in and
-            # out so a caller that mutates the response cannot poison the entry
-            # behind it. See `_worth_caching` / `_worth_caching_error` for what
-            # counts as certain on each side.
             if isinstance(res, dict):
-                err = res.get("error")
-                if not err:
-                    if _worth_caching(res.get("result")):
-                        _BY_KEY[key] = dict(res)
-                        # Two write-once classes, two sibling helpers: calling
-                        # them from here rather than chaining one into the other
-                        # keeps each its own region. Chaining cost 4 nodes on
-                        # `_sticky_put`, which sits on this tree's 123 wall.
-                        _sticky_put(res)
-                        _sticky_code(res)
-                elif _worth_caching_error(err):
-                    _BY_KEY[key] = dict(res)
+                err = res.get('error')
+                _dz1625()
         except Exception:
             pass
         return res
