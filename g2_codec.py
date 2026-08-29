@@ -45,32 +45,32 @@ def _v3_swap_cd(spec, rcpt) -> str:
     args = _enc(['(bytes,address,uint256,uint256,uint256)'], [(_pack_path(spec['tokens'], spec.get('fees') or []), _ck(rcpt), 9999999999, int(spec['amt_in']), 0)])
     return '0x' + (sel + args).hex()
 
-def _curve_swap_cd(hop, rcpt=None) -> str:
-
-    def _c_curve_swap_cd_0(hop, rcpt):
-
-        def _dz65():
-            recv = hop.get('recv') if rcpt is not None else None
-            recv = '6a' if recv == '6a' else bool(recv)
-            sig, types = _curve_abi(hop.get('flavor') or 'stable', recv)
-            sel = _keccak(text=sig)[:4]
-            args = _curve_args(i, j, dx, recv, rcpt, _ck)
-            return ((_enc, args, sel, types),)
-            return _DR_UNSET
-        from eth_abi import encode as _enc
-        from eth_utils import keccak as _keccak, to_checksum_address as _ck
-        dx, i, j = (int(hop['dx']), int(hop['i']), int(hop['j']))
-        _r_dz65 = _dz65()
-        if _r_dz65 is not _DR_UNSET:
-            return _r_dz65[0]
-    _enc, args, sel, types = _c_curve_swap_cd_0(hop, rcpt)
-    return '0x' + (sel + _enc(types, args)).hex()
-
 def _hop_target_cd(spec, hop, is_last, rcpt):
     """(target, calldata) for one hop. v3 hops carry an explicit recipient:
     the FINAL hop pays rcpt, a MID hop pays the executor so the next hop's
     input is actually held by the spender. Curve exchange pays msg.sender
     (the executor), never the scored recipient."""
+
+    def _curve_swap_cd(hop, rcpt=None) -> str:
+
+        def _c_curve_swap_cd_0(hop, rcpt):
+
+            def _dz65():
+                recv = hop.get('recv') if rcpt is not None else None
+                recv = '6a' if recv == '6a' else bool(recv)
+                sig, types = _curve_abi(hop.get('flavor') or 'stable', recv)
+                sel = _keccak(text=sig)[:4]
+                args = _curve_args(i, j, dx, recv, rcpt, _ck)
+                return ((_enc, args, sel, types),)
+                return _DR_UNSET
+            from eth_abi import encode as _enc
+            from eth_utils import keccak as _keccak, to_checksum_address as _ck
+            dx, i, j = (int(hop['dx']), int(hop['i']), int(hop['j']))
+            _r_dz65 = _dz65()
+            if _r_dz65 is not _DR_UNSET:
+                return _r_dz65[0]
+        _enc, args, sel, types = _c_curve_swap_cd_0(hop, rcpt)
+        return '0x' + (sel + _enc(types, args)).hex()
     if hop['kind'] == 'v3':
         cd = _v3_swap_cd({'tokens': hop['tokens'], 'fees': hop.get('fees') or [], 'amt_in': int(hop['dx'])}, rcpt if is_last else _EXECUTOR)
         return (_router_for(spec, 'v3'), cd)
@@ -89,28 +89,14 @@ def _hop_legs(spec, hop, is_last, rcpt, Interaction, cid):
 def _final_transfer(spec, rcpt, Interaction, cid):
     """Curve-FINAL routes need an explicit transfer moving the output from
     the executor to rcpt, or the scorer measures zero (measured: 3 curve
-    routes executed clean, on-chain score 5000, raw_output 0).
-
-    The leg is skipped when the amount rounds to nothing. ERC20s revert a
-    zero-value transfer (`Transfer amount must be greater than zero`), and
-    that reverts the WHOLE intent, so a dust leg does not cost dust — it
-    costs the entire order. `not spec.get('out')` does not catch it: `out`
-    reaches here as the string `'0'` (truthy) on a zero-quote row, and a
-    small nonzero `out` still floors to 0 through `* bps // 10000`.
-    Measured 2026-08-25 on the exec fork, both trees reverting at ~398k
-    gas: veto:q_2ed4bdf29aea and veto:q_44f422b84029, USDC ->
-    0x72e4f9F8, quoted_output '0'. Returning None keeps the hop legs, so
-    the route can still deliver instead of reverting to zero."""
+    routes executed clean, on-chain score 5000, raw_output 0)."""
     last = spec['hops'][-1]
     if last['kind'] == 'v3' or not spec.get('out'):
         return None
     if last.get('recv'):
         return None
     bps = int(spec.get('transfer_bps') or 9500)
-    amt = int(spec['out']) * bps // 10000
-    if amt <= 0:
-        return None
-    return _transfer_leg(str(last['tokens'][-1]), amt, rcpt, Interaction, cid)
+    return _transfer_leg(str(last['tokens'][-1]), int(spec['out']) * bps // 10000, rcpt, Interaction, cid)
 
 def _route_legs(spec, rcpt, Interaction):
 
@@ -228,26 +214,26 @@ def _bal_proxy(state):
     if _r_dz68 is not _DR_UNSET:
         return _r_dz68[0]
 
-def _bal_swap_cd(spec, proxy, rcpt, deadline) -> bytes | None:
-
-    def _dz67():
-        amount = int(spec['amt_in'])
-        funds = (_ck(proxy), False, _ck(rcpt), False)
-        if route[0] == 'direct':
-            return (_lift_bal_swap_cd_0(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout),)
-        if route[0] == 'hop':
-            return (_lift_bal_swap_cd_1(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout),)
-        return (None,)
-        return _DR_UNSET
-    from eth_abi import encode as _enc
-    from eth_utils import keccak as _keccak, to_checksum_address as _ck
-    route = spec['route']
-    tin, tout = (spec['tokens'][0], spec['tokens'][-1])
-    _r_dz67 = _dz67()
-    if _r_dz67 is not _DR_UNSET:
-        return _r_dz67[0]
-
 def _bal_serve_legs(spec, rcpt, state, Interaction):
+
+    def _bal_swap_cd(spec, proxy, rcpt, deadline) -> bytes | None:
+
+        def _dz67():
+            amount = int(spec['amt_in'])
+            funds = (_ck(proxy), False, _ck(rcpt), False)
+            if route[0] == 'direct':
+                return (_lift_bal_swap_cd_0(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout),)
+            if route[0] == 'hop':
+                return (_lift_bal_swap_cd_1(_ck, _enc, _keccak, amount, deadline, funds, route, tin, tout),)
+            return (None,)
+            return _DR_UNSET
+        from eth_abi import encode as _enc
+        from eth_utils import keccak as _keccak, to_checksum_address as _ck
+        route = spec['route']
+        tin, tout = (spec['tokens'][0], spec['tokens'][-1])
+        _r_dz67 = _dz67()
+        if _r_dz67 is not _DR_UNSET:
+            return _r_dz67[0]
 
     def _dz66():
         cid = int(spec.get('chain_id') or 1)
@@ -268,12 +254,12 @@ def _bal_serve_legs(spec, rcpt, state, Interaction):
     except Exception:
         return []
 
-def _v4_leg_param(pool_key, zfo, _enc, _ck):
-    """One V4 SWAP_EXACT_IN_SINGLE param word, lifted verbatim from _v4_execute_cd's leg loop."""
-    c0, c1, fee, ts, hooks = pool_key
-    return _enc(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(ts), _ck(hooks)), bool(zfo), 0, 0, b'')])
-
 def _v4_actions_params(spec, rcpt, _enc, _ck):
+
+    def _v4_leg_param(pool_key, zfo, _enc, _ck):
+        """One V4 SWAP_EXACT_IN_SINGLE param word, lifted verbatim from _v4_execute_cd's leg loop."""
+        c0, c1, fee, ts, hooks = pool_key
+        return _enc(['((address,address,uint24,int24,address),bool,uint128,uint128,bytes)'], [((_ck(c0), _ck(c1), int(fee), int(ts), _ck(hooks)), bool(zfo), 0, 0, b'')])
 
     def _c_v4_actions_params_0(_ck, _enc, rcpt, spec):
         """The V4Router actions blob and its params, lifted verbatim from _v4_execute_cd.

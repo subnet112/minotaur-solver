@@ -22,7 +22,7 @@ def _dr21():
     from minotaur_subnet.sdk.intent_solver import SolverMetadata
     from minotaur_subnet.shared.types import ExecutionPlan, Interaction
     logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "leanrtr")
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
     SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
     _KING_REPLAY_CACHE = None
@@ -64,53 +64,12 @@ class JamesSolver(_ApexBase):
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='swap intent solver', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='Current-champion base + raw-replay blind-spot cover (captured router calldata for venues outside its engine)', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     @staticmethod
     def _is_empty(plan) -> bool:
-        """True when `plan` is nothing the validator would score.
-
-        THIS IS THE `_is_empty` THE WHOLE STACK ACTUALLY CALLS, and that is why
-        the interactions-only test here was worth more than any of the covers.
-        `bin/preflight`'s plan-stack audit puts champ_top.JamesSolver at MRO 24
-        and _apex_champ.JamesSolver at 27, so this staticmethod SHADOWS the
-        cross-chain-aware `_apex_champ.JamesSolver._is_empty`. Attribute lookup
-        walks the MRO in order, so every `self._is_empty(...)` in the tree --
-        _apex_champ's own two call sites included -- landed here. That fix has
-        been inert since it was banked.
-
-        Three layers reach this by delegation as well: `solver.Bg124Solver`
-        (MRO 3) and `_apex_ourbase.Bg124Solver` (MRO 7) both define
-        `_empty(solver, plan)` as `solver._is_empty(plan)`, and this class's own
-        `generate_plan` branches on it one screen below.
-
-        WHAT IT COST. A bridge plan is `interactions=[]` with the destination
-        leg and bridge request under `metadata['cross_chain_plan']`
-        (baseline_solver.py:1181). Reading `interactions` alone called it empty,
-        so `generate_plan`'s fill-only-empty branch fired and returned
-        `_replay_plan`'s king-replay route -- single-chain, stamped with the
-        SOURCE `chain_id`. Scored as an ordinary single-chain plan it delivers
-        nothing where the intent asked and the order is DROPPED, a hard veto:
-        sub_226692a9b998, `cross_chain_delivery {"orders": 2, "credited": 0,
-        "reasons": {"no_cross_chain_plan": 2}}`.
-
-        The metadata read is inlined rather than imported so this cannot depend
-        on module load order -- it is called from inside a closure-built class
-        that four other modules delegate into.
-
-        FILL-ONLY-EMPTY IS PRESERVED. Only plans carrying
-        `metadata['cross_chain_plan']` change classification, and the king-replay
-        table is keyed on (tin, tout, amount) with every leg stamped one
-        chain_id, so it could never have served one. Every other plan classifies
-        exactly as it did, so the rescue that lifts a genuine champion-zero is
-        untouched and no matched order can turn into a regression.
-        """
         try:
-            if plan is None:
-                return True
-            if getattr(plan, 'interactions', None):
-                return False
-            return not (getattr(plan, 'metadata', None) or {}).get('cross_chain_plan')
+            return plan is None or not getattr(plan, 'interactions', None)
         except Exception:
             return True
 

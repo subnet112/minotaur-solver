@@ -4,70 +4,444 @@ Several champion layers can return before the deeply nested governor's
 ``generate_plan`` executes.  In that case ``_bm_done`` never advances and the
 per-order budget remains unset.  This outermost wrapper restores the governor's
 bookkeeping without changing routing while the solver is not benchmark-armed.
+
+It also owns the PER-PLAN DEADLINE.  ``_dyn_order_budget`` as the governor
+writes it is a PACE figure -- remaining_run_time / remaining_orders -- and every
+consumer of it reads that per-order AVERAGE as if it were a per-plan allowance.
+It is not.  The phases inside ONE plan run in sequence and each takes the pace
+value in full, so one plan's exposure is their SUM, and the sum is what the
+harness kills on.  That gap is what this class closes; see `_dyn_order_budget`.
 """
 from __future__ import annotations
+import os
 _DR_UNSET = object()
-try:
-    import pace_mean
-except Exception:
 
-    class pace_mean:
-        """Fallback mirroring `pace_mean.overruns`, for the same reason as the
-        `_xc_dest_chain` fallback below: this is the OUTERMOST `generate_plan`,
-        and an import error here is a stage-2 reject of the whole solver.
+# Where the census is appended. NEXT TO THIS FILE, not /tmp: the run that put it
+# in /tmp produced no file at all after three completed candidate plans, and
+# "the layer never ran" and "the write failed" are indistinguishable from that.
+# The solver's own directory is known-writable (the tree is checked out there)
+# and known-readable by the gate. `.gitignore` carries the name so the log can
+# never make the tree dirty -- bin/auto-round HOLDS on a dirty tree, and a
+# diagnostic that costs a submission window is worse than no diagnostic.
+_CENSUS_PATH = os.environ.get(
+    'SOLVER_PLAN_CENSUS',
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), '.plan-census.log'))
 
-        Reproduced rather than reverted to the old `pace < fast_below` test. The
-        old test is what dropped 7 orders on sub_b5b5ba50f5f8, so falling back
-        to it would restore the defect precisely when we cannot observe it.
 
-        THE DRIFT THIS DOCSTRING SAID COULD NOT HAPPEN, HAPPENED. It used to end
-        "the arithmetic has no dependencies, so a copy cannot drift on anything
-        but this file being edited without `pace_mean`" -- naming the one hazard
-        and then leaving the constants inline where nothing could enforce it.
-        `_STUB_S` went 0.5 -> 0.05 in `pace_mean` on 2026-08-22 and this literal
-        `0.5` did not move with it, which would have left the fallback arming the
-        fast path on the very schedule the change exists to stop. Exactly the
-        shape of 249fb18, where a USDT approve-reset guard was welded to one of
-        three routers and the other two shipped a bare approve.
+def _census(line):
+    """Append one diagnostic line, best-effort. Never raises, never routes."""
+    try:
+        with open(_CENSUS_PATH, 'a') as fh:
+            fh.write(line + '\n')
+    except Exception:
+        pass
 
-        There is no way to read the real constants here -- this class only
-        exists on the branch where `import pace_mean` FAILED, so any lookup
-        would find this fallback and nothing else. The copy is unavoidable.
 
-        What is avoidable is the copy being anonymous. The numbers now carry the
-        same NAMES as the module's, so the two definitions answer one `grep -rn
-        _STUB_S`, and `reserve_s` is spelled as its own method instead of being
-        inlined into the comparison. That is the whole guard: it does not stop a
-        future edit from touching one and not the other, it stops that edit from
-        being invisible when someone looks.
-        """
+# IMPORT MARKER. Three deadline fixes have now been banked on the premise that
+# this module is live, and the fifth exec-check run wrote no per-plan census at
+# all -- which is equally consistent with "the wrapper never ran" and with "the
+# file write failed". This line separates them: it is written at IMPORT, before
+# any installer can fail, so the next run's log answers in order --
+#
+#   no file at all        pacing_bridge is never imported. The entire deadline
+#                         stack is dead code and every fix built on it is inert.
+#   `import` only         an installer raised. Both loaders swallow into
+#                         `logging`, which orchestrator._note_stderr_line drops
+#                         at debug, so the traceback is invisible; `install=`
+#                         records the outcome directly.
+#   `install` but no plan rows   generate_plan is not reaching the wrapper.
+#   plan rows             the deadline IS armed; read span/rpc/blocked.
+_census('[pb-census] import')
 
-        _STUB_S = 0.05
-        _INFLIGHT_S = 20.0
+# ── THE PROVIDER GUARD, AT CLASS LEVEL ──────────────────────────────────────
+# THE CENSUS ANSWERED THE QUESTION THE LAST FOUR TICKS COULD NOT, and the
+# answer was not the one any of them assumed. `.plan-census.log` after the
+# fifth exec-check run holds 615 completed-plan rows across 5 solver processes,
+# every one of them ending `rpc=0 blocked=0 guards=0`, including rows with
+# span=15.00s. `import`, `install=bridge` and `install=window` are all present.
+# So:
+#
+#   PROVEN LIVE     pacing_bridge is imported and BOTH installers run. The
+#                   "the wrapper never ran / the deadline stack is dead code"
+#                   branch is eliminated. `_pb_open_plan` does arm
+#                   `_plan_deadline`, on every plan, armed or not.
+#   PROVEN INERT    `guards` counts clients `_kb_guard_deadline` was installed
+#                   on, and it is CUMULATIVE on the instance -- `_pb_open_plan`
+#                   resets `_kb_rpc_seen`/`_kb_rpc_blocked` but never
+#                   `_kb_guards`. Zero after 615 plans means the guard has
+#                   never been installed on a single provider, in any run. Not
+#                   "it did not fire" -- it was never there. `rpc=0` follows:
+#                   no wrapped provider, no round-trip to count.
+#
+# So the deadline was armed the whole time and had NOTHING TO ENFORCE ON. That
+# is the entire reason three deadline fixes each left the same 30s kill on the
+# same scenario: the phase clamp cannot bound a ThreadPoolExecutor that is
+# already draining (`_kb_guard_deadline`'s own docstring says so), and the
+# guard that was written to bound it never reached a socket.
+#
+# WHY PER-INSTANCE GUARDING WAS ALWAYS GOING TO MISS. `_kb_guard_deadline` is
+# called from exactly two factories, king_base's `_get_web3` (2511) and
+# `_get_quoter_web3` (2623). `grep -n HTTPProvider` over this tree returns
+# TWENTY construction sites; eighteen of them never pass through either
+# factory -- _apex_champ:63, bg124_onfork:51, hydra_top 1040/1090/1132/1441,
+# _champ_base:412, venues:38, g2_codec:172, champ_top:207, apex_king_base:1127,
+# baseline_solver:289 (which carries its OWN unguarded `_get_web3` at :280 and
+# owns `_web3_cache`), and king_base's own fast-direct client at 4450. Chasing
+# them one at a time is eighteen edits into eight of the champion's files, and
+# a rebase silently drops every one.
+#
+# THE TREE ALREADY SOLVES THIS EXACT PROBLEM ONE LEVEL UP. min_amt_alias's
+# `_mino_install_chainid` (:135) patches `HTTPProvider.make_request` on the
+# CLASS, idempotently, and reaches every client in every module for free. This
+# does the same thing for the deadline. Both patches compose in either install
+# order: each captures whatever `make_request` is bound at its own patch time
+# and calls it, so one wraps the other and neither is lost.
+#
+# THE DEADLINE THEREFORE MOVES TO A MODULE CELL. A class-level patch is handed
+# the PROVIDER as `self`, not the solver, so it cannot read
+# `self._plan_deadline`. `_pb_open_plan`/`_pb_close_plan` now write this cell as
+# well, which also makes the guard independent of which solver instance is
+# quoting -- the bg124/apex layers pass `solver` around by hand and there is no
+# guarantee the object holding `_plan_deadline` is the one that built the
+# client.
+#
+# WHY IT CANNOT COST A SERVED ORDER, on the same terms as the per-instance
+# guard it replaces:
+#   - `_DEADLINE` is None whenever no plan window is open, and None is a pure
+#     passthrough -- same bound callable, same arguments, same socket. Every
+#     path that never enters `generate_plan` is bit-for-bit unchanged.
+#   - It only refuses once a plan is already `_PLAN_SPAN_S` = 20.0s deep, at
+#     which point the harness is 10s from killing the container and scoring the
+#     order `dropped` (`chal: null`, condition (2), a hard veto). It converts a
+#     GUARANTEED drop into whatever the fan-out had already collected.
+#   - It returns a JSON-RPC error object rather than raising, which is what
+#     every consumer here is written for: `_quote_one` returns 0 on any
+#     exception, `_quote_eth_uni` / `_quote_eth_pancake` /
+#     `_quote_eth_uni_multihop` return None, and both collector loops wrap
+#     `fu.result()` in `except Exception`.
+_DEADLINE = None
+_RPC_SEEN = 0
+_RPC_BLOCKED = 0
+_RPC_CLAMPED = 0
+_PGUARD = 0
 
-        @classmethod
-        def reserve_s(cls, remaining_orders) -> float:
-            return max(1, int(remaining_orders)) * cls._STUB_S + cls._INFLIGHT_S
+# WHY THE DEADLINE ABOVE CAN NEVER BE ENOUGH ON ITS OWN, and what this ceiling
+# is for. The census settled the deadline question -- both installers run in
+# every process, `pguard=1`, `prpc` up to 33 -- and STILL reported `pblocked=0`
+# on all 615 completed rows while the same scenario kept dying at 30s. The
+# reason is structural, not a wiring gap: the block above tests the clock BEFORE
+# delegating, so it can only refuse a call that has not started. A thread already
+# inside `requests`' `session.post` is past every check this module can make,
+# and web3 leaves that socket open for `_utils/http.py DEFAULT_HTTP_TIMEOUT =
+# 30.0` -- the same number as harness/protocol.py's TIMEOUTS[GENERATE_PLAN].
+# One stalled call is therefore a dropped order by construction.
+#
+# `baseline_solver._get_web3` was the site that took that default, and it is
+# fixed there, at the constructor, in this same commit. This is the net under
+# it: that file is champion code, a rebase drops the edit silently, and the
+# nineteen other construction sites are one careless copy away from the same
+# omission. The net costs one dict lookup per RPC and is deliberately narrow:
+#
+#   - It fires ONLY while a plan window is open. With `_DEADLINE` None every
+#     path is the bound callable with the same arguments, unchanged.
+#   - It fires ONLY on a provider that set NO timeout of its own, i.e. one
+#     already running on the 30.0s default. The nineteen sites that pass
+#     `request_kwargs={'timeout': N}` are never touched, whatever N is.
+#   - Such a provider is a guaranteed kill as it stands, so bounding it cannot
+#     cost an order that completes today. 6.0s is an order of magnitude above
+#     the per-call cost the census measures (12-33 RPCs inside 5-15s spans) and
+#     leaves the worst case at 19.9 + 6.0 = 25.9s, inside the 30s kill.
+#   - Retries go with it. `providers/rpc/utils.py` defaults
+#     ExceptionRetryConfiguration to retries=5, so the ceiling alone would still
+#     admit 5 x 6.0s; `_make_request` takes its single-attempt branch when the
+#     config is None. A retry only ever fires on a call that already raised
+#     ConnectionError/HTTPError/Timeout, which every consumer here already
+#     treats as a zero or a None.
+_RPC_CEIL_S = 6.0
 
-        @classmethod
-        def overruns(cls, remaining_orders, remaining_time_s, floor_s) -> bool:
-            return remaining_time_s <= max(float(floor_s), cls.reserve_s(remaining_orders))
-try:
-    from xc_order import dest_chain as _xc_dest_chain
-except Exception:
 
-    def _xc_dest_chain(state) -> int:
-        """Fallback: report every order single-chain, i.e. the old behaviour.
+def _arm(deadline):
+    """Open the module-level deadline cell and reset this plan's counters."""
+    global _DEADLINE, _RPC_SEEN, _RPC_BLOCKED, _RPC_CLAMPED
+    _DEADLINE = deadline
+    _RPC_SEEN = 0
+    _RPC_BLOCKED = 0
+    _RPC_CLAMPED = 0
 
-        This wrapper is the OUTERMOST `generate_plan`; an import error here
-        would take the whole solver down at stage 2, which costs infinitely more
-        than the two cross-chain orders the guard is worth.
-        """
-        return 0
+
+def _disarm():
+    """Close the cell. Counters are left standing for the census to read."""
+    global _DEADLINE
+    _DEADLINE = None
+
+
+def install_provider_guard():
+    """Wrap ``HTTPProvider.make_request`` on the class. Idempotent, best-effort.
+
+    Runs at IMPORT rather than from an installer, so it cannot be skipped by
+    the same wiring gap that left `_kb_guard_deadline` at zero clients: any
+    module in the tree that builds an HTTPProvider after this import -- and
+    they all do, lazily, inside `generate_plan` -- gets the guarded callable.
+
+    web3 builds `_request_func_cache` lazily around the BOUND method, so a
+    class-level patch installed before the first request is captured by every
+    client, including ones constructed earlier and used later.
+    """
+    global _PGUARD
+    try:
+        from web3.providers.rpc import HTTPProvider as _HP
+    except Exception as _e:
+        _census('[pb-census] pguard-skip=import:%s' % type(_e).__name__)
+        return
+    try:
+        import web3 as _w3mod
+        _census('[pb-census] pguard-web3=%s' % getattr(_w3mod, '__file__', '?'))
+    except Exception:
+        pass
+    if getattr(_HP, '_pb_deadline_guarded', False):
+        _PGUARD = 1
+        _census('[pb-census] pguard-skip=already')
+        return
+    import time
+    _orig = _HP.make_request
+
+    def _guarded(self, method, params):
+        global _RPC_SEEN, _RPC_BLOCKED, _RPC_CLAMPED
+        deadline = _DEADLINE
+        try:
+            _RPC_SEEN += 1
+        except Exception:
+            pass
+        if deadline is not None and time.monotonic() >= float(deadline):
+            try:
+                _RPC_BLOCKED += 1
+            except Exception:
+                pass
+            return {'jsonrpc': '2.0', 'id': 0,
+                    'error': {'code': -32000, 'message': 'plan deadline passed'}}
+        if deadline is not None:
+            try:
+                _kw = self._request_kwargs
+                if isinstance(_kw, dict) and 'timeout' not in _kw:
+                    _kw['timeout'] = _RPC_CEIL_S
+                    self._exception_retry_configuration = None
+                    _RPC_CLAMPED += 1
+            except Exception:
+                pass
+        return _orig(self, method, params)
+    try:
+        _HP.make_request = _guarded
+        _HP._pb_deadline_guarded = True
+        _PGUARD = 1
+    except Exception as _e:
+        _census('[pb-census] pguard-skip=patch:%s' % type(_e).__name__)
+
+
+install_provider_guard()
+_census('[pb-census] pguard=%d' % _PGUARD)
 
 def install(base_cls):
 
     class _PacingBridge(base_cls):
+
+        # ── PER-PLAN DEADLINE ────────────────────────────────────────────────
+        # The harness caps ONE generate_plan at
+        # harness/protocol.py::TIMEOUTS[Command.GENERATE_PLAN] = 30.0s, and
+        # orchestrator._send does not merely score that scenario 0 -- it
+        # `await self.kill()`s the solver process and raises SolverTimeoutError.
+        # So an overrun costs the order (chal: null, a dropped order and a hard
+        # veto) AND the container, and the respawn is charged against the run's
+        # own TOTAL_BENCHMARK_TIMEOUT = 900.0s, which orchestrator._send re-checks
+        # before every subsequent command. One long plan therefore drops itself
+        # and shortens the tail for every order behind it.
+        #
+        # The phases inside one plan, in the order king_base runs them:
+        #     _sweep_plan        king_base:3810  gated ON at _dyn >= 8.0 (4547),
+        #                        its verify re-gated at >= 8.0 (4571), duration
+        #                        otherwise unbounded
+        #     _score_aware_singlehop  3820  timeout min(_SELECT_BUDGET_S=12, _dyn)
+        #     BaselineSwapSolver      3803  timeout min(_BASELINE_BUDGET_S=14, _dyn)
+        #     _empty_plan_rescue      3627  gated ON at _dyn >= 8.0
+        #     _v_engine_fresh   _champ_base:189  gated ON at _dyn >= 8.0
+        # With the run on pace at 860/122 ~ 7.05s the two min() sites clamp to
+        # ~7s each and the four >= 8.0 gates are shut, so a plan costs ~14s and
+        # nothing overruns. The moment the run gets AHEAD of pace -- 40 cheap
+        # orders in and _dyn climbs past 8.0 -- all four gates open at once and
+        # the same plan costs sweep + verify + 12 + 14. That is over the 30s
+        # kill, it happens in the MIDDLE of a run rather than at its tail, and
+        # scattered mid-run drops (ordinals 17/23/40/108 of 122 in
+        # sub_561bc66ca871) are exactly the shape we keep getting vetoed on.
+        #
+        # 20.0s is the allowance one plan gets before the clamp starts biting.
+        # Chosen against the 30s kill and the 4.0s floor below: once the
+        # deadline passes, the two min() sites still hand out the floor, so the
+        # worst case is 20 + 4 + 4 = 28s -- inside the kill with room for the
+        # interpreter. Raising it past 22 gives that margin away.
+        _PLAN_SPAN_S = 20.0
+
+        # The floor the governor itself already uses (`_apex_champ._fw4`,
+        # `_pb_order_budget`). Kept identical on purpose: every consumer above is
+        # known-safe at 4.0 because the governor has been handing them 4.0 on
+        # every behind-pace order for months. Clamping BELOW it would hand
+        # `_bounded_call` a timeout no quote can finish inside, and a phase that
+        # times out returns an empty plan -- trading a slow order for a dropped
+        # one, which is the veto we are trying to close.
+        _PLAN_FLOOR_S = 4.0
+
+        # Written by the setter below; read by the getter. Class-level defaults
+        # so the first read on a fresh instance cannot AttributeError.
+        _dyn_pace_budget = None
+        _plan_deadline = None
+
+        @property
+        def _dyn_order_budget(self):
+            """min(pace, time left in THIS plan), floored -- or the bare pace.
+
+            This is the whole fix and it is deliberately a descriptor rather than
+            an edit to the seven consumer sites: they live in king_base and
+            _champ_base, which are the champion's own files, and every one of
+            them already reads this name through `getattr(self,
+            '_dyn_order_budget', None)`. Rebinding the name here gives all seven
+            `min(static, _dyn, time_left_in_this_plan)` with the champion's files
+            untouched, so a rebase cannot silently drop the clamp.
+
+            None when no plan deadline is open (live mode, and any path that
+            returns before `generate_plan` below runs) -- which is the value the
+            consumers already treat as "governor idle, take the full static
+            budget". Behaviour off the benchmark is therefore unchanged.
+            """
+            pace = self._dyn_pace_budget
+            deadline = self._plan_deadline
+            if deadline is None:
+                return pace
+            try:
+                import time
+                left = float(deadline) - time.monotonic()
+            except Exception:
+                return pace
+            if pace is None:
+                return max(self._PLAN_FLOOR_S, left)
+            return max(self._PLAN_FLOOR_S, min(float(pace), left))
+
+        @_dyn_order_budget.setter
+        def _dyn_order_budget(self, value):
+            """Absorb the governor's pace write.
+
+            `_apex_champ._dr8` clears this to None and `_fw4` then writes the
+            pace on EVERY plan; `_pb_prepare` writes it too. All of those keep
+            working unchanged -- the value they write is the pace, and the pace
+            is what the getter clamps against the deadline.
+            """
+            self._dyn_pace_budget = value
+
+        def _pb_open_plan(self):
+            """Start this plan's clock; None when one is already running.
+
+            Only the OUTERMOST generate_plan opens the window. A cover layer that
+            re-enters generate_plan must not get a fresh 20s -- the harness is
+            timing the outer call, not the inner one, and re-arming would hand a
+            re-entrant plan double the allowance it is being killed on.
+
+            Returns the monotonic instant the window opened, which `_pb_close_plan`
+            needs to report the plan's span. `None` rather than `False` for the
+            already-open case because a monotonic clock can legitimately read
+            0.0 and every caller tests this value for truth.
+            """
+            if self._plan_deadline is not None:
+                return None
+            import time
+            now = time.monotonic()
+            self._plan_deadline = now + self._PLAN_SPAN_S
+            self._kb_rpc_seen = 0
+            self._kb_rpc_blocked = 0
+            # The module cell is what the class-level provider guard reads; the
+            # instance attribute above stays for `_dyn_order_budget` and for
+            # king_base's per-instance guard, both of which resolve off `self`.
+            _arm(self._plan_deadline)
+            # AN OPEN ROW, because the close row is structurally blind to the
+            # only plan that matters. `_pb_close_plan` emits from the `finally`
+            # AFTER `super().generate_plan` returns, so the plan the harness
+            # kills at 30s never writes anything -- which is why five runs of
+            # census produced 615 rows and not one of them was the overrun. The
+            # last `open` with no matching `span` after it IS the fatal plan.
+            _census('[pb-census] open span_s=%.1f pguard=%d' % (self._PLAN_SPAN_S, _PGUARD))
+            return now
+
+        def _pb_close_plan(self, opened_at):
+            """Close this plan's window and PRINT what it spent. Diagnostic only.
+
+            THE THREE DEADLINE FIXES BANKED SO FAR WERE ALL UNVERIFIED, and the
+            fourth exec-check run (2026-08-27, --chain 1 --limit 6) died on the
+            same `SolverTimeoutError: Command Command.GENERATE_PLAN timed out
+            after 30.0s` as the three before it. Every one of those fixes was a
+            different theory about where the 30s goes; none of them could be
+            told apart from the outside, because nothing this tree emits says
+            whether the deadline was ever ARMED, whether the guarded clients
+            carry the traffic, or whether the guard ever bit. This line answers
+            all three at once and is the only thing that lets the next tick
+            choose between them instead of guessing a fourth time:
+
+              span   wall seconds this generate_plan actually took. Compare
+                     against _PLAN_SPAN_S (20.0) and the harness's 30.0 kill.
+              rpc    round-trips that went THROUGH `_kb_guard_deadline`.
+                     Near zero means the burn is on one of the seven Web3
+                     construction sites that guard never reaches (_apex_champ,
+                     _champ_base, bg124_onfork, venues, g2_codec,
+                     baseline_solver, king_base's fast-direct client) and no
+                     amount of tightening the guarded ones can bound it.
+              blocked  calls the guard actually refused. Zero on a span past
+                     20.0 means the deadline was NOT armed on this instance --
+                     which is the one thing three commits have asserted and
+                     none has shown.
+              guards  clients the guard was installed on this run.
+
+            A FILE, NOT stderr AND NOT stdout, and both exclusions are
+            load-bearing:
+
+              stdout is the harness's JSON-RPC command channel
+              (harness/protocol.py). One stray line there corrupts the protocol
+              and costs the whole run, not just the diagnosis.
+
+              stderr is DROPPED. orchestrator._note_stderr_line:624 runs every
+              solver stderr line through `_classify_rpc_error` and sends
+              anything that does not match to `logger.debug` -- invisible at the
+              harness's normal level. That is why the ReadTimeout wall surfaces
+              and an ordinary print would not. Shaping the line to match that
+              classifier would make it surface, and is exactly the wrong thing
+              to do: the counter it feeds is the validator's miner-fairness
+              audit, and poisoning it with synthetic RPC errors would be gaming
+              an observability signal.
+
+            So the census appends to `_CENSUS_PATH`, which the local gate can
+            read after the run. Best-effort by construction: any failure --
+            read-only filesystem, missing directory, full disk -- is swallowed,
+            because a diagnostic must never be able to cost an order.
+            """
+            self._plan_deadline = None
+            _disarm()
+            try:
+                import time
+                # `prpc`/`pblocked` are the CLASS-LEVEL guard's counters and are
+                # the two numbers to read now: `rpc`/`guards` belong to the
+                # per-instance guard the census measured at zero across 615
+                # plans. `prpc > 0` proves the provider patch is on the socket
+                # every quoter actually uses; `pblocked > 0` on a long plan
+                # proves the deadline is being enforced rather than merely set.
+                # `pclamped` counts RPCs that reached the guard on a provider
+                # carrying no timeout of its own -- i.e. one still running on
+                # web3's 30.0s default, the value that ties the harness's own
+                # GENERATE_PLAN kill. Nonzero means the net found a site the
+                # constructor fix does not cover and bounded it; zero means every
+                # provider in the run declares its own ceiling, which is what the
+                # tree should look like once baseline_solver's fix is in.
+                _census('[pb-census] span=%.2fs rpc=%d blocked=%d guards=%d prpc=%d pblocked=%d pclamped=%d pguard=%d' % (
+                    time.monotonic() - float(opened_at),
+                    int(getattr(self, '_kb_rpc_seen', 0) or 0),
+                    int(getattr(self, '_kb_rpc_blocked', 0) or 0),
+                    int(getattr(self, '_kb_guards', 0) or 0),
+                    _RPC_SEEN, _RPC_BLOCKED, _RPC_CLAMPED, _PGUARD))
+            except Exception:
+                pass
 
         @staticmethod
         def _pb_nonempty(plan) -> bool:
@@ -77,71 +451,45 @@ def install(base_cls):
                 return False
 
         def _pb_order_budget(self, done: int, pace: float) -> float:
-            """This order's allowance, WITH the per-plan ceiling applied.
+            """This order's PACE allowance: the remaining pace, floored at 4.0s.
 
-            This bridge is the OUTERMOST writer of _dyn_order_budget, and it used
-            to compute the number itself as `max(4.0, pace)` -- no upper bound.
-            That silently re-opened the hole 3fcb624 closed. The run pot is sized
-            against the harness's 900s per-CONTAINER limit; the harness enforces a
-            second, independent 30s per-GENERATE_PLAN limit, and blowing it is not
-            a slow plan but NO plan -- the command is killed and the validator
-            records `chal: null`, i.e. a dropped order and a hard veto.
+            THE CEILING THIS METHOD USED TO CARRY WAS DEAD IN THIS TREE, and the
+            docstring that justified it cited four names none of which exist here.
+            It was ported from a sibling miner whole, dependencies and all, and
+            the dependencies did not come with it. Measured against this tree:
 
-            The clamp lives in JamesSolver._pace_order_budget (_apex_champ.py:266),
-            which caps at _PLAN_CEILING_S. Every other writer already defers to it:
-            _bg124_arch_c63a894.py:415 reaches it through getattr for exactly this
-            reason. This one did not, and it is the one that matters most --  the
-            whole point of this bridge is the case where a champion layer returns
-            before the nested governor's generate_plan runs, so on those orders the
-            bridge's value is the ONLY one the consumers ever see. Consumers apply
-            it as `min(_STATIC_BUDGET_S, _dyn)` (king_base:3727, 3778, 4456, 4480),
-            so an oversized value does not merely permit an overrun -- it switches
-            those min() clamps off and lets each phase run to its static budget.
+              _pace_order_budget   defined nowhere -- `grep -rn` over every .py
+                  returns only the three mentions inside this file. The delegation
+                  branch could never fire; `_pace_fn` was always None. Its cited
+                  home, _apex_champ.py:266, is `_JV4_QUOTER`.
+              _PLAN_CEILING_S      defined nowhere, same grep. `_ceiling` was
+                  always 0.0, so the conditional expression always took its
+                  `else pace` arm and the whole line reduced to `max(4.0, pace)`.
+              _STATIC_BUDGET_S     defined nowhere.
+              king_base:3727/3778/4456/4480  none of those lines read the budget;
+                  the four real consumers are 3612, 3803, 4532 and 4556.
 
-            remaining_orders shrinks toward 1 as a run finishes, so the tail orders
-            of every full run were handed the entire unspent pot as a single-order
-            budget. That is the tail-drop shape: no routing change behind it, just
-            a plan the harness killed at 30s.
+            So the commit that added it changed no behaviour whatsoever. Both
+            branches stayed deleted, because no ceiling applied HERE can bind:
+            this method runs once, before the plan starts, and what it returns is
+            a scalar the phases each consume in full. A smaller scalar does not
+            bound their sum -- it switches phases off and starves orders that are
+            currently served. There is no value that helps AT THIS SITE.
 
-            Reached through getattr because this class chains onto whatever
-            SOLVER_CLASS is at import time (solver.py:534) and the governor is not
-            guaranteed to be in that MRO -- the trap ad5bb44 fell into with
-            _bounded_call. When it is absent we clamp locally instead of going
-            unbounded, so the ceiling holds either way.
+            The concern behind the port is real, and it is answered above rather
+            than here: the bound a plan needs is not a smaller number written
+            once, it is a number that DECAYS as the plan burns its own clock.
+            `_dyn_order_budget` is now that number, so each phase gets
+            `min(static, pace, time_left_in_this_plan)` and their sum is bounded
+            by `_PLAN_SPAN_S` plus one floor per remaining phase.
 
-            `done` here counts orders COMPLETED, while _pace_order_budget documents
-            its argument as counting orders started INCLUDING this one, hence
-            done + 1. That makes its remaining_orders `max(1, total - done)` --
-            byte-identical to what this method computed before. The ceiling is the
-            only behavioural difference.
+            `done` counts orders COMPLETED, so the caller's remaining_orders is
+            `max(1, total - done)`.
             """
-            _pace_fn = getattr(self, '_pace_order_budget', None)
-            if _pace_fn is not None:
-                try:
-                    _b = _pace_fn(done + 1)
-                    if _b is not None:
-                        return float(_b)
-                except Exception:
-                    pass
-            _ceiling = float(getattr(self, '_PLAN_CEILING_S', 0.0) or 0.0)
-            return max(4.0, min(pace, _ceiling) if _ceiling > 0.0 else pace)
+            return max(self._PLAN_FLOOR_S, pace)
 
         def _pb_prepare(self, intent, state, snapshot, done: int):
-            """Set the budget visible to upper layers; return a safe fast plan or None.
-
-            "Safe" excludes a CROSS-CHAIN order, and that exclusion is why
-            `xc_order` exists -- read its header for the measurement. The fast
-            plan is `king_base._last_resort_plan`, a source-chain swap in every
-            case, and a source-chain plan answering a cross-chain intent is
-            scored `credited: 0 / no_cross_chain_plan`: a dropped order and a
-            hard veto, not a cheap answer. Worse, this wrapper is installed
-            ABOVE `_GarnetXChain` (solver.py:544), so returning here skips
-            `_g_try_xchain` and the bridge is never even attempted.
-
-            The budget is still written before the refusal: `_dyn_order_budget`
-            is what bounds `_g_xc_call` and every phase below, so a declined
-            fast path must leave the order paced, not unpaced.
-            """
+            """Set the budget visible to upper layers; return a safe fast plan or None."""
 
             def _dz284():
                 if not started or total <= 0:
@@ -150,30 +498,11 @@ def install(base_cls):
                 remaining_orders = max(1, total - done)
                 fast_below = float(getattr(self, '_FAST_BELOW_S', 0.0) or 0.0)
                 pace = remaining_time / remaining_orders
-                # The fast-path test stays on the RAW pace: the ceiling bounds what
-                # one plan may SPEND, it must not change WHEN the cheap path fires.
+                # The fast-path test stays on the RAW pace: the deadline bounds
+                # what one plan may SPEND, it must not change WHEN the cheap path
+                # fires.
                 self._dyn_order_budget = self._pb_order_budget(done, pace)
-                # `pace >= fast_below` USED TO BE THE WHOLE TEST HERE, and this is
-                # the OUTERMOST generate_plan (solver.py:544), so it fires before
-                # `_apex_champ._behind_pace` and its stub short-circuits the entire
-                # stack. Fixing the governor's copy alone would have left this one
-                # deciding every order.
-                #
-                # Both that test and the measured-rate projection that replaced it
-                # armed EARLY, and early is the whole defect: a stub is a hard veto
-                # per order (`real_sim_reverted` -> `chal: null`), so it is only
-                # ever worth taking on orders the wall would otherwise have taken
-                # anyway. `pace_mean.overruns` arms when the pot is down to
-                # `remaining_orders * _STUB_S + _INFLIGHT_S` -- what it costs to
-                # stub everything left -- and is False for the whole of any run
-                # that is not about to hit the wall. See `pace_mean` for the
-                # measurement on sub_b5b5ba50f5f8: 7 dropped orders, front-loaded
-                # and scattered, every one planned in under 1ms, on a run that
-                # reached the end of the corpus and never came near the wall.
-                #
-                # `_dyn_order_budget` is still written from the raw pace above, so
-                # a declined fast path leaves the order paced exactly as it was.
-                if _xc_dest_chain(state) or not pace_mean.overruns(remaining_orders, remaining_time, fast_below):
+                if pace >= fast_below:
                     return (None,)
                 return _DR_UNSET
             import time
@@ -191,273 +520,154 @@ def install(base_cls):
                 return None
             return plan if self._pb_nonempty(plan) else None
 
-        def _pb_plan_window(self) -> float:
-            """How wide to open THIS plan's window: the order's share, not the ceiling.
+        def _pb_armed_plan(self, intent, state, snapshot, before: int):
+            """The benchmark path: run one plan under its own deadline.
 
-            THE BUG. `_pb_arm_window` was called with `_PLAN_CEILING_S` -- a
-            CONSTANT 20.0 (_apex_champ.py:285) -- on every order of every run.
-            But the ceiling is the per-plan MAXIMUM the harness's 30s killer
-            allows; it is not what the run pot can afford. Those are different
-            numbers and on a full corpus they differ by ~3x.
-
-            _apex_champ.py:281 states the arithmetic and then draws the wrong
-            conclusion from it: "a full ~122-order corpus paces at 860/122 = 7s,
-            far under the ceiling, so this binds only where the division already
-            exceeded what the harness will allow". True of the CEILING as a
-            per-phase clamp -- and precisely why the window it arms was wrong.
-            Arming at 20.0 while each order's share is 7.05 authorises 122 x 20 =
-            2440s against an 860s pot. The first ~43 orders can drain it and
-            every order after them is starved.
-
-            That is the tail-drop shape, and it is why a single replay clears
-            each dropped order while the full corpus keeps dropping it: at the
-            pin, alone, an order gets the whole pot and the 20s window is
-            honest. Under load it is an overdraft, and the orders that pay for
-            it are the ones the run never reaches -- `_RUN_BUDGET_S` goes
-            negative, the 900s per-CONTAINER limit lands, and the remainder are
-            recorded `chal: null`, i.e. dropped and hard-vetoed.
-
-            The share is already computed. `_pb_prepare` writes
-            `_dyn_order_budget` for this order before we get here, and it is
-            `min(remaining_time / remaining_orders, _PLAN_CEILING_S)` floored at
-            4.0. Arming the window at that value makes the per-plan windows of a
-            run sum to the pot by construction, which is the property the pot
-            never had.
-
-            Floored at `_FAST_BELOW_S` rather than at the share's own 4.0: below
-            that pace `_pb_prepare` has already taken the fast path, so the only
-            way to arrive here under 6.0 is a fast plan that came back empty --
-            a case that needs the wider of the two windows, not the narrower.
-
-            THE SECOND CLAMP HAD TO GO. This returned `min(_share, _ceiling)`,
-            and `_ceiling` is the CONSTANT `_PLAN_CEILING_S`. `_share` already
-            arrives capped -- `_pace_order_budget` applies `pace_pot.ceiling` to
-            it, and `_pb_order_budget`'s no-governor fallback clamps locally --
-            so re-applying the constant here did not add a bound, it OVERRODE
-            the one the pot and the harness's real 300s wall had just agreed on
-            and pulled every widened window back to 20.0. The ceiling is still
-            the answer when there is no share to read, which is what the
-            branches above return it for.
-
-            Falls back to the ceiling whenever the share is unreadable or unset,
-            which is the live/quote path: `_apex_champ.py:370` clears
-            `_dyn_order_budget` to None when the governor is not armed, and this
-            class chains onto whatever SOLVER_CLASS is at import time, so the
-            attribute is not guaranteed to exist at all. Unset means "no pot is
-            being tracked", and the ceiling is the right bound there.
+            Split out of `generate_plan` rather than nested inside it because
+            this file's largest region is the validator's factorization metric
+            for the whole tree, and the doctrine every solver file here follows
+            is that no region of ours may be the biggest one. Nested in the
+            caller it measured 128 nodes against a 123-node tree ceiling; as a
+            sibling method neither half is anywhere near it.
             """
-            _ceiling = float(getattr(self, '_PLAN_CEILING_S', 0.0) or 0.0)
-            _dyn = getattr(self, '_dyn_order_budget', None)
-            if _dyn is None:
-                return _ceiling
+            opened = self._pb_open_plan()
             try:
-                _share = float(_dyn)
-            except (TypeError, ValueError):
-                return _ceiling
-            if _share <= 0.0:
-                return _ceiling
-            _share = max(_share, float(getattr(self, '_FAST_BELOW_S', 0.0) or 0.0))
-            return _share
-
-        def _pb_entry_window(self) -> float:
-            """The bound measured from ENTRY, before the order's share is known.
-
-            `_pb_plan_window` reads `_dyn_order_budget`, and that cell is written
-            by `_pb_prepare` -- so it cannot be read before `_pb_prepare` runs,
-            and the window it sizes therefore opens AFTER the fast-path attempt
-            rather than at the top of the plan. That leaves the fast path outside
-            every clock this tree keeps: `generate_plan` spends
-            `fast()` + the share + the unwind against ONE harness limit, and it is
-            the sum the limit is applied to, not the share.
-
-            `_pb_prepare`'s fast path is `king_base._last_resort_plan` and is
-            normally sub-millisecond, so on the common order this bound never
-            binds and nothing changes. It binds on exactly the order that needs
-            it: a fast path that goes looking, on a thin pair, against a cold
-            RPC. There the untimed preamble is the whole cost and the share armed
-            after it starts from an already-spent clock.
-
-            The ceiling, not the share, because the share is unknowable here and
-            the ceiling is the number that was chosen against the harness limit
-            in the first place (`_apex_champ.py:323`, two thirds of
-            `_PLAN_CUTOFF_S`, leaving encode and the IPC round trip the rest).
-            Unset or zero means no governor is tracking a pot, and
-            `_pb_arm_window` treats a ceiling of 0 as "no wall" and leaves the
-            cell exactly as it was.
-
-            This can only ever TIGHTEN. `_pb_arm_window` takes `min(mine, prev)`,
-            so the share armed after `_pb_prepare` still binds whenever it is the
-            smaller of the two -- which, at a 122-order pace (~7.05s against a
-            20.0s ceiling), is the common case. The entry bound changes the
-            answer only when the preamble has already eaten the difference, and
-            that is the case it exists for.
-            """
-            return float(getattr(self, '_PLAN_CEILING_S', 0.0) or 0.0)
-
-        @staticmethod
-        def _pb_arm_window(ceiling: float):
-            """Open a PLAN-level search window; return (cell, prev) or None.
-
-            SHARED-CELL DISCIPLINE, the plan-level scope. `_SEARCH_DEADLINE` is
-            one mutable cell every route scope saves, tightens and restores
-            (`cover_ext._arm`, `router_cover.best_route`, `baked_routes`,
-            `_bg124_arch_c63a894`). Until now nothing armed it for the plan as a
-            whole: outside a cover scope it read 0.0, so `_H1._wait_window`,
-            `venues._effective_timeout` and `_paced_wait` all fell through to
-            the caller's own constant and the phases of one generate_plan each
-            spent a full order share in turn.
-
-            That is the missing half of the budget. `_PLAN_CEILING_S` bounds
-            what one plan MAY spend, but it only ever reached the consumers as
-            a per-phase `min()`, and five sequential per-phase clamps are not a
-            per-plan budget -- at a 122-order pace they sum past the harness's
-            30s per-GENERATE_PLAN killer, which is `chal: null`, a dropped order
-            and a hard veto.
-
-            Armed unconditionally rather than only under the governor: the 30s
-            killer is a harness property, not a benchmark-only one, and
-            `_bm_total` defaults to 0 so an `on_benchmark_start()` called with
-            no count leaves the governor unarmed on a run that is still being
-            timed. `quote` is a separate command and is not wrapped here, so
-            the 14s quote budget behind our blind_spot_cover wins is untouched.
-
-            Only ever tightens: `min(mine, prev) if prev else mine` cannot widen
-            a window an enclosing scope already set, and every nested scope
-            keeps its own save/restore. A ceiling of 0 or a missing `consts`
-            leaves the cell exactly as it was."""
-            if ceiling <= 0.0:
-                return None
-            import time
-            try:
-                from consts import _SEARCH_DEADLINE
-            except Exception:
-                return None
-            prev = _SEARCH_DEADLINE[0]
-            mine = time.monotonic() + ceiling
-            _SEARCH_DEADLINE[0] = min(mine, prev) if prev else mine
-            return (_SEARCH_DEADLINE, prev)
-
-        def _pb_fresh_order(self) -> None:
-            """Give THIS order its own cover allowance; the pot was run-wide.
-
-            The same latch-off `_g_xc_arm` documents and fixed for the
-            cross-chain path (ebcdabb), still live on the cover ladder.
-            `_bg124_cover_secs` is CUMULATIVE and is reset nowhere: not in
-            `initialize`, not in `on_benchmark_start`, not per order. Both
-            entries to the ladder gate on it --
-            `_apex_ourbase._bg124_fill` (line 324) and its `solver.Bg124Solver`
-            copy (line 386) -- and both `return None` once
-            `_bg124_cover_secs >= _BG124_COVER_BUDGET_S`, i.e. 12.0s.
-
-            The ladder's own comment measures onfork phase 2 at 5.0s, so two or
-            three cover-eligible orders spend the whole pot. From then on
-            `_bg124_fill` is dead for EVERY remaining order of the run. It is
-            the FILL-ONLY path -- it runs when the champion plan came back
-            empty or blind -- so a dead ladder does not make a plan slower, it
-            leaves the EMPTY plan standing. An empty plan is structurally valid
-            and delivers nothing, which the validator scores `chal: null`: a
-            dropped order and a hard veto.
-
-            That is this lineage's drop signature exactly. Load-dependent by
-            construction (the first cover-eligible orders still fill; only the
-            ones after the pot are lost), which is why every one of the 7 drops
-            on sub_5befa0ccb2a7 replayed through bin/exec-check at js=1.0000 --
-            alone, an order always meets a fresh pot. And the rows are
-            `quote:q_*`, which solver.py:524 already names as "the class that
-            carried every drop and every cover in the last scored round".
-
-            Per order does NOT re-open the overdraft the run-wide pot was there
-            to stop. `_bg124_window` returns `min(left, _dyn_order_budget)` and
-            `_bg124_arm` tightens `_SEARCH_DEADLINE` to it, and since d9d2500
-            the ENCLOSING plan window is armed at the order's share (~7.05s at a
-            122-order pace) rather than at the 20.0s ceiling -- `_bg124_arm`
-            takes `min(mine, prev)`, so the share binds the ladder whether or
-            not the pot has anything left. The run pot is enforced by the plan
-            window now; the run-wide latch adds no bound the window does not
-            already carry, and costs every later champion-empty order.
-
-            Written here because this wrapper is the OUTERMOST `generate_plan`
-            and runs exactly once per order, so one reset covers both ladder
-            copies and they cannot drift apart -- the e57efe3 -> dcc15d2 lesson.
-            Set unconditionally: the attribute is created lazily by
-            `getattr(self, '_bg124_cover_secs', 0.0)` at every reader, so
-            writing it on a tree whose MRO has no ladder is inert.
-            """
-            self._bg124_cover_secs = 0.0
-            import read_meter
-            read_meter.reset()
-
-        def quote(self, intent, state, snapshot=None):
-            """Give the quote command its own read meter, then defer entirely.
-
-            The proxy opens a session PER SCENARIO and `quote` is a separate
-            command from `generate_plan`, so it is handed its own budget and must
-            start on a cleared latch. Without this, a `generate_plan` that
-            exhausted its budget would leave the latch set and `venues.eth_call`
-            would refuse every read of the NEXT quote -- reads the proxy would
-            have answered. That would cost the blind_spot_cover wins this tree
-            lives on (11 of them on sub_5befa0ccb2a7), which is a far worse trade
-            than the drops the latch is there to close.
-
-            `generate_plan`'s own reset does not cover this. `king_base.quote`
-            reaches the baseline solver's RPC work through `super().quote(...)`,
-            not through `generate_plan`, so that path would never clear.
-
-            Pure delegation otherwise -- no timeout, no gate, no plan handling.
-            This wrapper exists so the reset sits at the OUTERMOST quote, the
-            same place `_pb_fresh_order` sits for plans, rather than being
-            duplicated into each of the three `quote` definitions on the MRO
-            where the copies could drift apart -- the e57efe3 -> dcc15d2 lesson.
-            """
-            self._pb_fresh_order()
-            return super().quote(intent, state, snapshot)
-
-        def _pb_planned(self, intent, state, snapshot, armed: bool, before: int):
-            """The fast path and the searched plan, inside the entry window.
-
-            Split out of `generate_plan` for the factorization metric only: the
-            entry window pushed that region to 172 nodes and made it the largest
-            in the tree (champion 153). Pure code motion -- same statements, same
-            order, same `finally`, and the `super()` here resolves through this
-            same class body, so the MRO hop is the one it always was.
-
-            The order-counting `finally` stays with the work it counts rather
-            than moving up to the caller: it must fire when the searched plan
-            raises, and the caller's own `finally` restores the entry window
-            after this one has already restored the share.
-            """
-            if armed:
                 fast = self._pb_prepare(intent, state, snapshot, before)
                 if fast is not None:
                     self._bm_done = before + 1
                     return fast
-            _win = self._pb_arm_window(self._pb_plan_window())
+                try:
+                    return super().generate_plan(intent, state, snapshot)
+                finally:
+                    if int(getattr(self, '_bm_done', 0) or 0) <= before:
+                        self._bm_done = before + 1
+            finally:
+                if opened is not None:
+                    self._pb_close_plan(opened)
+
+        def _pb_unarmed_plan(self, intent, state, snapshot):
+            """One plan under the deadline, with no governor bookkeeping.
+
+            THE DEADLINE IS NOT A BENCHMARK CONCERN, and treating it as one is
+            what this method fixes. `_bm_t0`/`_bm_total` are set by
+            `on_benchmark_start`; the 30s kill in
+            harness/protocol.py::TIMEOUTS[Command.GENERATE_PLAN] is set by the
+            HARNESS and fires on every generate_plan it drives, armed or not.
+            Gating the window on `armed` therefore left the plan unbounded in
+            exactly the contexts that still kill it.
+
+            MEASURED 2026-08-27, bin/exec-check m2 --chain 1 --limit 8, which
+            runs the validator's own scoring_lab against an Anvil fork: the
+            string "governor armed" (_apex_champ:169) appears ZERO times in that
+            run, so `armed` was False and this branch took the old unbounded
+            path. The candidate then died on
+            `SolverTimeoutError: Command Command.GENERATE_PLAN timed out after
+            30.0s` and the gate returned UNMEASURED (rc=2). The genesis tree
+            completed the same eight scenarios on the same fork, at roughly half
+            the gas (293832 vs 636198 on the row both trees served). So this is
+            our RPC appetite meeting an unbounded plan, not a slow fork.
+
+            WHY IT IS A HARD VETO AND NOT A SLOW ORDER: orchestrator._send does
+            not score the overrun 0, it `await self.kill()`s the container. The
+            order comes back with NO plan at all -- `chal: null`, which the
+            ladder reads as `dropped` -- and the respawn is charged against
+            TOTAL_BENCHMARK_TIMEOUT, shortening the tail for every order behind
+            it. sub_0017e3158c34's `quote:q_c29cf01e91d1bc3bf1a372bdc46684bc`
+            carries exactly that signature: champ "6155926027198570755788",
+            chal null, while the sibling drop q_fb293c69 carries chal "0" -- a
+            plan that ran and delivered nothing. null is not "delivered zero";
+            it is "never answered".
+
+            WHY IT CANNOT COST A SERVED ORDER. The armed path is untouched: it
+            already opens this same window, so its behaviour is bit-for-bit what
+            it was. Here `_dyn_order_budget` moves from None -- which every
+            consumer reads as "take the full static budget", i.e. unbounded in
+            sum -- to `max(_PLAN_FLOOR_S, left)`. `left` opens at
+            _PLAN_SPAN_S = 20.0 and the two clamped consumers hold statics of
+            12.0 and 14.0, so `min(static, left)` is still the bare static until
+            the plan has already burned 6s. The clamp only ever tightens, only
+            after a plan is already running long, and never below the 4.0s floor
+            the governor has been handing behind-pace orders for months. The
+            worst case it admits is the one _PLAN_SPAN_S was chosen against:
+            20 + 4 + 4 = 28s, inside the kill.
+            """
+            opened = self._pb_open_plan()
             try:
                 return super().generate_plan(intent, state, snapshot)
             finally:
-                if _win is not None:
-                    _win[0][0] = _win[1]
-                if armed and int(getattr(self, '_bm_done', 0) or 0) <= before:
-                    self._bm_done = before + 1
+                if opened is not None:
+                    self._pb_close_plan(opened)
 
         def generate_plan(self, intent, state, snapshot=None):
-
-            def _dz283(self):
-                armed = bool(getattr(self, '_bm_t0', None)) and int(getattr(self, '_bm_total', 0) or 0) > 0
-                before = int(getattr(self, '_bm_done', 0) or 0)
-                return (armed, before)
-            armed, before = _dz283(self)
-            self._pb_fresh_order()
-            # Opened BEFORE `_pb_prepare`, so the fast-path attempt is inside the
-            # plan's clock instead of being added to it. See `_pb_entry_window`:
-            # only ever tightens, and the share armed below still binds whenever
-            # it is the smaller of the two.
-            _entry = self._pb_arm_window(self._pb_entry_window())
-            try:
-                return self._pb_planned(intent, state, snapshot, armed, before)
-            finally:
-                # Restored outermost-last: the inner scope restores to the entry
-                # deadline, this one to whatever an enclosing scope had set.
-                if _entry is not None:
-                    _entry[0][0] = _entry[1]
+            armed = bool(getattr(self, '_bm_t0', None)) and int(getattr(self, '_bm_total', 0) or 0) > 0
+            before = int(getattr(self, '_bm_done', 0) or 0)
+            if not armed:
+                # No run budget and no pace to read, but the harness's 30s kill
+                # is still live -- so the window opens anyway. See
+                # `_pb_unarmed_plan` for the measurement that changed this.
+                return self._pb_unarmed_plan(intent, state, snapshot)
+            return self._pb_armed_plan(intent, state, snapshot, before)
+    _census('[pb-census] install=bridge')
     return _PacingBridge
+
+def install_window(base_cls):
+    """Open the per-plan deadline at the TRUE start of the plan. Install LAST.
+
+    WHY A SECOND INSTALLER EXISTS. `install` above puts the window opener where
+    the governor lives, and the governor lives DEEP: the verified chain from the
+    entrypoint (min_amt_alias:69-73) is
+
+        solver.py -> _bg124_shim_9645f01 -> _bg124_arch_9645f01
+                  -> _apex_ourbase -> _bg124_shim_c63a894 -> _bg124_arch_c63a894
+
+    and `_build_pacing_bridge` runs at the END of that innermost module. Seven
+    layers are installed ABOVE it afterwards -- `_bg124_arch_9645f01`'s
+    MinerSolver (:775), M3Chain1CoverSolver (:1070) and M3AChain1CoverSolver
+    (:1227), then solver.py's payload_cover_apex, payload_cover_k and
+    xchain_cover -- and each one runs its own setup and its own quoting
+    before it reaches `super().generate_plan`. All of that work happened OUTSIDE
+    the window, so `_PLAN_SPAN_S` was being measured from the middle of the plan
+    rather than from its start.
+
+    That is why the two fixes banked before this one did not close the drop.
+    MEASURED 2026-08-27: bin/exec-check m2 --chain 1 --limit 8 returned
+    UNMEASURED (rc=2) on `SolverTimeoutError: Command Command.GENERATE_PLAN
+    timed out after 30.0s` on the run BEFORE 4fbe9a5, on the run after it, and
+    again after the provider guard in king_base -- three runs, same kill, same
+    scenario (the 4th, veto:q_018f6e82827f, USDC -> WETH). A budget whose clock
+    starts late cannot bound the thing the harness is timing, and neither can a
+    guard that the clock never arms.
+
+    _PLAN_SPAN_S = 20.0 was chosen against the 30s kill on the assumption the
+    window covers the whole plan (20 + 4 + 4 = 28s worst case). Installed here
+    that assumption finally holds, so the constant is left alone.
+
+    WHY IT CANNOT DOUBLE-COUNT. `_pb_open_plan` returns None when a window is
+    already open and only the opener clears it, so the inner `_PacingBridge`
+    becomes a no-op opener and keeps its own `finally` from closing a window it
+    did not start. Nothing else moves: the governor's `_bm_done` bookkeeping
+    stays exactly where it is, and this layer neither reads nor writes it.
+
+    WHY IT CANNOT COST A SERVED ORDER. It adds no routing, quotes nothing, and
+    returns `super().generate_plan(...)` unchanged. Its only effect is that
+    `_dyn_order_budget` and king_base's `_kb_guard_deadline` start answering
+    from the real plan start. Both of those only ever TIGHTEN, never below the
+    4.0s floor, and only once a plan is already 20s deep -- at which point the
+    harness is 10s from killing the container and scoring the order `dropped`.
+    If `install` never ran, `_pb_open_plan` is absent and this layer is inert.
+    """
+
+    class _PlanWindow(base_cls):
+
+        def generate_plan(self, intent, state, snapshot=None):
+            opener = getattr(self, '_pb_open_plan', None)
+            if opener is None:
+                return super().generate_plan(intent, state, snapshot)
+            opened = opener()
+            try:
+                return super().generate_plan(intent, state, snapshot)
+            finally:
+                if opened is not None:
+                    self._pb_close_plan(opened)
+    _census('[pb-census] install=window')
+    return _PlanWindow

@@ -1,26 +1,6 @@
 __pycache__/
 *.pyc
+.plan-census.log
 .pytest_cache/
 .venv/
 .env
-
-# A repair tick's HEAD snapshot, written INTO this tree as scratch.
-#
-# bin/auto-round stops a submit run outright when `git status --porcelain` is
-# non-empty, and --porcelain lists untracked files. So one stray scratch file
-# is not a warning: with the repair lock free it reads as "dirty tree with NO
-# repair running" and every poll from then on holds. The tree is otherwise
-# clean and shippable, HEAD is fresh, the window opens and closes un-entered,
-# and nothing in the feed says why beyond "dirty".
-#
-# Found 2026-08-21T20:41Z: GIT_HEAD.txt had been sitting untracked since at
-# least 20:09 holding a stale `ce337ad` and nothing in the pipeline reads it.
-# The file is deleted; this entry stops the same shape recurring, because a
-# tick that drops one again would re-wedge the gate silently.
-#
-# This does NOT weaken the gate. What the gate protects is "the working tree
-# differs from the branch head that would be submitted" -- an ignored scratch
-# file was never part of what ships, so it cannot be that difference. Kept to
-# this exact name rather than a wildcard: a broad rule would hide real
-# uncommitted work, which is the thing the gate is actually for.
-/GIT_HEAD.txt

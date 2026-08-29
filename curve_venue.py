@@ -80,17 +80,6 @@ def _indices(w3, pool, tin, tout):
     i, j = (pos.get(tin.lower()), pos.get(tout.lower()))
     return (i, j, n) if i is not None and j is not None else None
 
-def _pt_order(hint, n):
-    """pool_type codes to try: registry hint first (authoritative), then the
-    n_coins-implied family, then the stable fallback."""
-    fam = _PT_3 if n >= 3 else _PT_2
-    seq = ([hint] if hint else []) + list(fam) + list(_PT_STABLE)
-    out = []
-    for pt in seq:
-        if pt not in out:
-            out.append(pt)
-    return out
-
 def _route1(tin, pool, tout):
     return [_C(tin), _C(pool), _C(tout)] + [_C(_Z)] * 8
 
@@ -106,6 +95,17 @@ def _get_dy(w3, cid, route, swap, amt):
 def _leg(w3, cid, pool, hint, tin, tout, amt):
     """Best single hop (out, swap_row) for tin->tout via pool. Picks the first
     pool_type whose router get_dy is non-zero. None if the pool is dead."""
+
+    def _pt_order(hint, n):
+        """pool_type codes to try: registry hint first (authoritative), then the
+        n_coins-implied family, then the stable fallback."""
+        fam = _PT_3 if n >= 3 else _PT_2
+        seq = ([hint] if hint else []) + list(fam) + list(_PT_STABLE)
+        out = []
+        for pt in seq:
+            if pt not in out:
+                out.append(pt)
+        return out
 
     def _dz74():
         if idx is None:
@@ -141,14 +141,14 @@ def _direct(w3, cid, tin, tout, amt):
     out, pool, row = bl
     return (out, _route1(tin, pool, tout), [row] + [[0, 0, 0, 0, 0]] * 4)
 
-def _mk2(tin, l1, hub, l2, tout):
-    """Assemble the 2-hop CurveRouterNG (route[11], swap[5][5]) from two legs."""
-    route = [_C(tin), _C(l1[1]), _C(hub), _C(l2[1]), _C(tout)] + [_C(_Z)] * 6
-    swap = [l1[2], l2[2]] + [[0, 0, 0, 0, 0]] * 3
-    return (route, swap)
-
 def _twohop(w3, cid, tin, tout, amt):
     """Best tin->hub->tout route -> (out, route, swap) or None."""
+
+    def _mk2(tin, l1, hub, l2, tout):
+        """Assemble the 2-hop CurveRouterNG (route[11], swap[5][5]) from two legs."""
+        route = [_C(tin), _C(l1[1]), _C(hub), _C(l2[1]), _C(tout)] + [_C(_Z)] * 6
+        swap = [l1[2], l2[2]] + [[0, 0, 0, 0, 0]] * 3
+        return (route, swap)
 
     def _dz73():
         nonlocal best

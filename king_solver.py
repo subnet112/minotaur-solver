@@ -22,7 +22,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 def _dr23():
     logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "leanrtr")
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
     SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
     _BASE = 8453
@@ -133,7 +133,7 @@ class MinerSolver(_MinerSolverDR41):
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='swap intent solver', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description="Current-champion base + never-drop blind-spot cover for tokens it can't route (Maverick / Uni V2 / VIRTUAL hub)", supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     def _generate_plan_impl(self, intent, state, snapshot=None):
         try:
@@ -213,11 +213,8 @@ class MinerSolver(_MinerSolverDR41):
         return state.contract_address or params.get('receiver') or state.owner
 
     def _apex_deadline(self, snapshot):
-        from consts import DEADLINE
         ts = getattr(snapshot, 'timestamp', None) if snapshot else None
-        if not ts:
-            return DEADLINE
-        return int(ts) + 300
+        return int(ts or time.time()) + 300
 
     def _apex_v2(self, intent, state, snapshot, router, path, amount_in, chain_id):
         from common.abi_utils import encode_approve

@@ -23,12 +23,7 @@ from eth_abi import decode, encode
 from eth_utils import keccak, to_checksum_address as ck
 from eth_abi import encode as _enc
 import time
-from venues import CHAINS, DEADLINE, _SEARCH_DEADLINE, eth_call as _eth_call, q_v2
-
-# swapExactTokensForTokensSupportingFeeOnTransferTokens. Spelled here rather than
-# imported from router_cover: these two cover modules sit at the same layer and an
-# import between them would close a cycle through venues.
-S_V2_SWAP_FOT = '5c11d795'
+from venues import CHAINS, DEADLINE, S_V2_SWAP, _SEARCH_DEADLINE, eth_call as _eth_call, q_v2
 from baked_routes import baked_legs
 _COVER_BUDGET_S = 3.0
 
@@ -42,17 +37,9 @@ def _arm():
     returned an empty plan. Measured cost: sub_63ae4707f360 covered 38 blind
     spots and simultaneously DROPPED 41 orders the champion served. Always
     restore (see `_disarm`).
-
-    Honours the TIGHTER of the enclosing window and our own. Arming +3.0s flat
-    overwrote a tighter caller: `_cover_or` now bounds the whole cover attempt by
-    this order's share of the run pot (`MinerSolver._rb1_cap`), and this layer is
-    reached from inside that bound — three times over, once each for baked, curve
-    and v2. Ignoring it made the per-ORDER ceiling a per-LAYER one, which is the
-    overspend that starves the tail into `last_resort_empty` and drops it.
     """
     prev = _SEARCH_DEADLINE[0]
-    mine = time.monotonic() + _COVER_BUDGET_S
-    _SEARCH_DEADLINE[0] = min(mine, prev) if prev else mine
+    _SEARCH_DEADLINE[0] = time.monotonic() + _COVER_BUDGET_S
     return prev
 
 def _disarm(prev):
@@ -216,35 +203,12 @@ def _best_v2(rpc, tin, tout, amount, chain_id):
                 best = (out, router, path)
     return best
 
-def _v2_approve_rows(tin, router, amount):
-    """The approve row(s) for a V2 serve, carrying the USDT reset where it bites.
-
-    Same fourth-spender gap 7cfe2e6 closed in `router_cover`: the audit list in
-    `chain1_lib._approve_ixs` names only the three BAKED-spec builders, so this
-    module and `baked_routes` kept emitting a lone non-zero approve, which USDT
-    reverts outright -- taking the whole cover plan with it.
-    """
-    try:
-        from chain1_lib import _needs_reset_approve as _nra
-        reset = _nra(tin)
-    except Exception:
-        reset = False
-    rows = [{'target': tin, 'data': _approve(router, 0)}] if reset else []
-    return rows + [{'target': tin, 'data': _approve(router, amount)}]
-
 def _v2_swap(path, amount, recipient, router):
-    """approve + swapExactTokensForTokensSupportingFeeOnTransferTokens, in the tree's own codec.
+    """approve + swapExactTokensForTokens, in the tree's own codec.
 
     minOut is 0: the harness enforces the intent minimum, and a per-swap floor
     only adds a revert path — and a revert on a cover row throws away the very
     delivery it exists to make.
-
-    That reasoning was right and still left a revert path open, because it only
-    addressed the FLOOR. The plain 38ed1739 re-derives amounts from getAmountsOut
-    and asserts them AFTER the transfer, so it reverts on a skimming token or on a
-    pair whose reserves moved since the quote, whatever minOut says -- which is the
-    drop certify measured on `dex:veto:q_6581642391f7` (see 7cfe2e6). 5c11d795
-    drops that assert, so with minOut already 0 the swap leg has no revert path left.
     """
     body = _enc(['uint256', 'uint256', 'address[]', 'address', 'uint256'], [int(amount), 0, path, recipient, DEADLINE])
-    return _v2_approve_rows(path[0], router, amount) + [{'target': router, 'data': '0x' + S_V2_SWAP_FOT + body.hex()}]
+    return [{'target': path[0], 'data': _approve(router, amount)}, {'target': router, 'data': '0x' + S_V2_SWAP + body.hex()}]

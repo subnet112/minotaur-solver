@@ -105,24 +105,6 @@ def decode_one(kind, data):
         return 0
 
 
-def agg3_cd(cands):
-    """Multicall3 aggregate3 calldata over every candidate's (target, calldata).
-    allowFailure is True on every subcall so one dead venue cannot sink the batch."""
-    subcalls = [(t, True, cd) for _d, t, cd in cands]
-    return "0x" + (bytes.fromhex(SEL["agg3"])
-                   + enc(["(address,bool,bytes)[]"], [subcalls])).hex()
-
-
-def decode_agg3(cands, ret):
-    """aggregate3 return -> one output per candidate, positionally aligned.
-    A failed subcall contributes 0 rather than dropping its slot, so the caller's
-    index into `cands` stays the venue it asked about."""
-    from eth_abi import decode as dec
-    (res,) = dec(["(bool,bytes)[]"], ret)
-    return [decode_one(cands[k][0][0], d) if ok else 0
-            for k, (ok, d) in enumerate(res)]
-
-
 def approve_cd(spender, amt):
     return "0x" + SEL["approve"] + enc(["address", "uint256"],
                                        [ck(spender), amt]).hex()

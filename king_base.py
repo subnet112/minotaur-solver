@@ -47,12 +47,11 @@ import logging
 import os
 import time
 from typing import Any
-from strategies.dex_aggregator.baseline_solver import BaselineSwapSolver
+from strategies.dex_aggregator.baseline_solver import BaselineSwapSolver, _SnapLegacy
 from strategies.dex_aggregator.discovery import DiscoveryEngine
 from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 from king_consts import *
-import phase_gate as _pg
 
 def _dr142():
     from king_tables1 import _STATIC_EXOTIC_ROUTES
@@ -62,7 +61,7 @@ def _dr142():
     def _dr31():
 
         def _dz248():
-            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "leanrtr")
+            SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
             SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
             SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
             _FAST_DIRECT_INPUTS = frozenset({_USDBC})
@@ -205,42 +204,18 @@ class _MinerSolverDR10DR170(BaselineSwapSolver):
             logger.exception('[solver] fast direct-single-hop failed')
         return base_plan
 
-    def _sas_wave_room(self, _stage_t0):
-        """Whether the select stage can still afford a crossvenue wave.
-
-        Both waves are UNBOUNDED once entered: `_enumerate_crossvenue_2hop_proxy`
-        is one of the sites on the long quoter socket, and neither drains through
-        a wall. So this predicate is the only thing standing between a late entry
-        and an overrun, and it was measuring against the wrong number -- the flat
-        `_SELECT_BUDGET_S`, the stage's ceiling, rather than what THIS order's
-        share of the run pot actually leaves it. An order pacing at 4s was still
-        allowed in at 5.9s elapsed, i.e. already past its whole budget, and
-        overrunning the `_bounded_call` above does not trim the wave, it discards
-        every candidate the stage collected.
-
-        `_paced_wait` is the tree's answer to exactly that, and folding it in only
-        ever tightens: with no pacing bridge installed `_dyn_order_budget` is None,
-        `_SEARCH_DEADLINE` is unset, and it returns the constant unchanged -- so
-        this is byte-for-byte today's gate offline, which is also why no local gate
-        can move on it. Under pacing it reads room LEFT, so elapsed is charged
-        twice, once through the deadline and once through `_stage_t0`. That is
-        deliberate: erring toward skipping a wave costs at most an improvement
-        this pair may not have, and erring the other way costs the whole plan.
-        """
-        return time.monotonic() - _stage_t0 < self._paced_wait(_SELECT_BUDGET_S) - (_QUOTER_TIMEOUT_S + 1.0)
-
     def _sas_crossvenue_waves(self, cands, chain_id, tin, tout, amount_in, _stage_t0):
         try:
 
             def _dr285():
                 nonlocal cands
                 _bb = max((c['out'] for c in cands), default=0)
-                if self._sas_wave_room(_stage_t0):
+                if time.monotonic() - _stage_t0 < _SELECT_BUDGET_S - (_QUOTER_TIMEOUT_S + 1.0):
                     _xc = self._enumerate_crossvenue_2hop(chain_id, tin, tout, amount_in)
                     cands = cands + [c for c in _xc if c['out'] > _bb * 1.0005]
                 return _bb
             _bb = _dr285()
-            if self._sas_wave_room(_stage_t0):
+            if time.monotonic() - _stage_t0 < _SELECT_BUDGET_S - (_QUOTER_TIMEOUT_S + 1.0):
                 _xp = self._enumerate_crossvenue_2hop_proxy(chain_id, tin, tout, amount_in)
                 cands = cands + [c for c in _xp if c['out'] > _bb * 1.0005]
         except Exception:
@@ -733,11 +708,8 @@ class _MinerSolverDR10(_MinerSolverDR10DR170):
 
     @staticmethod
     def _sweep_deadline(snapshot):
-        from consts import DEADLINE
         ts = getattr(snapshot, 'timestamp', None) if snapshot else None
-        if not ts:
-            return DEADLINE
-        return int(ts) + 300
+        return int(ts or time.time()) + 300
 
     def _sweep_v2_plan(self, intent, state, snapshot, router, path, amount_in, chain_id):
         from eth_abi import encode as _enc
@@ -1322,8 +1294,7 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
         if _dr380 is not _DR_UNSET:
             return _dr380
 
-    def _swq_mav(self, mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, mc, _extras, extra_best, extra_tag, extra_route):
-        from eth_abi import decode as _dec
+    def _swq_mav(self, mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, _dec, mc, _extras, extra_best, extra_tag, extra_route):
         if mav_pools:
             token_a_in = tin.lower() == lo.lower()
             tick = 2147483647 if token_a_in else -2147483648
@@ -1333,8 +1304,6 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
 
                 def _dz213():
                     nonlocal extra_best, extra_route, extra_tag
-                    _dyn = getattr(self, '_dyn_order_budget', None)
-                    _rankable = _dyn is None or _dyn >= _SWEEP_VERIFY_MIN_S
                     for (tgt, cd, kind, tag, route), (ok, ret) in zip(mjobs, mc(mjobs)):
                         if not ok or not ret:
                             continue
@@ -1343,7 +1312,7 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
                         except Exception:
                             continue
                         _extras.append((out, tag, route))
-                        if _rankable and out > extra_best:
+                        if out > extra_best:
                             extra_best, extra_tag, extra_route = (out, tag, route)
                 nonlocal extra_best, extra_route, extra_tag
                 try:
@@ -1462,7 +1431,7 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
 
                 def _fw30():
                     reach_best, extra_best, extra_tag, extra_route, _extras, mav_pools = self._swq_parse(jobs, results, _dec)
-                    extra_best, extra_tag, extra_route = self._swq_mav(mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, mc, _extras, extra_best, extra_tag, extra_route)
+                    extra_best, extra_tag, extra_route = self._swq_mav(mav_pools, tin, tout, lo, calc, amount_in, _enc, _ck, _dec, mc, _extras, extra_best, extra_tag, extra_route)
                     _extras.sort(key=lambda x: -x[0])
                     self._sweep_topk = _extras[:3]
                     return (reach_best, extra_best, extra_tag, extra_route)
@@ -1633,26 +1602,7 @@ class _MinerSolverDR11(_MinerSolverDR11DR171):
         def _dr155():
 
             def _dz224():
-                """Approve exactly what this plan's swap leg spends: amount_in.
-
-                Both encoders that reach here build their calldata from amount_in and
-                neither reads spend_amount -- uniswap_v3 at its encode_exact_input_single
-                call above, aerodrome_slipstream_alt inside _shp_aerodrome_slipstream_alt.
-                Approving cand['spend_amount'] therefore UNDER-approves whenever the
-                candidate carries the _HOLE_SPEND_CAPS cap, and the router's transferFrom
-                reverts with "Transfer amount exceeds allowance" -- the order drops.
-
-                The cap is maverick's alone: _dr54 sets it on venue 'maverick_v2', which
-                is served by _build_singlehop_plan, and that builder encodes spend_amount
-                into its OWN calldata before approving it, so the two agree there. Reading
-                the same key from this builder pairs a capped approval with a full-amount
-                swap. Measured 2026-08-20 by bin/exec-check on veto:q_e26967cc89c9: the
-                champion delivered 246808684, ours reverted on allowance. It is timing-
-                dependent -- which candidate wins varies with pacing -- so the same tree
-                delivered the order 20 minutes earlier, which is why no plan-level gate
-                ever caught it.
-                """
-                interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, int(amount_in)), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
+                interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, int(cand.get('spend_amount') or amount_in)), chain_id=chain_id), Interaction(target=router, value='0', call_data=call, chain_id=chain_id)]
                 logger.info('[solver] score-aware %s param=%s out=%d gas_model=%d', route_tag, cand['param'], cand['out'], cand['gas_model'])
                 return interactions
             interactions = _dz224()
@@ -1683,52 +1633,26 @@ class _MinerSolverDR56(_MinerSolverDR11):
         would send output past the app's _gained() → 0), so only a truly
         identical order reuses; everything else recomputes.
 
-        THE KEY MUST INCLUDE app_id. It did not, and that was this lineage's
-        drop list. EVERY plan this tree builds is constructed
-        `ExecutionPlan(intent_id=intent.app_id, ...)` — 17 call sites in this
-        file alone — so app_id is a FUNCTIONAL input, not a label. Two orders
-        that share (chain, in, out, amount, min_out, recipient) but belong to
-        DIFFERENT apps collided here, and the second was handed the first
-        order's plan, still stamped with the first order's `intent_id`. The
-        scorer credits the app's own `_gained()`, so that plan delivers to
-        nobody: `cross_chain_delivery {"credited": 0, "nothing_delivered": 1}`
-        on sub_97566d1a7842.
+        The memo above was DEAD until this fix: `_dz212` rebound `ck` without a
+        `nonlocal`, so the key never escaped it, `ck` stayed None, the lookup
+        always missed and the store was skipped by `if ck is not None`. Every
+        duplicate re-ran full discovery — i.e. the tail-drop this docstring
+        describes was never actually prevented. The champion still carries it.
 
-        This is why no plan-level gate could see it. The cached plan is
-        WELL-FORMED and carries the right leg count, so `bin/perf-check` reads
-        ours=N legs == champ=N legs and clears the row SAFE — the exact failure
-        `bin/exec-check` exists for ("a plan comparison cannot see a plan that
-        is well-formed and then delivers nothing"). It is also why replaying a
-        dropped order ALONE proves nothing: with `--limit 6` the cache is cold,
-        the order computes its own plan with its own intent_id, and it delivers
-        at js=1.0000. All 13 drops on sub_97566d1a7842 replayed green that way.
-
-        It also explains the SHAPE. The drops were SCATTERED (indices 8..121,
-        73 rows served after the first), not a drained tail — a collision lands
-        wherever a duplicate pair+amount recurs. And it is not the RPC-read
-        budget: a cache HIT reads LESS, which is why this tree measures 6 of
-        the 5000-unit per-scenario budget. `WETH_to_USDC`, a named standing
-        scenario and the most-repeated pair in the corpus, had the highest
-        collision probability of any row and was dropped every run.
-
-        intent_function joins it for the same reason and costs nothing.
-        Narrowing a memo key can only ever cause a RECOMPUTE, never a wrong
-        plan, so this cannot convert a matched order into a regression. The
-        speed win the memo was added for is untouched: the observed ~11×
-        repeat was the same pair AND the same app, and still hits."""
+        The key also gains four fields the original omitted, each of which
+        provably reaches the shipped plan, so a hit now equals a recompute:
+          app_id / nonce          stamped onto ExecutionPlan as intent_id and
+                                  nonce; without them a hit returns a plan
+                                  attributed to the FIRST order of the pair.
+          platform_fee_*          _fee_params() merges these from raw_params
+                                  into _effective_swap_amount(), which sets
+                                  amount_in — so they change the CALLDATA.
+        Widening cannot cost a hit on the live corpus (all rows share one
+        app_id), and the whole block stays inside `except: ck = None`, so any
+        failure degrades to exactly today's behaviour: no caching."""
         ck = None
         try:
-
-            def _dr136():
-
-                def _dz212():
-                    nonlocal ck
-                    ck = (int(getattr(state, 'chain_id', 0) or 0), str(getattr(intent, 'app_id', '') or ''), str(getattr(intent, 'intent_function', '') or ''), str(p.get('input_token', '') or '').lower(), str(p.get('output_token', '') or '').lower(), str(p.get('input_amount', '') or ''), str(p.get('min_output_amount', '') or ''), str(recip or '').lower())
-                nonlocal ck
-                p = self._normalized_swap_params(intent, state)
-                recip = state.contract_address or p.get('receiver') or getattr(state, 'owner', '')
-                _dz212()
-            _dr136()
+            ck = self._plan_cache_key(intent, state)
             hit = self.__dict__.setdefault('_plan_cache', {}).get(ck)
             if hit is not None:
                 return hit
@@ -1742,7 +1666,7 @@ class _MinerSolverDR56(_MinerSolverDR11):
                 logger.exception('[solver] generate_plan top-level guard caught; last-resort plan')
                 plan = self._last_resort_plan(intent, state, snapshot)
             plan = self._slim_plan_metadata(plan, state)
-            if ck is not None and self._pc_worth_caching(plan):
+            if ck is not None and plan is not None:
                 try:
                     self.__dict__.setdefault('_plan_cache', {})[ck] = plan
                 except Exception:
@@ -1752,109 +1676,39 @@ class _MinerSolverDR56(_MinerSolverDR11):
         return plan
 
     @staticmethod
-    def _pc_worth_caching(plan) -> bool:
-        """Only a plan that actually DOES something may enter the memo.
-
-        THE GUARD USED TO BE `plan is not None`, AND THAT LATCHED THE DROPS.
-        The king's documented "genuinely unroutable" bottom-out is not None --
-        it is a well-formed ExecutionPlan with `interactions == []`. So an
-        order that came back empty was written into `_plan_cache` under its
-        pair key, and from then on EVERY order sharing that key returned it
-        from line 1707 (`if hit is not None: return hit`) without calling
-        `_generate_plan_impl` at all. One empty answer poisoned the pair for
-        the rest of the run.
-
-        A negative result is exactly the thing that must NOT be cached here,
-        because emptiness is not a property of the pair -- it is a property of
-        the WINDOW the search had when it ran. `pacing_bridge._pb_plan_window`
-        arms `_SEARCH_DEADLINE` at this order's share of the run pot, so the
-        same pair returns a route with a wide window and nothing with a narrow
-        one. Caching the narrow-window answer freezes the unluckiest attempt
-        of the run and replays it over every later occurrence, including the
-        ones that would have had budget to spare.
-
-        That composes into the measured shape exactly:
-          - SCATTERED, not a drained tail -- a poisoned key fires wherever its
-            duplicates happen to sit, and rows keep being served around them
-            (sub_226692a9b998 drops at index 120 with matched rows after it).
-          - The drop SET churns run to run (13 -> 10 across sub_97566d1a7842
-            -> sub_226692a9b998, with only WETH_to_USDC in common) because
-            WHICH occurrence gets the narrow window varies.
-          - WETH_to_USDC drops EVERY run: 93e59e0 measured it as the
-            most-repeated pair in the corpus, and one starved occurrence out of
-            ~11 is enough to lose all of them.
-          - A single-order replay is always green: `bin/exec-check --limit 6`
-            starts cold, so there is nothing to hit.
-
-        Same defect class as 9c683c5 ("the cover pot latched off run-wide, so
-        every later empty plan stayed empty") and _pb_fresh_order's ladder
-        reset -- a negative result latching for a whole run.
-
-        Cannot cost a matched order. Declining to cache only ever causes a
-        RECOMPUTE; the recomputed plan is the one the search would have
-        produced anyway, and a non-empty plan still caches and still hits, so
-        the ~11x repeat speed win the memo was built for is untouched. The
-        only thing that costs more is a pair that is GENUINELY unroutable,
-        which re-searches per occurrence -- bounded by the plan window the
-        governor already arms, and paid for by orders we were dropping.
-        """
-        try:
-            return bool(getattr(plan, 'interactions', None))
-        except Exception:
-            return False
+    def _cache_key_order(state, p, recip):
+        """Chain / token / amount / recipient half of the plan-cache key —
+        the fields that describe the swap the caller actually asked for."""
+        return (int(getattr(state, 'chain_id', 0) or 0),
+                str(p.get('input_token', '') or '').lower(),
+                str(p.get('output_token', '') or '').lower(),
+                str(p.get('input_amount', '') or ''),
+                str(p.get('min_output_amount', '') or ''),
+                str(recip or '').lower())
 
     @staticmethod
-    def _slim_bridge_payload(plan) -> bool:
-        """True when `plan` carries a bridge payload, so slimming must not run.
+    def _cache_key_context(intent, state, fee):
+        """App / nonce / platform-fee half of the key. These four are the
+        fields the original omitted; each reaches the shipped plan (see
+        generate_plan's docstring), so a hit equals a recompute."""
+        return (str(getattr(intent, 'app_id', '') or ''),
+                int(getattr(state, 'nonce', 0) or 0),
+                str(fee.get('platform_fee_wei', '') or ''),
+                str(fee.get('platform_fee_token', '') or '').lower())
 
-        Delegates to `empty_rescue.is_cross_chain`, the one owner of "does this
-        PLAN carry a bridge payload?" (`xc_order`'s header names it, and
-        `_apex_ourbase._empty` / `_bg124_arch_c63a894._g_xc_bridges` both reach
-        it the same way). Imported inside the call because this module is in the
-        MRO's base and a module-level import would cycle; the literal test is
-        the fallback rather than the primary for the reason this tree keeps
-        paying for -- a fourth inlined copy of a rule is what drifts.
-        """
-        try:
-            from empty_rescue import is_cross_chain as _x
-            return bool(_x(plan))
-        except Exception:
-            return isinstance((getattr(plan, 'metadata', None) or {}).get('cross_chain_plan'), dict)
+    def _plan_cache_key(self, intent, state):
+        """The in-run memo key for one order. Raises rather than returning a
+        partial key — generate_plan runs this inside its `except: ck = None`,
+        so a failure degrades to "no caching", exactly as before."""
+        p = self._normalized_swap_params(intent, state)
+        recip = state.contract_address or p.get('receiver') or getattr(state, 'owner', '')
+        fee = self._fee_params(state, p)
+        return (self._cache_key_order(state, p, recip)
+                + self._cache_key_context(intent, state, fee))
 
     @staticmethod
     def _slim_plan_metadata(plan, state):
         """Strip the SHIPPED plan's metadata to the functional minimum.
-
-        A CROSS-CHAIN plan is exempt, and that exemption is this method's whole
-        correctness argument. THE BUG: this runs unconditionally on the ship
-        path (`:1719`, right after `_generate_plan_impl`), and a bridge plan is
-        `interactions=[]` with its ENTIRE payload under
-        `metadata['cross_chain_plan']` (`baseline_solver.py:1192`, alongside
-        `src_chain_id` / `dst_chain_id` / `plan_type`). Slimming replaced that
-        dict with `{'chain_id': <source chain>}` -- `old.get('chain_id')` is
-        absent on a bridge plan, so `cid` fell through to `state.chain_id` --
-        leaving a plan with no interactions and no payload. That is not a
-        cheaper plan, it is an empty source-chain one, and the validator scores
-        it `no_cross_chain_plan`: credited 0, a dropped order and a hard veto.
-
-        It is also why the five commits that stopped upper layers overwriting a
-        bridge plan (1fc59e2, 85adae2, eca60e8, 2ff4a9b, 6e91880, 586051a) never
-        closed the reason. Every one of them guards a layer ABOVE; this destroys
-        the payload BELOW all of them, at the last point before the plan ships,
-        so no guard upstream could see it. Measured on scored sub_54af070ead05 /
-        round-e29790440-n1: `cross_chain_delivery` = orders 3, credited 0,
-        reasons `no_cross_chain_plan` 1 + `nothing_delivered` 2. The two
-        `nothing_delivered` rows are orders served by a layer that returns above
-        king_base's `generate_plan` and never reach this method -- 0a5ecd8 is
-        the fix for those. The single `no_cross_chain_plan` row is the order
-        that DID descend into `_generate_plan_impl` and got stripped here.
-
-        Cannot cost a matched order. The exemption fires only on a plan carrying
-        `cross_chain_plan`, and every one of the 99 orders scored `matched` on
-        that verdict delivers through `interactions` -- a bridge plan has none.
-        Their metadata holds no `cross_chain_plan` key, so they take the byte
-        -identical path and the gas saving below is untouched. The exempted
-        plans are the 3 that score credited 0 today, i.e. already at the floor.
 
         ``plan.metadata`` is JSON-serialized into the on-chain ``scoreIntent``
         CALLDATA (16 gas per non-zero byte). Our verbose keys
@@ -1881,8 +1735,6 @@ class _MinerSolverDR56(_MinerSolverDR11):
             except Exception:
                 logger.exception('[solver] metadata slim skipped; leaving plan metadata as-is')
         if plan is None:
-            return plan
-        if _MinerSolverDR56._slim_bridge_payload(plan):
             return plan
         _dz239()
         return plan
@@ -1928,7 +1780,7 @@ class _MinerSolverDR56(_MinerSolverDR11):
                                         except Exception:
                                             return None
                                     return DiscoveryEngine(_call).aero_v2_candidates(chain_id, tin.lower(), tout.lower(), amount_in)
-                                aero = self._bounded_call(_q, timeout=self._paced_wait(3.0)) or []
+                                aero = self._bounded_call(_q, timeout=3.0) or []
                                 aero = [c for c in aero if c.get('out', 0) >= min_out]
                                 if aero:
                                     logger.info('[discovery] usdbc quoted cover out=%s', aero[0]['out'])
@@ -2652,6 +2504,11 @@ class _MinerSolverDR77(_MinerSolverDR56):
                 except Exception:
                     pass
                 if w3.is_connected():
+                    # After is_connected(), never before: the probe is one cheap
+                    # call on first creation, and guarding it would turn a
+                    # past-deadline plan's FIRST client into None for every
+                    # caller here rather than into an empty quote.
+                    self._kb_guard_deadline(w3)
                     self._web3_cache[cid] = w3
                     return (w3,)
             except Exception:
@@ -2664,6 +2521,80 @@ class _MinerSolverDR77(_MinerSolverDR56):
         _r_dz236 = _dz236()
         if _r_dz236 is not _DR_UNSET:
             return _r_dz236[0]
+
+    def _kb_guard_deadline(self, w3):
+        """Refuse to START a round-trip once this plan's deadline has passed.
+
+        THE PHASE BUDGETS CANNOT BOUND A THREAD POOL, and that is the gap this
+        closes. `_dyn_order_budget` clamps each phase, but every quoter fan-out
+        in this file is written as
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+                futs = [ex.submit(...) for ... in jobs]
+                for fu in concurrent.futures.as_completed(futs):
+
+        and `with` exits through `shutdown(wait=True)`. There is no deadline
+        check in the loop and none before submit, so once the jobs are in the
+        queue the plan waits out EVERY socket no matter how little time is left.
+        Five sites do this (3182, 4327, 4475, 4770, 2979) with `workers` up to
+        _QUOTER_MAX_WORKERS = 48 against a single fork node that serialises them.
+
+        MEASURED 2026-08-27, bin/exec-check m2 --chain 1 --limit 8: the run died
+        on `SolverTimeoutError: Command Command.GENERATE_PLAN timed out after
+        30.0s` and the gate returned UNMEASURED (rc=2) -- the SAME failure
+        4fbe9a5 was banked to fix, so the phase-level clamp alone is measurably
+        not enough. The stderr underneath it is a wall of
+        `ReadTimeoutError: HTTPConnectionPool(host='127.0.0.1', port=18650):
+        Read timed out. (read timeout=5.0)`, and 5.0 is _QUOTER_TIMEOUT_S
+        exactly, so the overrun is the quoter pool draining, not one slow call.
+        The harness kills on that (harness/protocol.py::TIMEOUTS) rather than
+        scoring it 0, so the order returns `chal: null` and the ladder reads
+        `dropped` -- condition (2), a hard veto. sub_0017e3158c34 carries that
+        signature on quote:q_c29cf01e91d1bc3bf1a372bdc46684bc.
+
+        WHY IT CANNOT COST A SERVED ORDER. While `time.monotonic() < deadline`
+        this returns `inner(...)` -- the same bound method, same arguments, same
+        socket -- so every quote that fits in the plan is bit-for-bit what it
+        was. When `_plan_deadline` is None (live mode, and any path that never
+        entered `pacing_bridge.generate_plan`) the guard never fires at all. It
+        only bites after _PLAN_SPAN_S = 20.0s, at which point the harness is
+        already 10s from killing the container and scoring the order `dropped`;
+        returning a JSON-RPC error there converts a GUARANTEED drop into
+        whatever the fan-out had already collected. Every consumer is written
+        for that: `_quote_one` returns 0 on any exception, `_quote_eth_uni` /
+        `_quote_eth_pancake` / `_quote_eth_uni_multihop` return None, and both
+        collector loops wrap `fu.result()` in `except Exception`.
+
+        The wrap goes on the provider instance BEFORE the first request, so
+        web3's `_request_func_cache` -- built lazily on first use and closed
+        over `self.make_request` -- captures the guarded callable rather than
+        the raw one. `_kb_deadline_guarded` keeps a re-created client from
+        stacking wraps.
+        """
+        import time
+        provider = getattr(w3, 'provider', None)
+        inner = getattr(provider, 'make_request', None)
+        if inner is None or getattr(provider, '_kb_deadline_guarded', False):
+            return
+        def _guarded(method, params):
+            deadline = getattr(self, '_plan_deadline', None)
+            try:
+                self._kb_rpc_seen = int(getattr(self, '_kb_rpc_seen', 0) or 0) + 1
+            except Exception:
+                pass
+            if deadline is not None and time.monotonic() >= float(deadline):
+                try:
+                    self._kb_rpc_blocked = int(getattr(self, '_kb_rpc_blocked', 0) or 0) + 1
+                except Exception:
+                    pass
+                return {'jsonrpc': '2.0', 'id': 0, 'error': {'code': -32000, 'message': 'plan deadline passed'}}
+            return inner(method, params)
+        try:
+            provider.make_request = _guarded
+            provider._kb_deadline_guarded = True
+            self._kb_guards = int(getattr(self, '_kb_guards', 0) or 0) + 1
+        except Exception:
+            pass
 
     def _get_quoter_web3(self, chain_id):
         """Web3 client dedicated to the quoter fan-out: same RPC, LONGER socket
@@ -2689,6 +2620,7 @@ class _MinerSolverDR77(_MinerSolverDR56):
                         w3.provider.exception_retry_configuration = None
                     except Exception:
                         pass
+                    self._kb_guard_deadline(w3)
                     cache[cid] = w3
                     return (w3,)
                 except Exception:
@@ -2709,66 +2641,6 @@ class _MinerSolverDR77(_MinerSolverDR56):
         if _dr332 is not _DR_UNSET:
             return _dr332
         return self._get_web3(cid)
-
-    def _paced_wait(self, timeout):
-        """``timeout`` clamped to this order's own share of the run.
-
-        `_bounded_call` bounds a WAIT, not the work: `t.join(timeout)` parks
-        the planning thread for the full timeout and then returns None so the
-        caller falls back. `_dr243` already clamps the baseline and select
-        waits with `min(_BUDGET_S, _dyn_order_budget)`; the discovery and spec
-        waits below were left on flat 8.0s and 6.0s constants, so an order
-        holding a 3s share still sat in them for eight.
-
-        The entry gate at the `_DISCOVERY_MIN_BUDGET_S` caller is not this
-        check: it decides whether the share is big enough to ENTER discovery,
-        not how much of that share the wait may spend once inside.
-
-        Overrunning here is not paid locally — it comes out of the run pot the
-        later orders need, and the validator kills a plan at 30s and reports
-        `chal: null`, a DROPPED order and a hard veto. Only ever tightens:
-        `min` cannot grant a longer wait than the site asked for, and with no
-        pacing bridge installed `_dyn_order_budget` is None and the wait is
-        exactly what it was.
-
-        THE SHARE WAS BEING GRANTED ONCE PER PHASE, NOT ONCE PER PLAN. The
-        clamp above is the whole order budget, and every phase of a single
-        generate_plan applies it independently: select, baseline, discovery,
-        spec and the aero cover wait run SEQUENTIALLY and each one was handed
-        the full share again. A 122-order corpus paces at 860/122 = 7.05s, so
-        those five waits summed to 7.05+7.05+7.05+6.0+3.0 = 30.2s — a per-plan
-        spend just over the harness's 30s per-GENERATE_PLAN killer, from a
-        budget that reads correct at every individual site. That is the shape
-        the drops have: load-dependent, no routing change behind them, and
-        invisible to a targeted replay where the early phases answer and the
-        later ones are never reached.
-
-        So charge against the window as well as the share. `_SEARCH_DEADLINE`
-        is the cell the cover scopes already share (`cover_ext._arm`,
-        `router_cover.best_route`, `baked_routes`); the pacing bridge now opens
-        one for the plan as a whole at `_PLAN_CEILING_S`, so time a phase burns
-        is subtracted from what the phases after it may ask for. Unset (0.0) is
-        the offline case — perf-check runs with `rpc_urls: {}` and nothing arms
-        the cell — and there the clamp is inert, which is why no offline gate
-        moves on this.
-
-        A zero return is not a new failure mode: `_bounded_call` already
-        returns None on overrun and every call site treats None as "fall
-        back". The only change is that we stop paying for the wait first."""
-        import time
-        dyn = getattr(self, '_dyn_order_budget', None)
-        try:
-            out = timeout if dyn is None else min(timeout, float(dyn))
-        except (TypeError, ValueError):
-            out = timeout
-        try:
-            from consts import _SEARCH_DEADLINE
-            dl = _SEARCH_DEADLINE[0]
-        except Exception:
-            return out
-        if not dl:
-            return out
-        return max(0.0, min(out, dl - time.monotonic()))
 
     @staticmethod
     def _bounded_call(fn, args=(), *, timeout):
@@ -2800,25 +2672,39 @@ class _MinerSolverDR77(_MinerSolverDR56):
         from that same WETH balance before our router leg runs. Spending the
         gross amount then drops the order; spending the net amount can still
         clear the order min and covers the incumbent's tiny-fee blind spots.
-        """
 
-        def _dz235():
-            try:
-                fee = int(params.get('platform_fee_wei', 0) or 0)
-            except (TypeError, ValueError):
-                fee = 0
-            if fee <= 0:
-                return (amount_in,)
-            fee_token = str(params.get('platform_fee_token', '') or '').lower()
-            if fee_token and fee_token != _WETH:
-                return (amount_in,)
-            return (max(0, amount_in - fee),)
-            return _DR_UNSET
-        if not _NET_WETH_PLATFORM_FEE or amount_in <= 0 or str(tin).lower() != _WETH:
+        INERT AS SHIPPED, AND THAT IS DELIBERATE. ``_NET_WETH_PLATFORM_FEE``
+        reads ``SOLVER_NET_WETH_PLATFORM_FEE`` with a default of ``'0'`` (line
+        76) and the harness sets no such variable, so every one of the twelve
+        call sites across five files is handed the gross amount today. The
+        champion carries this function byte-identical, flag and all, so netting
+        is NOT what separates us from it on any order and turning the flag on is
+        a divergence with no evidence behind it: where the app does not actually
+        reserve the fee, netting spends less and can only lower delivered
+        output, which risks turning a `matched` order into a `worse` one. Left
+        off until an executing gate can measure it.
+
+        THE COMPARISON WAS ALSO CHAIN-BLIND, which is fixed here. ``_WETH`` is
+        the BASE wrapper (king_consts.py:10, 0x4200..0006); mainnet's is the
+        separate ``_ETH_WETH`` (king_consts.py:127, 0xc02a..6cc2). A chain-1
+        WETH-input order could therefore never satisfy the guard even with the
+        flag on, so anyone enabling it to chase a chain-1 drop would have
+        measured no change and drawn the wrong conclusion. Both wrappers are
+        accepted now, for the input token and for the fee token alike.
+        """
+        _weth_in = {_WETH, _ETH_WETH}
+        if not _NET_WETH_PLATFORM_FEE or amount_in <= 0 or str(tin).lower() not in _weth_in:
             return amount_in
-        _r_dz235 = _dz235()
-        if _r_dz235 is not _DR_UNSET:
-            return _r_dz235[0]
+        try:
+            fee = int(params.get('platform_fee_wei', 0) or 0)
+        except (TypeError, ValueError):
+            fee = 0
+        if fee <= 0:
+            return amount_in
+        fee_token = str(params.get('platform_fee_token', '') or '').lower()
+        if fee_token and fee_token not in _weth_in:
+            return amount_in
+        return max(0, amount_in - fee)
 
     def _quote_uni_path_candidate(self, chain_id, tokens, fees, amount_in):
         """Single exactInput quote for a known-good Uniswap V3 path."""
@@ -3256,24 +3142,13 @@ class _MinerSolverDR123(_MinerSolverDR77):
         _eth_uni_quoter = _UNI_QUOTER_BY_CHAIN.get(int(chain_id))
         if not _eth_uni_quoter:
             return []
-        from eth_v2 import v2_gas, v2_specs
-        from quoter_wave import harvest, window
+        import concurrent.futures
 
         def _fw12():
             from eth_abi import encode as _enc, decode as _dec
             from eth_utils import keccak as _kk, to_checksum_address as _ck
-            # quoter_wave: the three FAN-OUT quotes move to the client every
-            # other fan-out in the tree already uses -- same RPC, socket timeout
-            # _QUOTER_TIMEOUT_S instead of the shared _RPC_TIMEOUT_S, retry
-            # ladder off. This was the one site left on the 2.0s client, and a
-            # quote slower than that is not an error here: it is a venue
-            # silently missing from max(out). `_quote_eth_curve` below keeps the
-            # shared client deliberately -- it is called sequentially, OUTSIDE
-            # the harvest window, so a longer socket there would be unbounded.
-            _qw3 = self._get_quoter_web3(int(chain_id)) or w3
             uni_sel = _kk(text='quoteExactInputSingle((address,address,uint256,uint24,uint160))')[:4]
             uni_exact_sel = _kk(text='quoteExactInput(bytes,uint256)')[:4]
-            v2_sel = _kk(text='getAmountsOut(uint256,address[])')[:4]
 
             def _eth_uni_path(tokens, fees):
                 path = b''
@@ -3289,7 +3164,7 @@ class _MinerSolverDR123(_MinerSolverDR77):
                     p = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
 
                     def _dr340():
-                        r = _qw3.eth.call({'to': _ck(_eth_uni_quoter), 'data': '0x' + (uni_sel + p).hex()})
+                        r = w3.eth.call({'to': _ck(_eth_uni_quoter), 'data': '0x' + (uni_sel + p).hex()})
                         out, _a, _t, gas_est = _dec(['uint256', 'uint160', 'uint32', 'uint256'], r)
                         if int(out) > 0:
                             return {'venue': 'uniswap_v3', 'param': int(fee), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _OFFSET_UNI + int(gas_est)}
@@ -3306,7 +3181,7 @@ class _MinerSolverDR123(_MinerSolverDR77):
                     p = _enc(['(address,address,uint256,uint24,uint160)'], [(_ck(tin), _ck(tout), int(amount_in), int(fee), 0)])
 
                     def _dr342():
-                        r = _qw3.eth.call({'to': _ck(_PANCAKE_QUOTER), 'data': '0x' + (uni_sel + p).hex()})
+                        r = w3.eth.call({'to': _ck(_PANCAKE_QUOTER), 'data': '0x' + (uni_sel + p).hex()})
                         out, _a, _t, gas_est = _dec(['uint256', 'uint160', 'uint32', 'uint256'], r)
                         if int(out) > 0:
                             return {'venue': 'pancake_v3', 'param': int(fee), 'out': int(out), 'gas_est': int(gas_est), 'gas_model': _OFFSET_UNI + int(gas_est)}
@@ -3323,7 +3198,7 @@ class _MinerSolverDR123(_MinerSolverDR77):
                     tokens, fees = route
                     path = _eth_uni_path(tokens, fees)
                     p = _enc(['bytes', 'uint256'], [path, int(amount_in)])
-                    r = _qw3.eth.call({'to': _ck(_eth_uni_quoter), 'data': '0x' + (uni_exact_sel + p).hex()})
+                    r = w3.eth.call({'to': _ck(_eth_uni_quoter), 'data': '0x' + (uni_exact_sel + p).hex()})
 
                     def _dr249():
                         out, _a, _t, gas_est = _dec(['uint256', 'uint160[]', 'uint32[]', 'uint256'], r)
@@ -3333,31 +3208,6 @@ class _MinerSolverDR123(_MinerSolverDR77):
                     _dr250 = _dr249()
                     if _dr250 is not _DR_UNSET:
                         return _dr250
-                except Exception:
-                    return None
-                return None
-
-            def _quote_eth_v2(spec):
-                # eth_v2: the mainnet ladder has no constant-product venue at
-                # all -- every V2 router this tree knows is a chain-8453
-                # deployment. A long-tail token's real depth is usually a
-                # WETH pair, so the pool that would have served the order is
-                # never quoted and max(out) ranks thin V3 ticks against each
-                # other. Same v2_fork shape the Base sweep already ships.
-                try:
-                    router, tokens = spec
-                    p = _enc(['uint256', 'address[]'], [int(amount_in), [_ck(t) for t in tokens]])
-
-                    def _dr351():
-                        r = _qw3.eth.call({'to': _ck(router), 'data': '0x' + (v2_sel + p).hex()})
-                        out = int(_dec(['uint256[]'], r)[0][-1])
-                        if out > 0:
-                            gas_est, gas_model = v2_gas(tokens)
-                            return {'venue': 'v2_fork', 'router': _ck(router), 'param': tuple(tokens), 'tokens': tuple(tokens), 'out': out, 'gas_est': gas_est, 'gas_model': gas_model}
-                        return _DR_UNSET
-                    _dr352 = _dr351()
-                    if _dr352 is not _DR_UNSET:
-                        return _dr352
                 except Exception:
                     return None
                 return None
@@ -3393,50 +3243,31 @@ class _MinerSolverDR123(_MinerSolverDR77):
                 _fwr24 = _fw24()
                 if _fwr24 is not None:
                     return _fwr24[0]
-            return (_quote_eth_uni, _quote_eth_pancake, _quote_eth_uni_multihop, _quote_eth_v2, _quote_eth_curve)
-        _quote_eth_uni, _quote_eth_pancake, _quote_eth_uni_multihop, _quote_eth_v2, _quote_eth_curve = _fw12()
+            return (_quote_eth_uni, _quote_eth_pancake, _quote_eth_uni_multihop, _quote_eth_curve)
+        _quote_eth_uni, _quote_eth_pancake, _quote_eth_uni_multihop, _quote_eth_curve = _fw12()
         tin_l, tout_l = (str(tin).lower(), str(tout).lower())
 
         def _dr151():
             eth_mids = [h for h in _ETH_HUBS if h not in (tin_l, tout_l)]
-            # twohop_tier: this ladder never asked for the 1% tier, so a
-            # long-tail token whose only real V3 pool is the 10000 one could be
-            # quoted DIRECT but never through a hub. An earlier round's two >1%
-            # cuts were both chain-1 two-hop rows priced out of a thinner pool.
-            from twohop_tier import twohop_routes
-            uni_routes = [((tin, mid, tout), fees) for mid, fees in twohop_routes(eth_mids, _ETH_UNI_FEES_TWOHOP)]
-            # pancake_tier: the Pancake quoter was handed Uniswap's ladder, so
-            # chain 1 asked it for 3000 (no such tier on PancakeV3Factory) and
-            # never for 2500, where its non-stable liquidity sits. :4454 and
-            # :4965 already pair the venue with _PANCAKE_FEES; this one did not.
-            from pancake_tier import pancake_fees
-            # eth_v2: these go FIRST because the fan-out's worker cap is 48 and
-            # the rest of this list overruns it. Counted here rather than taken
-            # from any module header, because two of the four summands come from
-            # modules added after the others were written: v2_specs 4, uni 4,
-            # pancake 5 -- the four core tiers plus 2500 -- and uni_routes 38,
-            # for 51 against 48. Whatever sits past the cap queues, so the list
-            # order decides what waits: the last three entries of twohop_tier's
-            # second exotic mid, not the only constant-product quotes on the
-            # chain. Queued is not lost, since harvest bounds the stage on one
-            # window, but it is not free either -- adding a tier pair anywhere
-            # below lengthens that queue rather than filling slack.
-            jobs = [(_quote_eth_v2, s) for s in v2_specs(tin, tout, eth_mids)] + [(_quote_eth_uni, f) for f in _ETH_UNI_FEES] + [(_quote_eth_pancake, f) for f in pancake_fees(_ETH_UNI_FEES, _PANCAKE_FEES)] + [(_quote_eth_uni_multihop, r) for r in uni_routes]
+            uni_routes = [((tin, mid, tout), fees) for mid in eth_mids[:3] for fees in _ETH_UNI_FEES_TWOHOP]
+            jobs = [(_quote_eth_uni, f) for f in _ETH_UNI_FEES] + [(_quote_eth_pancake, f) for f in _ETH_UNI_FEES] + [(_quote_eth_uni_multihop, r) for r in uni_routes]
 
             def _dr74():
                 cands: list[dict[str, Any]] = []
                 try:
 
                     def _dr225():
-                        # quoter_wave: the socket swap above opened this fan-out
-                        # from 2.0s to _QUOTER_TIMEOUT_S, and `as_completed` had
-                        # no wall of its own -- `with ThreadPoolExecutor(...)`
-                        # joins every straggler on __exit__. Opening a wait
-                        # without bounding it is how a >1% cut becomes a DROPPED
-                        # order: the stage overruns _sel_to, `_bounded_call`
-                        # returns None and the whole enhanced plan is discarded.
+                        nonlocal c
                         workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
-                        cands.extend(harvest(jobs, workers, window(self, _QUOTER_TIMEOUT_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S)))
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+                            futs = [ex.submit(fn, arg) for fn, arg in jobs]
+                            for fu in concurrent.futures.as_completed(futs):
+                                try:
+                                    c = fu.result()
+                                    if c is not None:
+                                        cands.append(c)
+                                except Exception:
+                                    pass
                     _dr225()
                 except Exception:
                     logger.exception('[solver] eth enumerate concurrent failed; sequential fallback')
@@ -3590,7 +3421,7 @@ class _MinerSolverDR123(_MinerSolverDR77):
                         return None
 
                     def _dr55():
-                        pool_states = self._cached_pool_states(chain_id, snapshot)
+                        pool_states = _SnapLegacy.or_rpc(self, chain_id, snapshot)
                         a, b = (tin.lower(), tout.lower())
                         best = None
 
@@ -3619,48 +3450,13 @@ class _MinerSolverDR123(_MinerSolverDR77):
 
                     def _dr281():
 
-                        def _dz171():
-                            """The tier to encode, MEASURED wherever this tree has a measurement.
-
-                            `best[1]` is the fee of the highest-`liquidity` pool the snapshot
-                            carries for this pair, and that comparison is the defect. A V3
-                            `liquidity` figure is denominated per tick-spacing, so it does NOT
-                            order across fee tiers -- comparing them picks a tier by an
-                            arithmetic accident rather than by depth. On Base WETH<->USDC it
-                            picks 3000, and `_champ_base` :917 and :942 both record what that
-                            encodes: a blind `exactInputSingle` against "a pool that does not
-                            exist", which reverts and delivers zero.
-
-                            `singlehop_tier` already holds the tier this tree's own fill rows
-                            deliver on for that pair, and rung (2) of `_last_resort_plan` has
-                            consulted it since 4f45c61. This rung runs FIRST and did not, so it
-                            answered those rows before the fixed rung was ever reached and they
-                            kept shipping 3000 -- state/last-perf-ab.json still carries
-                            `fee=0xbb8` for all five of them, planned hours after that commit.
-                            Rung (2) served no order the table names; this is where the cover
-                            has to land to reach them.
-
-                            The liquidity pick stays the DEFAULT, so the table's one measured
-                            pair is the only thing that moves and every other pair on every
-                            chain encodes exactly the byte it encoded before. Guarded, because
-                            `_last_resort_plan` answers a raise from this rung by falling
-                            through to `_empty_plan` -- a dropped order and a hard veto, which
-                            is far worse than the reverting hop this replaces.
-                            """
-                            try:
-                                from singlehop_tier import single_hop_fee
-                                return single_hop_fee(chain_id, tin, tout, default=best[1])
-                            except Exception:
-                                return best[1]
-
                         def _dz170():
                             from common.abi_utils import encode_approve
                             from strategies.dex_aggregator.v3_codec import encode_exact_input_single
-                            interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=fee_tier, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
-                            return (ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'offline-fallback', 'route': 'uniswap_v3', 'fee_tier': fee_tier}),)
+                            interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=best[1], recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
+                            return (ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'solver': 'offline-fallback', 'route': 'uniswap_v3', 'fee_tier': best[1]}),)
                             return _DR_UNSET
                         deadline = 9999999999
-                        fee_tier = _dz171()
                         _r_dz170 = _dz170()
                         if _r_dz170 is not _DR_UNSET:
                             return _r_dz170[0]
@@ -3895,8 +3691,71 @@ class _MinerSolverDR176(_MinerSolverDR123):
             _dr186 = _dr185()
             if _dr186 is not _DR_UNSET:
                 return _dr186
-        spec = self._bounded_call(_select, timeout=self._paced_wait(6.0))
+        spec = self._bounded_call(_select, timeout=6.0)
         return spec if spec else default
+
+    _STARVED_DISCOVERY_MAX = 6
+
+    def _empty_plan_rescue(self, intent, state, snapshot):
+        """Discovery rescue for a plan that came back empty, or None.
+
+        Two routes to the same probe, split on how much per-order budget is
+        left: the unmetered one when the governor is idle or still on pace,
+        and the seat-capped bounded one below `_DISCOVERY_MIN_BUDGET_S`.
+        """
+        budget_s = getattr(self, '_dyn_order_budget', None)
+        if budget_s is not None and budget_s < _DISCOVERY_MIN_BUDGET_S:
+            return self._starved_discovery_plan(intent, state, snapshot, budget_s)
+        params = self._normalized_swap_params(intent, state)
+        return self._dynamic_discovery_plan(intent, state, snapshot, params)
+
+    def _starved_discovery_plan(self, intent, state, snapshot, budget_s):
+        """Last-chance discovery for an order the pace governor has starved.
+
+        `_DISCOVERY_MIN_BUDGET_S` (8.0) skips the discovery rescue once the
+        per-order budget collapses, but the governor floors
+        `_dyn_order_budget` at 4.0 (`_apex_champ._fw4`, `pacing_bridge`), so
+        the gate is shut for good the moment a run falls behind pace — 4.0 can
+        never climb back over 8.0. Every order arriving here after that keeps
+        its empty plan, and an empty plan is a `dropped` order: a hard veto
+        that rejects the whole submission (aero_pin BUDGET LAW, #1207). The
+        gate is protecting the run budget from an order that is already lost.
+
+        Only reached when the plan is ALREADY empty, so this cannot turn a
+        matched order into a regression — the sole cost is time, and time is
+        bounded twice: the probe runs under `_bounded_call` with the starved
+        slice as a hard timeout, and at most `_STARVED_DISCOVERY_MAX` orders
+        per run may take it, so a long tail of empties cannot starve the
+        orders queued behind them.
+        """
+        if not self._claim_starved_seat():
+            return None
+        return self._bounded_discovery_probe(intent, state, snapshot, budget_s)
+
+    def _claim_starved_seat(self) -> bool:
+        """Take one of the run's `_STARVED_DISCOVERY_MAX` starved-rescue seats.
+
+        Charged on the attempt, not the outcome: a probe that times out has
+        already spent the wall-clock the cap exists to ration.
+        """
+        taken = int(getattr(self, '_starved_dc_used', 0) or 0)
+        if taken >= self._STARVED_DISCOVERY_MAX:
+            return False
+        self._starved_dc_used = taken + 1
+        return True
+
+    def _bounded_discovery_probe(self, intent, state, snapshot, budget_s):
+        """Run discovery under `budget_s` as a hard timeout; None if it misses."""
+        try:
+            params = self._normalized_swap_params(intent, state)
+        except Exception:
+            logger.exception('[discovery] starved rescue: params failed')
+            return None
+        plan = self._bounded_call(self._dynamic_discovery_plan, (intent, state, snapshot, params), timeout=max(1.0, float(budget_s or 0.0)))
+        if plan is None or not getattr(plan, 'interactions', None):
+            return None
+        logger.info('[discovery] starved rescue served an otherwise-empty order (%d/%d)', self._starved_dc_used, self._STARVED_DISCOVERY_MAX)
+        return plan
 
     def _dynamic_discovery_plan(self, intent, state, snapshot, params):
         """Dynamic route discovery for pairs nothing else serves (covers only)."""
@@ -3950,7 +3809,7 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 except Exception:
                                     return None
                             return DiscoveryEngine(_call).discover(chain_id, tin.lower(), tout.lower(), amount_in, min_out)
-                        cands = self._bounded_call(_run, timeout=self._paced_wait(8.0)) or []
+                        cands = self._bounded_call(_run, timeout=8.0) or []
                         _r_dz167 = _dz167()
                         if _r_dz167 is not _DR_UNSET:
                             return _r_dz167[0]
@@ -3970,7 +3829,6 @@ class _MinerSolverDR176(_MinerSolverDR123):
             return None
 
     def _generate_plan_impl(self, intent, state, snapshot=None):
-        plan = None
 
         def _dr377():
             try:
@@ -4036,18 +3894,10 @@ class _MinerSolverDR176(_MinerSolverDR123):
                         logger.exception('[sweep] universal sweep failed; normal path')
 
                     def _dr243():
-                        # The two heaviest waits of the plan path, back to back:
-                        # select (12.0s) then baseline (14.0s). Both used to be
-                        # sized from `_dyn_order_budget` alone, and `_base_to`
-                        # was computed BEFORE select ran -- so baseline was
-                        # granted the whole order share a second time, measured
-                        # from a clock that had already been spent. Route both
-                        # through `_paced_wait`, which charges them against the
-                        # plan-level window as well, and read baseline's budget
-                        # AFTER select returns so it sees what select consumed.
-                        _sel_to = self._paced_wait(_SELECT_BUDGET_S)
+                        _dyn = getattr(self, '_dyn_order_budget', None)
+                        _sel_to = _SELECT_BUDGET_S if _dyn is None else min(_SELECT_BUDGET_S, _dyn)
+                        _base_to = _BASELINE_BUDGET_S if _dyn is None else min(_BASELINE_BUDGET_S, _dyn)
                         enhanced = self._bounded_call(self._score_aware_singlehop, (intent, state, snapshot, None), timeout=_sel_to)
-                        _base_to = self._paced_wait(_BASELINE_BUDGET_S)
                         return (_base_to, enhanced)
                     _base_to, enhanced = _dr243()
                     _dz181()
@@ -4073,6 +3923,10 @@ class _MinerSolverDR176(_MinerSolverDR123):
                                 def _dr38():
 
                                     def _dz153():
+                                        # nonlocal is load-bearing: without it the `_empty = True`
+                                        # below stays local to _dz153, which is called for effect
+                                        # only, so a getPool() miss (route points at a pool that
+                                        # does not exist) never reaches the fallback at `if _empty`.
                                         nonlocal _empty
                                         _cid = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
                                         _w3 = self._get_web3(_cid)
@@ -4095,20 +3949,9 @@ class _MinerSolverDR176(_MinerSolverDR123):
                             except Exception:
                                 pass
                         if _empty:
-                            # Same defect as the sweep gate above: this asked
-                            # `_dyn_order_budget >= _DISCOVERY_MIN_BUDGET_S`,
-                            # the whole share against a flat 8.0, so the rescue
-                            # never ran under the governor. It is reached only
-                            # when the pool set came back EMPTY, whose only
-                            # alternative is `last_resort_empty` -- a plan that
-                            # delivers nothing -- so refusing it here was
-                            # strictly worse than entering it bounded.
-                            _dc_to = _pg.enter(self, _DISCOVERY_MIN_BUDGET_S)
-                            if _dc_to > 0.0:
-                                _p4 = self._normalized_swap_params(intent, state)
-                                _dp = _pg.run(self, self._dynamic_discovery_plan, (intent, state, snapshot, _p4), _dc_to)
-                                if _dp is not None:
-                                    return _dp
+                            _dp = self._empty_plan_rescue(intent, state, snapshot)
+                            if _dp is not None:
+                                return _dp
                         return _DR_UNSET
                     _dr127 = _dr126()
                     if _dr127 is not _DR_UNSET:
@@ -4187,27 +4030,12 @@ class _MinerSolverDR176(_MinerSolverDR123):
 
                 def _dr301():
 
-                    def _dz181():
-                        # The tier is a MEASUREMENT now, not a constant. See
-                        # singlehop_tier: on Base this hop asked for 3000, the
-                        # pool the tree's own fill rows use is 500, and the
-                        # five Base WETH<->USDC rows on sub_ef966e486a99 scored
-                        # champ "0" / chal "0" because of it. Import guarded
-                        # and defaulted: this rung must never raise, since the
-                        # caller answers a raise with _empty_plan, i.e. a drop.
-                        try:
-                            from singlehop_tier import single_hop_fee
-                            return single_hop_fee(chain_id, tin, tout)
-                        except Exception:
-                            return 3000
-
-                    def _dz180(fee):
+                    def _dz180():
                         deadline = 9999999999
-                        interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=fee, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
+                        interactions = [Interaction(target=tin, value='0', call_data=encode_approve(router, amount_in), chain_id=chain_id), Interaction(target=router, value='0', call_data=encode_exact_input_single(token_in=tin, token_out=tout, fee=3000, recipient=recipient, deadline=deadline, amount_in=amount_in, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
                         return (deadline, interactions)
-                    fee_tier = _dz181()
-                    deadline, interactions = _dz180(fee_tier)
-                    return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=interactions, deadline=deadline, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'best-effort', 'route': 'uniswap_v3', 'fee_tier': fee_tier, 'chain_id': chain_id})
+                    deadline, interactions = _dz180()
+                    return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=interactions, deadline=deadline, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'solver': 'best-effort', 'route': 'uniswap_v3', 'fee_tier': 3000, 'chain_id': chain_id})
                     return _DR_UNSET
                     return _DR_UNSET
                 _dr302 = _dr301()
@@ -4226,8 +4054,7 @@ class _MinerSolverDR176(_MinerSolverDR123):
     def _empty_plan(intent, state):
         """Structurally-valid (non-null) empty plan — the absolute last resort
         for a genuinely unroutable pair. Never raises."""
-        from consts import DEADLINE
-        return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=[], deadline=DEADLINE, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'route': 'last_resort_empty'})
+        return ExecutionPlan(intent_id=getattr(intent, 'app_id', '') or '', interactions=[], deadline=int(time.time()) + 300, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'route': 'last_resort_empty'})
 
     def _enumerate_singlehop_quotes(self, chain_id, tin, tout, amount_in):
         """Exact-quote every single-hop venue CONCURRENTLY. Returns list of
@@ -4243,7 +4070,7 @@ class _MinerSolverDR176(_MinerSolverDR123):
         w3 = self._get_quoter_web3(int(chain_id))
         if w3 is None:
             return []
-        from quoter_wave import harvest, window
+        import concurrent.futures
         from eth_abi import encode as _enc, decode as _dec
 
         def _dr248():
@@ -4574,26 +4401,18 @@ class _MinerSolverDR176(_MinerSolverDR123):
                     workers = max(1, min(_QUOTER_MAX_WORKERS, len(jobs)))
 
                     def _dr261():
-                        # quoter_wave: the LAST fan-out in the tree still running
-                        # a long socket with no wall of its own, and the only one
-                        # of the two that meets a live RPC on the bench --
-                        # `build_rpc_url_map` proxies reads for 8453 and nothing
-                        # else, so chain 1 is served from baked tables in ~0.4ms
-                        # and every second this stage spends is spent HERE.
-                        # `as_completed(futs)` had no timeout inside a
-                        # `with ThreadPoolExecutor(...)`, whose __exit__ is
-                        # shutdown(wait=True): the stage drained every straggler
-                        # before returning, and _run_jobs is called TWICE (core
-                        # then extra), so both drains are serial.
-                        # Its only bound is `_bounded_call(self._score_aware_
-                        # singlehop, ..., timeout=_sel_to)` at :4018, and
-                        # overrunning THAT does not degrade the plan, it deletes
-                        # it -- None enhanced, fall to baseline with `_base_to`
-                        # read off an already-spent clock, then the offline
-                        # fallback, which on Base delivers nothing. That is a
-                        # DROPPED order and a hard veto, not a cut.
+
                         def _dz165():
-                            out.extend(harvest(jobs, workers, window(self, _QUOTER_TIMEOUT_S, _RPC_TIMEOUT_S, _SELECT_BUDGET_S)))
+                            nonlocal c
+                            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+                                futs = [ex.submit(fn, arg) for fn, arg in jobs]
+                                for fu in concurrent.futures.as_completed(futs):
+                                    try:
+                                        c = fu.result()
+                                    except Exception:
+                                        c = None
+                                    if c is not None:
+                                        out.append(c)
                         try:
                             _dz165()
                         except Exception:
@@ -4803,24 +4622,11 @@ class _MinerSolverDR176(_MinerSolverDR123):
             else:
 
                 def _dr140():
-                    # ENTER ON ROOM LEFT, NOT ROOM ALLOTTED, AND BOUND THE CALL.
-                    # This read `_dyn_order_budget < _SWEEP_MIN_BUDGET_S`, i.e.
-                    # the order's whole SHARE of the run pot against a flat 8.0
-                    # -- and the share is ~4.0-7.05, so the sweep was refused on
-                    # every order of every governed run while reading as live
-                    # code offline, where the cell is None. `_sweep_quotes` was
-                    # also called raw, so the crude test was the only thing
-                    # between a hung RPC and the harness's 30s per-plan kill.
-                    # `phase_gate.enter` returns one number that both admits the
-                    # phase and bounds it. See phase_gate for the ids this cost.
                     nonlocal best_x, reach, route, tag
-                    _sw_to = _pg.enter(self, _SWEEP_MIN_BUDGET_S)
-                    if _sw_to <= 0.0:
+                    _dyn_sw = getattr(self, '_dyn_order_budget', None)
+                    if _dyn_sw is not None and _dyn_sw < _SWEEP_MIN_BUDGET_S:
                         return None
-                    _sw = _pg.run(self, self._sweep_quotes, (w3, tin, tout, amount_in), _sw_to)
-                    if _sw is None:
-                        return None
-                    reach, (best_x, tag, route) = _sw
+                    reach, (best_x, tag, route) = self._sweep_quotes(w3, tin, tout, amount_in)
                     _cache[_ck_key] = (reach, (best_x, tag, route))
                     return _DR_UNSET
                 _dr141 = _dr140()
@@ -4841,20 +4647,10 @@ class _MinerSolverDR176(_MinerSolverDR123):
                 _dr360 = _dr359()
                 if _dr360 is not _DR_UNSET:
                     return _dr360
-                # The third copy of the same defect, and the one the other two
-                # made dangerous. This asked `_dyn_order_budget >=
-                # _SWEEP_VERIFY_MIN_S` -- the whole share against a flat 8.0 --
-                # so under the governor the sweep's pick was served on its
-                # QUOTE-RANKED estimate, unverified. That was harmless only
-                # while the sweep itself never ran; now that it does, skipping
-                # verify would ship a route no gate here has ever measured,
-                # because offline `_dyn` is None and verify always runs. Enter
-                # on room left and bound the call, so production verifies the
-                # same picks perf-check does.
-                _vf_to = _pg.enter(self, _SWEEP_VERIFY_MIN_S)
-                if _vf_to > 0.0:
+                _dyn = getattr(self, '_dyn_order_budget', None)
+                if _dyn is None or _dyn >= _SWEEP_VERIFY_MIN_S:
                     try:
-                        _ver = _pg.run(self, _dz193, (), _vf_to)
+                        _ver = _dz193()
                         if _ver is not None:
                             best_x, tag, route = _ver
                     except Exception:
@@ -4937,7 +4733,7 @@ class MinerSolver(_MinerSolverDR176):
 
                     def _dr103():
                         chain_id = int(state.chain_id or (snapshot.chain_id if snapshot else 0) or 0)
-                        pool_states = self._cached_pool_states(chain_id, snapshot)
+                        pool_states = _SnapLegacy.or_rpc(self, chain_id, snapshot)
                         if not pool_states:
                             return None
                         try:
@@ -5158,5 +4954,5 @@ class MinerSolver(_MinerSolverDR176):
 
     def metadata(self) -> SolverMetadata:
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='swap intent solver', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='Baseline routing + score-aware multi-venue single-hop selection (Uniswap V3 tiers + Aerodrome Slipstream), honest quoting, 0-zero coverage', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 SOLVER_CLASS = MinerSolver
