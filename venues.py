@@ -19,6 +19,7 @@ No third-party solver code; only stdlib + eth_abi. eth_call goes to the RPC the
 harness/sandbox provides (same endpoints the champion quotes against).
 """
 from __future__ import annotations
+_DR_UNSET = object()
 import json
 import time
 from eth_abi import encode as _enc, decode as _dec
@@ -43,67 +44,109 @@ def eth_call(rpc_url, to, data_hex, timeout=1.5):
     """eth_call via web3; returns raw bytes or None (revert / empty / hiccup / out of
     time). Refuses to START a call once the search deadline has passed, so the total
     search can never overrun the per-plan timeout no matter how slow the RPC is."""
+
+    def _dz2040():
+        try:
+            res = _w3(rpc_url, timeout).eth.call({'to': Web3.to_checksum_address(to), 'data': data_hex})
+            return (bytes(res) if res else None,)
+        except Exception:
+            return (None,)
+        return _DR_UNSET
     dl = _SEARCH_DEADLINE[0]
     if dl and time.monotonic() >= dl:
         return None
-    try:
-        res = _w3(rpc_url, timeout).eth.call({'to': Web3.to_checksum_address(to), 'data': data_hex})
-        return bytes(res) if res else None
-    except Exception:
-        return None
+    _r_dz2040 = _dz2040()
+    if _r_dz2040 is not _DR_UNSET:
+        return _r_dz2040[0]
 
 def _approve(token, spender, amount):
     return '0x' + S_APPROVE + _enc(['address', 'uint256'], [spender, int(amount)]).hex()
 
 def _v3_path_bytes(tokens, fees):
+
+    def _dz2039():
+        nonlocal b
+        for i, f in enumerate(fees):
+            b += int(f).to_bytes(3, 'big') + bytes.fromhex(tokens[i + 1][2:])
     b = bytes.fromhex(tokens[0][2:])
-    for i, f in enumerate(fees):
-        b += int(f).to_bytes(3, 'big') + bytes.fromhex(tokens[i + 1][2:])
+    _dz2039()
     return b
 
 def q_v3_single(rpc, cfg, tin, tout, amt, fee):
+
+    def _dz2038():
+        r = eth_call(rpc, cfg['quoter'], data)
+        if not r:
+            return (0,)
+        try:
+            return (int(_dec(['uint256'], r[:32])[0]),)
+        except Exception:
+            return (0,)
+        return _DR_UNSET
     data = '0x' + S_QUOTE_SINGLE + _enc(['(address,address,uint256,uint24,uint160)'], [(tin, tout, int(amt), int(fee), 0)]).hex()
-    r = eth_call(rpc, cfg['quoter'], data)
-    if not r:
-        return 0
-    try:
-        return int(_dec(['uint256'], r[:32])[0])
-    except Exception:
-        return 0
+    _r_dz2038 = _dz2038()
+    if _r_dz2038 is not _DR_UNSET:
+        return _r_dz2038[0]
 
 def q_v3_path(rpc, cfg, tokens, fees, amt):
+
+    def _dz2037():
+        r = eth_call(rpc, cfg['quoter'], data)
+        if not r:
+            return (0,)
+        try:
+            return (int(_dec(['uint256'], r[:32])[0]),)
+        except Exception:
+            return (0,)
+        return _DR_UNSET
     path = _v3_path_bytes(tokens, fees)
     data = '0x' + S_QUOTE_PATH + _enc(['bytes', 'uint256'], [path, int(amt)]).hex()
-    r = eth_call(rpc, cfg['quoter'], data)
-    if not r:
-        return 0
-    try:
-        return int(_dec(['uint256'], r[:32])[0])
-    except Exception:
-        return 0
+    _r_dz2037 = _dz2037()
+    if _r_dz2037 is not _DR_UNSET:
+        return _r_dz2037[0]
 
 def q_v2(rpc, router, path, amt):
-    data = '0x' + S_V2_AMOUNTS + _enc(['uint256', 'address[]'], [int(amt), path]).hex()
-    r = eth_call(rpc, router, data)
-    if not r:
-        return 0
-    try:
-        outs = _dec(['uint256[]'], r)[0]
-        return int(outs[-1]) if outs else 0
-    except Exception:
-        return 0
+
+    def _dz2036(amt, path, router, rpc):
+        data = '0x' + S_V2_AMOUNTS + _enc(['uint256', 'address[]'], [int(amt), path]).hex()
+        r = eth_call(rpc, router, data)
+        _r_dz2035 = _dz2035()
+        return (_r_dz2035, data, r)
+
+    def _dz2035():
+        if not r:
+            return (0,)
+        try:
+            outs = _dec(['uint256[]'], r)[0]
+            return (int(outs[-1]) if outs else 0,)
+        except Exception:
+            return (0,)
+        return _DR_UNSET
+    _r_dz2035, data, r = _dz2036(amt, path, router, rpc)
+    if _r_dz2035 is not _DR_UNSET:
+        return _r_dz2035[0]
 
 def q_aero(rpc, routes, amt):
     """Aerodrome getAmountsOut for a Route[] list. Returns final out int (0 if none)."""
-    data = '0x' + S_AERO_GAO + _enc(['uint256', '(address,address,bool,address)[]'], [int(amt), routes]).hex()
-    r = eth_call(rpc, AERO_ROUTER, data)
-    if not r:
-        return 0
-    try:
-        outs = _dec(['uint256[]'], r)[0]
-        return int(outs[-1]) if outs else 0
-    except Exception:
-        return 0
+
+    def _dz2034(amt, routes, rpc):
+        data = '0x' + S_AERO_GAO + _enc(['uint256', '(address,address,bool,address)[]'], [int(amt), routes]).hex()
+        r = eth_call(rpc, AERO_ROUTER, data)
+        _r_dz2033 = _dz2033()
+        return (_r_dz2033, data, r)
+
+    def _dz2033():
+        if not r:
+            return (0,)
+        try:
+            outs = _dec(['uint256[]'], r)[0]
+            return (int(outs[-1]) if outs else 0,)
+        except Exception:
+            return (0,)
+        return _DR_UNSET
+    _r_dz2033, data, r = _dz2034(amt, routes, rpc)
+    if _r_dz2033 is not _DR_UNSET:
+        return _r_dz2033[0]
 
 def q_curve(rpc, cfg, tin, tout, amt):
     """Curve stable/meta pools via MetaRegistry. Returns {pool,i,j,dy} or None.
@@ -113,61 +156,104 @@ def q_curve(rpc, cfg, tin, tout, amt):
     there is no fixed-amount `transfer(app, dy)` leg that could revert when the
     realized dy is 1 wei below the quote. Covers the stETH/wstETH/crvUSD/3pool tail
     that Uniswap-only routing misses."""
+
     def _curve_pool(rpc, mr, tin, tout):
+
+        def _dz2030():
+            if not d or len(d) < 32:
+                return (None,)
+            pool = '0x' + d[12:32].hex()
+            return (pool if int(pool, 16) else None,)
+            return _DR_UNSET
         d = eth_call(rpc, mr, '0x' + S_CURVE_FIND + _enc(['address', 'address'], [tin, tout]).hex())
-        if not d or len(d) < 32:
-            return None
-        pool = '0x' + d[12:32].hex()
-        return pool if int(pool, 16) else None
+        _r_dz2030 = _dz2030()
+        if _r_dz2030 is not _DR_UNSET:
+            return _r_dz2030[0]
 
     def _curve_indices(rpc, mr, pool, tin, tout):
         """(i, j) coin indices, or None when absent or underlying-only (an underlying
         pair needs exchange_underlying, a different selector — skip rather than mis-encode)."""
+
+        def _dz2029():
+            if not di:
+                return (None,)
+            try:
+                i, j, is_under = _dec(['int128', 'int128', 'bool'], di)
+            except Exception:
+                return (None,)
+            return (None if is_under else (int(i), int(j)),)
+            return _DR_UNSET
         di = eth_call(rpc, mr, '0x' + S_CURVE_IDX + _enc(['address', 'address', 'address'], [pool, tin, tout]).hex())
-        if not di:
-            return None
-        try:
-            i, j, is_under = _dec(['int128', 'int128', 'bool'], di)
-        except Exception:
-            return None
-        return None if is_under else (int(i), int(j))
+        _r_dz2029 = _dz2029()
+        if _r_dz2029 is not _DR_UNSET:
+            return _r_dz2029[0]
 
     def _curve_dy(rpc, pool, i, j, amt):
+
+        def _dz2028():
+            if not dy or len(dy) < 32:
+                return (0,)
+            try:
+                return (int(_dec(['uint256'], dy[:32])[0]),)
+            except Exception:
+                return (0,)
+            return _DR_UNSET
         dy = eth_call(rpc, pool, '0x' + S_CURVE_GETDY + _enc(['int128', 'int128', 'uint256'], [i, j, int(amt)]).hex())
-        if not dy or len(dy) < 32:
-            return 0
-        try:
-            return int(_dec(['uint256'], dy[:32])[0])
-        except Exception:
-            return 0
+        _r_dz2028 = _dz2028()
+        if _r_dz2028 is not _DR_UNSET:
+            return _r_dz2028[0]
+
     def _resolve():
         """MetaRegistry lookup -> indices -> dy. None at the first step that misses."""
+
+        def _dz2026(mr):
+            pool = _curve_pool(rpc, mr, tin, tout)
+            return pool
+
+        def _dz2025(mr, pool):
+            idx = _curve_indices(rpc, mr, pool, tin, tout)
+            _r_dz2024 = _dz2024()
+            return (_r_dz2024, idx)
+
+        def _dz2024():
+            if not idx:
+                return (None,)
+            i, j = idx
+            out = _curve_dy(rpc, pool, i, j, amt)
+            return ({'pool': pool, 'i': i, 'j': j, 'dy': out} if out else None,)
+            return _DR_UNSET
         mr = cfg.get('curve_metareg')
         if not mr:
             return None
-        pool = _curve_pool(rpc, mr, tin, tout)
+        pool = _dz2026(mr)
         if not pool:
             return None
-        idx = _curve_indices(rpc, mr, pool, tin, tout)
-        if not idx:
-            return None
-        i, j = idx
-        out = _curve_dy(rpc, pool, i, j, amt)
-        return {'pool': pool, 'i': i, 'j': j, 'dy': out} if out else None
+        _r_dz2024, idx = _dz2025(mr, pool)
+        if _r_dz2024 is not _DR_UNSET:
+            return _r_dz2024[0]
     return _resolve()
 
 def _legs_curve(tin, amt, app_addr, route):
     """approve + exchange with receiver=app (0xddc1f59d) — no forward leg, no revert."""
+
+    def _dz2032():
+        return ([(tin, _approve(tin, route['pool'], amt)), (route['pool'], '0x' + S_CURVE_EXCH_RECV + body.hex())],)
+        return _DR_UNSET
     body = _enc(['int128', 'int128', 'uint256', 'uint256', 'address'], [route['i'], route['j'], int(amt), 0, app_addr])
-    return [(tin, _approve(tin, route['pool'], amt)), (route['pool'], '0x' + S_CURVE_EXCH_RECV + body.hex())]
+    _r_dz2032 = _dz2032()
+    if _r_dz2032 is not _DR_UNSET:
+        return _r_dz2032[0]
 
 def _aero_candidates(tin, tout, hubs):
     """Candidate Aerodrome Route[] lists: direct (volatile/stable) + 2-hop via hubs."""
+
+    def _dz2031():
+        for s1 in (False, True):
+            for s2 in (False, True):
+                cands.append([(tin, hub.lower(), s1, AERO_FACTORY), (hub.lower(), tout, s2, AERO_FACTORY)])
     cands = [[(tin, tout, False, AERO_FACTORY)], [(tin, tout, True, AERO_FACTORY)]]
     for hub in hubs:
         if hub.lower() in (tin, tout):
             continue
-        for s1 in (False, True):
-            for s2 in (False, True):
-                cands.append([(tin, hub.lower(), s1, AERO_FACTORY), (hub.lower(), tout, s2, AERO_FACTORY)])
+        _dz2031()
     return cands

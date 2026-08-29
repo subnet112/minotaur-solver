@@ -1,3 +1,4 @@
+_DR_UNSET = object()
 from chain1_c import _WETH, _USDT, _QUOTER, _ROUTER, _FEES, _HUBS, _CHAMP_FEE
 from _vaddr_ext import _addr_bytes
 
@@ -13,12 +14,18 @@ def _champ_fee(a, b):
     return _CHAMP_FEE.get(frozenset((a, b)), 3000)
 
 def _champ_route(tin, tout):
+
+    def _dz595():
+        if _WETH not in (tin, tout):
+            return (((tin, _WETH, tout), (_champ_fee(tin, _WETH), _champ_fee(_WETH, tout))),)
+        return (((tin, tout), (3000,)),)
+        return _DR_UNSET
     fs = frozenset((tin, tout))
     if fs in _CHAMP_FEE:
         return ((tin, tout), (_CHAMP_FEE[fs],))
-    if _WETH not in (tin, tout):
-        return ((tin, _WETH, tout), (_champ_fee(tin, _WETH), _champ_fee(_WETH, tout)))
-    return ((tin, tout), (3000,))
+    _r_dz595 = _dz595()
+    if _r_dz595 is not _DR_UNSET:
+        return _r_dz595[0]
 
 def _direct_legs(tin, tout):
     """Every (route, fees) pair for the single-hop tin -> tout, one per fee tier.
@@ -89,12 +96,15 @@ def _needs_reset_approve(tin):
     return tin == _USDT
 
 def _approves(tin, amt, chain_id):
+
+    def _dz594():
+        if _needs_reset_approve(tin):
+            ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), 0), chain_id=chain_id))
     from eth_utils import to_checksum_address as _ck
     from common.abi_utils import encode_approve
     from minotaur_subnet.shared.types import Interaction as _IX
     ixs = []
-    if _needs_reset_approve(tin):
-        ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), 0), chain_id=chain_id))
+    _dz594()
     ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), int(amt)), chain_id=chain_id))
     return ixs
 
@@ -102,17 +112,23 @@ def _build(route, tin, amt, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX
     leg = _swap_leg(route, amt, rcpt)
     return _approves(tin, amt, chain_id) + [_IX(target=_ROUTER, value='0', call_data=leg, chain_id=chain_id)]
-from bg124_minota_ext import _amounts  # relocated leaf; see that module
+from bg124_minota_ext import _amounts
 from _mvp_ext import _valid_pair
 
 def _token(p, field):
     return str(p.get(field, '') or '').lower()
 
 def _params(s, intent, state):
+
+    def _dz593():
+        tout = _token(p, 'output_token')
+        amt, mo = _amounts(p)
+        if not _valid_pair(tin, tout, amt):
+            return (None,)
+        return ((tin, tout, amt, mo),)
+        return _DR_UNSET
     p = s._normalized_swap_params(intent, state)
     tin = _token(p, 'input_token')
-    tout = _token(p, 'output_token')
-    amt, mo = _amounts(p)
-    if not _valid_pair(tin, tout, amt):
-        return None
-    return (tin, tout, amt, mo)
+    _r_dz593 = _dz593()
+    if _r_dz593 is not _DR_UNSET:
+        return _r_dz593[0]
