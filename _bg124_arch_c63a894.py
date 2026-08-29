@@ -26,6 +26,7 @@ from minotaur_subnet.sdk.intent_solver import SolverMetadata
 from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 import cover_ext as _ext
 import router_cover as _rc
+from consts import _SEARCH_DEADLINE
 WIN_MARGIN_BPS = 30
 SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
 
@@ -37,8 +38,59 @@ def _params(state):
     p = fn() if callable(fn) else getattr(state, 'raw_params', None) or {}
     return p or {}
 
+def _bridges(plan):
+    """True when `plan` carries a bridge payload, whatever its `interactions` say.
+
+    Delegates to `empty_rescue.is_cross_chain`, the one owner of this predicate,
+    for the reason that module's own header records: three layers of this MRO
+    grew a private copy after the rule had already cost a round, and copies of a
+    rule drift apart. The `except` branch inlines the same read only so that a
+    failed import cannot decide routing -- the same shape `xc_order._token_chain`
+    uses, and the same fallback `_g_xc_bridges` already carries.
+
+    Reports "not a bridge" for anything it cannot read, which leaves every caller
+    on the behaviour it had before this helper existed.
+    """
+    try:
+        from empty_rescue import is_cross_chain as _x
+    except Exception:
+        try:
+            return isinstance((getattr(plan, 'metadata', None) or {}).get('cross_chain_plan'), dict)
+        except Exception:
+            return False
+    return _x(plan)
+
+
 def _empty(plan):
-    return plan is None or not getattr(plan, 'interactions', None)
+    """True when `plan` has nothing to serve -- BRIDGE PAYLOADS INCLUDED as content.
+
+    THE INTERACTIONS-ALONE QUESTION, ONE LEVEL ABOVE WHERE 7c23ce1 FIXED IT.
+    A bridge plan is `interactions=[]` with its real payload under
+    `metadata['cross_chain_plan']` (`baseline_solver.py:1181`). This predicate
+    read only `interactions`, so it called a working champion bridge plan empty,
+    and its single caller -- `MinerSolver.generate_plan`, the OUTERMOST dispatch
+    in this module -- routed the order to `_cover_or`, whose cover is a
+    source-chain swap by construction. A source-chain plan answering an order
+    whose delivery is measured on another chain is credited on neither, which is
+    `cross_chain_delivery.reasons.no_cross_chain_plan` and a DROPPED order.
+
+    7c23ce1 fixed exactly this reasoning in `_g_try_cover` and the reason still
+    scored 1 on the very next verdict (sub_99ff73d67700, round-e29789876-n1,
+    image solver-39b4158776ea, which CONTAINS 7c23ce1). Two call sites asked the
+    same wrong question; only one was answered. `_cover_or`'s own docstring
+    states the premise this breaks -- "Reached only on an EMPTY champion plan, so
+    nothing here can turn a served order into a regression" -- which was true of
+    every plan except the one shape that matters here.
+
+    Cannot cost a served order. The only rows whose classification changes are
+    plans carrying a bridge payload, and for those the cover was replacing a
+    delivery that can be credited with one that cannot; on every other plan
+    `_bridges` is False and this is the test it always was. `_empty(None)` stays
+    True, so `_base_plan`'s retry-then-cover channel is untouched.
+    """
+    if plan is None:
+        return True
+    return not getattr(plan, 'interactions', None) and not _bridges(plan)
 
 class MinerSolver(_Base):
     """Champion stack + confirmed-zero / fill-only-empty cover delta."""
@@ -49,7 +101,7 @@ class MinerSolver(_Base):
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='certified champion stack + live best-of-venue cover on champion-zero pairs', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
+        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='swap intent solver', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
 
     def _rpc_for(self, chain_id):
         m = getattr(self, '_cover_rpc', None) or {}
@@ -81,15 +133,15 @@ class MinerSolver(_Base):
             return None
         return (tin, tout, amt, chain, app)
 
-    def _rb1_our_route_safe(self, intent, state):
+    def _rb1_cover_route(self, intent, state):
         """Our best route: (plan, exact_quoted_out) or (None, 0).
 
-        `_rb1_`-prefixed on purpose: the apex layer stacked above this one
-        (_bg124_arch_9645f01) derives from this class and defines its own
-        `_our_route(self, pool_states, token_in, token_out, amount_in,
-        chain_id)`. A bare `_our_route` here loses every `self.` dispatch to
-        that 5-arg override and raises TypeError out of `_cover_or`. Keep the
-        name unique to whichever layer owns it.
+        NOT named `_our_route`: `MinerSolver` in _bg124_arch_9645f01 defines an
+        unrelated `_our_route(pool_states, token_in, token_out, amount_in,
+        chain_id)` that wins the MRO, so the old name resolved there and raised
+        TypeError out of `_cover_or` — past this try/except, which sits inside
+        the shadowed function and never ran. That killed the `_ext_cover`
+        fallback on every empty-base row.
         """
         try:
             return self._rb1_our_route(intent, state)
@@ -177,17 +229,86 @@ class MinerSolver(_Base):
         ix = [Interaction(target=str(l['target']), value='0', call_data=str(l['data']), chain_id=int(chain)) for l in legs]
         return ExecutionPlan(interactions=ix, deadline=0, nonce=int(getattr(state, 'nonce', 0) or 0), metadata={'chain_id': int(chain), 'route': 'ext_cover', 'expected_output': str(out)})
 
+    _RB1_COVER_S = 6.0
+
+    def _rb1_cap(self):
+        """Seconds our optional covers may spend on THIS order.
+
+        THE BUDGET LAW, applied to the last layer that was still exempt from it.
+        `_g_xc_call` states the law for the cross-chain solver and `aero_pin`
+        records what breaking it cost: time spent here does not come out of this
+        order, it comes out of the shared `_RUN_BUDGET_S` the pacing governor
+        divides across the corpus. Overspend and every LATER order is paced down
+        to the `max(4.0, ...)` floor — under `_DISCOVERY_MIN_BUDGET_S` and
+        `_SWEEP_MIN_BUDGET_S` (8.0) — which switches off the discovery rescue and
+        the sweep, so an empty champion plan stops being rescued and becomes
+        `last_resort_empty`: a structurally valid plan that delivers nothing, i.e.
+        a DROPPED order and a hard veto.
+
+        Our two cover layers were the biggest unbounded spender in the tree.
+        `_rb1_cover_route` armed `venues.BUDGET_S` (6.0s) through
+        `router_cover.best_route`, and `_ext_cover` then armed
+        `cover_ext._COVER_BUDGET_S` (3.0s) again for EACH of baked, curve and v2
+        — up to 15s on one empty-base order, against a 900s pot divided over ~122
+        orders, i.e. a ~7.4s pace. Two such orders early in a run pay for
+        themselves out of the tail. That is the drop shape the validator has
+        scored three rounds running (5 on sub_f18ba43bced1) with every plan we DID
+        return identical to the champion's — `VETOED BUT READS CLEAN` in
+        perf-check, which is what an off-plan cutoff looks like from a gate that
+        only compares plans.
+
+        `_dyn_order_budget` is this order's own share, written by the pacing
+        governor (and by `pacing_bridge._pb_order_budget` on the orders where a
+        champion layer short-circuits ahead of it). Reached through getattr
+        because this class chains onto whatever `SOLVER_CLASS` is at import time
+        and the governor is not guaranteed to be in that MRO — absent governor =
+        the old constant, exactly as today.
+        """
+        dyn = getattr(self, '_dyn_order_budget', None)
+        try:
+            dyn = float(dyn)
+        except (TypeError, ValueError):
+            return self._RB1_COVER_S
+        return self._RB1_COVER_S if dyn <= 0 else min(self._RB1_COVER_S, dyn)
+
+    def _rb1_arm(self):
+        """Bound the whole cover attempt to this order's share; return `prev`.
+
+        SHARED-CELL DISCIPLINE, the tightening half. `_SEARCH_DEADLINE` is one
+        mutable cell every `venues.eth_call` in the tree reads, so we honour the
+        TIGHTER of what we inherit and our own window and hand `prev` back
+        untouched — the rule `router_cover.best_route` already states. Both
+        layers now run under ONE window instead of arming a fresh one each, which
+        is the whole point: the ceiling is per ORDER, not per layer.
+        """
+        import time
+        prev = _SEARCH_DEADLINE[0]
+        mine = time.monotonic() + self._rb1_cap()
+        _SEARCH_DEADLINE[0] = min(mine, prev) if prev else mine
+        return prev
+
     def _cover_or(self, intent, state, base):
         """Serve our cover when we have one, else the champion's plan.
 
         The inherited cover runs FIRST — it is the proven path. `_ext_cover` only
         sees pairs that one also failed, so it can never displace a route that
         would otherwise have served.
+
+        Reached only on an EMPTY champion plan, so nothing here can turn a served
+        order into a regression. What the window above protects is the OTHER
+        orders: falling back to `base` costs a blind-spot cover, which is worth
+        +1 on the adoption ladder, while starving the tail costs a drop, which is
+        a hard veto. Across 17 crowns every winner had `dropped == 0` and nine
+        were won with `better <= 1`.
         """
-        our_plan, _ = self._rb1_our_route_safe(intent, state)
-        if our_plan is not None:
-            return our_plan
-        return self._ext_cover(intent, state) or base
+        prev = self._rb1_arm()
+        try:
+            our_plan, _ = self._rb1_cover_route(intent, state)
+            if our_plan is not None:
+                return our_plan
+            return self._ext_cover(intent, state) or base
+        finally:
+            _SEARCH_DEADLINE[0] = prev
 
     def generate_plan(self, intent, state, snapshot=None):
         base = self._base_plan(intent, state, snapshot)
@@ -300,10 +421,52 @@ def _g_install():
     _prev = SOLVER_CLASS
 
     def _g_dest_chain(state):
-        p = dict(getattr(state, 'raw_params', None) or {})
-        d = p.get('dest_chain_id')
+        """Delegates to `xc_order.dest_chain`, the one owner of this predicate.
+
+        THE PRIVATE COPY READ ONE SIGNAL AND THE ORDER NEEDED TWO. This helper
+        used to inline `raw_params['dest_chain_id']` and nothing else, while
+        `baseline_solver` (`:440`-`:450`) dispatches to
+        `_generate_cross_chain_plan` on EITHER that key OR an `eip155:` chain
+        prefix on the output token that differs from the input's -- the second
+        branch firing exactly when the first is absent. `xc_order.dest_chain`
+        reads both, in that precedence, and additionally overlays
+        `typed_context` the way `_normalized_swap_params._dr33` does, because a
+        typed order carries its tokens there and the raw copy can be stale.
+
+        The split cost a whole order. `pacing_bridge:176` and
+        `_apex_champ:497` already ask `xc_order`, so on a prefix-declared order
+        both fast paths correctly DECLINE to short-circuit -- and then arrived
+        here, where `_g_try_xchain` computed `dest == 0`, never called
+        `_g_xc_call`, and let the order fall through to an ordinary
+        source-chain swap. That is `{"orders": 3, "credited": 0, "reasons":
+        {"no_cross_chain_plan": 1, ...}}` on sub_54af070ead05: the guards
+        reserved the order for the bridge and the bridge never looked at it.
+        Two definitions of "is this cross-chain?" in one MRO is the
+        e57efe3 -> dcc15d2 drift `xc_order`'s header was written about.
+
+        It cannot cost a matched order. `generate_plan` builds the incumbent
+        FIRST and `_g_xc_serves` defers to it whenever it already delivers;
+        `_g_try_xchain` returns None unless `_g_xc_delivers` confirms a
+        non-empty destination leg, and returns None on any raise. So a widened
+        `dest` buys an attempt bounded by `min(_G_XC_BUDGET_S,
+        _dyn_order_budget)`, and every failure lands back on the plan this
+        order gets today.
+
+        The `except` branch inlines the old single-signal read, so a failed
+        import decides no routing -- the same shape `_bridges` above and
+        `pacing_bridge`'s own fallback already carry.
+        """
         try:
-            return int(d) if d not in (None, '', '0', 0) else 0
+            from xc_order import dest_chain as _xcd
+        except Exception:
+            p = dict(getattr(state, 'raw_params', None) or {})
+            d = p.get('dest_chain_id')
+            try:
+                return int(d) if d not in (None, '', '0', 0) else 0
+            except (TypeError, ValueError):
+                return 0
+        try:
+            return int(_xcd(state) or 0)
         except (TypeError, ValueError):
             return 0
 
@@ -354,16 +517,64 @@ def _g_install():
         The destination leg is found by CHAIN, not by position: the compiler requires
         legs[i+1].chain_id == bridge_requests[i].dst_chain_id, so the destination leg
         is whichever leg sits on the plan's own dst_chain_id.
+
+        NOW A DELEGATION, not a fourth copy. This arithmetic was written here
+        first, as the PRODUCER-side guard, and the three consumer guards
+        (`_apex_champ:470`, `_apex_champ:515`, `_champ_base:103`) went on asking
+        the key-alone `is_cross_chain` question -- so nothing_delivered x2 scored
+        again on sub_10821047e512 after this test had already fixed it once. The
+        rule now lives in `empty_rescue`, which owns the sibling predicate and
+        says so: "Copies of a rule drift apart; that is the e57efe3 -> dcc15d2
+        lesson this tree keeps re-learning." The local `_g_xc_dst` /
+        `_g_xc_leg_on` helpers stay -- other call sites in this file use them.
         """
-        md = getattr(pl, 'metadata', None) or {}
-        xc = md.get('cross_chain_plan')
-        if not isinstance(xc, dict):
-            return False
-        dst = _g_xc_dst(md)
-        legs = xc.get('legs')
-        if not dst or not isinstance(legs, list):
-            return False
-        return any(_g_xc_leg_on(leg, dst) for leg in legs)
+        try:
+            from empty_rescue import delivers_cross_chain as _d
+        except Exception:
+            md = getattr(pl, 'metadata', None) or {}
+            xc = md.get('cross_chain_plan')
+            if not isinstance(xc, dict):
+                return False
+            dst = _g_xc_dst(md)
+            legs = xc.get('legs')
+            if not dst or not isinstance(legs, list):
+                return False
+            return any(_g_xc_leg_on(leg, dst) for leg in legs)
+        return _d(pl)
+
+    def _g_xc_bridges(pl):
+        """True when `pl` carries a bridge payload AT ALL, delivering or not.
+
+        The weaker sibling of `_g_xc_delivers`, and the one `_g_try_cover` needs.
+        A bridge plan is `interactions=[]` with its real payload under
+        `metadata['cross_chain_plan']` (`baseline_solver.py:1181`), so the
+        interactions-alone test `_g_try_cover` used to run called a working
+        champion bridge plan EMPTY and handed the order to a source-chain cover
+        -- a plan that delivers on the wrong chain and cannot be credited on any
+        of them. That is `cross_chain_delivery.reasons.no_cross_chain_plan`, 1 of
+        the 7 uncredited cross-chain rows on scored sub_31b685489c7f.
+
+        `_apex_champ.JamesSolver._is_empty` and `empty_rescue._is_empty` already
+        answer this question correctly and for this exact reason -- "_dr12 treats
+        an empty plan as licence to answer with the per-app agent strategy, so a
+        bridge plan was being replaced by a source-chain one that delivers on the
+        wrong chain". `_g_try_cover` never asked them. Delegating rather than
+        inlining a fourth copy: copies of a rule drift apart, which is what
+        `_g_xc_delivers` records happening to the delivery half across three
+        consumer guards.
+
+        Deliberately the WEAKER test. `_g_xc_delivers` would let a
+        bridge-and-stop champion be replaced, and a source-chain plan is no more
+        creditable than an empty destination leg -- neither reaches the
+        destination -- so there is nothing to win there and a `no_cross_chain_plan`
+        to lose.
+        """
+        try:
+            from empty_rescue import is_cross_chain as _x
+        except Exception:
+            md = getattr(pl, 'metadata', None) or {}
+            return isinstance(md.get('cross_chain_plan'), dict)
+        return _x(pl)
 
     def _g_patch_cross_chain(bs):
         if getattr(bs.BaselineSwapSolver, '_cross_chain_params', None) is not None:
@@ -388,12 +599,35 @@ def _g_install():
         bs.BaselineSwapSolver._cross_chain_params = _cross_chain_params
         bs.BaselineSwapSolver._state_with_extra = _state_with_extra
 
+    def _g_bounded(fn, args, timeout):
+        """Run ``fn(*args)`` under a wall-clock ceiling; None if it overruns.
+
+        Same shape as king_base._bounded_call, but defined here rather than
+        inherited: _bounded_call exists ONLY in king_base, and this class chains
+        up through _champ_base -> hydra_top -> champ_top -> apex_king_base, which
+        is a separate fork of the engine. Relying on the MRO would make the cap a
+        silent no-op exactly where it is load-bearing.
+        """
+        import threading
+        box = {}
+
+        def _run():
+            try:
+                box['v'] = fn(*args)
+            except Exception:
+                box['v'] = None
+        th = threading.Thread(target=_run, daemon=True)
+        th.start()
+        th.join(timeout)
+        return None if th.is_alive() else box.get('v')
+
     class _GarnetXChain(_prev):
-        _G_XC_BUDGET_S = 14.0
+        _G_XC_BUDGET_S = 8.0
 
         def initialize(self, config):
             super().initialize(config)
             self._g_compat = None
+            self._g_xc_spent = 0.0
             try:
                 import strategies.dex_aggregator.baseline_solver as _bs
                 _g_patch_cross_chain(_bs)
@@ -403,18 +637,106 @@ def _g_install():
             except Exception:
                 self._g_xchain = None
 
+        def _g_xc_arm(self):
+            """Give THIS order its own cross-chain allowance.
+
+            _G_XC_BUDGET_S used to be a whole-RUN pot that only ever went down:
+            _g_xc_spent was set once, lazily, and incremented on every call with
+            no reset anywhere in the class -- not in initialize, and there is no
+            on_benchmark_start here to reset it either. So the first two or three
+            orders to use the cross-chain solver spent the pot, _g_xc_cap
+            returned 0.0 for the whole rest of the run, and from then on BOTH
+            callers were dead for every remaining order:
+
+              _g_try_xchain -> None, so a genuine cross-chain order fell through
+                to the champion plan, which for a cross-chain order is empty.
+              _g_try_cover  -> None, so an order whose champion plan came back
+                empty kept that empty plan.
+
+            An empty plan is a structurally valid plan that delivers nothing,
+            which the validator scores as a DROPPED order -- a hard veto. The
+            cap meant to stop one order overrunning was instead converting every
+            later rescuable order into a drop, and it is invisible locally
+            because no local gate runs a whole benchmark through one solver
+            instance: every gate re-plans order by order from a fresh process.
+
+            Per order now, not per run. Each order gets the same allowance, so
+            the rescue can never latch off, and each order stays individually
+            bounded -- which is the property the pot was actually there for.
+
+            The pace budget is armed here too. _g_xc_cap bounds the allowance by
+            _dyn_order_budget, but this method runs BEFORE super().generate_plan,
+            and super() is what refreshes that value -- so _g_try_xchain (ahead of
+            super) sized this order from the PREVIOUS order's number while
+            _g_try_cover (after super) used the fresh one, and on the run's first
+            order there was no value at all, leaving the call unbounded by pace.
+            Computing it here with this order's index makes both callers agree.
+
+            Reached through getattr because _GarnetXChain chains onto whatever
+            SOLVER_CLASS is at import time and the pacing governor is not
+            guaranteed to be in that MRO -- the same reason _g_xc_cap reaches
+            _dyn_order_budget defensively, and the trap ad5bb44 fell into with
+            _bounded_call. Absent governor = no-op, exactly as today. super()
+            still overwrites this on its own way through, so nothing downstream
+            of super() reads the value armed here.
+            """
+            self._g_xc_spent = 0.0
+            _pace = getattr(self, '_pace_order_budget', None)
+            if _pace is not None:
+                try:
+                    _b = _pace(getattr(self, '_bm_done', 0) + 1)
+                    if _b is not None:
+                        self._dyn_order_budget = _b
+                except Exception:
+                    pass
+
+        def _g_xc_cap(self):
+            """Seconds this cross-chain call may spend on THIS order.
+
+            Whatever is left of this order's allowance, and never more than the
+            order's own share of the run (_dyn_order_budget). 0 means refuse.
+            """
+            _left = self._G_XC_BUDGET_S - self._g_xc_spent
+            if _left <= 0:
+                return 0.0
+            _dyn = getattr(self, '_dyn_order_budget', None)
+            return _left if _dyn is None else min(_left, float(_dyn))
+
         def _g_xc_call(self, intent, state, snapshot):
+            """Run the cross-chain solver under this order's allowance.
+
+            _g_bounded enforces the cap on the call itself, so an overrun costs
+            this order its remaining allowance and nothing more. That matters
+            because _build_dest_swap_interactions no longer returns [] the way it
+            did before 351b4a9: it now does pool discovery over RPC plus a full
+            nested _processor.generate_plan, and _g_try_cover reaches this on every
+            order whose champion plan is empty.
+
+            The overrun is not paid by this order alone. It comes out of the shared
+            _RUN_BUDGET_S that the pacing governor divides across the run, so it
+            starves every LATER order down to the max(4.0, ...) floor -- under both
+            _DISCOVERY_MIN_BUDGET_S and _SWEEP_MIN_BUDGET_S (8.0), which switches off
+            the discovery rescue and the sweep. An empty plan then stops being
+            rescued and becomes last_resort_empty: a structurally valid plan that
+            delivers nothing, i.e. a DROPPED order and a hard veto. That is the
+            BUDGET LAW recorded in aero_pin.py -- blindfill starved this same
+            governor and cost a whole submission under #1207 drop-reject.
+
+            Bounding this cannot make any order worse: on timeout the call returns
+            None, which is what both callers already handle by falling back to the
+            champion plan. king_base._dr22 bounds this same BaselineSwapSolver.
+            generate_plan with _bounded_call for exactly this reason.
+            """
             import time as _gt
             xc = getattr(self, '_g_xchain', None)
             if xc is None:
                 return None
-            if getattr(self, '_g_xc_spent', None) is None:
-                self._g_xc_spent = 0.0
-            if self._g_xc_spent >= self._G_XC_BUDGET_S:
+            _cap = self._g_xc_cap()
+            if _cap <= 0:
                 return None
             t = _gt.time()
             try:
-                return xc.generate_plan(intent, state, snapshot)
+                return _g_bounded(xc.generate_plan, (intent, state, snapshot), _cap)
             finally:
                 self._g_xc_spent += _gt.time() - t
 
@@ -448,7 +770,7 @@ def _g_install():
 
         def _g_try_cover(self, champ, intent, state, snapshot):
             try:
-                if champ is None or not getattr(champ, 'interactions', None):
+                if champ is None or (not getattr(champ, 'interactions', None) and not _g_xc_bridges(champ)):
                     alt = self._g_xc_call(intent, state, snapshot)
                     if alt is not None and getattr(alt, 'interactions', None) and (not (getattr(alt, 'metadata', None) or {}).get('cross_chain_plan')):
                         return alt
@@ -456,11 +778,115 @@ def _g_install():
                 pass
             return None
 
+        def _g_xc_incumbent(self, intent, state, snapshot):
+            """The wrapped chain's own plan, paired with whatever it raised.
+
+            `generate_plan` below now builds the incumbent BEFORE the
+            cross-chain override, so the override can see what it would be
+            replacing. The champion is allowed to raise -- payload_cover_k's
+            `_k_champ_plan` above us exists to retry exactly that -- so the
+            raise is CARRIED here rather than swallowed: if the override has
+            nothing to serve we re-raise it, and the layer above sees precisely
+            what it saw when `super()` was called from the old call site.
+            """
+            try:
+                return super().generate_plan(intent, state, snapshot), None
+            except Exception as raised:
+                return None, raised
+
+        def _g_xc_serves(self, champ):
+            """True when the incumbent ALREADY answers this order with something creditable.
+
+            THE TEST BELOW USED TO BE `and`, WHICH MADE THIS GUARD INERT, and the
+            two shapes it has to recognise are mutually exclusive by construction.
+            `baseline_solver._generate_cross_chain_plan` returns
+            `ExecutionPlan(interactions=[], metadata={'cross_chain_plan': ...})`
+            -- an incumbent bridge plan carries NO interactions -- while an
+            ordinary same-chain plan carries interactions and no such key. So
+            `bool(interactions) and _g_xc_delivers(champ)` is False for BOTH, and
+            for every plan that has ever reached it. The guard this docstring
+            describes was never once applied.
+
+            AND THE SAME-CHAIN HALF IS THE HALF THAT WAS BEING VETOED. On an order
+            whose `dest_chain_id` differs, a plan that declares no cross-chain legs
+            is NOT scored zero: `harness/orchestrator.py:3012-3037` returns
+            `delivered = None` with the code `no_cross_chain_plan` and says so in
+            as many words -- "Nothing is measured (there is no journey to run), so
+            this costs one dict lookup and cannot move a score: delivered stays
+            None exactly as before." The row then falls through to the ORDINARY
+            single-chain comparison, and a champion swapping on the source chain
+            is credited there in full. `xc_delivery.seeded_balance` records the
+            receipt: on `quote:q_b54dbf9f36cdf05c886b21df54f4b9ee` "the champion
+            served the same row 2997823052643978701627 with an ordinary
+            single-chain swap; the bridge is the only reason we returned nothing."
+
+            Declaring a cross-chain plan is therefore not free coverage -- it MOVES
+            the row onto the destination measurement, where an empty or reverting
+            leg is a hard zero against a champion who is still collecting his
+            source-chain credit. That is one dropped order and a hard veto on
+            sub_f56b577d9174 (`destination_leg_reverted: 1`), and the 10.85% cut on
+            sub_b6741a0fda14 this docstring already records below.
+
+            So the predicate is a DISJUNCTION: the incumbent serves when it carries
+            interactions the same-chain scorer will credit, OR a destination leg the
+            cross-chain scorer will credit. Fill-only-empty, the rule every other
+            override door in this tree already keeps -- `_beats`, `_beats_champ`,
+            `Bg124Solver.generate_plan`'s `if bar > 0: return plan`.
+
+            IT CANNOT COST A COVER. The blind branch is untouched: an incumbent with
+            no interactions and no delivering leg still reads False here, so
+            `_g_try_xchain` runs on exactly the orders where the champion delivers
+            nothing -- which is where a `blind_spot_cover` lives and where a bridge
+            plan cannot produce a regression or a drop, both verdicts needing a
+            positive champion value to compare against. What it gives up is a bridge
+            plan beating a serving champion, and every cross-chain row this tree has
+            ever shipped scored `credited: 0`, so that upside is measured at zero
+            while the risk it removes is measured at one veto and one hard-floor cut.
+
+            THE ORIGINAL NOTE, which stated the rule this implementation now keeps:
+
+            THE OTHER HALF OF `_g_xc_delivers`. That predicate is the producer-side
+            guard: it refuses OUR cross-chain plan when the destination leg is
+            empty, because an empty leg delivers nothing by construction. Its own
+            memo names the rule it was only half able to keep -- "_g_try_xchain
+            returns that plan AHEAD of super(), so on a cross-chain order the
+            champion plan is never even built ... we can never turn a
+            champion-served cross-chain order into a regression" -- and a
+            non-empty destination leg is not the same claim as a BETTER one.
+
+            So the surface it left open is the cut, not the drop: our destination
+            leg delivers something, the champion's delivers more, and we override
+            it anyway because the champion's plan was never built to compare
+            against. Scored sub_b6741a0fda14 (round-e29789706-n1) was rejected on
+            exactly that shape and said so in its own words --
+            `reason: "reject: 1 order(s) cut >1% (hard floor)"` -- one regression
+            row, `q_c73d9aeb2c50f36a54506e51255387cf`, champ 19316058457192 vs
+            ours 17220034377077, a 10.85% cut with gas unmeasured on BOTH sides
+            while the other 84 compared rows matched byte-for-byte. A cut past
+            100bps is a hard veto exactly like a drop.
+
+            Deferring here costs at most a win and can only ever score `matched`;
+            not deferring costs the whole submission. That is the same trade every
+            other override door in this tree already takes -- `_beats` (+10bps over
+            the champion's declared expected_output), `_beats_champ` (+12bps over
+            the champion's own re-quoted route), `Bg124Solver.generate_plan`'s
+            `if bar > 0: return plan`. This path was the last one still deciding
+            without looking.
+            """
+            try:
+                return bool(getattr(champ, 'interactions', None)) or _g_xc_delivers(champ)
+            except Exception:
+                return False
+
         def generate_plan(self, intent, state, snapshot=None):
-            pl = self._g_try_xchain(intent, state, snapshot)
-            if pl is not None:
-                return pl
-            champ = super().generate_plan(intent, state, snapshot)
+            self._g_xc_arm()
+            champ, raised = self._g_xc_incumbent(intent, state, snapshot)
+            if not self._g_xc_serves(champ):
+                pl = self._g_try_xchain(intent, state, snapshot)
+                if pl is not None:
+                    return pl
+            if raised is not None:
+                raise raised
             alt = self._g_try_cover(champ, intent, state, snapshot)
             return alt if alt is not None else champ
 
@@ -469,7 +895,7 @@ def _g_install():
             name = _gos.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
             ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
             auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
-            return _GSolverMetadata(name=name, version=ver, author=auth, description='champion coverage + cross-chain bridging', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
+            return _GSolverMetadata(name=name, version=ver, author=auth, description='swap intent solver', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])
     SOLVER_CLASS = _GarnetXChain
 _g_install()
 import json as _hjson
@@ -478,6 +904,25 @@ from solver_rs import SAFE_TOKENS, SOLVER_NAME, SOLVER_VERSION
 _G_HTTP = '0x216B4B4Ba9F3e719726886d34a177484278Bfcae'
 _G_HARVEST = _hjson.loads('{"1|0x8cddd6eea1067b78b77255e49861843f69d4703d|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|688961262299000000000000": {"to": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57", "data": "0xa94e78ef00000000000000000000000000000000000000000000000000000000000000200000000000000000000000008cddd6eea1067b78b77255e49861843f69d4703d0000000000000000000000000000000000000000000091e4aa34bbbaac54b0000000000000000000000000000000000000000000000000000021bbad8f3028f2000000000000000000000000000000000000000000000000003030aecc8df15c000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000760000000000000000000000000000000000000000000000000000000006a740ad285e340bb9ca64532bada9d0d8079a8900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000032000000000000000000000000095ad61b0a150d79219dcf64e1e6cc01f0b64c4ce00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a73000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000006000000000000000000000000e592427a0aece92de3edee1f18e0157c05861564000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a7cf0f2000000000000000000000000000000000000000000000000000000000000002b8cddd6eea1067b78b77255e49861843f69d4703d00271095ad61b0a150d79219dcf64e1e6cc01f0b64c4ce000000000000000000000000000000000000000000000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a73000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000004000000000000000000000000f9234cb08edb93c0d4a4d4c70cc3ffd070e78e07000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000004de4811beed0119b4afce20d2583eb608c6f7af1954f0000000000000000000000000000000000000000000000000000000000000000", "tin": "0x8cddd6eea1067b78b77255e49861843f69d4703d", "out": 13562969763789028}, "1|0x1abaea1f7c830bd89acc67ec4af516284b1bc33c|0x2260fac5e5542a773aa44fbcfedf7c193bc2c599|20049191270": {"to": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57", "data": "0xa94e78ef00000000000000000000000000000000000000000000000000000000000000200000000000000000000000001abaea1f7c830bd89acc67ec4af516284b1bc33c00000000000000000000000000000000000000000000000000000004ab06616600000000000000000000000000000000000000000000000000000000017cda8f00000000000000000000000000000000000000000000000000000000022013a8000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000a80000000000000000000000000000000000000000000000000000000006a740ad5f2070663cc41489a843f0aac866d6c1300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000320000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a73000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000006000000000000000000000000e592427a0aece92de3edee1f18e0157c05861564000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a7cf0f4000000000000000000000000000000000000000000000000000000000000002b1abaea1f7c830bd89acc67ec4af516284b1bc33c0001f4a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c59900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a730000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000003600000000000000000000000000000000000000000000000000000000000000006000000000000000000000000e592427a0aece92de3edee1f18e0157c0586156400000000000000000000000000000000000000000000000000000000000012c000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a7cf0f4000000000000000000000000000000000000000000000000000000000000002ba0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000bb82260fac5e5542a773aa44fbcfedf7c193bc2c5990000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000e592427a0aece92de3edee1f18e0157c0586156400000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a7cf0f4000000000000000000000000000000000000000000000000000000000000002ba0b86991c6218b36c1d19d4a2e9eb0ce3606eb480001f42260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000007f86bf177dd4f3494b841a37e810a34dd56c829b0000000000000000000000000000000000000000000000000000000000000fa000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000007f86bf177dd4f3494b841a37e810a34dd56c829b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "tin": "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c", "out": 35653066}, "1|0x13d074303c95a34d304f29928dc8a16dec797e9e|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2|30000000000000000000000": {"to": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57", "data": "0x54e3f31b000000000000000000000000000000000000000000000000000000000000002000000000000000000000000013d074303c95a34d304f29928dc8a16dec797e9e000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000065a4da25d3016c00000000000000000000000000000000000000000000000000000011459994862f180000000000000000000000000000000000000000000000000018ac9241e44347400000000000000000000000000000000000000000000000000000000000001e0000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000003c00000000000000000000000000000000000000000000000000000000000000440000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb9226600000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa010000000000000000000000000000000000000000000000000000000000400100000000000000000000000000000000000000000000000000000000000004a0000000000000000000000000000000000000000000000000000000006a740ae384d661d5673a4bf7b249eb603bab2f2c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000def171fe48cf0115b1d80b88dc8eab59176fee57000000000000000000000000f9234cb08edb93c0d4a4d4c70cc3ffd070e78e070000000000000000000000000000000000000000000000000000000000000148e1f21c6700000000000000000000000013d074303c95a34d304f29928dc8a16dec797e9e000000000000000000000000f9234cb08edb93c0d4a4d4c70cc3ffd070e78e07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff91a32b6900000000000000000000000013d074303c95a34d304f29928dc8a16dec797e9e00000000000000000000000000000000000000000000065a4da25d3016c000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000001000000000000000000004de45b670a54cd8c4e6f03d5bbbedcbaa68c8b2ca2d900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000001480000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "tin": "0x13d074303c95a34d304f29928dc8a16dec797e9e", "out": 111111185558011673}, "1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x8de39b057cc6522230ab19c0205080a8663331ef|400951308": {"to": "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57", "data": "0xa94e78ef0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000017e6080c00000000000000000000000000000000000000000e00d3a7e610778000000000000000000000000000000000000000000000000014012e5d91ce620af1109e88000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266000000000000000000000000000000000000000000000000000000000000016000000000000000000000000045a6e007c874ffc6321d6fb90eac272dd6864bfa01000000000000000000000000000000000000000000000000000000000040010000000000000000000000000000000000000000000000000000000000000760000000000000000000000000000000000000000000000000000000006a740ae6f42335f38cf941299c81788dcc249fd700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000320000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a73000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000006000000000000000000000000e592427a0aece92de3edee1f18e0157c05861564000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000006a7cf105000000000000000000000000000000000000000000000000000000000000002ba0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000064c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000000000000000000000000000000000000000000000008de39b057cc6522230ab19c0205080a8663331ef00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000009be264469ef954c139da4a45cf76cbcc5e3a6a73000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000004000000000000000000000000f9234cb08edb93c0d4a4d4c70cc3ffd070e78e07000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000004de5caa3a16f8440f85303afaab1992f2b97d12469b10000000000000000000000000000000000000000000000000000000000000000", "tin": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "out": 6190509026058158340011040675}}')
 
+def _g_hkey(state):
+
+    def _dz7(p, state):
+        tin = str(p.get('input_token') or '').lower()
+        tout = str(p.get('output_token') or '').lower()
+        amt = int(p.get('input_amount') or 0)
+        chain = int(getattr(state, 'chain_id', 0) or 0)
+        return (amt, chain, tin, tout)
+    p = dict(getattr(state, 'raw_params', None) or {})
+    try:
+        amt, chain, tin, tout = _dz7(p, state)
+    except (TypeError, ValueError):
+        return None
+    if not (tin and tout and (amt > 0) and chain):
+        return None
+    return '%d|%s|%s|%d' % (chain, tin, tout, amt)
+
+def _g_approve_cd(spender, amt):
+    return '0x095ea7b3' + (b'\x00' * 12).hex() + spender[2:].lower() + int(amt).to_bytes(32, 'big').hex()
 _g_prev_harvest_class = SOLVER_CLASS
 
 class _GarnetHarvest(_g_prev_harvest_class):
@@ -490,31 +935,11 @@ class _GarnetHarvest(_g_prev_harvest_class):
 
     def _rf2_row(self, state):
         """Harvest-table row for this order, or None."""
-
-        def _g_hkey(state):
-
-            def _dz7(p, state):
-                tin = str(p.get('input_token') or '').lower()
-                tout = str(p.get('output_token') or '').lower()
-                amt = int(p.get('input_amount') or 0)
-                chain = int(getattr(state, 'chain_id', 0) or 0)
-                return (amt, chain, tin, tout)
-            p = dict(getattr(state, 'raw_params', None) or {})
-            try:
-                amt, chain, tin, tout = _dz7(p, state)
-            except (TypeError, ValueError):
-                return None
-            if not (tin and tout and (amt > 0) and chain):
-                return None
-            return '%d|%s|%s|%d' % (chain, tin, tout, amt)
         key = _g_hkey(state)
         return _G_HARVEST.get(key) if key else None
 
     def _rf2_legs(self, row, state):
         """approve + the harvested call, in the harness's interaction type."""
-
-        def _g_approve_cd(spender, amt):
-            return '0x095ea7b3' + (b'\x00' * 12).hex() + spender[2:].lower() + int(amt).to_bytes(32, 'big').hex()
         p = dict(getattr(state, 'raw_params', None) or {})
         amt = int(p.get('input_amount') or 0)
         return [_HIX(target=row['tin'], value='0', call_data=_g_approve_cd(_G_HTTP, amt), chain_id=1), _HIX(target=row['to'], value='0', call_data=row['data'], chain_id=1)]

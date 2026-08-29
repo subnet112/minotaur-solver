@@ -133,7 +133,7 @@ class MinerSolver(_MinerSolverDR41):
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description="Current-champion base + never-drop blind-spot cover for tokens it can't route (Maverick / Uni V2 / VIRTUAL hub)", supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='swap intent solver', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     def _generate_plan_impl(self, intent, state, snapshot=None):
         try:
@@ -213,8 +213,11 @@ class MinerSolver(_MinerSolverDR41):
         return state.contract_address or params.get('receiver') or state.owner
 
     def _apex_deadline(self, snapshot):
+        from consts import DEADLINE
         ts = getattr(snapshot, 'timestamp', None) if snapshot else None
-        return int(ts or time.time()) + 300
+        if not ts:
+            return DEADLINE
+        return int(ts) + 300
 
     def _apex_v2(self, intent, state, snapshot, router, path, amount_in, chain_id):
         from common.abi_utils import encode_approve

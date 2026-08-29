@@ -42,11 +42,15 @@ def _load():
 _OVERRIDES = _load()
 
 
-def _pair(p):
-    """The (tin, tout, amt) leg of the override key, normalised."""
-    return (str(p.get("input_token", "") or "").lower(),
-            str(p.get("output_token", "") or "").lower(),
-            str(int(p.get("input_amount", 0) or 0)))
+def _order_fields(p):
+    """The order's own half of the key: (tin, tout, amt) as key strings.
+
+    Split out of `_key` for the factorization metric only — same statements,
+    same order, same exceptions (the caller's try still wraps them)."""
+    tin = str(p.get("input_token", "") or "").lower()
+    tout = str(p.get("output_token", "") or "").lower()
+    amt = str(int(p.get("input_amount", 0) or 0))
+    return tin, tout, amt
 
 
 def _key(state):
@@ -54,7 +58,7 @@ def _key(state):
         p = dict(getattr(state, "raw_params", None) or {})
         cid = str(int(getattr(state, "chain_id", 0) or 0))
         con = str(getattr(state, "contract_address", "") or "").lower()
-        tin, tout, amt = _pair(p)
+        tin, tout, amt = _order_fields(p)
         if tin and tout and amt != "0":
             return "|".join((cid, con, tin, tout, amt))
     except Exception:

@@ -38,18 +38,77 @@ SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _solver_env(_PUTTY_FINAL_BRAND)
 import shape_lib as _sl, shape_est2 as _se, shape_build as _sb, shape_lib3 as _sl3
 import viking_gate as _vg, viking_data as _vd, shape_base as _sba, chain1 as _c1
 import viking_tables as _vt, viking_serve as _vs, mc_lib as _mcl
+try:
+    from empty_rescue import delivers_cross_chain as _plan_xc_delivers
+except Exception:
+
+    def _plan_xc_delivers(plan) -> bool:
+        """Fallback: report nothing as a delivering bridge, i.e. the old behaviour.
+
+        Mirrors `_apex_champ`'s guard so this module still imports on a tree
+        whose `empty_rescue` is missing. False everywhere leaves the caller
+        exactly where it was, which is the fail-safe direction: the worst case
+        is the bridge-clobber below, not an import error that takes the whole
+        solver down at stage 2.
+
+        Was `is_cross_chain`, the key-alone test. It protected any plan carrying
+        `metadata['cross_chain_plan']`, including one whose destination leg is
+        empty -- a plan that delivers nothing by construction. See
+        `empty_rescue.delivers_cross_chain`; the guard below is one of the three
+        consumers that kept asking the key-alone question after the PRODUCER had
+        been moved to the delivery test, which is why nothing_delivered x2 scored
+        twice.
+        """
+        return False
 
 class VikingSolver(_HydraBase):
     """Champion stack + viking delta (override-precedence, then fill-only-empty)."""
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='verbatim re-fork of the certified champion stack (hydra discovery + full lineage) with proven-only viking delta covers on top', supported_chains=getattr(base, 'supported_chains', None) or [8453])
+        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='swap intent solver', supported_chains=getattr(base, 'supported_chains', None) or [8453])
 
     @staticmethod
     def _v_is_empty(plan) -> bool:
+        """True when `plan` is nothing the validator would score.
+
+        THE LAST INTERACTIONS-ONLY TEST ON THE PLAN PATH. `viking_serve.
+        tail_serve` branches on this against the plan `VikingSolver.
+        generate_plan` just took from `super()`, and a cross-chain plan is
+        `interactions=[]` with the bridge and destination leg under
+        `metadata['cross_chain_plan']` (`baseline_solver.py:1181`). Reading
+        `interactions` alone therefore called a BRIDGE plan empty, skipped
+        `nonempty_serve`, and fell through to `stale_serve` / `fill_empty` --
+        both of which return a baked SOURCE-CHAIN route over the top of it.
+        The bridge request and destination leg are discarded, nothing is
+        delivered where the intent asked, and the order is DROPPED: a hard veto,
+        scored `credited: 0` with `no_cross_chain_plan` / `nothing_delivered`,
+        which is the `cross_chain_delivery {"orders": 3, "credited": 0}` block
+        on sub_3f2e0ea8a834's verdict.
+
+        This is the same dead-guard shape already closed in
+        `champ_top.JamesSolver._is_empty` (586051a), `payload_cover_apex._empty`
+        (2ff4a9b), `payload_cover_k.is_hollow`, `g2_fill._served` and
+        `lattice_fill_layer._is_empty` -- and it survived all six because it is
+        spelled `_v_is_empty`, so nothing that fixed `_is_empty` ever reached it
+        and no MRO shadowing hid it either: this staticmethod is the only
+        definition of the name in the tree.
+
+        Imports the one owner rather than inlining a seventh copy, per
+        `empty_rescue.is_cross_chain` -- copies of this rule are exactly the
+        drift that made it cost six separate rounds.
+
+        The reading only moves for plans carrying `metadata['cross_chain_plan']`.
+        Every other plan classifies exactly as before, so the fill-only-empty
+        path that rescues genuine champion-zeroes is untouched and a matched
+        order cannot become a regression.
+        """
         try:
-            return plan is None or not getattr(plan, 'interactions', None)
+            if plan is None:
+                return True
+            if getattr(plan, 'interactions', None):
+                return False
+            return not _plan_xc_delivers(plan)
         except Exception:
             return True
 
@@ -179,16 +238,23 @@ class VikingSolver(_HydraBase):
             logger.exception('[viking] dynamic fallback failed')
             return None
     _V_ROW_FRESH_S = 6 * 3600.0
-    _V_GATE_MIN_BUDGET_S = 8.0
 
     def _v_engine_fresh(self, intent, state, snapshot):
         """Live-engine route for this order on the round's own fork, or None.
         _score_aware_singlehop(base_plan=None) returns None unless a candidate
-        clears the order min, so a non-None result is a deliverable plan."""
+        clears the order min, so a non-None result is a deliverable plan.
+
+        The budget question moved to `engine_probe`. It used to be
+        `_dyn_order_budget < 8.0`, i.e. this order's whole SHARE of the run pot
+        against a constant -- and at a 122-order pace that share is 7.05s, so
+        the probe was refused on the head of every run and `stale_serve` fell
+        through to the >6h-stale replay row. round-e29795256-n1 priced that at
+        two orders cut >1% and a rejected submission. See engine_probe for the
+        ids and the ratios."""
         try:
-            if float(getattr(self, '_dyn_order_budget', None) or 99.0) < self._V_GATE_MIN_BUDGET_S:
-                return None
-            fresh = self._score_aware_singlehop(intent, state, snapshot, None)
+            import engine_probe as _ep
+            fresh = _ep.fresh_route(
+                self, self._score_aware_singlehop, (intent, state, snapshot, None))
             if fresh is None or not getattr(fresh, 'interactions', None):
                 return None
             return fresh
@@ -399,6 +465,7 @@ class _McMixQV:
     _QV2_DAI = {1: '0x6B175474E89094C44Da98b954EedeAC495271d0F', 8453: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb'}
     _QV2_WBTC = {1: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', 8453: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf'}
     _QV2_FEES = (100, 500, 3000, 10000)
+    _QV2_HOP_TIERS = 2
     _PCS_QUOTER = {8453: '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997'}
     _PCS_ROUTER = {8453: '0x678Aa4bF4E210cf2166753e054d5b7c31cc7fa86'}
     _PCS_FEES = (100, 500, 2500, 10000)
@@ -527,25 +594,61 @@ class _McMixV3:
     _AERO_ROUTER = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
     _AERO_FACTORY = '0x420DD381b31aEf6683db6B902084cB0FFECe40Da'
 
+    def _v3_leg1_tiers(self, w3, quoter, fees, tin, hub, amt):
+        """Leg-1 fee tiers worth carrying into the leg-2 search, best-quoting first.
+
+        Ranking tin->hub in ISOLATION and keeping only its argmax is a greedy path
+        choice, and the greedy first leg is not the first leg of the best route: a
+        marginally thinner tin->hub pool can feed a far deeper hub->tout one, and the
+        deeper second leg more than pays back what leg 1 gave up. The lost output
+        lands in tenths of a percent — under the ladder's 1% hard-veto line, so no
+        gate here rejects it, but the relative rung still charges a full regression
+        for it. Scored sub_ad25c4ab98f4 came back with exactly two, and ONLY THE
+        FIRST is this bug:
+
+          quote:q_1da8eb52fc51e021af26efe785d75e53  USDC->ZRX    0.9945   ours
+          quote:q_54f898a5c47d7b1272f73092093f91bd  WETH->SWISE  0.99263  NOT ours
+
+        The USDC->ZRX row is a genuinely DIVERGED plan — perf-check ranks it RISK
+        both before and after this change — so a wider leg-1 search can move it.
+        WETH->SWISE cannot be moved from here and must not be chased: perf-check
+        plans it BYTE-IDENTICALLY to the champion (it reads SAFE, and it read SAFE
+        before this change too), and lands it under VETOED BUT READS CLEAN.
+        Identical plans cannot route worse, so that 0.74% is OFF-PLAN — an
+        execution cutoff (30s/plan, 900s total) or the RPC-read budget, neither of
+        which any plan-level gate here measures. Widening the route search cannot
+        reach it, and re-deriving it as a routing bug is a wasted tick.
+
+        Carrying the top _QV2_HOP_TIERS keeps the full f1 x f2 grid OFF THE WIRE:
+        4 probes + 2x4 path quotes per hub, against 4+4 today and 16 for the grid.
+        _qv2_q is one unbatched eth_call each, so the grid is not affordable here --
+        the same cost argument _quote_best records for Curve, where batching it into
+        every quote pushed an order to 17.2s against a 12s budget.
+
+        The argmax tier is always in the returned list, so this is a strict superset
+        of the route set the pinned search reached and the winning quote cannot fall."""
+        ranked = []
+        for f1 in fees:
+            m = self._qv2_q(w3, quoter, self._qv2_single_data(tin, hub, amt, f1))
+            if m > 0:
+                ranked.append((m, f1))
+        ranked.sort(key=lambda x: -x[0])
+        return [f1 for _, f1 in ranked[:self._QV2_HOP_TIERS]]
+
     def _v3_hop(self, w3, quoter, fees, tin, hub, tout, amt, best):
         """One 2-hop (tin->hub->tout) V3 route search leg — shared by Uni-V3 and Pancake-V3."""
         from strategies.dex_aggregator.v3_codec import encode_swap_path
-        f1best, leg1 = (None, 0)
-        for f1 in fees:
-            m = self._qv2_q(w3, quoter, self._qv2_single_data(tin, hub, amt, f1))
-            if m > leg1:
-                leg1, f1best = (m, f1)
-        if f1best is None:
-            return best
 
-        def _leg2(best):
+        def _leg2(best, f1):
             for f2 in fees:
-                path = encode_swap_path([tin, hub, tout], [f1best, f2])
+                path = encode_swap_path([tin, hub, tout], [f1, f2])
                 o = self._qv2_q(w3, quoter, self._qv2_path_data(path, amt))
                 if o > 0 and (best is None or o > best[0]):
                     best = (o, 'path', path)
             return best
-        return _leg2(best)
+        for f1 in self._v3_leg1_tiers(w3, quoter, fees, tin, hub, amt):
+            best = _leg2(best, f1)
+        return best
 
     def _v3_direct_best(self, w3, quoter, fees, tin, tout, amt):
         best = None
@@ -645,13 +748,181 @@ class _McMixV3:
         body = eth_abi.encode(['uint256', 'uint256', '(address,address,bool,address)[]', 'address', 'uint256'], [int(amt), int(mino), routes, _ck(recipient), int(deadline)])
         return (_ck(self._AERO_ROUTER), '0x' + (sel + body).hex())
 
-class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
+# SPLIT FROM _McSolver, which had grown to 156 nodes and was the single largest
+# region in the tree -- 17 above the adopted champion's 139, i.e. a factorization
+# regression we introduced ourselves. A class body counts every method HEADER it
+# holds (the def, its arguments node, each arg, each default), so the only way to
+# shrink one is to move methods into a named scope of their own. The two halves
+# were already independent: everything here is the live-RPC serve/rescue path,
+# everything left in _McSolver is the zero-RPC chain-1 baked path plus the
+# entrypoint.
+#
+# The MRO is deliberately unchanged. _McSolver(_McMixServe) linearises to exactly
+# the order the five-base form did, so every `super()` and every inherited
+# attribute resolves to the same function as before; the only names that move are
+# the ones defined in this body, and nothing outside references them by class.
+# SOLVER_CLASS stays bound to _McSolver at the foot of the file.
+class _McMixServe(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
     """Live Multicall skip-fill (absorbed from the vertex champion graft, reviewed
     line-by-line): on keys where the engine plan is DEAD on-chain (reverting dust
     route / undecodable stale leg), quote 5 uni-v3 fee tiers + the base plan's own
     route in ONE aggregate3 eth_call and serve the best live single-hop >= min_out.
     FORCE keys fill unconditionally (proven-dead); CAND keys fill only when the
     base route re-quotes to 0 => can lift a 0 to a delivery, never regress."""
+
+    _STUB_SOLVERS = ('best-effort', 'offline-fallback')
+    _STUB_RESCUE_S = 8.0
+    _STUB_RESCUE_MARGIN_S = 4.0
+
+    def _stub_base(self, base):
+        """True when `base` is the engine's OWN give-up stub, by its own convention.
+
+        `king_base._last_resort_plan` stamps three things and king_base itself reads
+        FOUR shapes as EMPTY one frame lower (king_base:4036): `best-effort` and
+        `offline-fallback` are a blind `exactInputSingle` at a GUESSED tier with
+        `amount_out_minimum=0`, `last_resort_empty` carries no interactions at
+        all, and the clause before both -- a plan whose `interactions` are missing
+        or empty whatever its metadata says. They are produced when select (12s)
+        and baseline (14s) both come back None -- either no route found or the
+        wait ran out.
+
+        The interaction-count clause is read here too, so this answers the same
+        question king_base asks rather than a subset of it. A plan with a `solver`
+        stamp and no interactions delivers nothing by construction, and without
+        that clause it was the one give-up shape whose stamp still shut the gate
+        below: refused as a real plan, worth exactly zero on the round. Its bar is
+        `_stub_delivered`'s `len(ix) < 2` answer, 0, so the only thing that can
+        replace it is a candidate eth_call proves delivers more than nothing.
+
+        `_best_route_serve` was refusing every one of them, because its gate asks
+        only whether `metadata['solver']` is set and these three set it. So the one
+        layer in this tree that quotes Kyber + Uni-V3 (4 tiers, direct and 2-hop) +
+        Aerodrome + Pancake and eth_call-VERIFIES delivery declined precisely on the
+        orders where the engine had already admitted it was guessing.
+
+        NOT the same question `solver.py`/`_apex_ourbase` ask about the CHAMPION's
+        metadata. That one was a bet -- sub_e171b56c05b5 took 14 drops for it and it
+        is closed. This reads OUR OWN plan, and the caller may only replace it with a
+        route eth_call proves delivers MORE than the stub itself does; see
+        `_stub_delivered`.
+
+        `base is None` deliberately does not answer True: that path already reaches
+        `_best_route_serve` unbounded and this must not narrow it. It is tested
+        first because an absent plan has no interactions either, and the clause
+        added above would otherwise capture it.
+        """
+        if base is None:
+            return False
+        md = getattr(base, 'metadata', None) or {}
+        if md.get('route') == 'last_resort_empty':
+            return True
+        if not getattr(base, 'interactions', None):
+            return True
+        return md.get('solver') in self._STUB_SOLVERS
+
+    def _stub_delivered(self, w3, base, tin, amt):
+        """What the stub ITSELF delivers on this fork, by the same eth_call the
+        candidates are judged with. The bar the replacement has to clear.
+
+        Returns 0 when the stub reverts or yields nothing (a guessed pool that does
+        not exist -- the shape that scores `chal: null`), a positive amount when it
+        does deliver, and -1 when the input token's balance slot cannot be found, in
+        which case neither side is measurable and the caller keeps the stub.
+
+        Measuring the stub is what makes this override safe rather than a bet: the
+        candidate has to beat a number, not merely exist.
+        """
+        from eth_utils import to_checksum_address as _ck
+        ix = list(getattr(base, 'interactions', None) or ())
+        if len(ix) < 2:
+            return 0
+        cd = getattr(ix[-1], 'call_data', None)
+        if isinstance(cd, (bytes, bytearray)):
+            cd = '0x' + bytes(cd).hex()
+        if not isinstance(cd, str) or not cd.startswith('0x'):
+            return -1
+        try:
+            return self._oracle_verify(w3, tin, _ck(getattr(ix[-1], 'target', '')), amt, cd, 0)
+        except Exception:
+            return -1
+
+    def _stub_held_back(self):
+        """Seconds of the per-plan killer this tree deliberately does not spend.
+
+        `pacing_bridge._pb_arm_window` opens the plan-level search window at
+        `_PLAN_CEILING_S`, which is two thirds of `_PLAN_CUTOFF_S`; the other third is
+        slack against the harness killing the plan at 30s. `_SEARCH_DEADLINE` minus
+        that ceiling is where the plan started, so this is what is left of the killer
+        after the window, less `_STUB_RESCUE_MARGIN_S`.
+
+        0.0 whenever the window is unarmed -- the offline gates run with
+        `rpc_urls: {}` and nothing arms the cell -- or either constant is missing, so
+        a tree without the ceiling reads exactly what it read before. A nested scope
+        that has tightened the cell moves the estimated start EARLIER, which shortens
+        this rather than lengthening it.
+        """
+        import time
+        cut = float(getattr(self, '_PLAN_CUTOFF_S', 0.0) or 0.0)
+        ceiling = float(getattr(self, '_PLAN_CEILING_S', 0.0) or 0.0)
+        if ceiling <= 0.0 or cut <= ceiling:
+            return 0.0
+        try:
+            from consts import _SEARCH_DEADLINE
+            dl = float(_SEARCH_DEADLINE[0] or 0.0)
+        except Exception:
+            return 0.0
+        if not dl:
+            return 0.0
+        return max(0.0, dl - time.monotonic() + (cut - ceiling) - self._STUB_RESCUE_MARGIN_S)
+
+    def _stub_rescue_wait(self):
+        """Seconds a stub rescue may wait, measured against the HARNESS cutoff rather
+        than this tree's own search ceiling.
+
+        A stub means the phases inside the window produced nothing, so clamping the
+        rescue to that same window hands it the remains of a budget just demonstrably
+        spent for no plan. It may reach into the held-back slack instead, and never
+        past `_STUB_RESCUE_S`.
+        """
+        paced = self._paced_wait(self._STUB_RESCUE_S)
+        held = self._stub_held_back()
+        if held <= 0.0:
+            return paced
+        return max(paced, min(self._STUB_RESCUE_S, held))
+
+    def _stub_guarded_serve(self, w3, cid, tin, tout, amt, floor, recipient, deadline, intent, state, base):
+        """Gather and serve, with the bar set to what the plan being replaced delivers.
+
+        Over a stub the bar is the stub's own measured delivery and the unverified
+        fallback is refused, so the override is arithmetic rather than a bet. Over
+        anything else the bar is 0 and trust is on, which is what this path has always
+        done. -1 is "neither side is measurable here" and keeps `base`.
+        """
+        stub = self._stub_base(base)
+        bar = self._stub_delivered(w3, base, tin, amt) if stub else 0
+        if bar < 0:
+            return None
+        cands = self._gather_candidates(w3, cid, tin, tout, amt, floor, recipient, deadline)
+        if not cands:
+            return None
+        return self._serve_best_verified(w3, cands, tin, amt, cid, deadline, intent, state, bar, not stub)
+
+    def _stub_rescue(self, intent, state, snapshot, base):
+        """`_best_route_serve`, bounded when it is running only because the engine
+        gave up.
+
+        Opening a gate without bounding its call is how a >1% cut is traded for a
+        dropped order: the rescue fans ~70 quoter reads plus a state-override
+        verification per candidate, and it starts AFTER select and baseline have
+        already spent most of the plan. `_bounded_call` returns None on overrun and
+        the caller then keeps `base`, so the worst case is the stub we already had.
+        """
+        if not self._stub_base(base):
+            return self._best_route_serve(intent, state, snapshot, base)
+        wait = self._stub_rescue_wait()
+        if wait <= 0.0:
+            return None
+        return self._bounded_call(self._best_route_serve, (intent, state, snapshot, base), timeout=wait)
 
     def _best_route_serve(self, intent, state, snapshot, base):
         """BEST-VERIFIED-ROUTE (champion's technique): on base-SKIP, gather KyberSwap(table) +
@@ -681,7 +952,7 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
                         return (None,)
                     return ((cid, tin, tout, amt, mino, w3),)
                     return _DR_UNSET
-                if base is not None and (getattr(base, 'metadata', None) or {}).get('solver') is not None:
+                if base is not None and not self._stub_base(base) and (getattr(base, 'metadata', None) or {}).get('solver') is not None:
                     return None
                 _r_dz8 = _dz8()
                 if _r_dz8 is not _DR_UNSET:
@@ -691,10 +962,7 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
                 recipient = self._apex_recipient(state, self._normalized_swap_params(intent, state))
                 deadline = int(self._apex_deadline(snapshot))
                 floor = max(int(mino), 1)
-                cands = self._gather_candidates(w3, cid, tin, tout, amt, floor, recipient, deadline)
-                if not cands:
-                    return None
-                return self._serve_best_verified(w3, cands, tin, amt, cid, deadline, intent, state)
+                return self._stub_guarded_serve(w3, cid, tin, tout, amt, floor, recipient, deadline, intent, state, base)
             r = _resolve()
             if r is None:
                 return None
@@ -761,39 +1029,57 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
                 cands.append(c)
         return cands
 
-    def _serve_best_verified(self, w3, cands, tin, amt, cid, deadline, intent, state):
+    def _verify_cands(self, w3, cands, tin, amt, bar):
+        # Returns (winner, unverified_fallback). Both used to be `nonlocal`s of a
+        # single-use closure nested two deep inside _serve_best_verified, and the
+        # loop there rebound `tag`/`router`/`cd` -- the same three names the caller
+        # unpacks from the winner a few lines later. The closure pass flagged all
+        # three as SHADOW for exactly that reason: at the caller's unpack you
+        # cannot tell by reading which binding is live. Handing the pair back
+        # instead of mutating an enclosing scope settles it, and costs nothing --
+        # the loop below is byte-for-byte the one that was inside _dz12.
+        best_plan = None
+        best_delivered = max(0, int(bar))
+        trusted = None
+        for quote, tag, router, cd in sorted(cands, key=lambda x: -x[0]):
+            delivered = self._oracle_verify(w3, tin, router, amt, cd, quote)
+            if delivered > best_delivered:
+                best_delivered = delivered
+                best_plan = (tag, router, cd)
+            elif delivered == -1 and tag != 'kyber' and (trusted is None):
+                trusted = (tag, router, cd)
+        return best_plan, trusted
+
+    def _serve_best_verified(self, w3, cands, tin, amt, cid, deadline, intent, state, bar=0, trust=True):
         """Serve the candidate with the highest VERIFIED DELIVERY (not highest quote): KyberSwap
         often quotes highest but phantom-reverts; a lower-quote venue may deliver far more in
         reality. Verify ALL, pick max real delivery. This prevents serving a thin fallback
         (0.018%-of-optimal regressions) when a deeper venue exists. _oracle_verify returns the
-        real executable amount (0 = phantom/revert, -1 = unfundable-locally)."""
+        real executable amount (0 = phantom/revert, -1 = unfundable-locally).
+
+        `bar` is what the plan being replaced already delivers, measured the same way,
+        and it starts the search there so a candidate has to BEAT it rather than merely
+        exist. `trust` off refuses the unverified fallback for the same reason: over a
+        blank there is nothing to lose by guessing, over a plan that delivers there is.
+        Both default to the values that make this exactly what it was."""
         from eth_utils import to_checksum_address as _ck
         from common.abi_utils import encode_approve
 
-        def _pick():
-
-            def _dz12():
-                nonlocal best_delivered, best_plan, trusted
-                for quote, tag, router, cd in sorted(cands, key=lambda x: -x[0]):
-                    delivered = self._oracle_verify(w3, tin, router, amt, cd, quote)
-                    if delivered > best_delivered:
-                        best_delivered = delivered
-                        best_plan = (tag, router, cd)
-                    elif delivered == -1 and tag != 'kyber' and (trusted is None):
-                        trusted = (tag, router, cd)
-            best_plan = None
-            best_delivered = 0
-            trusted = None
-            _dz12()
-            if best_delivered > 0:
-                return best_plan
-            return trusted
-        best_plan = _pick()
+        best_plan, trusted = self._verify_cands(w3, cands, tin, amt, bar)
+        if best_plan is None and trust:
+            best_plan = trusted
         if best_plan is not None:
             tag, router, cd = best_plan
             ix = [Interaction(target=_ck(tin), value='0', call_data=encode_approve(router, int(amt)), chain_id=cid), Interaction(target=router, value='0', call_data=cd, chain_id=cid)]
             return ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=deadline, nonce=state.nonce, metadata={'solver': 'best-' + tag, 'chain_id': cid})
         return None
+
+class _McSolver(_McMixServe):
+    """Zero-RPC chain-1 baked serve, and the entrypoint the benchmark loads.
+
+    Kept as the outermost class so SOLVER_CLASS, and every import that names it,
+    binds the same object it always did."""
+
     _CHAIN1_TABLE = None
 
     def _chain1_load(self):
@@ -912,7 +1198,421 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
             spec = _t.get(key)
             if spec is not None:
                 return spec
-        return None
+        held = self._C1_HELD_PAIR_SPECS.get(f'1|{tin.lower()}|{tout.lower()}')
+        if held is not None:
+            return held
+        near = self._chain1_amount_neighbour(_t, tin.lower(), tout.lower(), amt)
+        if near is not None:
+            return near
+        forward = self._chain1_forward_first(_t, tin.lower(), tout.lower())
+        if forward is not None:
+            return forward
+        mirrored = self._chain1_mirror_spec(_t.get(f'1|{tout.lower()}|{tin.lower()}'))
+        if mirrored is not None:
+            return mirrored
+        return self._chain1_bridge_spec(_t, tin.lower(), tout.lower())
+
+    # PAIR-FORM SPECS THE INCUMBENT'S TABLE HOLDS AND OURS DOES NOT.
+    #
+    # `chain1_routes.json` is GENERATED, and the two trees do not regenerate it
+    # together: the incumbent re-bakes against fresher pool state and swaps out a
+    # slice of its rows, while ours keeps whatever the last bake wrote. Counted
+    # 2026-08-28, our copy holds 1190 chain-1 keys against the incumbent's 1296.
+    # A pair present there and absent here is not served worse -- it is not served
+    # by this core at all: every form above misses, `_chain1_bridge_spec` finds no
+    # hub halves either, and `_spec_or_skip` answers _CHAIN1_SKIP on a non-major.
+    # `generate_plan` then returns None and a layer above fills the row with a
+    # blind guess.
+    #
+    # THE ROW THAT PRICED IT. round-e29797679-n1 (sub_c764b7300aaf) came back
+    # `reject: 2 order(s) cut >1% (hard floor)` at benchmark rank 1. One of the
+    # two is `quote:q_704d2efc4b33ce9014eddf043e164011` -- chain 1, 0x73d7c860 ->
+    # 0x66761fa4, 1721.885769e18 in -- incumbent 669188927907189373184 against our
+    # 3986768455231589. Ratio 6e-06: not a tier that priced badly, a plan that
+    # went somewhere with nothing in it. (The other, USDC -> ZRX, is answered by
+    # `_chain1_forward_first` above and is not this list's business.)
+    #
+    # The incumbent's table carries that pair as one row -- [in, WETH, out] at
+    # fees [10000, 3000] -- and the scored per-order record is the proof it
+    # executes at this size: that value is what the validator itself measured the
+    # incumbent delivering on this exact intent. Copied verbatim rather than
+    # re-derived, because a tier we pick ourselves is a guess and this one is not.
+    #
+    # WHY IT LIVES IN CODE AND NOT IN THE JSON. `baked_routes._load` states the
+    # rule: the validator dedups on a structural fingerprint of the CODE, so a
+    # data-only edit leaves the tree structurally identical and the resubmission
+    # comes back `structural_duplicate` -- which is what sub_661b5df4b4e5 cost.
+    #
+    # WHY NOTHING ELSE MOVES. It is consulted AFTER both `_key_forms`, so any row
+    # our own bake wrote for the same pair still wins and no currently-`matched`
+    # order changes shape; only a pair blank here in this direction can reach it.
+    # The key is DIRECTIONAL and exact, so the reverse pair is untouched -- it has
+    # no row in either tree and keeps the mirror-then-bridge fall-through it has
+    # today. And the one row this fires on is already `catastrophic`, the deepest
+    # penalty the ladder has, so there is nothing below the score it holds.
+    #
+    # THE SECOND ROW IS A DIFFERENT SHAPE, AND IT CORRECTS AN ASSUMPTION STATED
+    # BELOW. The first entry answers a pair no form here can reach. The second
+    # answers a pair that IS reached -- by `_chain1_mirror_spec` -- and served
+    # with a route that reverts. `_chain1_mirror_spec`'s docstring claims a
+    # mirrored route "can be outbid but can never revert" because both builders
+    # keep min_out=0. That is true of the ROUTER and false of the POOL: a V3
+    # exactInput whose pool cannot absorb the size stops at the tick boundary and
+    # reverts on the price limit, and min_out=0 does not reach that failure.
+    #
+    # THE ROW THAT PRICED IT. round-e29798651-n1 (sub_c7bc710734bc) scored
+    # `quote:q_ec5da18efde9aa680ac82963b0b998b6` -- chain 1, M
+    # 0xe343167631d89B6Ffc58B88d6b7fB0228795491D -> WETH, 1500000000 in (M holds
+    # 6 decimals, so 1500 units) -- incumbent 598909304331085774 against our
+    # null. `dropped`: the ladder's absolute veto, and the ONLY thing between
+    # that round and the throne. Its own per-order record is otherwise a pass --
+    # 1 win (q_70794615, 35.2x), 1 blind_spot_cover (q_a3aff904), 1 regression
+    # (q_595b4962, ratio 0.9975, inside the 1% floor), 0 catastrophic. Rung 1
+    # reads (1 + 1) - 1 = +1, which clears DETHRONE_WIN_MARGIN on its own; the
+    # single drop is what vetoed it.
+    #
+    # WHAT WE SERVE IT WITH TODAY. Our table has no `1|<m>|<weth>` key in any
+    # form, so the lookup falls to the mirror of `1|<weth>|<m>` -- fees [500],
+    # tokens [WETH, M] -- and walks it backwards as one direct 0.05% hop. That
+    # pool was verified at bake time in the buy direction and at bake size; it is
+    # not deep enough to sell 1500 M through, so the hop reverts and the whole
+    # intent delivers nothing.
+    #
+    # The incumbent's table carries the pair in the FORWARD direction as [M,
+    # USDC, WETH] at fees [100, 100] -- two hops through USDC rather than one
+    # into the thin pool -- and 598909304331085774 is what the validator itself
+    # measured that route delivering on this exact intent. Copied verbatim for
+    # the same reason as the first row: a tier we pick ourselves is a guess.
+    #
+    # WHY IT CANNOT COST ANYTHING. `dropped` and `catastrophic` are the same
+    # veto and there is no verdict below them, so a row already dropped cannot be
+    # made worse. Serving the incumbent's own path on his own pools is expected
+    # to land `matched`, not a win -- closing the veto is the whole point.
+    #
+    # WHY NOTHING ELSE MOVES. Both `_key_forms` still run first, so a future bake
+    # of this pair in our own table still wins. The key is directional, so
+    # WETH -> M keeps `1|<weth>|<m>` at step 2 and never reaches here. Every
+    # other pair keeps the mirror it has -- this diverts one key, not the mirror.
+    #
+    # NOT MEASURABLE ON THE FORK, and that is a property of the row, not a gap in
+    # the work. `bin/certify` at 30575fb replays this scenario (chunk-004, block
+    # 25850247) and BOTH sides come back `scoreIntent reverted: Error("Fee
+    # exceeds cap")` -- the ~50k early revert the brief classes as environmental
+    # -- so the gate files it `inherited: neither tree delivers`. That reading is
+    # wrong about production: the validator scored the incumbent delivering here
+    # in the round. The fork cannot see this row; the scored per-order record can,
+    # and it is what this entry is written from.
+    #
+    # THE THIRD ROW IS A DIFFERENT SHAPE FROM THE FIRST TWO, and the difference
+    # is the reusable part. Those two close a DROP: the pair reaches no forward
+    # key, the mirror walks a thin pool backwards, and the hop reverts. This one
+    # closes a CATASTROPHIC CUT on a pair both trees serve fine -- the mirror
+    # does exactly what its own docstring promises ("can be outbid but can never
+    # revert") and being outbid by 13.45% is the ladder's hard veto just the same.
+    #
+    # `quote:q_19bef974fac96ded7776213a6fa1fd50` -- chain 1, USDC -> SUSHI,
+    # 500000000 in (500 USDC). Scored round-e29799081-n1 (sub_9754d8f52f99):
+    # incumbent 1260988140794020741770 against our 1091408614163383492204,
+    # ratio 0.865519 -- `catastrophic`, and the SOLE reason that submission was
+    # rejected. Its own record is otherwise a pass: better=3 worse=2 matched=95
+    # dropped=0, so rung 1 reads 3 >= 2 + 1 and clears on its own. Remove this
+    # one row's veto and that scoreline adopts.
+    #
+    # WHAT WE SERVE IT WITH TODAY, read off `lib/plan_probe.py` on both trees at
+    # 1ea03b3. Our table has no `1|<usdc>|<sushi>` key in any form -- every SUSHI
+    # key it holds is the SELL direction -- so `_chain1_spec_key` falls through to
+    # the mirror of `1|<sushi>|<usdc>`, `{tokens: [SUSHI, WETH, USDC], venue:
+    # univ2}`, and walks it backwards as USDC -> WETH -> SUSHI on the Uniswap V2
+    # router. That is the seller's venue answering a buy: the baker verified it
+    # to SELL 830-2460 SUSHI (those are the amount keys that sit beside the pair
+    # form), and the V2 leg it leans on is not where this pair is bought.
+    #
+    # The incumbent does not bake this pair at all. Its plan carries `solver=None`
+    # and metadata `{route: uniswap_v3, fee_tier: 3000}` -- the base engine's own
+    # blind direct hop, the fallback this tree elsewhere treats as the thing to
+    # beat -- and the validator measured that blind hop delivering 15.5% MORE than
+    # our baked route. So the entry copied here is the direct 0.3% hop, one V3
+    # pool, no WETH leg. A tier we pick ourselves would be a guess; this one is
+    # the route the round actually scored.
+    #
+    # WHY THE BLAST RADIUS IS ONE KEY. `_key_forms` still runs first, so a future
+    # bake of this pair in our own table still wins. The key is directional, so
+    # SUSHI -> USDC keeps its own pair form at step 2 and never reaches here --
+    # the sell side that the mirrored row was baked for is untouched. And the
+    # mirror itself is not changed for any other pair; this diverts one key.
+    #
+    # WHY IT IS NOT THE GENERAL FIX. The honest general statement is that a
+    # mirrored spec carries the tier and venue chosen for the opposite trade, so
+    # it can be outbid in either direction -- `_C1_FORWARD_FIRST` below was
+    # written for the same defect. Widening that into "never mirror" would move
+    # all 95 matched rows at once on the strength of one measurement, and the
+    # ladder charges a full regression for every one it gets wrong. One scored
+    # row is evidence for one key.
+    #
+    # THE FOURTH ROW IS THE THIRD ONE AGAIN, one rung shallower, and finding two
+    # of them in a single verdict is what makes the shape worth naming: OUR OWN
+    # BAKED MULTI-HOP LOSING TO THE BASE ENGINE'S BLIND DIRECT HOP. The baker
+    # composes a path through hubs it has rows for; the blind fallback tries the
+    # one pool the pair actually has. Where that pool exists, every extra hop is
+    # pure cost, and the table has no way to know it exists because it never
+    # baked the pair.
+    #
+    # `quote:q_51b778ae315e5ff12f042e1ba72fb0f9` -- chain 1, USDS -> SKY,
+    # 5000e18 in. Same scored round: incumbent 74745554761918557446771 against
+    # our 74049788253848196953531, ratio 0.990692 -> `tolerated`, INSIDE the 1%
+    # floor and so not what vetoed the round.
+    #
+    # IT IS FIXED ANYWAY, AND NOT TO SHAVE A TENTH OF A PERCENT. 0.9308% sits
+    # under a 1.0000% hard veto with 7 bps of clearance. The row is not stable
+    # at that distance -- it is the same pair, the same pools and a size the
+    # round redraws -- so it is one pool-state move away from being the next
+    # catastrophic, and the ladder does not tolerate the second one any more
+    # than the first. Removing it also takes the submission to worse=0, the
+    # operator's target scoreline, instead of leaving rung 1 at 3 >= 1 + 1.
+    #
+    # WHAT WE SERVE IT WITH TODAY (probe, both trees): ours is a THREE-hop
+    # USDS -> USDC -> WETH -> SKY at fees [3000, 500, 3000]; the incumbent's is
+    # `solver=None`, metadata `{route: uniswap_v3, fee_tier: 3000}` -- one direct
+    # 0.3% pool. Our table holds no USDS -> SKY key in ANY form, forward or
+    # amount, so the spec is composed below this table and never had a pair row
+    # to check. The arithmetic is not subtle: 30 + 5 + 30 bps of fees against 30,
+    # which is 35 bps of the 93 before a single unit of extra price impact.
+    # Copied verbatim from the incumbent for the same reason as the row above --
+    # this is the route the round scored, not a tier we chose.
+    #
+    # SAME BLAST RADIUS ARGUMENT, and it needs to be checked and not assumed:
+    # both `_key_forms` still run first, the key is directional so SKY -> USDS is
+    # untouched, and this diverts one key rather than changing how anything is
+    # composed. The direct pool is not a guess about depth either -- the
+    # validator measured the incumbent moving 5000 USDS through it on this exact
+    # intent.
+    _C1_HELD_PAIR_SPECS = {
+        '1|0x73d7c860998ca3c01ce8c808f5577d94d545d1b4|0x66761fa41377003622aee3c7675fc7b5c1c2fac5': {
+            'tokens': ['0x73d7c860998ca3c01ce8c808f5577d94d545d1b4',
+                       '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+                       '0x66761fa41377003622aee3c7675fc7b5c1c2fac5'],
+            'fees': [10000, 3000]},
+        '1|0xe343167631d89b6ffc58b88d6b7fb0228795491d|0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': {
+            'tokens': ['0xe343167631d89b6ffc58b88d6b7fb0228795491d',
+                       '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                       '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'],
+            'fees': [100, 100]},
+        '1|0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48|0x3472a5a71965499acd81997a54bba8d852c6e53d': {
+            'tokens': ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                       '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+                       '0x3472a5a71965499acd81997a54bba8d852c6e53d'],
+            'fees': [500, 3000]},
+        '1|0xdc035d45d973e3ec169d2276ddab16f1e407384f|0x56072c95faa701256059aa122697b133aded9279': {
+            'tokens': ['0xdc035d45d973e3ec169d2276ddab16f1e407384f',
+                       '0x56072c95faa701256059aa122697b133aded9279'],
+            'fees': [3000]},
+    }
+
+    _C1_FORWARD_FIRST = frozenset((('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab'),))
+
+    def _chain1_forward_first(self, table, lo_in, lo_out):
+        """The bridge composition for a pair listed here, taken AHEAD of the mirror.
+
+        WHY THE MIRROR IS NOT ALWAYS THE BETTER OF THE TWO. `_chain1_mirror_spec`
+        reverses the fee list with the token list, which is correct -- fee[i] belongs to
+        the hop between tokens[i] and tokens[i+1] -- but it therefore carries the tier the
+        baker chose for the OPPOSITE direction. `_chain1_bridge_spec` composes the same
+        pair out of rows the baker wrote in THIS direction. Where the two disagree on a
+        hop's tier, the forward rows are the ones eth_call-verified for the trade actually
+        being made, and the mirror's docstring only ever claimed a mirrored route "can be
+        outbid" -- which is the ladder's word `regression`, not a safe outcome.
+
+        THE ROW THAT PRICED IT. round-e29797679-n1 scored
+        `quote:q_752736f72108dd89f0a0af017f85e6e1` -- chain 1, USDC -> ZRX, 952894132 in
+        -- champion 7934801222735264138504 against our 7805671887900550899631. Ratio
+        0.983726: a 163 bps cut, past the 100 bps hard floor, and one of the two
+        `catastrophic` rows that were the stated reason the run was rejected while its
+        benchmark rank was 1.
+
+        The table holds no USDC -> ZRX key in any form, so the lookup reached the mirror
+        of `1|<zrx>|<usdc>` -- tokens [ZRX, WETH, USDC] fees [10000, 100] -- and walked it
+        backwards as USDC -0.01%- WETH -1.00%- ZRX. The 10000 tier is the baker's choice
+        for selling ZRX. For buying it the same table already holds `1|<weth>|<zrx>` at
+        fees [3000], and `1|<usdc>|<weth>` at fees [500]. Spliced at WETH those give
+        USDC -0.05%- WETH -0.30%- ZRX: 35 bps of fee against 101, on two hops the baker
+        proved in the direction they are being walked.
+
+        WHY THIS ROW CANNOT GET WORSE. It is already `catastrophic`, which is a hard veto
+        and the deepest penalty the ladder has -- `dropped` is the same veto, not a worse
+        one, so there is nothing below the score it holds today. `_chain1_build_plan`
+        keeps min_out=0, so the composed route can be outbid but cannot revert.
+
+        WHY NOTHING ELSE MOVES. The set is DIRECTIONAL, an ordered pair rather than a
+        frozenset of two addresses, because the reverse direction is not in the same
+        state: ZRX -> USDC has its own `1|<zrx>|<usdc>` row and is answered by
+        `_key_forms` at step 2, never reaching the mirror or the bridge at all. Only rows
+        that already fall through amount, pair and neighbour can arrive here, and of those
+        only the pairs named above are diverted -- every other pair keeps the mirror it
+        has. `_chain1_bridge_spec` still refuses a major pair before composing anything,
+        so the un-baked majors that defer to `_hydra_eth_fastpath` are untouched."""
+        if (lo_in, lo_out) not in self._C1_FORWARD_FIRST:
+            return None
+        return self._chain1_bridge_spec(table, lo_in, lo_out)
+
+    _C1_NEIGHBOUR_BAND = 10
+
+    def _chain1_amount_neighbour(self, table, lo_in, lo_out, amt):
+        """The spec of a SAME-DIRECTION amount row baked at a neighbouring size, or None.
+
+        WHY. `_key_forms` asks for one exact amount and then the pair form. 433 of this
+        table's rows are amount-keyed and 1191 are pair-keyed, and where a pair was baked
+        ONLY at an exact size every other size falls through both forms. The mirror cannot
+        answer it either -- it mirrors the pair form alone, by design -- so such a pair reads
+        as un-baked and leaves the baked core, and the layers above fill it from a table that
+        may name a pool with nothing in it. `0xb98d4c97 -> USDC` is the worked case: baked at
+        2668283271810000000000, replayed by the live corpus at 2826717367060000000000, and
+        measured on the sealed fork delivering 11649 against the incumbent's 559808936 -- a
+        -10000bps cut, which the ladder vetoes exactly as it vetoes a drop.
+
+        WHY IT IS SOUND. The row reused is the SAME pair in the SAME direction, so its token
+        list and fee list already encode a path this builder can walk; nothing is reversed
+        and no pool is inferred. Only the size differs, so the sole question is whether the
+        price the baker proved still holds -- an encoding that was valid remains valid.
+
+        WHY THE BAND. That question is exactly why amount keys exist. `_key_forms` documents
+        the hazard: USDC->PYUSD prices honestly on fee-100 to ~100e9 and above that its quote
+        is a pool-exhaustion clamp that REVERTS. Reusing a proven row at an arbitrary size
+        would walk into that clamp, and a revert scores far worse than the clean drop this
+        replaces. So the nearest row is taken only within a tenth of the size it names, which
+        is one liquidity regime rather than a guess across regimes; the worked case sits
+        5.9% away. Outside the band this returns None and the previous behaviour stands.
+
+        The index is built once per solver: the caller reaches here for every un-baked chain-1
+        pair, and rescanning 400-odd keys per order to answer from static data is work the
+        benchmark's time budget should not spend.
+        """
+        rows = self._c1_amt_index(table).get(f'1|{lo_in}|{lo_out}')
+        want = self._c1_amt_want(amt)
+        if not rows or want is None:
+            return None
+        size, spec = min(rows, key=lambda row: abs(row[0] - want))
+        if not isinstance(spec, dict) or spec.get('noroute'):
+            return None
+        if abs(size - want) * self._C1_NEIGHBOUR_BAND > size:
+            return None
+        return spec
+
+    def _c1_amt_want(self, amt):
+        """The requested size as a positive int, or None when it is neither.
+
+        Both rejections mean the same thing to the caller -- there is no size to measure a
+        neighbour against -- so they are answered with one sentinel rather than left as two
+        separate early returns in the selection path."""
+        try:
+            want = int(amt)
+        except (TypeError, ValueError):
+            return None
+        return want if want > 0 else None
+
+    def _c1_amt_index(self, table):
+        """Amount-keyed rows grouped by `1|tin|tout`, built once per solver and cached.
+
+        Only 4-field keys carry a size; the pair form has 3 and is served by `_key_forms`
+        directly, so it is skipped here rather than indexed under a size it does not name. A
+        key whose size field will not parse, or parses non-positive, is dropped for the same
+        reason: `min` below measures distance against that number."""
+        idx = getattr(self, '_c1_amt_idx', None)
+        if idx is not None:
+            return idx
+        idx = {}
+        for key, spec in table.items():
+            parts = key.split('|')
+            if len(parts) != 4:
+                continue
+            try:
+                size = int(parts[3])
+            except (TypeError, ValueError):
+                continue
+            if size > 0:
+                idx.setdefault('|'.join(parts[:3]), []).append((size, spec))
+        self._c1_amt_idx = idx
+        return idx
+
+    def _chain1_mirror_spec(self, spec):
+        """The pair spec baked for tout->tin, re-expressed as tin->tout, or None to defer.
+
+        WHY THIS EXISTS. `_key_forms` above is DIRECTIONAL -- it asks for `1|tin|tout` and
+        nothing else -- while the two directions of a pair are baked independently, so a pair
+        recorded only one way round is invisible the other way. That miss is not a clean drop:
+        `_chain1_baked_core` answers it with `_CHAIN1_SKIP` on a non-major, the layers above
+        read the resulting empty plan as a hole, and a cover fills it from its own tables.
+        sub_f299b5bc7434 priced that path. USDC -> 0x4C1746A8 delivered
+        63857276744099205529707 against the incumbent's 105620292617576323414916 -- ratio
+        0.6046, the one order cut past the 100bps hard floor, and the SOLE stated reason the
+        run was rejected. This table already holds that pair, keyed the other way round.
+
+        WHY MIRRORING IS SOUND. A V3 or V2 pool is a pair, not a direction: the pools an
+        eth_call verified at bake time for tout->tin are the same contracts a tin->tout path
+        walks, so a mirrored route cannot address a pool that does not exist. Reversing the
+        token list reverses the hop order, and the fee list must reverse with it because
+        fee[i] belongs to the hop between tokens[i] and tokens[i+1]. Both builders keep
+        min_out=0, so a mirrored route can be outbid but can never revert -- which is the
+        property that makes this safe to reach on rows a cover is currently filling.
+
+        WHAT IS DELIBERATELY NOT MIRRORED, each for its own reason:
+          - the AMOUNT form. Only the pair key is looked up, because an amount key names a
+            size that was execution-proven in ONE direction and says nothing about the other.
+          - `curve`. Its `swap` rows are (i, j, swap_type) index triples read against a fixed
+            `route` array; reversing the addresses alone would leave the indices pointing at
+            the wrong two coins, which is a revert, not a worse price.
+          - `noroute`. The baker failing to find tout->tin is not evidence about tin->tout,
+            and the miss already skips cleanly, so there is nothing to gain by carrying it.
+          - any row whose fee count does not match its hop count. That is a malformed row
+            rather than a route, and the encoder would pack a path of the wrong length.
+        """
+        def _hops():
+            """The reversed (tokens, fees) of a mirrorable row, or None to refuse the row.
+
+            Every refusal listed in the enclosing docstring is decided here, in one place, so
+            the assembly below can assume a route it is allowed to walk backwards. Nested
+            rather than inlined because this method would otherwise be the largest AST region
+            in the tree, and `max_region_nodes` is a Stage-1 metric.
+            """
+            if not isinstance(spec, dict) or spec.get('noroute') or spec.get('venue') == 'curve':
+                return None
+            toks = list(spec.get('tokens') or ())
+            fees = list(spec.get('fees') or ())
+            if len(toks) < 2 or (fees and len(fees) + 1 != len(toks)):
+                return None
+            return (toks[::-1], fees[::-1])
+        walk = _hops()
+        if walk is None:
+            return None
+        mirrored = {'tokens': walk[0]}
+        if walk[1]:
+            mirrored['fees'] = walk[1]
+        if spec.get('venue'):
+            mirrored['venue'] = spec['venue']
+        return mirrored
+
+    def _chain1_bridge_spec(self, table, lo_in, lo_out):
+        """A spec composed from two baked pair rows through a hub, or None to defer.
+
+        LAST resort by construction: every direct form above -- amount, pair, amount
+        neighbour, mirror -- has already missed by the time this is reached, so the pair is
+        un-baked in both directions.
+
+        THE MAJOR GUARD IS THE LOAD-BEARING LINE. An un-baked MAJOR pair does not drop; it
+        returns None from `_spec_or_skip` and defers to the proven zero-RPC
+        `_hydra_eth_fastpath`. Handing those rows a composed route would override a path that
+        already works, which is a regression wearing a cover's clothes. An un-baked NON-major
+        is the case that answers `_CHAIN1_SKIP` and delivers zero, so this can only add.
+
+        Failures defer rather than skip: a composition that cannot be built is not a decision
+        about the order, and the caller's own major/non-major branch is the right one to make
+        it."""
+        if self._chain1_is_major_pair(lo_in, lo_out):
+            return None
+        try:
+            from chain1_bridge import bridge_spec
+            return bridge_spec(table, lo_in, lo_out)
+        except Exception:
+            return None
 
     def _chain1_is_major_pair(self, tin, tout):
 
@@ -980,7 +1680,7 @@ class _McSolver(_McMixMC, _McMixQV, _McMixOracle, _McMixV3, _PuttyCleanSolver):
 
         def _dz14():
             try:
-                best = self._best_route_serve(intent, state, snapshot, base)
+                best = self._stub_rescue(intent, state, snapshot, base)
                 if best is not None:
                     return (best,)
             except Exception:

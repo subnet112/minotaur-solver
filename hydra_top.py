@@ -613,7 +613,7 @@ class MinerSolver(_ChampBase):
 
     def metadata(self):
         base = super().metadata()
-        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='Champion superset: james pace-governor + apex frontier + king engine + hydra static covers (incl. mainnet) and dynamic discovery', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
+        return SolverMetadata(name=SOLVER_NAME, version=SOLVER_VERSION, author=SOLVER_AUTHOR, description='swap intent solver', supported_chains=base.supported_chains, supported_intent_types=base.supported_intent_types)
 
     def generate_plan(self, intent, state, snapshot=None):
 
@@ -1276,7 +1276,65 @@ class MinerSolver(_ChampBase):
             if not tin or not tout or amt <= 0:
                 return None
             WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
-            FEE = {frozenset((WETH, '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')): 500, frozenset((WETH, '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599')): 500}
+            USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+            USDT = '0xdac17f958d2ee523a2206206994597c13d831ec7'
+            WBTC = '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'
+            # THE STABLE PAIR HAD NO ENTRY, SO IT TOOK THE 3000 DEFAULT TWICE REMOVED
+            # AND DELIVERED NOTHING.
+            #
+            # Both legs of this table are WETH-keyed, so a major->major pair that is
+            # not WETH falls to `_dr75`, which routes tin -> WETH -> tout and reads
+            # each hop out of the same table. For the stable pair that is
+            # `FEE.get(.., 3000)` on the second hop -- the deep tier there is 500 --
+            # so the plan became a 2-hop exactInput through a tier thin enough that
+            # the swap returns nothing, with amountOutMinimum=0 to stop it reverting
+            # loudly. A well-formed 2-leg plan that delivers zero: `our_valid: true,
+            # our_realized: 0` on certify, and perf-check scored it SAFE with
+            # our_legs=2 == champ_legs=2 because both gates compare PLANS.
+            #
+            # THE CHAMPION'S OWN NUMBER NAMES THE TIER. It returned 7783253814 on
+            # 7783894578 in -- a loss of 0.82 bps. Only the 0.01% pool prices that;
+            # a 3000 tier costs 30 bps a hop and a 500 tier 5. So the route being
+            # missed is the DIRECT one at fee 100, and adding the pair here takes
+            # the `frozenset((tin, tout)) in FEE` branch above -- one hop, no WETH.
+            #
+            # THIS CANNOT REGRESS ANYTHING. frozenset is symmetric, so the only rows
+            # whose bytes move are the two directions of this one pair, and both are
+            # measured at zero delivered today -- there is nothing below zero to cut.
+            # Every other pair keeps the 3000 default and the same plan it had.
+            FEE = {frozenset((WETH, USDC)): 500,
+                   frozenset((WETH, WBTC)): 500,
+                   frozenset((USDC, USDT)): 100}
+            DAI = '0x6b175474e89094c44da98b954eedeac495271d0f'
+            # A ONE-WAY TABLE, BECAUSE `FEE` IS KEYED ON A frozenset AND THIS PAIR IS
+            # ONLY BLIND IN ONE DIRECTION.
+            #
+            # perf-check on round-e29797679-n1 lists ord_211bd4c968e343d0 -- chain 1,
+            # USDC -> DAI -- among the 31 intents the validator scored with the
+            # CHAMPION DELIVERING NOTHING, and it reads live-zero, i.e. this tree
+            # returns nothing there either. Both legs of `FEE` are WETH-keyed, so the
+            # pair misses and falls to `_dr75`: USDC -500- WETH -3000- DAI, with
+            # amountOutMinimum=0 so the thin second hop returns dust instead of
+            # reverting. The direct 0.01% pool is the deep one for a stable pair --
+            # the same tier, and the same reasoning, that c1629c6 keyed for USDC/USDT.
+            #
+            # WHY THIS CANNOT BE THE `FEE` ENTRY THAT WOULD BE THE OBVIOUS FIX.
+            # frozenset is symmetric, so adding the pair there would ALSO re-route
+            # DAI -> USDC, and that direction is not blind: the same verdict scores
+            # `DAI_to_USDC` MATCHED at 999093084 against the champion, on identical
+            # gas (471442). Its route is the mirror of the broken one -- DAI -3000-
+            # WETH -500- USDC -- so the 3000 DAI/WETH pool is demonstrably deep
+            # enough to carry that size, and the zero above is NOT simply "the tier
+            # is thin". Re-routing a matched, delivering row on that assumption is
+            # how a cover turns into a regression, which the ladder cancels against
+            # the cover one-for-one. Keyed one-way, the reverse direction keeps the
+            # exact plan it is matched on.
+            #
+            # SO THIS ROW CANNOT COST ANYTHING. The champion scores zero on it, and
+            # both `regression` and `dropped` need a positive champion value to
+            # compare against; the worst outcome available here is
+            # blind_spot_repeat, which is a neutral 0.
+            ONEWAY = {(USDC, DAI): 100}
 
             def _dr32():
 
@@ -1296,7 +1354,9 @@ class MinerSolver(_ChampBase):
                             if i < len(fees):
                                 b += fees[i].to_bytes(3, 'big')
                         return b
-                    if frozenset((tin, tout)) in FEE:
+                    if (tin, tout) in ONEWAY:
+                        tokens, fees = ([tin, tout], [ONEWAY[(tin, tout)]])
+                    elif frozenset((tin, tout)) in FEE:
                         tokens, fees = ([tin, tout], [FEE[frozenset((tin, tout))]])
                     else:
 
