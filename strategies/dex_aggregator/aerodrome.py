@@ -22,17 +22,29 @@ from typing import Any, Callable
 from eth_abi.abi import encode as abi_encode
 
 def _aero_c():
+
+    def _dz2520():
+        AERODROME_SLIPSTREAM_ROUTER: dict[int, str] = {8453: '0xBE6D8f0d05cC4be24d5167a3eF062215bE6D18a5'}
+        AERODROME_TICK_SPACINGS: tuple[int, ...] = (1, 50, 100, 200, 2000)
+        globals().update(locals())
     logger = logging.getLogger(__name__)
     AERODROME_SLIPSTREAM_FACTORY: dict[int, str] = {8453: '0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A'}
-    AERODROME_SLIPSTREAM_ROUTER: dict[int, str] = {8453: '0xBE6D8f0d05cC4be24d5167a3eF062215bE6D18a5'}
-    AERODROME_TICK_SPACINGS: tuple[int, ...] = (1, 50, 100, 200, 2000)
-    globals().update(locals())
+    _dz2520()
 _aero_c()
 
 def _dr4():
 
+    def _dz2518():
+        _EXACT_INPUT_SINGLE_SELECTOR, discover_pools_for_pair = _dr2()
+        _EXACT_INPUT_SELECTOR = bytes.fromhex('c04b8d59')
+        return (_EXACT_INPUT_SELECTOR, _EXACT_INPUT_SINGLE_SELECTOR, discover_pools_for_pair)
+
     def _fw2():
-        _FACTORY_ABI = [{'inputs': [{'internalType': 'address', 'name': 'tokenA', 'type': 'address'}, {'internalType': 'address', 'name': 'tokenB', 'type': 'address'}, {'internalType': 'int24', 'name': 'tickSpacing', 'type': 'int24'}], 'name': 'getPool', 'outputs': [{'internalType': 'address', 'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
+
+        def _dz2517():
+            _FACTORY_ABI = [{'inputs': [{'internalType': 'address', 'name': 'tokenA', 'type': 'address'}, {'internalType': 'address', 'name': 'tokenB', 'type': 'address'}, {'internalType': 'int24', 'name': 'tickSpacing', 'type': 'int24'}], 'name': 'getPool', 'outputs': [{'internalType': 'address', 'name': 'pool', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]
+            return _FACTORY_ABI
+        _FACTORY_ABI = _dz2517()
         return (_FACTORY_ABI,)
     _FACTORY_ABI, = _fw2()
 
@@ -69,16 +81,30 @@ def _dr4():
                     try:
 
                         def _dr9():
-                            pool = w3.eth.contract(address=w3.to_checksum_address(pool_address), abi=_POOL_ABI)
-                            slot0 = pool.functions.slot0().call()
+
+                            def _dz2510():
+                                pool = w3.eth.contract(address=w3.to_checksum_address(pool_address), abi=_POOL_ABI)
+                                slot0 = pool.functions.slot0().call()
+                                return (pool, slot0)
+                            pool, slot0 = _dz2510()
 
                             def _fw3():
-                                liquidity = pool.functions.liquidity().call()
-                                fee = pool.functions.fee().call()
-                                token0 = pool.functions.token0().call()
-                                token1 = pool.functions.token1().call()
-                                tick_spacing = pool.functions.tickSpacing().call()
-                                return ((fee, liquidity, slot0, tick_spacing, token0, token1),)
+
+                                def _dz2505():
+                                    liquidity = pool.functions.liquidity().call()
+                                    fee = pool.functions.fee().call()
+                                    token0 = pool.functions.token0().call()
+                                    return (fee, liquidity, token0)
+
+                                def _dz2504():
+                                    token1 = pool.functions.token1().call()
+                                    tick_spacing = pool.functions.tickSpacing().call()
+                                    return (((fee, liquidity, slot0, tick_spacing, token0, token1),),)
+                                    return _DR_UNSET
+                                fee, liquidity, token0 = _dz2505()
+                                _r_dz2504 = _dz2504()
+                                if _r_dz2504 is not _DR_UNSET:
+                                    return _r_dz2504[0]
                             _fwr3 = _fw3()
                             if _fwr3 is not None:
                                 return _fwr3[0]
@@ -100,32 +126,60 @@ def _dr4():
     The discovered pool states are merged into ``pool_states`` (mutated
     in place) with the ``dex='aerodrome_slipstream'`` marker.
     """
+
+                        def _dz2511():
+                            if w3 is None or w3.eth.get_code(w3.to_checksum_address(factory_addr)) == b'':
+                                return (pool_states,)
+                            return _DR_UNSET
                         if not _is_supported_chain(chain_id):
                             return pool_states
                         factory_addr = AERODROME_SLIPSTREAM_FACTORY[chain_id]
-                        if w3 is None or w3.eth.get_code(w3.to_checksum_address(factory_addr)) == b'':
-                            return pool_states
+                        _r_dz2511 = _dz2511()
+                        if _r_dz2511 is not _DR_UNSET:
+                            return _r_dz2511[0]
                         a_lower, b_lower = (token_a.lower(), token_b.lower())
 
                         def _dr5():
-                            cache_key = (chain_id, 'aero_slip', min(a_lower, b_lower), max(a_lower, b_lower))
-                            now = time.time()
-                            if discovery_cache is not None:
-                                if now - discovery_cache.get(cache_key, 0) < cache_ttl:
-                                    return pool_states
-                            factory = w3.eth.contract(address=w3.to_checksum_address(factory_addr), abi=_FACTORY_ABI)
+
+                            def _dz2508():
+                                factory = w3.eth.contract(address=w3.to_checksum_address(factory_addr), abi=_FACTORY_ABI)
+                                return factory
+
+                            def _dz2507():
+                                if discovery_cache is not None:
+                                    if now - discovery_cache.get(cache_key, 0) < cache_ttl:
+                                        return (pool_states,)
+                                return _DR_UNSET
+
+                            def _dz2506():
+                                cache_key = (chain_id, 'aero_slip', min(a_lower, b_lower), max(a_lower, b_lower))
+                                now = time.time()
+                                return (cache_key, now)
+                            cache_key, now = _dz2506()
+                            _r_dz2507 = _dz2507()
+                            if _r_dz2507 is not _DR_UNSET:
+                                return _r_dz2507[0]
+                            factory = _dz2508()
 
                             def _dr3():
                                 discovered = 0
 
                                 def _dr10():
+
+                                    def _dz2503(ts):
+                                        pool_addr = factory.functions.getPool(w3.to_checksum_address(token_a), w3.to_checksum_address(token_b), ts).call()
+                                        return pool_addr
+
+                                    def _dz2502():
+                                        nonlocal rpc_errors
+                                        logger.debug('Aerodrome factory.getPool(%s, %s, ts=%d) failed: %s', token_a[:10], token_b[:10], ts, exc)
+                                        rpc_errors += 1
                                     rpc_errors = 0
                                     for ts in AERODROME_TICK_SPACINGS:
                                         try:
-                                            pool_addr = factory.functions.getPool(w3.to_checksum_address(token_a), w3.to_checksum_address(token_b), ts).call()
+                                            pool_addr = _dz2503(ts)
                                         except Exception as exc:
-                                            logger.debug('Aerodrome factory.getPool(%s, %s, ts=%d) failed: %s', token_a[:10], token_b[:10], ts, exc)
-                                            rpc_errors += 1
+                                            _dz2502()
                                             continue
 
                                         def _fw3():
@@ -171,12 +225,15 @@ def _dr4():
             return _dr12
         _EXACT_INPUT_SINGLE_SELECTOR = bytes.fromhex('a026383e')
         return (_EXACT_INPUT_SINGLE_SELECTOR, discover_pools_for_pair)
-    _EXACT_INPUT_SINGLE_SELECTOR, discover_pools_for_pair = _dr2()
-    _EXACT_INPUT_SELECTOR = bytes.fromhex('c04b8d59')
+    _EXACT_INPUT_SELECTOR, _EXACT_INPUT_SINGLE_SELECTOR, discover_pools_for_pair = _dz2518()
 
     def encode_exact_input_single(token_in: str, token_out: str, tick_spacing: int, recipient: str, deadline: int, amount_in: int, amount_out_minimum: int, sqrt_price_limit_x96: int=0) -> str:
-        """Encode Slipstream SwapRouter.exactInputSingle calldata."""
-        encoded = abi_encode(['(address,address,int24,address,uint256,uint256,uint256,uint160)'], [(token_in, token_out, int(tick_spacing), recipient, int(deadline), int(amount_in), int(amount_out_minimum), int(sqrt_price_limit_x96))])
+
+        def _dz2516(amount_in, amount_out_minimum, deadline, recipient, sqrt_price_limit_x96, tick_spacing, token_in, token_out):
+            """Encode Slipstream SwapRouter.exactInputSingle calldata."""
+            encoded = abi_encode(['(address,address,int24,address,uint256,uint256,uint256,uint160)'], [(token_in, token_out, int(tick_spacing), recipient, int(deadline), int(amount_in), int(amount_out_minimum), int(sqrt_price_limit_x96))])
+            return encoded
+        encoded = _dz2516(amount_in, amount_out_minimum, deadline, recipient, sqrt_price_limit_x96, tick_spacing, token_in, token_out)
         return '0x' + (_EXACT_INPUT_SINGLE_SELECTOR + encoded).hex()
 
     def encode_path(tokens: list[str], tick_spacings: list[int]) -> bytes:
@@ -191,13 +248,19 @@ def _dr4():
             raise ValueError('encode_path: need len(tokens) == len(tick_spacings) + 1')
 
         def _fw1():
-            out = bytearray()
-            for i, tok in enumerate(tokens):
+
+            def _dz2515():
                 addr_hex = tok[2:] if tok.startswith('0x') else tok
                 out.extend(bytes.fromhex(addr_hex.zfill(40)))
+                _dz2514()
+
+            def _dz2514():
                 if i < len(tick_spacings):
                     ts = int(tick_spacings[i])
                     out.extend((ts & 16777215).to_bytes(3, 'big'))
+            out = bytearray()
+            for i, tok in enumerate(tokens):
+                _dz2515()
             return (out,)
         out, = _fw1()
         return bytes(out)

@@ -113,23 +113,49 @@ class SwapIntentProcessor(IntentProcessor):
         params = self._extract_swap_params(intent, state)
 
         def _fw1():
-            input_token: str = params['input_token']
-            output_token: str = params['output_token']
-            input_amount: int = params['input_amount']
-            min_output_amount: int = params['min_output_amount']
-            recipient: str = state.contract_address or params.get('receiver', state.owner)
-            fee_tier: int = params.get('fee_tier', self.default_fee_tier)
+
+            def _dz2825():
+                input_amount, input_token, min_output_amount, output_token, recipient = _dz2824()
+                fee_tier: int = params.get('fee_tier', self.default_fee_tier)
+                return (fee_tier, input_amount, input_token, min_output_amount, output_token, recipient)
+
+            def _dz2824():
+                input_amount, input_token, min_output_amount, output_token = _dz2823()
+                recipient: str = state.contract_address or params.get('receiver', state.owner)
+                return (input_amount, input_token, min_output_amount, output_token, recipient)
+
+            def _dz2823():
+                input_amount, input_token, output_token = _dz2822()
+                min_output_amount: int = params['min_output_amount']
+                return (input_amount, input_token, min_output_amount, output_token)
+
+            def _dz2822():
+                input_token: str = params['input_token']
+                output_token: str = params['output_token']
+                input_amount: int = params['input_amount']
+                return (input_amount, input_token, output_token)
+            fee_tier, input_amount, input_token, min_output_amount, output_token, recipient = _dz2825()
             chain_id = context.chain_id
             router_address = self._get_router(chain_id)
 
             def _dr1():
 
+                def _dz2818():
+                    return (ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3', 'fee_tier': fee_tier, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'min_output_amount': str(min_output_amount)}),)
+                    return _DR_UNSET
+
                 def _dz399():
-                    deadline = context.timestamp + self.deadline_offset
+
+                    def _dz2817():
+                        deadline = context.timestamp + self.deadline_offset
+                        return deadline
+                    deadline = _dz2817()
                     interactions = [Interaction(target=input_token, value='0', call_data=encode_approve(router_address, input_amount), chain_id=chain_id), Interaction(target=router_address, value='0', call_data=encode_exact_input_single(token_in=input_token, token_out=output_token, fee=fee_tier, recipient=recipient, deadline=deadline, amount_in=input_amount, amount_out_minimum=0, chain_id=chain_id), chain_id=chain_id)]
                     return (deadline, interactions)
                 deadline, interactions = _dz399()
-                return ExecutionPlan(intent_id=intent.app_id, interactions=interactions, deadline=deadline, nonce=state.nonce, metadata={'route': 'uniswap_v3', 'fee_tier': fee_tier, 'input_token': input_token, 'output_token': output_token, 'input_amount': str(input_amount), 'min_output_amount': str(min_output_amount)})
+                _r_dz2818 = _dz2818()
+                if _r_dz2818 is not _DR_UNSET:
+                    return _r_dz2818[0]
                 return _DR_UNSET
             return (_dr1,)
         _dr1, = _fw1()
@@ -166,17 +192,33 @@ class SwapIntentProcessor(IntentProcessor):
         normalized = normalize_swap_intent_params(params, manifest=manifest_from_definition(intent), intent_name=_intent_function_from_state(state, 'swap'), receiver_default=state.contract_address or state.owner, slippage_bps=self.slippage_bps)
 
         def _dr3():
-            input_token = normalized.get('input_token')
-            output_token = normalized.get('output_token')
-            input_amount = normalized.get('input_amount', 0)
+
+            def _dz2821():
+                input_token = normalized.get('input_token')
+                output_token = normalized.get('output_token')
+                input_amount = normalized.get('input_amount', 0)
+                return (input_amount, input_token, output_token)
+
+            def _dz2820():
+                if not output_token:
+                    raise ValueError('Missing required parameter: output_token in state.raw_params')
+                if input_amount <= 0:
+                    raise ValueError(f'input_amount must be positive, got {input_amount}')
+                _r_dz2819 = _dz2819()
+                if _r_dz2819 is not _DR_UNSET:
+                    return (_r_dz2819[0],)
+                return _DR_UNSET
+
+            def _dz2819():
+                result: dict[str, Any] = {'input_token': input_token, 'output_token': output_token, 'input_amount': input_amount, 'min_output_amount': normalized['min_output_amount'], 'receiver': normalized['receiver'], 'fee_tier': normalized['fee_tier']}
+                return (result,)
+                return _DR_UNSET
+            input_amount, input_token, output_token = _dz2821()
             if not input_token:
                 raise ValueError('Missing required parameter: input_token in state.raw_params')
-            if not output_token:
-                raise ValueError('Missing required parameter: output_token in state.raw_params')
-            if input_amount <= 0:
-                raise ValueError(f'input_amount must be positive, got {input_amount}')
-            result: dict[str, Any] = {'input_token': input_token, 'output_token': output_token, 'input_amount': input_amount, 'min_output_amount': normalized['min_output_amount'], 'receiver': normalized['receiver'], 'fee_tier': normalized['fee_tier']}
-            return result
+            _r_dz2820 = _dz2820()
+            if _r_dz2820 is not _DR_UNSET:
+                return _r_dz2820[0]
         result = _dr3()
         return result
 
