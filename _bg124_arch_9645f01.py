@@ -19,7 +19,7 @@ from eth_abi import encode as _enc, decode as _dec
 from eth_utils import keccak as _kk
 
 def _mk_meta():
-    return (os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine'), os.environ.get('MINOTAUR_SOLVER_VERSION', '3.37.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'))
+    return (os.environ.get('MINOTAUR_SOLVER_NAME', "leanrtr"), os.environ.get('MINOTAUR_SOLVER_VERSION', '3.37.0'), os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84'))
 SOLVER_NAME, SOLVER_VERSION, SOLVER_AUTHOR = _mk_meta()
 
 class _C:

@@ -22,7 +22,7 @@ from minotaur_subnet.shared.types import ExecutionPlan, Interaction
 
 def _dr23():
     logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "leanrtr")
     SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
     SOLVER_AUTHOR = os.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
     _BASE = 8453

@@ -24,7 +24,7 @@ def _fw6():
         from minotaur_subnet.sdk.intent_solver import SolverMetadata
         from minotaur_subnet.shared.types import ExecutionPlan, Interaction
         logger = logging.getLogger(__name__)
-        SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
+        SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "leanrtr")
         SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
         import king_base as _kb
         _BOTZ = '0xca179f3978137f5745e6d731591aaef985ee9d6d'

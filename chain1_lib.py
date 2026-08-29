@@ -1,23 +1,40 @@
+_DR_UNSET = object()
 from chain1_c import _WETH, _USDT, _QUOTER, _ROUTER, _FEES, _HUBS, _CHAMP_FEE
 from _vaddr_ext import _addr_bytes
 
 def _pack(tokens, fees):
+
+    def _dz851():
+        nonlocal b
+        for i, t in enumerate(tokens):
+            b += _addr_bytes(t)
+            if i < len(fees):
+                b += int(fees[i]).to_bytes(3, 'big')
     b = b''
-    for i, t in enumerate(tokens):
-        b += _addr_bytes(t)
-        if i < len(fees):
-            b += int(fees[i]).to_bytes(3, 'big')
+    _dz851()
     return b
 
 def _champ_fee(a, b):
     return _CHAMP_FEE.get(frozenset((a, b)), 3000)
 
 def _champ_route(tin, tout):
+
+    def _dz850():
+        if fs in _CHAMP_FEE:
+            return (((tin, tout), (_CHAMP_FEE[fs],)),)
+        _r_dz849 = _dz849()
+        if _r_dz849 is not _DR_UNSET:
+            return (_r_dz849[0],)
+        return _DR_UNSET
+
+    def _dz849():
+        if _WETH not in (tin, tout):
+            return (((tin, _WETH, tout), (_champ_fee(tin, _WETH), _champ_fee(_WETH, tout))),)
+        return _DR_UNSET
     fs = frozenset((tin, tout))
-    if fs in _CHAMP_FEE:
-        return ((tin, tout), (_CHAMP_FEE[fs],))
-    if _WETH not in (tin, tout):
-        return ((tin, _WETH, tout), (_champ_fee(tin, _WETH), _champ_fee(_WETH, tout)))
+    _r_dz850 = _dz850()
+    if _r_dz850 is not _DR_UNSET:
+        return _r_dz850[0]
     return ((tin, tout), (3000,))
 
 def _direct_legs(tin, tout):
@@ -67,11 +84,17 @@ def _qroute(w3, route, amt, block):
         return None
 
 def _swap_leg(route, amt, rcpt):
+
+    def _dz848():
+        return ('0x' + (sel + _enc(['(bytes,address,uint256,uint256,uint256)'], [(_pack(tokens, fees), _ck(rcpt), 9999999999, int(amt), 0)])).hex(),)
+        return _DR_UNSET
     from eth_abi import encode as _enc
     from eth_utils import to_checksum_address as _ck
     tokens, fees = route
     sel = _selector('exactInput((bytes,address,uint256,uint256,uint256))')
-    return '0x' + (sel + _enc(['(bytes,address,uint256,uint256,uint256)'], [(_pack(tokens, fees), _ck(rcpt), 9999999999, int(amt), 0)])).hex()
+    _r_dz848 = _dz848()
+    if _r_dz848 is not _DR_UNSET:
+        return _r_dz848[0]
 
 def _needs_reset_approve(tin):
     """Whether `tin` must be approved to 0 before being approved to the real amount.
@@ -89,30 +112,46 @@ def _needs_reset_approve(tin):
     return tin == _USDT
 
 def _approves(tin, amt, chain_id):
+
+    def _dz847():
+        _dz846()
+        ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), int(amt)), chain_id=chain_id))
+
+    def _dz846():
+        if _needs_reset_approve(tin):
+            ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), 0), chain_id=chain_id))
     from eth_utils import to_checksum_address as _ck
     from common.abi_utils import encode_approve
     from minotaur_subnet.shared.types import Interaction as _IX
     ixs = []
-    if _needs_reset_approve(tin):
-        ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), 0), chain_id=chain_id))
-    ixs.append(_IX(target=tin, value='0', call_data=encode_approve(_ck(_ROUTER), int(amt)), chain_id=chain_id))
+    _dz847()
     return ixs
 
 def _build(route, tin, amt, rcpt, chain_id):
     from minotaur_subnet.shared.types import Interaction as _IX
     leg = _swap_leg(route, amt, rcpt)
     return _approves(tin, amt, chain_id) + [_IX(target=_ROUTER, value='0', call_data=leg, chain_id=chain_id)]
-from bg124_minota_ext import _amounts  # relocated leaf; see that module
+from bg124_minota_ext import _amounts
 from _mvp_ext import _valid_pair
 
 def _token(p, field):
     return str(p.get(field, '') or '').lower()
 
 def _params(s, intent, state):
-    p = s._normalized_swap_params(intent, state)
-    tin = _token(p, 'input_token')
-    tout = _token(p, 'output_token')
-    amt, mo = _amounts(p)
-    if not _valid_pair(tin, tout, amt):
-        return None
-    return (tin, tout, amt, mo)
+
+    def _dz845(intent, s, state):
+        p = s._normalized_swap_params(intent, state)
+        tin = _token(p, 'input_token')
+        tout = _token(p, 'output_token')
+        _r_dz844 = _dz844()
+        return (_r_dz844, p, tin, tout)
+
+    def _dz844():
+        amt, mo = _amounts(p)
+        if not _valid_pair(tin, tout, amt):
+            return (None,)
+        return ((tin, tout, amt, mo),)
+        return _DR_UNSET
+    _r_dz844, p, tin, tout = _dz845(intent, s, state)
+    if _r_dz844 is not _DR_UNSET:
+        return _r_dz844[0]

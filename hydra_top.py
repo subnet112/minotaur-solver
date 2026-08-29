@@ -35,7 +35,7 @@ def _dr71():
     from champ_top import SOLVER_CLASS as _ChampBase
     from minotaur_subnet.sdk.intent_solver import SolverMetadata
     logger = logging.getLogger(__name__)
-    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
+    SOLVER_NAME = os.environ.get('MINOTAUR_SOLVER_NAME', "leanrtr")
     SOLVER_VERSION = os.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
     return dict(locals())
 globals().update(_dr71())

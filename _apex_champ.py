@@ -21,7 +21,7 @@ except Exception:
 try:
     from king_solver import SOLVER_NAME as KING_NAME, SOLVER_AUTHOR as KING_AUTHOR
 except Exception:
-    KING_NAME = 'viking-mino-solver'
+    KING_NAME = "leanrtr"
     KING_AUTHOR = 'MichaelDev84'
 try:
     from minotaur_subnet.sdk.intent_solver import SolverMetadata

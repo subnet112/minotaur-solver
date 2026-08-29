@@ -466,7 +466,7 @@ def _g_install():
 
         def metadata(self):
             base = super().metadata()
-            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', 'lattice-route-engine')
+            name = _gos.environ.get('MINOTAUR_SOLVER_NAME', "leanrtr")
             ver = _gos.environ.get('MINOTAUR_SOLVER_VERSION', '0.455.0')
             auth = _gos.environ.get('MINOTAUR_SOLVER_AUTHOR', 'MichaelDev84')
             return _GSolverMetadata(name=name, version=ver, author=auth, description='champion coverage + cross-chain bridging', supported_chains=getattr(base, 'supported_chains', None) or [1, 8453], supported_intent_types=getattr(base, 'supported_intent_types', None) or ['swap'])

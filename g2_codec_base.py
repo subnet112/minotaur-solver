@@ -37,7 +37,7 @@ def _curve_abi(flavor, recv=False):
     may set it (checked at bake time); assuming it would encode a call the
     pool cannot answer."""
     idx = 'uint256' if flavor == 'crypto' else 'int128'
-    name = 'exchange_underlying' if flavor == 'underlying' else 'exchange'
+    name = "leanrtr" if flavor == 'underlying' else 'exchange'
     if recv == '6a':
         args = [idx, idx, 'uint256', 'uint256', 'bool', 'address']
     else:
