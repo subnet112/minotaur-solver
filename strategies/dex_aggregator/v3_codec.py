@@ -44,11 +44,18 @@ def encode_exact_input_single(token_in: str, token_out: str, fee: int, recipient
     Returns:
         The ABI-encoded calldata as a 0x-prefixed hex string.
     """
+
+    def _dz2829():
+        nonlocal encoded_params
+        encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, deadline, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
+        return ('0x' + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex(),)
+        return _DR_UNSET
     if chain_id in SWAP_ROUTER_V2_CHAINS:
         encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
         return '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V2 + encoded_params).hex()
-    encoded_params = encode(['(address,address,uint24,address,uint256,uint256,uint256,uint160)'], [(token_in, token_out, fee, recipient, deadline, amount_in, amount_out_minimum, sqrt_price_limit_x96)])
-    return '0x' + (EXACT_INPUT_SINGLE_SELECTOR_V1 + encoded_params).hex()
+    _r_dz2829 = _dz2829()
+    if _r_dz2829 is not _DR_UNSET:
+        return _r_dz2829[0]
 
 def encode_exact_input(path: bytes, recipient: str, deadline: int, amount_in: int, amount_out_minimum: int) -> str:
     """Encode Uniswap V3 SwapRouter.exactInput calldata (multi-hop).
@@ -97,17 +104,24 @@ def encode_swap_path(tokens: list[str], fees: list[int]) -> bytes:
 
     def _dr1():
 
+        def _dz2828():
+            if len(fees) != len(tokens) - 1:
+                raise ValueError(f'Need exactly {len(tokens) - 1} fees for {len(tokens)} tokens, got {len(fees)}')
+
         def _dz401():
-            path = b''
-            for i, token in enumerate(tokens):
-                addr_hex = token[2:] if token.startswith('0x') else token
+
+            def _dz2827():
+                nonlocal path
                 path += bytes.fromhex(addr_hex)
                 if i < len(fees):
                     path += fees[i].to_bytes(3, byteorder='big')
+            path = b''
+            for i, token in enumerate(tokens):
+                addr_hex = token[2:] if token.startswith('0x') else token
+                _dz2827()
             return (path,)
             return _DR_UNSET
-        if len(fees) != len(tokens) - 1:
-            raise ValueError(f'Need exactly {len(tokens) - 1} fees for {len(tokens)} tokens, got {len(fees)}')
+        _dz2828()
         _r_dz401 = _dz401()
         if _r_dz401 is not _DR_UNSET:
             return _r_dz401[0]

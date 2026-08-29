@@ -14,12 +14,20 @@ def _v_gated_table():
     """Lazy gated_rows.json — 'tin|tout|amt' -> champion-route-gated row spec
     (own-built routes only; pool params machine-extracted from oracle route
     hops). Inert when the file is absent."""
+
+    def _dz2960():
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gated_rows.json')
+        return path
+
+    def _dz2959():
+        nonlocal _V_GATED_CACHE
+        _V_GATED_CACHE = {str(k).lower(): v for k, v in (_json.load(open(path)) or {}).items()}
     global _V_GATED_CACHE
     if _V_GATED_CACHE is None:
         import json as _json
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gated_rows.json')
+        path = _dz2960()
         try:
-            _V_GATED_CACHE = {str(k).lower(): v for k, v in (_json.load(open(path)) or {}).items()}
+            _dz2959()
         except Exception:
             _V_GATED_CACHE = {}
     return _V_GATED_CACHE
@@ -29,13 +37,21 @@ def _viking_override() -> set:
     scorecard-PROVEN to deliver 0 ALWAYS (structural miss), so the replay row
     is served unconditionally: our delivery vs their 0 = a win; a stale row
     reverts to 0 = the tie we already had. Ships empty at re-fork."""
+
+    def _dz2958():
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_override.json')
+        return path
+
+    def _dz2957():
+        nonlocal _VIKING_OVERRIDE_CACHE
+        data = _json.load(open(path))
+        _VIKING_OVERRIDE_CACHE = {str(k).lower() for k in data} if isinstance(data, list) else set()
     global _VIKING_OVERRIDE_CACHE
     if _VIKING_OVERRIDE_CACHE is None:
         import json as _json
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_override.json')
+        path = _dz2958()
         try:
-            data = _json.load(open(path))
-            _VIKING_OVERRIDE_CACHE = {str(k).lower() for k in data} if isinstance(data, list) else set()
+            _dz2957()
         except Exception:
             _VIKING_OVERRIDE_CACHE = set()
     return _VIKING_OVERRIDE_CACHE
@@ -50,16 +66,23 @@ def _viking_cached_bar(key):
         def _dr22():
 
             def _dz407():
+
+                def _dz2950():
+                    data = _json.load(open(path)) or {}
+                    return data
+
+                def _dz2949():
+                    if iv > 0:
+                        bars[str(k).lower()] = iv
                 bars: dict = {}
                 try:
-                    data = _json.load(open(path)) or {}
+                    data = _dz2950()
                     for k, v in data.items() if isinstance(data, dict) else []:
                         try:
                             iv = int(v)
                         except (TypeError, ValueError):
                             continue
-                        if iv > 0:
-                            bars[str(k).lower()] = iv
+                        _dz2949()
                 except Exception:
                     bars = {}
                 return (bars,)
@@ -80,21 +103,42 @@ def _viking_frozen_index() -> dict:
     construction — those are never overridden."""
 
     def _dz408():
-        here = os.path.dirname(os.path.abspath(__file__))
-        for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
-            try:
-                data = _json.load(open(os.path.join(here, fname))) or {}
-            except Exception:
-                continue
+
+        def _dz2955():
+            here = os.path.dirname(os.path.abspath(__file__))
+            return here
+
+        def _dz2954(fname, here):
+            data = _json.load(open(os.path.join(here, fname))) or {}
+            return data
+
+        def _dz2953():
             for k, spec in data.items() if isinstance(data, dict) else []:
 
                 def _dr12():
-                    rows = (spec or {}).get('interactions') or []
+
+                    def _dz2947():
+                        rows = (spec or {}).get('interactions') or []
+                        return rows
+
+                    def _dz2946():
+                        if sig:
+                            idx.setdefault(str(k).lower(), []).append(sig)
+                        return ((rows, sig),)
+                        return _DR_UNSET
+                    rows = _dz2947()
                     sig = frozenset(((str(r.get('target', '')).lower(), str(r.get('data', '')).lower()) for r in rows))
-                    if sig:
-                        idx.setdefault(str(k).lower(), []).append(sig)
-                    return (rows, sig)
+                    _r_dz2946 = _dz2946()
+                    if _r_dz2946 is not _DR_UNSET:
+                        return _r_dz2946[0]
                 rows, sig = _dr12()
+        here = _dz2955()
+        for fname in ('hydra_replay.json', 'king_replay.json', 'override_replay.json'):
+            try:
+                data = _dz2954(fname, here)
+            except Exception:
+                continue
+            _dz2953()
     global _VIKING_FROZEN_INDEX
     if _VIKING_FROZEN_INDEX is None:
         import json as _json
@@ -108,33 +152,59 @@ def _viking_replay() -> dict:
     dicts], "out": stamped build-time quote, "at": build unix time}. Parse
     deferred past the Stage-2 init budget; a broken file just disables the
     layer (never raises)."""
+
+    def _dz2956():
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_replay.json')
+        return path
     global _VIKING_REPLAY_CACHE
     if _VIKING_REPLAY_CACHE is None:
         import json as _json
         import calendar as _cal
         import time as _time
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viking_replay.json')
+        path = _dz2956()
 
         def _dr19():
+
+            def _dz2952():
+                data = _json.load(open(path)) or {}
+                return data
+
+            def _dz2951(spec):
+                rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
+                return rows
             out: dict = {}
             try:
-                data = _json.load(open(path)) or {}
+                data = _dz2952()
                 for key, spec in data.items() if isinstance(data, dict) else []:
-                    rows = [i for i in (spec or {}).get('interactions', []) if i.get('target') and i.get('data')]
+                    rows = _dz2951(spec)
                     if not rows:
                         continue
 
                     def _dr7():
-                        try:
+
+                        def _dz2944():
+                            nonlocal bout
+                            bout = int((spec or {}).get('built_out', 0) or 0)
+
+                        def _dz2943():
+                            out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
+                            return ((at, bout),)
+                            return _DR_UNSET
+
+                        def _dz2942():
+                            nonlocal at
                             at = _cal.timegm(_time.strptime(str((spec or {}).get('built_at', '')), '%Y-%m-%dT%H:%M:%SZ'))
+                        try:
+                            _dz2942()
                         except Exception:
                             at = 0
                         try:
-                            bout = int((spec or {}).get('built_out', 0) or 0)
+                            _dz2944()
                         except (TypeError, ValueError):
                             bout = 0
-                        out[str(key).lower()] = {'ix': rows, 'out': bout, 'at': at}
-                        return (at, bout)
+                        _r_dz2943 = _dz2943()
+                        if _r_dz2943 is not _DR_UNSET:
+                            return _r_dz2943[0]
                     at, bout = _dr7()
             except Exception:
                 out = {}

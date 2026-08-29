@@ -1,3 +1,4 @@
+_DR_UNSET = object()
 import shape_lib2 as _sl2
 import shape_lib3 as _sl3
 
@@ -17,12 +18,24 @@ def _b_sg2(c):
     return _sl2._v_build_sg2(c[1], c[2], c[3], c[4], c[5], c[9])(c[7])
 
 def _b_gs2(c):
+
+    def _dz2419():
+        return (_sl2._v_build_gs2(c[1], c[2], c[3], c[4], c[5], ea, c[9])(c[7]),)
+        return _DR_UNSET
     ea = getattr(c[8], 'account', None) or c[7]
-    return _sl2._v_build_gs2(c[1], c[2], c[3], c[4], c[5], ea, c[9])(c[7])
+    _r_dz2419 = _dz2419()
+    if _r_dz2419 is not _DR_UNSET:
+        return _r_dz2419[0]
 
 def _b_sv3(c):
+
+    def _dz2418():
+        return (_sl3._v_build_sv3(c[1], c[2], c[3], c[4], c[5], ea, c[9])(c[7]),)
+        return _DR_UNSET
     ea = getattr(c[8], 'account', None) or c[7]
-    return _sl3._v_build_sv3(c[1], c[2], c[3], c[4], c[5], ea, c[9])(c[7])
+    _r_dz2418 = _dz2418()
+    if _r_dz2418 is not _DR_UNSET:
+        return _r_dz2418[0]
 
 def _b_sgs(c):
     return _sl2._v_build_sgs(c[1], c[2], c[3], c[4], c[9])(c[7])

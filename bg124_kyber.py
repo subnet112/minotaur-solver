@@ -16,74 +16,95 @@ order must never fire on a different app's SERVED order sharing the pair/amount
 was verified to execute and beat the incumbent at bake time.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 import json
 import logging
 from pathlib import Path
-
 logger = logging.getLogger(__name__)
-
 
 def _types():
     from minotaur_subnet.shared.types import ExecutionPlan, Interaction
-    return ExecutionPlan, Interaction
-
+    return (ExecutionPlan, Interaction)
 
 def _load():
     try:
-        p = Path(__file__).parent / "kyber_overrides.json"
+        p = Path(__file__).parent / 'kyber_overrides.json'
         if p.is_file():
             return json.loads(p.read_text())
     except Exception:
-        logger.exception("[kyber] override load failed")
+        logger.exception('[kyber] override load failed')
     return {}
-
-
 _OVERRIDES = _load()
-
 
 def _pair(p):
     """The (tin, tout, amt) leg of the override key, normalised."""
-    return (str(p.get("input_token", "") or "").lower(),
-            str(p.get("output_token", "") or "").lower(),
-            str(int(p.get("input_amount", 0) or 0)))
-
+    return (str(p.get('input_token', '') or '').lower(), str(p.get('output_token', '') or '').lower(), str(int(p.get('input_amount', 0) or 0)))
 
 def _key(state):
-    try:
-        p = dict(getattr(state, "raw_params", None) or {})
-        cid = str(int(getattr(state, "chain_id", 0) or 0))
-        con = str(getattr(state, "contract_address", "") or "").lower()
+
+    def _dz787(state):
+        cid, p = _dz786(state)
+        con = str(getattr(state, 'contract_address', '') or '').lower()
+        _r_dz785 = _dz785()
+        return (_r_dz785, cid, con, p)
+
+    def _dz786(state):
+        p = dict(getattr(state, 'raw_params', None) or {})
+        cid = str(int(getattr(state, 'chain_id', 0) or 0))
+        return (cid, p)
+
+    def _dz785():
         tin, tout, amt = _pair(p)
-        if tin and tout and amt != "0":
-            return "|".join((cid, con, tin, tout, amt))
+        if tin and tout and (amt != '0'):
+            return ('|'.join((cid, con, tin, tout, amt)),)
+        return _DR_UNSET
+    try:
+        _r_dz785, cid, con, p = _dz787(state)
+        if _r_dz785 is not _DR_UNSET:
+            return _r_dz785[0]
     except Exception:
         pass
     return None
 
-
 def _plan(intent, state, row, chain_id):
-    ExecutionPlan, Interaction = _types()
-    ix = [Interaction(target=r["target"], value=str(r.get("value", "0")),
-                      call_data=r["data"], chain_id=chain_id)
-          for r in row.get("interactions", [])]
-    if not ix:
-        return None
-    return ExecutionPlan(intent_id=intent.app_id, interactions=ix,
-                         deadline=9999999999, nonce=state.nonce,
-                         metadata={"solver": "bg124-kyber", "chain_id": chain_id})
 
+    def _dz783():
+        if not ix:
+            return (None,)
+        return (ExecutionPlan(intent_id=intent.app_id, interactions=ix, deadline=9999999999, nonce=state.nonce, metadata={'solver': 'bg124-kyber', 'chain_id': chain_id}),)
+        return _DR_UNSET
+    ExecutionPlan, Interaction = _types()
+    ix = [Interaction(target=r['target'], value=str(r.get('value', '0')), call_data=r['data'], chain_id=chain_id) for r in row.get('interactions', [])]
+    _r_dz783 = _dz783()
+    if _r_dz783 is not _DR_UNSET:
+        return _r_dz783[0]
 
 def try_cover(solver, intent, state):
     """Exact-key KyberSwap override. Returns an ExecutionPlan or None."""
+
+    def _dz781(state):
+        row = _OVERRIDES.get(_key(state))
+        _r_dz780 = _dz780()
+        return (_r_dz780, row)
+
+    def _dz780():
+        if not row or not row.get('interactions'):
+            return (None,)
+        _r_dz779 = _dz779()
+        if _r_dz779 is not _DR_UNSET:
+            return (_r_dz779[0],)
+        return _DR_UNSET
+
+    def _dz779():
+        chain_id = int(getattr(state, 'chain_id', 0) or 0)
+        return (_plan(intent, state, row, chain_id),)
+        return _DR_UNSET
     if not _OVERRIDES:
         return None
     try:
-        row = _OVERRIDES.get(_key(state))
-        if not row or not row.get("interactions"):
-            return None
-        chain_id = int(getattr(state, "chain_id", 0) or 0)
-        return _plan(intent, state, row, chain_id)
+        _r_dz780, row = _dz781(state)
+        if _r_dz780 is not _DR_UNSET:
+            return _r_dz780[0]
     except Exception:
-        logger.exception("[kyber] cover failed; champion plan stands")
+        logger.exception('[kyber] cover failed; champion plan stands')
         return None

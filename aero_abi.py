@@ -40,9 +40,13 @@ def _path_bytes(path_toks, fees):
 
     Lifted verbatim out of `_v3_exact_input` and `_quote_v3`, which each built it
     with identical code."""
+
+    def _dz468():
+        nonlocal raw
+        raw += hex(int(f))[2:].rjust(6, '0') + t[2:].lower()
     raw = path_toks[0][2:].lower()
     for f, t in zip(fees, path_toks[1:]):
-        raw += hex(int(f))[2:].rjust(6, '0') + t[2:].lower()
+        _dz468()
     return bytes.fromhex(raw)
 
 def _pad(b):

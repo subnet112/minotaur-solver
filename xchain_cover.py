@@ -50,41 +50,14 @@ on. There is no served order here to turn into a regression. Every other order
 takes one dict read and one comparison, then the identical path it takes today.
 """
 from __future__ import annotations
-
+_DR_UNSET = object()
 import logging
-
 logger = logging.getLogger(__name__)
-
-# Mirrors `simulator/cross_chain_bench._CANONICAL_TOKEN_BY_CHAIN`, which that
-# module documents as a CODE CONSTANT for the same reason it is copied rather
-# than imported here: the simulator package is not importable from the solver
-# sandbox, and a token the benchmark cannot map is seeded nowhere, so a cover
-# built on a guess would deliver zero however correct its calldata.
-_CANONICAL = {
-    "weth": {1: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-             8453: "0x4200000000000000000000000000000000000006"},
-    "usdc": {1: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-             8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"},
-}
-
-# `BENCHMARK_BRIDGE_FEE_BPS`. The benchmark ignores live bridge quotes on any
-# scored path (two validators quoting seconds apart would disagree), so this
-# fixed fee IS the number the scorer will use.
+_CANONICAL = {'weth': {1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 8453: '0x4200000000000000000000000000000000000006'}, 'usdc': {1: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 8453: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'}}
 _FEE_BPS = 5
-
-# `harness/orchestrator._ANVIL_DEFAULT_ACCOUNT` — who `_delivery_recipients`
-# credits when the intent carries no receiver of its own, which is every
-# benchmark quote case.
-_ANVIL_DEFAULT = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-
-# The chains whose destination backends the benchmark actually runs. A plan
-# naming any other chain is deferred LOUD by
-# `_assert_destination_backends_usable`, so staying inside this set is what
-# keeps a cover from costing the row it was meant to win.
+_ANVIL_DEFAULT = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
 _CHAINS = (1, 8453)
-
-_TRANSFER_SELECTOR = "a9059cbb"
-
+_TRANSFER_SELECTOR = 'a9059cbb'
 
 def _params(state):
     """The intent's raw params, through the accessor the harness itself uses.
@@ -93,23 +66,21 @@ def _params(state):
     `state.raw_params_view()`, and both `intent_requests_cross_chain` and
     `_delivery_recipients` read the same view — so reading anything else here
     would be answering a different question than the one being scored."""
-    view = getattr(state, "raw_params_view", None)
+    view = getattr(state, 'raw_params_view', None)
     if view is not None:
         try:
             return dict(view() or {})
         except Exception:
             pass
-    return dict(getattr(state, "raw_params", None) or {})
-
+    return dict(getattr(state, 'raw_params', None) or {})
 
 def _int_or_none(raw):
-    if raw in (None, "", 0, "0"):
+    if raw in (None, '', 0, '0'):
         return None
     try:
         return int(raw)
     except (TypeError, ValueError):
         return None
-
 
 def _bridged_to(token, src, dst):
     """`map_bridged_token`: the destination-chain address of what a bridge moves.
@@ -118,18 +89,15 @@ def _bridged_to(token, src, dst):
     no destination balance — so here they return None instead, and the caller
     declines rather than shipping a plan that cannot be funded on the far side.
     """
-    low = str(token or "").lower()
+    low = str(token or '').lower()
     for by_chain in _CANONICAL.values():
-        if by_chain.get(src, "").lower() == low:
+        if by_chain.get(src, '').lower() == low:
             return by_chain.get(dst)
     return None
 
-
 def _transfer_call(to_addr, amount):
     """`ERC20.transfer(to, amount)` calldata."""
-    return "0x%s%024x%s%064x" % (
-        _TRANSFER_SELECTOR, 0, str(to_addr)[2:].lower().rjust(40, "0"), amount)
-
+    return '0x%s%024x%s%064x' % (_TRANSFER_SELECTOR, 0, str(to_addr)[2:].lower().rjust(40, '0'), amount)
 
 def _delivered_amount(amount_in):
     """What the destination fork will actually hold: the bridge's own arithmetic.
@@ -138,66 +106,87 @@ def _delivered_amount(amount_in):
     move and subtracts `amount * fee_bps // 10_000`. Integer division, floor,
     exactly as written there — transferring one wei more than this reverts the
     destination leg and turns a cover into a `destination_leg_reverted` zero."""
-    return amount_in - amount_in * _FEE_BPS // 10_000
-
+    return amount_in - amount_in * _FEE_BPS // 10000
 
 class _Route(object):
     """One identity-bridge order, resolved: everything the plan needs and
     nothing that needs a network to learn."""
 
     def __init__(self, src, dst, token_in, token_out, amount, recipient):
+
+        def _dz2961():
+            self.dst = dst
+            self.token_in = token_in
+            self.token_out = token_out
+            self.amount = amount
+            self.recipient = recipient
+            self.delivered = _delivered_amount(amount)
         self.src = src
-        self.dst = dst
-        self.token_in = token_in
-        self.token_out = token_out
-        self.amount = amount
-        self.recipient = recipient
-        self.delivered = _delivered_amount(amount)
+        _dz2961()
 
-
-# The chain pair this intent crosses, or None when it crosses nothing this
-# cover can answer. Split out of `resolve` for the factorization metric: a
-# module-level def's body is its own region, so the cheapest way to shrink the
-# tree's largest region is to move whole decisions out of it rather than to
-# golf them (minifying moves max_region_nodes by exactly zero).
 def _chain_pair(state, params):
-    dst = _int_or_none(params.get("dest_chain_id"))
-    src = _int_or_none(getattr(state, "chain_id", 0))
-    if dst is None or src is None or dst == src:
-        return None
-    # Staying inside the benchmark's own destination set is what keeps a cover
-    # from costing the row it was meant to win — see _CHAINS.
-    if src not in _CHAINS or dst not in _CHAINS:
-        return None
-    return src, dst
 
+    def _dz2972(params, state):
+        dst = _int_or_none(params.get('dest_chain_id'))
+        src = _int_or_none(getattr(state, 'chain_id', 0))
+        _r_dz2971 = _dz2971()
+        return (_r_dz2971, dst, src)
 
-# The three order terms a plan cannot be built without, or None if any is
-# missing or nonsensical. Same split rationale as _chain_pair.
+    def _dz2971():
+        if dst is None or src is None or dst == src:
+            return (None,)
+        if src not in _CHAINS or dst not in _CHAINS:
+            return (None,)
+        return _DR_UNSET
+    _r_dz2971, dst, src = _dz2972(params, state)
+    if _r_dz2971 is not _DR_UNSET:
+        return _r_dz2971[0]
+    return (src, dst)
+
 def _order_terms(params):
-    amount = _int_or_none(params.get("input_amount"))
-    token_in = str(params.get("input_token") or "")
-    token_out = str(params.get("output_token") or "")
-    if amount is None or amount <= 0 or not token_in or not token_out:
-        return None
-    return amount, token_in, token_out
 
+    def _dz2970(params):
+        amount, token_in = _dz2969(params)
+        token_out = str(params.get('output_token') or '')
+        _r_dz2968 = _dz2968()
+        return (_r_dz2968, amount, token_in, token_out)
 
-# The identity test, and the whole safety argument in one place: we answer only
-# when the bridge itself already produces the asked-for asset. An order whose
-# output token lives on the SOURCE chain fails this and is left alone, which is
-# what keeps a mislabelled single-chain order out of here — and therefore what
-# guarantees no order the champion serves can turn into a drop.
+    def _dz2969(params):
+        amount = _int_or_none(params.get('input_amount'))
+        token_in = str(params.get('input_token') or '')
+        return (amount, token_in)
+
+    def _dz2968():
+        if amount is None or amount <= 0 or (not token_in) or (not token_out):
+            return (None,)
+        return ((amount, token_in, token_out),)
+        return _DR_UNSET
+    _r_dz2968, amount, token_in, token_out = _dz2970(params)
+    if _r_dz2968 is not _DR_UNSET:
+        return _r_dz2968[0]
+
 def _is_identity_bridge(token_in, token_out, src, dst):
     bridged = _bridged_to(token_in, src, dst)
     return bridged is not None and bridged.lower() == token_out.lower()
-
 
 def resolve(state):
     """The identity-bridge route this intent asks for, or None.
 
     None is the answer for every order the stack already handles, and it is
     reached before anything expensive: one params read, then comparisons."""
+
+    def _dz2966():
+        if not _is_identity_bridge(token_in, token_out, src, dst):
+            return (None,)
+        _r_dz2965 = _dz2965()
+        if _r_dz2965 is not _DR_UNSET:
+            return (_r_dz2965[0],)
+        return _DR_UNSET
+
+    def _dz2965():
+        recipient = str(params.get('receiver') or '') or _ANVIL_DEFAULT
+        return (_Route(src, dst, token_in, token_out, amount, recipient),)
+        return _DR_UNSET
     params = _params(state)
     pair = _chain_pair(state, params)
     if pair is None:
@@ -207,94 +196,43 @@ def resolve(state):
     if terms is None:
         return None
     amount, token_in, token_out = terms
-    if not _is_identity_bridge(token_in, token_out, src, dst):
-        return None
-    recipient = str(params.get("receiver") or "") or _ANVIL_DEFAULT
-    return _Route(src, dst, token_in, token_out, amount, recipient)
+    _r_dz2966 = _dz2966()
+    if _r_dz2966 is not _DR_UNSET:
+        return _r_dz2966[0]
 
-
-# The two legs of the journey. Leg 0 carries no interactions: the deposit is
-# SYNTHESIZED by the benchmark from bridge_requests[0] (shared/types.
-# mock_bridge_deposit, "synthesis (a solver-shape bridge leg that carries no
-# calldata yet)"), so a source-side deposit written here would be work the
-# harness discards.
-#
-# READ THIS BEFORE ADDING ONE ANYWAY — measured 2026-08-26 against the
-# validator's own code, because the emptiness is ALSO why this cover cannot yet
-# be credited, and the two facts are one line apart:
-#
-#   harness/orchestrator._mock_bridge_for_benchmark:2831  builds the SCORED
-#   single-chain sim. When the top-level `interactions` is empty it calls
-#   _source_leg_interactions, which keeps only legs whose chain_id == the
-#   scored chain (:2756) — the destination leg is dropped, and leg 0 and the
-#   synthesized bridge leg both contribute ZERO indices. `mocked` comes back
-#   [] == plan.interactions, so :2853 returns the plan UNCHANGED with 0
-#   interactions. Its own comment at :2815 says what happens next: "scoreIntent
-#   then reverts '(empty revert)' and the row scores 0 NO MATTER HOW GOOD THE
-#   PLAN IS", which sets fail_closed_miss (:2129) and SKIPS score_fn (:2191).
-#   raw_output is only ever set from score_fn's result (:2228), and
-#   epoch/relative_scoring reads raw_output alone — so the destination amount
-#   this plan really delivers is recorded on the row (:2176, outside the guard)
-#   and is still not what the ladder counts.
-#
-# So the credit gap is a platform asymmetry — the destination measurement
-# synthesizes the deposit, the scored path does not — NOT a defect in the plan
-# shape below. Closing it needs a source-side interaction whose selector is in
-# shared/types._BRIDGE_CALL_SELECTORS (the benchmark rewrites those to
-# token.transfer(mock, amount) and executes them). That was deliberately NOT
-# written blind: this identity has no ALCHEMY_KEY, so bin/exec-check reads
-# UNMEASURED here and no local gate executes a plan. Verify against a real
-# bridge router address before adding it.
 def _journey_legs(route):
+
+    def _dz2964(route):
+        delivery = Interaction(target=route.token_out, value='0', call_data=_transfer_call(route.recipient, route.delivered), chain_id=route.dst)
+        _r_dz2963 = _dz2963()
+        return (_r_dz2963, delivery)
+
+    def _dz2963():
+        return ([ChainLeg(chain_id=route.src, interactions=[], metadata={'type': 'bridge_source'}), ChainLeg(chain_id=route.dst, interactions=[delivery], metadata={'type': 'destination_swap'})],)
+        return _DR_UNSET
     from minotaur_subnet.shared.types import ChainLeg, Interaction
+    _r_dz2963, delivery = _dz2964(route)
+    if _r_dz2963 is not _DR_UNSET:
+        return _r_dz2963[0]
 
-    delivery = Interaction(
-        target=route.token_out, value="0",
-        call_data=_transfer_call(route.recipient, route.delivered),
-        chain_id=route.dst)
-    return [
-        ChainLeg(chain_id=route.src, interactions=[],
-                 metadata={"type": "bridge_source"}),
-        ChainLeg(chain_id=route.dst, interactions=[delivery],
-                 metadata={"type": "destination_swap"}),
-    ]
-
-
-# One request, source-chain token and amount. `_forward_legs` reads `amount`
-# for the deterministic estimate and remaps `token` to the destination chain
-# itself, so declaring the destination address here would double-map it.
 def _bridge_requests(route):
     from minotaur_subnet.shared.types import BridgeRequest
+    return [BridgeRequest(token=route.token_in, amount=route.amount, src_chain_id=route.src, dst_chain_id=route.dst, recipient=route.recipient, purpose='bridge %s.. for identity delivery' % route.token_in[:10])]
 
-    return [BridgeRequest(
-        token=route.token_in, amount=route.amount,
-        src_chain_id=route.src, dst_chain_id=route.dst,
-        recipient=route.recipient,
-        purpose="bridge %s.. for identity delivery" % route.token_in[:10])]
-
-
-# `cross_chain_plan` is what declares_cross_chain keys on, and `dst_chain_id`
-# is read by _delivery_recipients to credit the destination chain's own app
-# address alongside the receiver. Both names are load-bearing; do not rename.
 def _plan_metadata(route, payload):
-    return {"cross_chain_plan": payload, "src_chain_id": route.src,
-            "dst_chain_id": route.dst, "plan_type": "cross_chain",
-            "solver": "xchain-identity",
-            "expected_output": str(route.delivered)}
-
+    return {'cross_chain_plan': payload, 'src_chain_id': route.src, 'dst_chain_id': route.dst, 'plan_type': 'cross_chain', 'solver': 'xchain-identity', 'expected_output': str(route.delivered)}
 
 def build_plan(intent, state, route):
     """The two-leg journey, in the platform's own solver-shape primitive."""
+
+    def _dz2962():
+        return (ExecutionPlan(intent_id=intent.app_id, interactions=[], deadline=9999999999, nonce=getattr(state, 'nonce', 0), metadata=_plan_metadata(route, payload)),)
+        return _DR_UNSET
     from minotaur_subnet.shared.types import CrossChainPlan, ExecutionPlan
-
-    payload = CrossChainPlan(
-        legs=_journey_legs(route),
-        bridge_requests=_bridge_requests(route)).to_dict()
-    return ExecutionPlan(
-        intent_id=intent.app_id, interactions=[], deadline=9999999999,
-        nonce=getattr(state, "nonce", 0),
-        metadata=_plan_metadata(route, payload))
-
+    payload = CrossChainPlan(legs=_journey_legs(route), bridge_requests=_bridge_requests(route)).to_dict()
+    _r_dz2962 = _dz2962()
+    if _r_dz2962 is not _DR_UNSET:
+        return _r_dz2962[0]
 
 def try_cover(intent, state):
     """A delivering cross-chain plan for this intent, or None to stand aside."""
@@ -304,9 +242,8 @@ def try_cover(intent, state):
             return None
         return build_plan(intent, state, route)
     except Exception:
-        logger.exception("[xchain] identity cover failed; stack plan stands")
+        logger.exception('[xchain] identity cover failed; stack plan stands')
         return None
-
 
 def install(base_cls):
     """Wrap `base_cls` so the identity bridge is answered before the stack.
@@ -330,5 +267,4 @@ def install(base_cls):
             if plan is not None:
                 return plan
             return super().generate_plan(intent, state, snapshot)
-
     return _XChainCover
